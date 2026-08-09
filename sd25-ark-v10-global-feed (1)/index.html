@@ -1356,21 +1356,19 @@ a{color:inherit}
 body.viewer-open{
   overflow:hidden!important;
 }
-body.viewer-open #app,
-body.viewer-open .rail,
-body.viewer-open .composer,
-body.viewer-open .auth-chip,
-body.viewer-open .api-settings-btn,
-body.viewer-open #settingsPopover,
-body.viewer-open #toast{
+body.viewer-open #app{
   visibility:hidden!important;
   pointer-events:none!important;
+}
+body.viewer-open #immersiveViewer{
+  visibility:visible!important;
+  pointer-events:auto!important;
 }
 
 .immersive-viewer{
   position:fixed;
   inset:0;
-  z-index:500;
+  z-index:2147483000;
   display:grid;
   grid-template-columns:minmax(0,1fr) 330px;
   background:#000;
@@ -1623,6 +1621,72 @@ body.viewer-open #toast{
 .feed-refresh:hover{color:#ddd}
 .publish-working{opacity:.56!important;pointer-events:none!important}
 
+
+.viewer-video-wrap{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.viewer-video-loading,
+.viewer-video-error{
+  position:absolute;
+  inset:0;
+  z-index:3;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:28px;
+  background:#000;
+}
+.viewer-video-loading.hidden,
+.viewer-video-error.hidden{display:none!important}
+.viewer-video-loading-inner,
+.viewer-video-error-inner{max-width:330px}
+.viewer-video-spinner{
+  width:28px;
+  height:28px;
+  margin:0 auto 13px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,.09);
+  border-top-color:#d0d0d0;
+  animation:spin .72s linear infinite;
+}
+.viewer-video-error strong{
+  display:block;
+  color:#ddd;
+  font-size:13px;
+  margin-bottom:6px;
+}
+.viewer-video-error span{
+  display:block;
+  color:#656565;
+  font-size:9px;
+  line-height:1.45;
+  margin-bottom:13px;
+}
+.viewer-error-actions{
+  display:flex;
+  justify-content:center;
+  gap:7px;
+}
+.viewer-error-actions button{
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);
+  color:#bbb;
+  border-radius:9px;
+  padding:8px 11px;
+  cursor:pointer;
+  font-size:9px;
+}
+.viewer-error-actions button:hover{
+  background:rgba(255,255,255,.075);
+  color:#fff;
+}
+
 </style>
 </head>
 <body>
@@ -1800,7 +1864,12 @@ body.viewer-open #toast{
     </div>
   </div>
 
-  <div id="immersiveViewer" class="immersive-viewer hidden" aria-hidden="true">
+
+  <div id="modalRoot"></div>
+  <div id="toasts" class="toast-stack"></div>
+</div>
+
+<div id="immersiveViewer" class="immersive-viewer hidden" aria-hidden="true">
     <div class="viewer-media-zone">
       <button id="viewerExit" class="viewer-exit" aria-label="Back">
         <svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg>
@@ -1822,10 +1891,6 @@ body.viewer-open #toast{
       <button id="viewerPostBtn" class="viewer-post-btn">Post video</button>
     </aside>
   </div>
-
-  <div id="modalRoot"></div>
-  <div id="toasts" class="toast-stack"></div>
-</div>
 
 <script>
 const $=s=>document.querySelector(s);
@@ -2457,28 +2522,118 @@ function closeViewerModal(){
 }
 function exitImmersiveViewer(){
  const root=$("#immersiveViewer");
+ if(!root)return;
+
  const v=root.querySelector("video");
- if(v){v.pause();v.removeAttribute("src");v.load()}
+ if(v){
+   try{v.pause()}catch{}
+   try{v.removeAttribute("src");v.load()}catch{}
+ }
+
  closeViewerModal();
  root.classList.add("hidden");
  root.setAttribute("aria-hidden","true");
  document.body.classList.remove("viewer-open");
  currentViewerId=null;
- history.replaceState(null,"",location.pathname+location.search+(state.route&&state.route!=="feed"?"#"+state.route:""));
+
+ const route=["feed","search","activity","profile","cameos","drafts"].includes(state.route)
+   ? state.route
+   : "feed";
+
+ setRoute(route,false);
+ history.replaceState(null,"",location.pathname+location.search+(route!=="feed"?"#"+route:""));
 }
+function mountViewerVideo(m){
+ const source=absoluteUrl(m.videoUrl||m.resultUrl);
+ const stage=$("#viewerStage");
+
+ stage.innerHTML=`
+   <div class="viewer-video-wrap">
+     <video id="immersiveVideo"
+       src="${escapeHtml(source)}"
+       controls
+       autoplay
+       playsinline
+       preload="auto"
+       style="aspect-ratio:${normalizedSourceRatio(m.ratio)}"></video>
+
+     <div id="viewerVideoLoading" class="viewer-video-loading">
+       <div class="viewer-video-loading-inner">
+         <div class="viewer-video-spinner"></div>
+         <div style="font-size:9px;color:#6d6d6d">Loading video…</div>
+       </div>
+     </div>
+
+     <div id="viewerVideoError" class="viewer-video-error hidden">
+       <div class="viewer-video-error-inner">
+         <strong>Video couldn't load</strong>
+         <span>The viewer is still safe to close. You can retry the video without leaving SD2.5.</span>
+         <div class="viewer-error-actions">
+           <button id="viewerRetryVideo">Retry</button>
+           <button id="viewerErrorBack">Back</button>
+         </div>
+       </div>
+     </div>
+   </div>`;
+
+ const video=$("#immersiveVideo");
+ const loading=$("#viewerVideoLoading");
+ const error=$("#viewerVideoError");
+
+ const ready=()=>{
+   loading?.classList.add("hidden");
+   error?.classList.add("hidden");
+ };
+ const failed=()=>{
+   loading?.classList.add("hidden");
+   error?.classList.remove("hidden");
+ };
+
+ video.addEventListener("loadeddata",ready,{once:true});
+ video.addEventListener("canplay",ready,{once:true});
+ video.addEventListener("error",failed,{once:true});
+
+ // Autoplay may be blocked; controls remain usable.
+ const playAttempt=video.play();
+ if(playAttempt?.catch)playAttempt.catch(()=>{});
+
+ $("#viewerRetryVideo").onclick=()=>{
+   error.classList.add("hidden");
+   loading.classList.remove("hidden");
+   video.load();
+   const p=video.play();
+   if(p?.catch)p.catch(()=>{});
+ };
+ $("#viewerErrorBack").onclick=exitImmersiveViewer;
+
+ // If the browser never fires a useful event, do not leave an eternal spinner.
+ setTimeout(()=>{
+   if(!document.body.classList.contains("viewer-open"))return;
+   if(video.readyState>=2)ready();
+   else if(video.networkState===HTMLMediaElement.NETWORK_NO_SOURCE)failed();
+ },8000);
+}
+
 function openImmersiveViewer(m,{remix=false}={}){
  if(!m || m.status || !(m.videoUrl||m.resultUrl)){
    toast(`STATUS · ${m?.status||"Not ready"}`);
    return;
  }
+
  currentViewerId=mediaKey(m.id);
  const root=$("#immersiveViewer");
- const source=m.videoUrl||m.resultUrl;
+
+ // Defensive: the viewer must never remain under #app.
+ if(root.parentElement!==document.body){
+   document.body.appendChild(root);
+ }
+
  root.classList.remove("hidden");
  root.setAttribute("aria-hidden","false");
  document.body.classList.add("viewer-open");
 
- $("#viewerStage").innerHTML=`<video src="${escapeHtml(source)}" controls autoplay playsinline style="aspect-ratio:${normalizedSourceRatio(m.ratio)}"></video>`;
+ mountViewerVideo(m);
+
  $("#viewerOwner").textContent="@"+(m.user||"private");
  $("#viewerPrompt").textContent=m.prompt||"";
  $("#viewerMeta").textContent=`${m.kind==="remix"?"Remix · ":""}${m.ratio||"adaptive"} · SD2.5`;
@@ -2495,6 +2650,7 @@ function openImmersiveViewer(m,{remix=false}={}){
  history.replaceState(null,"",location.pathname+location.search+"#view-"+encodeURIComponent(mediaKey(m.id)));
  if(remix)setTimeout(openViewerRemix,80);
 }
+
 function refreshImmersiveViewer(){
  const m=getViewerRecord();
  if(!m){exitImmersiveViewer();return}
@@ -2502,6 +2658,7 @@ function refreshImmersiveViewer(){
    $("#viewerStage").innerHTML=`<div style="color:#666;font-size:10px;text-align:center">STATUS · ${escapeHtml(m.status||"Not ready")}</div>`;
    return;
  }
+ if(!$("#immersiveVideo"))mountViewerVideo(m);
  $("#viewerOwner").textContent="@"+(m.user||"private");
  $("#viewerPrompt").textContent=m.prompt||"";
  $("#viewerMeta").textContent=`${m.kind==="remix"?"Remix · ":""}${m.ratio||"adaptive"} · SD2.5`;
@@ -3169,7 +3326,7 @@ async function shareText(text){
 
 
 
-$("#viewerExit").onclick=exitImmersiveViewer;
+$("#viewerExit").onclick=e=>{e.preventDefault();e.stopPropagation();exitImmersiveViewer()};
 $("#viewerRemixBtn").onclick=openViewerRemix;
 $("#viewerCameoBtn").onclick=saveViewerAsCameo;
 $("#viewerShareBtn").onclick=()=>{
@@ -3434,15 +3591,36 @@ function openViewerFromHash(){
  }
  return false;
 }
-setTimeout(openViewerFromHash,80);
-window.addEventListener("hashchange",()=>{
- if(location.hash.startsWith("#view-"))openViewerFromHash();
- else if(!$("#immersiveViewer").classList.contains("hidden"))exitImmersiveViewer();
-});
+function syncRouteFromHash(){
+ if(location.hash.startsWith("#view-")){
+   if($("#immersiveViewer").classList.contains("hidden")){
+     openViewerFromHash();
+   }
+   return;
+ }
 
+ if(!$("#immersiveViewer").classList.contains("hidden")){
+   const requested=location.hash.slice(1)||"feed";
+   const safe=["feed","search","activity","profile","cameos","drafts"].includes(requested)?requested:"feed";
+   document.body.classList.remove("viewer-open");
+   $("#immersiveViewer").classList.add("hidden");
+   currentViewerId=null;
+   setRoute(safe,false);
+   return;
+ }
 
-window.addEventListener("hashchange",()=>setRoute(location.hash.slice(1)||"feed",false));
-setRoute(location.hash.slice(1)||"feed",false);
+ const requested=location.hash.slice(1)||"feed";
+ const safe=["feed","search","activity","profile","cameos","drafts"].includes(requested)?requested:"feed";
+ setRoute(safe,false);
+}
+
+if(location.hash.startsWith("#view-")){
+ setRoute("feed",false);
+ setTimeout(openViewerFromHash,80);
+}else{
+ syncRouteFromHash();
+}
+window.addEventListener("hashchange",syncRouteFromHash);
 
 setTimeout(()=>$("#splash").classList.add("hide"),420);
 </script>
