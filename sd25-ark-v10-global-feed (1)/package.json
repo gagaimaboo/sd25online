@@ -1,0 +1,8 @@
+{
+  "name": "sd25-global-feed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "latest"
+  }
+}
