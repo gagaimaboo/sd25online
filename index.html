@@ -17707,12 +17707,456 @@ function drawGameOverSpecialVisual(now=performance.now()){
  }
 }
 
-function drawLoading(){
- ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='top';ctx.font='58px monospace';ctx.fillText('Undertale:Battlegrounds',W/2,250);ctx.font='28px monospace';ctx.fillStyle='#aaa';ctx.fillText('LOADING REAL ASSETS',W/2,360);
- const pct=loadTotal?clamp(loadDone/loadTotal,0,1):0,bx=280,by=610,bw=888,bh=44;
- ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.strokeRect(bx,by,bw,bh);ctx.fillStyle='#fff';ctx.fillRect(bx+7,by+7,(bw-14)*pct,bh-14);
- ctx.font='30px monospace';ctx.fillStyle='#fff';ctx.fillText(`${Math.floor(pct*100)}%   ${loadDone}/${loadTotal}`,W/2,690);ctx.font='22px monospace';ctx.fillStyle='#888';ctx.fillText(loadLabel,W/2,750);
+// ================= MENU SKIN =================
+// Shared look for every non-battle screen: a deep Waterfall/Ruins purple night,
+// the Delta Rune emblem in chunky pixels, twinkling crystal stars, rising
+// monster dust, and UNDERTALE-style double-framed boxes. Battle UI is untouched.
+const UI_PIXEL_HEART=[
+ '..XXX...XXX..',
+ '.XXXXX.XXXXX.',
+ 'XXXXXXXXXXXXX',
+ 'XXXXXXXXXXXXX',
+ 'XXXXXXXXXXXXX',
+ '.XXXXXXXXXXX.',
+ '..XXXXXXXXX..',
+ '...XXXXXXX...',
+ '....XXXXX....',
+ '.....XXX.....',
+ '......X......'
+];
+function drawPixelHeart(cx,cy,px,color='#f00',fill=1,emptyColor=null){
+ const rows=UI_PIXEL_HEART.length,cols=UI_PIXEL_HEART[0].length;
+ const x0=Math.round(cx-cols*px/2),y0=Math.round(cy-rows*px/2);
+ const cut=rows-rows*clamp(fill,0,1);
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+   if(UI_PIXEL_HEART[r][c]!=='X')continue;
+   const filled=r>=cut-1e-6;
+   if(!filled&&!emptyColor)continue;
+   ctx.fillStyle=filled?color:emptyColor;
+   ctx.fillRect(x0+c*px,y0+r*px,px,px);
+ }
 }
+
+let uiBackdropCache=null;
+function uiBuildDeltaRune(){
+ // Drawn at 1/6 scale and upscaled without smoothing so it reads as pixel art.
+ const c=document.createElement('canvas');c.width=132;c.height=112;
+ const g=c.getContext('2d');g.fillStyle='#fff';
+ const cx=66;
+ // Winged orb: the orb sits between two wings of stacked pixel feathers.
+ g.beginPath();g.arc(cx,24,11,0,Math.PI*2);g.fill();
+ const feathers=[[58,6],[54,6],[47,6],[38,6],[27,5]];
+ for(const side of [-1,1]){
+   feathers.forEach(([len,h],i)=>{
+     const y=12+i*7,x0=cx+side*13;
+     for(let k=0;k<len;k++){
+       // Each feather tapers to a point at its tip.
+       const tip=Math.max(0,k-(len-8));
+       const hh=Math.max(1,h-Math.floor(tip*.7));
+       const yy=y+Math.floor((i+1)*k/len*2);
+       g.fillRect(side<0?x0-k-1:x0+k,yy,1,hh);
+     }
+   });
+ }
+ // Three downward triangles: two above, one below.
+ const tri=(x,y,w,h)=>{g.beginPath();g.moveTo(x-w/2,y);g.lineTo(x+w/2,y);g.lineTo(x,y+h);g.closePath();g.fill()};
+ tri(cx-20,52,34,28);tri(cx+20,52,34,28);tri(cx,84,34,28);
+ return c;
+}
+function uiBackdropLayer(){
+ if(uiBackdropCache)return uiBackdropCache;
+ const c=document.createElement('canvas');c.width=W;c.height=H;
+ const g=c.getContext('2d');
+ const bg=g.createLinearGradient(0,0,0,H);
+ bg.addColorStop(0,'#000000');bg.addColorStop(.55,'#05020a');bg.addColorStop(1,'#140722');
+ g.fillStyle=bg;g.fillRect(0,0,W,H);
+ // Low violet glow along the floor, like the Ruins/Waterfall rooms.
+ const glow=g.createRadialGradient(W/2,H*1.08,40,W/2,H*1.08,W*.62);
+ glow.addColorStop(0,'rgba(120,50,170,.28)');glow.addColorStop(1,'rgba(120,50,170,0)');
+ g.fillStyle=glow;g.fillRect(0,0,W,H);
+ // Delta Rune emblem.
+ const rune=uiBuildDeltaRune();
+ g.save();g.imageSmoothingEnabled=false;g.globalAlpha=.045;
+ const rw=rune.width*6,rh=rune.height*6;
+ g.drawImage(rune,Math.round(W/2-rw/2),Math.round(H*.56-rh/2),rw,rh);
+ g.restore();
+ // Vignette.
+ const v=g.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.9);
+ v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.75)');
+ g.fillStyle=v;g.fillRect(0,0,W,H);
+ uiBackdropCache=c;
+ return c;
+}
+function uiHexRGB(s){
+ const m=/^#([0-9a-f]{6})$/i.exec(String(s||''));
+ if(!m)return null;
+ const n=parseInt(m[1],16);return [(n>>16)&255,(n>>8)&255,n&255];
+}
+function drawMenuBackdrop(now=performance.now(),accent='#fff'){
+ drawMenuBackdropScene(now,accent);
+ drawCheckerStrip(0,58);
+}
+function drawMenuBackdropScene(now=performance.now(),accent='#fff'){
+ const proto=CanvasRenderingContext2D.prototype;
+ ctx.save();
+ ctx.drawImage(uiBackdropLayer(),0,0);
+ const t=uiReducedMotion?0:now;
+ // Waterfall ceiling crystals: pixel crosses that twinkle at their own pace.
+ for(let i=0;i<64;i++){
+   const x=((i*977+131)%1409)+18,y=70+((i*463+57)%(H-240));
+   const tw=.5+.5*Math.sin(t/(700+(i%7)*140)+i*2.3);
+   const a=uiReducedMotion?.25:(.06+.5*tw*tw);
+   const col=i%11===0?accent:(i%3===0?'#9fe8ff':'#ffffff');
+   const s=i%5===0?3:2;
+   ctx.globalAlpha=a;ctx.fillStyle=col;
+   proto.fillRect.call(ctx,x,y,s,s);
+   if(i%5===0&&tw>.7){
+     ctx.globalAlpha=a*.6;
+     proto.fillRect.call(ctx,x-s*2,y,s,s);proto.fillRect.call(ctx,x+s*2,y,s,s);
+     proto.fillRect.call(ctx,x,y-s*2,s,s);proto.fillRect.call(ctx,x,y+s*2,s,s);
+   }
+ }
+ // Rising monster dust.
+ if(!uiReducedMotion){
+   for(let i=0;i<30;i++){
+     const speed=18+(i%6)*7,span=H+80;
+     const y=H+40-((t/1000*speed+i*197)%span);
+     const x=((i*613)%W)+Math.sin(t/1400+i)*14;
+     const life=1-Math.abs((y/H)-.5)*2;
+     ctx.globalAlpha=Math.max(0,life)*.22;
+     ctx.fillStyle=i%4===0?'#d8b8ff':'#ffffff';
+     const s=i%3===0?4:3;
+     proto.fillRect.call(ctx,Math.round(x),Math.round(y),s,s);
+   }
+ }
+ ctx.globalAlpha=1;
+ // Very faint scanlines keep a little CRT texture.
+ ctx.globalAlpha=.03;ctx.fillStyle='#fff';
+ for(let y=92;y<H;y+=6)proto.fillRect.call(ctx,0,y,W,1);
+ ctx.restore();
+}
+function drawCheckerStrip(y,h){
+ const proto=CanvasRenderingContext2D.prototype;
+ ctx.save();
+ const g=ctx.createLinearGradient(0,y,0,y+h);
+ g.addColorStop(0,'#1a0c28');g.addColorStop(1,'#050208');
+ ctx.fillStyle=g;proto.fillRect.call(ctx,0,y,W,h);
+ // Diamond lattice ornament.
+ ctx.fillStyle='#2c1840';
+ for(let x=18;x<W;x+=36){
+   const cy=y+h/2-2;
+   for(let d=0;d<4;d++)proto.fillRect.call(ctx,x-d*2,cy-6+d*3,d*4+2,3);
+   for(let d=0;d<3;d++)proto.fillRect.call(ctx,x-(2-d)*2,cy+6+d*3,(2-d)*4+2,3);
+ }
+ ctx.fillStyle='#fff';proto.fillRect.call(ctx,0,y+h-4,W,4);
+ ctx.fillStyle='rgba(255,255,0,.35)';proto.fillRect.call(ctx,0,y+h+2,W,1);
+ ctx.restore();
+}
+function drawUiHeart(x,y,size=25,alpha=1){
+ const im=images.heart||images.heartFallback;
+ ctx.save();ctx.globalAlpha=alpha;
+ // Soft red halo behind the SOUL.
+ const halo=ctx.createRadialGradient(x,y,0,x,y,size*1.4);
+ halo.addColorStop(0,'rgba(255,0,0,.35)');halo.addColorStop(1,'rgba(255,0,0,0)');
+ ctx.fillStyle=halo;CanvasRenderingContext2D.prototype.fillRect.call(ctx,x-size*1.5,y-size*1.5,size*3,size*3);
+ if(im){ctx.imageSmoothingEnabled=false;ctx.drawImage(im,Math.round(x-size/2),Math.round(y-size/2),size,size)}
+ else drawPixelHeart(x,y,Math.max(1,Math.round(size/13)),'#f00');
+ ctx.restore();
+}
+function drawSectionHeader(title,subtitle,accent='#ffff00',now=performance.now(),rightText=''){
+ const entry=uiScreenProgress(now,430);
+ const proto=CanvasRenderingContext2D.prototype;
+ ctx.save();ctx.globalAlpha=entry;ctx.translate(0,(1-entry)*-18);
+ const bob=uiReducedMotion?0:Math.round(Math.sin(now/420)*2);
+ drawUiHeart(50,108+bob,26,entry);
+ font(58,'#3a1457','left');ctx.fillText(title,80,86);
+ font(58,'#fff','left');ctx.fillText(title,76,82);
+ font(19,'#9a8fb0','left');ctx.fillText(subtitle,80,158);
+ ctx.fillStyle=accent;proto.fillRect.call(ctx,76,205,92,5);
+ ctx.fillStyle='#2a1d3a';proto.fillRect.call(ctx,176,207,W-252,2);
+ // A glint sweeps along the rule every few seconds.
+ if(!uiReducedMotion){
+   const k=((now/2600)%1),gx=176+k*(W-252);
+   const gl=ctx.createLinearGradient(gx-90,0,gx+90,0);
+   gl.addColorStop(0,'rgba(255,255,255,0)');gl.addColorStop(.5,'rgba(255,255,255,.75)');gl.addColorStop(1,'rgba(255,255,255,0)');
+   ctx.fillStyle=gl;proto.fillRect.call(ctx,Math.max(176,gx-90),206,180,4);
+ }
+ ctx.fillStyle=accent;
+ for(const dx of [0,10,20]){proto.fillRect.call(ctx,W-76-dx,205,5,5)}
+ if(rightText){font(15,'#8d82a3','right');ctx.fillText(rightText,W-76,187)}
+ ctx.restore();
+}
+function drawSelectionCorners(r,color='#ffff00',now=performance.now()){
+ const pulse=uiReducedMotion?1:.76+.24*Math.sin(now/180),l=22;
+ const proto=CanvasRenderingContext2D.prototype;
+ ctx.save();
+ // Inner wash + glow so the active choice reads at a glance.
+ ctx.globalAlpha=.07+.05*pulse;ctx.fillStyle=color;proto.fillRect.call(ctx,r.x,r.y,r.w,r.h);
+ ctx.globalAlpha=.6+.4*pulse;ctx.strokeStyle=color;ctx.lineWidth=4;ctx.shadowColor=color;ctx.shadowBlur=14*pulse;
+ ctx.beginPath();
+ ctx.moveTo(r.x-3,r.y+l);ctx.lineTo(r.x-3,r.y-3);ctx.lineTo(r.x+l,r.y-3);
+ ctx.moveTo(r.x+r.w-l,r.y-3);ctx.lineTo(r.x+r.w+3,r.y-3);ctx.lineTo(r.x+r.w+3,r.y+l);
+ ctx.moveTo(r.x-3,r.y+r.h-l);ctx.lineTo(r.x-3,r.y+r.h+3);ctx.lineTo(r.x+l,r.y+r.h+3);
+ ctx.moveTo(r.x+r.w-l,r.y+r.h+3);ctx.lineTo(r.x+r.w+3,r.y+r.h+3);ctx.lineTo(r.x+r.w+3,r.y+r.h-l);
+ ctx.stroke();
+ // A spark travels around the frame.
+ if(!uiReducedMotion){
+   const per=2*(r.w+r.h),d=((now/4)%per);
+   let sx,sy;
+   if(d<r.w){sx=r.x+d;sy=r.y-3}
+   else if(d<r.w+r.h){sx=r.x+r.w+3;sy=r.y+(d-r.w)}
+   else if(d<2*r.w+r.h){sx=r.x+r.w-(d-r.w-r.h);sy=r.y+r.h+3}
+   else{sx=r.x-3;sy=r.y+r.h-(d-2*r.w-r.h)}
+   ctx.shadowBlur=10;ctx.globalAlpha=.95;ctx.fillStyle='#fff';
+   proto.fillRect.call(ctx,Math.round(sx-3),Math.round(sy-3),6,6);
+ }
+ ctx.restore();
+}
+
+// Box skin: while a menu screen draws, strokeRect/fillRect get UNDERTALE-style
+// framing. Dark panels gain a faint violet depth gradient; framed boxes gain an
+// inner hairline (the classic double frame); coloured frames glow.
+let uiSkinActive=false;
+function uiSkinFillRect(x,y,w,h){
+ const proto=CanvasRenderingContext2D.prototype;
+ const rgb=typeof this.fillStyle==='string'?uiHexRGB(this.fillStyle):null;
+ const full=w>=W-2&&h>=H-2;
+ // Screens that clear to black get the shared night backdrop instead.
+ if(full&&rgb&&Math.max(...rgb)<=0x10&&this.globalAlpha>=.999&&this.globalCompositeOperation==='source-over'){
+   const prev=this.fillStyle;drawMenuBackdropScene(performance.now());this.fillStyle=prev;return;
+ }
+ if(!rgb||full||w<90||h<34||this.globalCompositeOperation!=='source-over'){proto.fillRect.call(this,x,y,w,h);return}
+ const mx=Math.max(...rgb);
+ const gray=mx-Math.min(...rgb)<10;
+ if(!gray||mx>0x22){proto.fillRect.call(this,x,y,w,h);return}
+ const g=this.createLinearGradient(0,y,0,y+h);
+ g.addColorStop(0,`rgb(${mx+14},${mx+6},${mx+26})`);
+ g.addColorStop(1,`rgb(${Math.max(0,mx-2)},${Math.max(0,mx-2)},${mx+3})`);
+ const prev=this.fillStyle;this.fillStyle=g;proto.fillRect.call(this,x,y,w,h);this.fillStyle=prev;
+}
+function uiSkinStrokeRect(x,y,w,h){
+ const proto=CanvasRenderingContext2D.prototype;
+ const lw=this.lineWidth,col=this.strokeStyle;
+ const rgb=typeof col==='string'?uiHexRGB(col):null;
+ if(!rgb||lw<2||w<40||h<26){proto.strokeRect.call(this,x,y,w,h);return}
+ const mx=Math.max(...rgb),mn=Math.min(...rgb),colored=mx-mn>50;
+ this.save();
+ if(colored){this.shadowColor=col;this.shadowBlur=16}
+ proto.strokeRect.call(this,x,y,w,h);
+ this.restore();
+ if(h>=44&&w>=70){
+   const inset=lw/2+5;
+   this.save();
+   this.lineWidth=1;this.globalAlpha*=colored?.45:(mx>150?.22:.35);
+   proto.strokeRect.call(this,x+inset,y+inset,w-inset*2,h-inset*2);
+   this.restore();
+ }
+}
+function withMenuSkin(fn){
+ if(uiSkinActive)return fn();
+ uiSkinActive=true;
+ ctx.fillRect=uiSkinFillRect;ctx.strokeRect=uiSkinStrokeRect;
+ try{drawMenuBackdropScene(performance.now());return fn()}
+ finally{delete ctx.fillRect;delete ctx.strokeRect;uiSkinActive=false}
+}
+
+// ---------- Loading ----------
+const UI_LOADING_LINES=[
+ '* The anticipation fills you\n  with DETERMINATION.',
+ '* You hear a distant ribbit.',
+ '* Smells like a bait shop.',
+ '* Someone is sorting bones\n  alphabetically.',
+ '* Temmie is vibrating\n  somewhere nearby.',
+ '* The echo flowers whisper\n  about asset caches.',
+ '* Papyrus is recalibrating\n  his puzzles.',
+ '* (It\'s a sprite. It is\n  still loading.)'
+];
+function drawLoading(){
+ const now=performance.now();
+ drawMenuBackdrop(now,'#ffff00');
+ const pct=loadTotal?clamp(loadDone/loadTotal,0,1):0;
+ const proto=CanvasRenderingContext2D.prototype;
+ // Logo.
+ font(84,'#3a1457','center');ctx.fillText('UNDERTALE',W/2+5,135);
+ font(84,'#fff','center');ctx.fillText('UNDERTALE',W/2,130);
+ font(30,'#ffff00','center');ctx.fillText('B A T T L E G R O U N D S',W/2,236);
+ // The SOUL fills with determination as assets arrive.
+ const beat=uiReducedMotion?1:1+.04*Math.max(0,Math.sin(now/260))**8;
+ ctx.save();ctx.translate(W/2,400);ctx.scale(beat,beat);ctx.translate(-W/2,-400);
+ const halo=ctx.createRadialGradient(W/2,400,10,W/2,400,150);
+ halo.addColorStop(0,`rgba(255,0,0,${.15+.3*pct})`);halo.addColorStop(1,'rgba(255,0,0,0)');
+ ctx.fillStyle=halo;proto.fillRect.call(ctx,W/2-160,240,320,320);
+ drawPixelHeart(W/2,400,11,'#ff0000',pct,'#3a0000');
+ ctx.restore();
+ // HP-bar style progress.
+ const bx=W/2-300,by=560,bw=600,bh=30;
+ font(26,'#fff','right');ctx.fillText('LOAD',bx-22,by+2);
+ ctx.fillStyle='#c00000';proto.fillRect.call(ctx,bx,by,bw,bh);
+ ctx.fillStyle='#ffff00';proto.fillRect.call(ctx,bx,by,Math.round(bw*pct),bh);
+ font(26,'#fff','left');ctx.fillText(`${loadDone} / ${loadTotal}`,bx+bw+22,by+2);
+ font(18,'#8d82a3','center');ctx.fillText(String(loadLabel||'').slice(0,64),W/2,by+52);
+ // UNDERTALE dialogue box with a typewritten flavour line.
+ const box={x:W/2-440,y:700,w:880,h:190};
+ ctx.fillStyle='#000';proto.fillRect.call(ctx,box.x,box.y,box.w,box.h);
+ ctx.strokeStyle='#fff';ctx.lineWidth=6;proto.strokeRect.call(ctx,box.x,box.y,box.w,box.h);
+ const idx=Math.floor(now/3600)%UI_LOADING_LINES.length,line=UI_LOADING_LINES[idx];
+ const shown=line.slice(0,Math.floor(((now%3600)/1000)*34));
+ font(34,'#fff','left');
+ shown.split('\n').forEach((ln,i)=>ctx.fillText(ln,box.x+42,box.y+38+i*48));
+ font(16,'#6f6585','center');ctx.fillText(`${Math.floor(pct*100)}%`,W/2,box.y+box.h+22);
+}
+
+function drawTitleTab(i,label,now,entry){
+ const r=titleTabRect(i),active=i===mainSelected;
+ const stagger=uiReducedMotion?1:uiEaseOut((entry-(i*.045))/.72);
+ if(stagger<=0)return;
+ const since=Math.max(0,now-uiTitleSelectedAt);
+ const punch=active&&!uiReducedMotion?Math.sin(Math.min(1,since/180)*Math.PI)*.06:0;
+ const lift=active&&!uiReducedMotion?-4:0;
+ const scale=1+punch;
+ const rise=(1-stagger)*22+lift;
+ const proto=CanvasRenderingContext2D.prototype;
+ ctx.save();ctx.globalAlpha=.25+.75*stagger;
+ ctx.translate(r.x+r.w/2,r.y+r.h/2+rise);ctx.scale(scale,scale);ctx.translate(-(r.x+r.w/2),-(r.y+r.h/2));
+ const g=ctx.createLinearGradient(0,r.y,0,r.y+r.h);
+ if(active){g.addColorStop(0,'#3a3000');g.addColorStop(1,'#0e0b00')}
+ else{g.addColorStop(0,'#160c22');g.addColorStop(1,'#040207')}
+ ctx.fillStyle=g;proto.fillRect.call(ctx,r.x,r.y,r.w,r.h);
+ ctx.save();
+ if(active){ctx.shadowColor='#ffff00';ctx.shadowBlur=18}
+ ctx.strokeStyle=active?'#ffff00':'#8a80a0';ctx.lineWidth=active?5:3;proto.strokeRect.call(ctx,r.x,r.y,r.w,r.h);
+ ctx.restore();
+ ctx.strokeStyle=active?'rgba(255,255,0,.45)':'rgba(255,255,255,.12)';ctx.lineWidth=1;proto.strokeRect.call(ctx,r.x+7,r.y+7,r.w-14,r.h-14);
+ font(label==='SETTINGS'?18:(label==='CREATOR'?20:24),'#2a1040','center');ctx.fillText(label,r.x+r.w/2+2,r.y+26);
+ font(label==='SETTINGS'?18:(label==='CREATOR'?20:24),active?'#ffff00':'#fff','center');ctx.fillText(label,r.x+r.w/2,r.y+24);
+ // Numbered pip row under the label.
+ ctx.fillStyle=active?'#ffff00':'#4a3f5e';
+ proto.fillRect.call(ctx,r.x+r.w/2-14,r.y+64,28,3);
+ font(12,active?'#d8cf40':'#6f6585','center');ctx.fillText(String(i+1).padStart(2,'0'),r.x+r.w/2,r.y+70);
+ ctx.restore();
+}
+function drawTitleLogo(now,entry){
+ const proto=CanvasRenderingContext2D.prototype;
+ ctx.save();ctx.globalAlpha=entry;ctx.translate(0,(1-entry)*-28);
+ font(96,'#3a1457','center');ctx.fillText('UNDERTALE',W/2+6,70);
+ // Golden glint sweeping across the white logo.
+ const k=uiReducedMotion?-1:((now/3400)%1.6)-.3;
+ const lx=W/2-330,lw=660,gx=lx+k*lw;
+ const grad=ctx.createLinearGradient(gx-80,0,gx+80,0);
+ grad.addColorStop(0,'#ffffff');grad.addColorStop(.5,'#ffe066');grad.addColorStop(1,'#ffffff');
+ font(96,'#fff','center');ctx.fillStyle=k<0?'#fff':grad;ctx.fillText('UNDERTALE',W/2,64);
+ // BATTLEGROUNDS subtitle flanked by SOULs and rules.
+ font(30,'#ffff00','center');ctx.fillText('B A T T L E G R O U N D S',W/2,172);
+ const bob=uiReducedMotion?0:Math.round(Math.sin(now/400)*2);
+ drawUiHeart(W/2-300,188+bob,20,entry);drawUiHeart(W/2+300,188-bob,20,entry);
+ ctx.fillStyle='#4a2a66';proto.fillRect.call(ctx,W/2-620,188,300,2);proto.fillRect.call(ctx,W/2+320,188,300,2);
+ // Save-file strip, like UNDERTALE's SAVE box.
+ const next=progressionNextExp();
+ const strip=`LV ${progressionLevel()}     EXP ${progression.exp}${next!==null?`  (NEXT ${next})`:'  (MAX)'}     ${progression.gold} G`;
+ font(17,'#b8aed0','center');ctx.fillText(strip,W/2,224);
+ ctx.restore();
+}
+function drawTitle(now=performance.now()){
+ drawMenuBackdrop(now,'#ffff00');
+ const proto=CanvasRenderingContext2D.prototype;
+ const entry=uiScreenProgress(now,520);
+ if(uiTitleLastSelected!==mainSelected){uiTitleLastSelected=mainSelected;uiTitleSelectedAt=now}
+ const target=titleTabRect(mainSelected),targetCx=target.x+target.w/2;
+ if(!Number.isFinite(uiTitleCursorX))uiTitleCursorX=targetCx;
+ uiTitleCursorX=uiReducedMotion?targetCx:(uiTitleCursorX+(targetCx-uiTitleCursorX)*.19);
+
+ drawTitleLogo(now,entry);
+
+ const labels=['BATTLE','ENEMIES','KILLS','SPARES','SETTINGS','CREATOR','SHOP','RUSH','MODS'];
+ for(let i=0;i<labels.length;i++)drawTitleTab(i,labels[i],now,entry);
+ // The red SOUL glides under the active tab instead of teleporting between choices.
+ const soulBob=uiReducedMotion?0:Math.sin(now/300)*2;
+ drawUiHeart(uiTitleCursorX,384+soulBob,26,entry);
+ ctx.save();ctx.globalAlpha=.5*entry;
+ const trail=ctx.createLinearGradient(uiTitleCursorX-60,0,uiTitleCursorX+60,0);
+ trail.addColorStop(0,'rgba(255,0,0,0)');trail.addColorStop(.5,'rgba(255,0,0,1)');trail.addColorStop(1,'rgba(255,0,0,0)');
+ ctx.fillStyle=trail;proto.fillRect.call(ctx,uiTitleCursorX-60,404,120,3);ctx.restore();
+
+ const base=BOSS_OPTIONS[bossSelected]||BOSS_OPTIONS[0];
+ const b=effectiveBossById(base.id)||base;
+ const box={x:150,y:432,w:1148,h:405};
+ const panelEntry=uiReducedMotion?1:uiEaseOut((entry-.12)/.88);
+ ctx.save();ctx.globalAlpha=panelEntry;ctx.translate(0,(1-panelEntry)*26);
+ ctx.fillStyle='#030104';ctx.fillRect(box.x,box.y,box.w,box.h);
+ ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.strokeRect(box.x,box.y,box.w,box.h);
+ ctx.fillStyle='#161020';ctx.fillRect(box.x+5,box.y+5,box.w-10,44);
+ const copy=titleTabCopy(mainSelected);
+ drawUiHeart(box.x+30,box.y+27,16,panelEntry);
+ font(15,'#b8aed0','left');ctx.fillText('ACTIVE LOADOUT',box.x+48,box.y+14);
+ font(15,'#ffff00','right');ctx.fillText(copy[1],box.x+box.w-24,box.y+14);
+
+ // Portrait bay with a spotlight.
+ const portrait={x:box.x+30,y:box.y+74,w:282,h:282};
+ ctx.fillStyle='#000';ctx.fillRect(portrait.x,portrait.y,portrait.w,portrait.h);
+ const spot=ctx.createRadialGradient(portrait.x+portrait.w/2,portrait.y+portrait.h*.55,10,portrait.x+portrait.w/2,portrait.y+portrait.h*.55,portrait.w*.62);
+ spot.addColorStop(0,'rgba(170,120,255,.22)');spot.addColorStop(1,'rgba(170,120,255,0)');
+ ctx.fillStyle=spot;proto.fillRect.call(ctx,portrait.x,portrait.y,portrait.w,portrait.h);
+ ctx.fillStyle='rgba(255,255,255,.08)';proto.fillRect.call(ctx,portrait.x+40,portrait.y+portrait.h-58,portrait.w-80,6);
+ ctx.strokeStyle=mainSelected===0?'#ffff00':'#8a80a0';ctx.lineWidth=3;ctx.strokeRect(portrait.x,portrait.y,portrait.w,portrait.h);
+ const bob=uiReducedMotion?0:Math.sin(now/410)*3;
+ ctx.save();ctx.translate(0,bob);drawBossIcon(base,portrait,true,1.18);ctx.restore();
+ font(13,'#6f6585','center');ctx.fillText('TARGET PREVIEW',portrait.x+portrait.w/2,portrait.y+portrait.h-26);
+
+ // Main information column.
+ const tx=box.x+348;
+ font(43,'#2a1040','left');ctx.fillText(copy[0],tx+3,box.y+81);
+ font(43,'#fff','left');ctx.fillText(copy[0],tx,box.y+78);
+ font(20,'#c9c0dd','left');ctx.fillText(copy[2],tx,box.y+132);
+ ctx.fillStyle='#2a1d3a';proto.fillRect.call(ctx,tx,box.y+175,box.w-400,3);
+ ctx.fillStyle='#ffff00';proto.fillRect.call(ctx,tx,box.y+175,60,3);
+ font(18,'#9a8fb0','left');ctx.fillText('* CURRENT TARGET',tx,box.y+196);
+ font(34,'#fff','left');ctx.fillText(b.label,tx,box.y+224);
+ font(18,'#9a8fb0','left');ctx.fillText(`${b.area}  //  AT ${b.atk}  DF ${b.def}`,tx,box.y+268);
+ // Battle-style HP bar.
+ const hpY=box.y+298,barW=Math.min(260,60+Math.round(Math.log10(Math.max(10,b.hp))*60));
+ font(18,'#fff','left');ctx.fillText('HP',tx,hpY);
+ ctx.fillStyle='#c00000';proto.fillRect.call(ctx,tx+40,hpY,barW,20);
+ ctx.fillStyle='#ffff00';proto.fillRect.call(ctx,tx+40,hpY,barW,20);
+ font(18,'#fff','left');ctx.fillText(`${b.hp} / ${b.hp}`,tx+56+barW,hpY);
+ const titleRole=vanillaMode?(noelleEnabled?'noelle':'classic'):sandboxRole();
+ font(18,'#c9c0dd','left');ctx.fillText(`SUPPORT  ${supportLabel()}     PLAYER  ${roleDisplayName(titleRole)}`,tx,box.y+338);
+
+ // Record block.
+ const sx=box.x+box.w-260;
+ const ry=box.y+188;
+ ctx.fillStyle='#0b0612';ctx.fillRect(sx,ry,220,160);ctx.strokeStyle='#8a80a0';ctx.lineWidth=2;ctx.strokeRect(sx,ry,220,160);
+ font(13,'#9a8fb0','center');ctx.fillText('BATTLE RECORD',sx+110,ry+14);
+ ctx.fillStyle='#e8e8e8';for(let d=0;d<3;d++)proto.fillRect.call(ctx,sx+34+d*5,ry+58-d*4,3,3);
+ font(25,'#fff','left');ctx.fillText(`${menuTotalOutcome('kills')} KILLS`,sx+60,ry+44);
+ drawPixelHeart(sx+42,ry+94,2,'#ffff00');
+ font(25,'#ffff00','left');ctx.fillText(`${menuTotalOutcome('spares')} SPARES`,sx+60,ry+82);
+ const modsOn=activeModCount();
+ font(14,modsOn?'#ff8cff':(hardModeEnabled?'#ff4040':'#9a8fb0'),'center');
+ ctx.fillText(modsOn?`MODS // ${modsOn} ACTIVE`:(hardModeEnabled?'HARD MODE // ON':(vanillaMode?'VANILLA RULES':'SANDBOX RULES')),sx+110,ry+128);
+ ctx.restore();
+
+ // Bottom command rail with keycaps.
+ const railY=878;
+ ctx.save();ctx.globalAlpha=entry;
+ ctx.fillStyle='#0a0610';ctx.fillRect(150,railY,1148,68);ctx.strokeStyle='#4a3f5e';ctx.lineWidth=2;ctx.strokeRect(150,railY,1148,68);
+ const keycap=(label,x,y,align='left')=>{
+   font(16,'#fff','left');const w=Math.max(34,ctx.measureText(label).width+18);
+   const kx=align==='right'?x-w:x;
+   ctx.fillStyle='#1c1428';proto.fillRect.call(ctx,kx,y,w,30);
+   ctx.strokeStyle='#b8aed0';ctx.lineWidth=2;proto.strokeRect.call(ctx,kx,y,w,30);
+   ctx.fillStyle='#b8aed0';proto.fillRect.call(ctx,kx+2,y+26,w-4,2);
+   font(16,'#fff','center');ctx.fillText(label,kx+w/2,y+6);
+   return w;
+ };
+ const lw=keycap('◀ A',178,railY+19);font(16,'#b8aed0','left');ctx.fillText('PREV',178+lw+12,railY+25);
+ const rw=keycap('D ▶',1270,railY+19,'right');font(16,'#b8aed0','right');ctx.fillText('NEXT',1270-rw-12,railY+25);
+ const confirmPulse=uiReducedMotion?1:(.75+.25*Math.sin(now/360));
+ const zw=keycap('Z',W/2-120,railY+19);keycap('ENTER',W/2-120+zw+8,railY+19);
+ font(20,`rgba(255,255,0,${confirmPulse})`,'left');ctx.fillText('OPEN',W/2+30,railY+23);
+ font(14,'#6f6585','center');ctx.fillText('F2 DEBUG LAB   ♥   F11 FULLSCREEN',W/2,977);
+ ctx.restore();
+}
+
 
 function panel(r,active=false,fill='#020202'){
  ctx.fillStyle=fill;ctx.fillRect(Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.round(r.h));
@@ -17744,34 +18188,6 @@ function drawUiScreenCurtain(now=performance.now()){
  if(p>=.999)return;
  ctx.save();ctx.globalAlpha=1-p;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.restore();
 }
-function drawMenuBackdrop(now=performance.now(),accent='#fff'){
- ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
- // Sparse drifting pixel dust makes the menus feel alive without fighting the pixel-art style.
- ctx.save();
- for(let i=0;i<38;i++){
-   const seed=(i*977)%1448;
-   const x=(seed+(!uiReducedMotion?(now*.012*(1+(i%3)*.35)):0))%W;
-   const y=78+((i*193)%920);
-   const blink=.10+.10*(.5+.5*Math.sin(now/520+i*1.7));
-   ctx.globalAlpha=uiReducedMotion?.12:blink;
-   ctx.fillStyle=i%9===0?accent:'#fff';
-   const z=i%7===0?4:2;
-   ctx.fillRect(Math.round(x),Math.round(y),z,z);
- }
- ctx.restore();
- // Quiet scanlines give the terminal framing some texture.
- ctx.save();ctx.globalAlpha=.065;ctx.fillStyle='#fff';
- for(let y=92;y<H;y+=8)ctx.fillRect(0,y,W,1);
- ctx.restore();
- drawCheckerStrip(0,58);
-}
-function drawUiHeart(x,y,size=25,alpha=1){
- const im=images.heart||images.heartFallback;
- ctx.save();ctx.globalAlpha=alpha;
- if(im){ctx.imageSmoothingEnabled=false;ctx.drawImage(im,Math.round(x-size/2),Math.round(y-size/2),size,size)}
- else{ctx.fillStyle='#f00';ctx.fillRect(Math.round(x-size*.32),Math.round(y-size*.2),Math.round(size*.64),Math.round(size*.55));ctx.fillRect(Math.round(x-size*.22),Math.round(y-size*.48),Math.round(size*.2),Math.round(size*.2));ctx.fillRect(Math.round(x+size*.02),Math.round(y-size*.48),Math.round(size*.2),Math.round(size*.2))}
- ctx.restore();
-}
 function menuTotalOutcome(type){
  return Object.values(battleStats?.[type]||{}).reduce((a,v)=>a+(Number(v)||0),0);
 }
@@ -17788,44 +18204,7 @@ function titleTabCopy(i){
   ['MODS','BATTLE MODIFIERS','Turn challenge, cheat and chaos rules on or off. Modded runs do not write progression.']
  ][i]||['','',''];
 }
-function drawTitleTab(i,label,now,entry){
- const r=titleTabRect(i),active=i===mainSelected;
- const stagger=uiReducedMotion?1:uiEaseOut((entry-(i*.045))/.72);
- if(stagger<=0)return;
- const since=Math.max(0,now-uiTitleSelectedAt);
- const punch=active&&!uiReducedMotion?Math.sin(Math.min(1,since/180)*Math.PI)*.045:0;
- const scale=1+punch;
- const rise=(1-stagger)*22;
- ctx.save();ctx.globalAlpha=.25+.75*stagger;
- ctx.translate(r.x+r.w/2,r.y+r.h/2+rise);ctx.scale(scale,scale);ctx.translate(-(r.x+r.w/2),-(r.y+r.h/2));
- ctx.fillStyle=active?'#120f00':'#020202';ctx.fillRect(r.x,r.y,r.w,r.h);
- ctx.strokeStyle=active?'#ffff00':'#777';ctx.lineWidth=active?5:3;ctx.strokeRect(r.x,r.y,r.w,r.h);
- if(active){ctx.strokeStyle='#5e5700';ctx.lineWidth=2;ctx.strokeRect(r.x+8,r.y+8,r.w-16,r.h-16)}
- font(label==='SETTINGS'?18:(label==='CREATOR'?20:24),active?'#ffff00':'#fff','center');ctx.fillText(label,r.x+r.w/2,r.y+24);
- font(12,active?'#9d9500':'#555','center');ctx.fillText(String(i+1).padStart(2,'0'),r.x+r.w/2,r.y+61);
- ctx.restore();
-}
 
-function drawSectionHeader(title,subtitle,accent='#ffff00',now=performance.now(),rightText=''){
- const entry=uiScreenProgress(now,430);
- ctx.save();ctx.globalAlpha=entry;ctx.translate(0,(1-entry)*-18);
- font(58,'#fff','left');ctx.fillText(title,76,82);
- font(19,'#777','left');ctx.fillText(subtitle,80,158);
- ctx.fillStyle=accent;ctx.fillRect(76,205,92,5);
- ctx.fillStyle='#333';ctx.fillRect(176,207,W-252,2);
- if(rightText){font(15,'#666','right');ctx.fillText(rightText,W-76,187)}
- ctx.restore();
-}
-function drawSelectionCorners(r,color='#ffff00',now=performance.now()){
- const pulse=uiReducedMotion?1:.76+.24*Math.sin(now/180),l=18;
- ctx.save();ctx.globalAlpha=.55+.35*pulse;ctx.strokeStyle=color;ctx.lineWidth=3;
- ctx.beginPath();
- ctx.moveTo(r.x,r.y+l);ctx.lineTo(r.x,r.y);ctx.lineTo(r.x+l,r.y);
- ctx.moveTo(r.x+r.w-l,r.y);ctx.lineTo(r.x+r.w,r.y);ctx.lineTo(r.x+r.w,r.y+l);
- ctx.moveTo(r.x,r.y+r.h-l);ctx.lineTo(r.x,r.y+r.h);ctx.lineTo(r.x+l,r.y+r.h);
- ctx.moveTo(r.x+r.w-l,r.y+r.h);ctx.lineTo(r.x+r.w,r.y+r.h);ctx.lineTo(r.x+r.w,r.y+r.h-l);
- ctx.stroke();ctx.restore();
-}
 function drawTinyStatusPill(text,x,y,active=false,accent='#ffff00'){
  ctx.font='14px "UndertaleFont","UT8Bit",monospace';const w=Math.max(86,ctx.measureText(text).width+28),h=30;
  ctx.fillStyle=active?'#0d0d00':'#050505';ctx.fillRect(x,y,w,h);ctx.strokeStyle=active?accent:'#333';ctx.lineWidth=2;ctx.strokeRect(x,y,w,h);
@@ -17866,10 +18245,6 @@ function enemyStartRect(){return{x:930,y:817,w:400,h:58}}
 function enemyBackRect(){return{x:930,y:885,w:400,h:58}}
 function settingsRowRect(i){return{x:W/2-505,y:235+i*92,w:850,h:72}}
 function settingsBackRect(){return{x:W/2-210,y:858,w:420,h:74}}
-function drawCheckerStrip(y,h){
- const s=36;for(let x=0;x<W;x+=s){ctx.fillStyle=((x/s)%2?'#151515':'#050505');ctx.fillRect(x,y,s,h)}
- ctx.fillStyle='#fff';ctx.fillRect(0,y+h-4,W,4);
-}
 function creatorLoadDataImage(data,key){
  creatorRuntimeImages[key]=null;
  if(!data)return;
@@ -17924,80 +18299,6 @@ function drawBossIcon(b,r,active,scaleBoost=1){
    const maxW=r.w*.62*scaleBoost,maxH=r.h*.54*scaleBoost,iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,s=Math.min(maxW/iw,maxH/ih);
    const dw=Math.round(iw*s),dh=Math.round(ih*s);ctx.globalAlpha=active?1:.68;ctx.drawImage(im,Math.round(cx-dw/2),Math.round(cy-dh/2),dw,dh);
  }ctx.restore();
-}
-function drawTitle(now=performance.now()){
- drawMenuBackdrop(now,'#ffff00');
- const entry=uiScreenProgress(now,520);
- if(uiTitleLastSelected!==mainSelected){uiTitleLastSelected=mainSelected;uiTitleSelectedAt=now}
- const target=titleTabRect(mainSelected),targetCx=target.x+target.w/2;
- if(!Number.isFinite(uiTitleCursorX))uiTitleCursorX=targetCx;
- uiTitleCursorX=uiReducedMotion?targetCx:(uiTitleCursorX+(targetCx-uiTitleCursorX)*.19);
-
- // Header arrives separately from the tabs so the page reads like a real title screen.
- ctx.save();ctx.globalAlpha=entry;ctx.translate(0,(1-entry)*-28);
- font(72,'#fff','center');ctx.fillText('UNDERTALE:BATTLEGROUNDS',W/2,82);
- font(19,'#777','center');ctx.fillText('CUSTOM BATTLE ENGINE  //  PC BUILD',W/2,174);
- const pulse=uiReducedMotion?1:(.72+.28*Math.sin(now/460));
- font(15,`rgba(255,255,255,${.38+.22*pulse})`,'center');ctx.fillText('SELECT A TERMINAL',W/2,214);
- const next=progressionNextExp();font(14,'#777','right');ctx.fillText(`LV ${progressionLevel()}   EXP ${progression.exp}${next!==null?`   NEXT ${next}`:'   MAX'}   ${progression.gold} G`,W-76,214);
- ctx.restore();
-
- const labels=['BATTLE','ENEMIES','KILLS','SPARES','SETTINGS','CREATOR','SHOP','RUSH','MODS'];
- for(let i=0;i<labels.length;i++)drawTitleTab(i,labels[i],now,entry);
- // The red SOUL glides under the active tab instead of teleporting between choices.
- drawUiHeart(uiTitleCursorX,382,24,entry);
- ctx.save();ctx.globalAlpha=.42*entry;ctx.fillStyle='#f00';ctx.fillRect(uiTitleCursorX-22,402,44,3);ctx.restore();
-
- const base=BOSS_OPTIONS[bossSelected]||BOSS_OPTIONS[0];
- const b=effectiveBossById(base.id)||base;
- const box={x:150,y:432,w:1148,h:405};
- const panelEntry=uiReducedMotion?1:uiEaseOut((entry-.12)/.88);
- ctx.save();ctx.globalAlpha=panelEntry;ctx.translate(0,(1-panelEntry)*26);
- ctx.fillStyle='#010101';ctx.fillRect(box.x,box.y,box.w,box.h);
- ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.strokeRect(box.x,box.y,box.w,box.h);
- ctx.fillStyle='#151515';ctx.fillRect(box.x+4,box.y+4,box.w-8,44);
- font(15,'#777','left');ctx.fillText('ACTIVE LOADOUT',box.x+22,box.y+13);
- const copy=titleTabCopy(mainSelected);
- font(15,'#777','right');ctx.fillText(copy[1],box.x+box.w-22,box.y+13);
-
- // Portrait bay.
- const portrait={x:box.x+30,y:box.y+74,w:282,h:282};
- ctx.fillStyle='#000';ctx.fillRect(portrait.x,portrait.y,portrait.w,portrait.h);
- ctx.strokeStyle=mainSelected===0?'#ffff00':'#777';ctx.lineWidth=3;ctx.strokeRect(portrait.x,portrait.y,portrait.w,portrait.h);
- const bob=uiReducedMotion?0:Math.sin(now/410)*3;
- ctx.save();ctx.translate(0,bob);drawBossIcon(base,portrait,true,1.18);ctx.restore();
- font(13,'#555','center');ctx.fillText('TARGET PREVIEW',portrait.x+portrait.w/2,portrait.y+portrait.h-22);
-
- // Main information column.
- const tx=box.x+348;
- font(43,'#fff','left');ctx.fillText(copy[0],tx,box.y+78);
- font(20,'#aaa','left');ctx.fillText(copy[2],tx,box.y+132);
- ctx.fillStyle='#333';ctx.fillRect(tx,box.y+175,box.w-400,3);
- font(18,'#777','left');ctx.fillText('CURRENT TARGET',tx,box.y+198);
- font(34,'#fff','left');ctx.fillText(b.label,tx,box.y+226);
- font(18,'#777','left');ctx.fillText(`${b.area}  //  HP ${b.hp}  AT ${b.atk}  DF ${b.def}`,tx,box.y+272);
- const titleRole=vanillaMode?(noelleEnabled?'noelle':'classic'):sandboxRole();
- font(19,'#aaa','left');ctx.fillText(`SUPPORT  ${supportLabel()}`,tx,box.y+308);
- font(19,'#aaa','left');ctx.fillText(`PLAYER   ${roleDisplayName(titleRole)}`,tx,box.y+338);
-
- // Compact status block on the right. Gives the menu useful persistence without becoming a dashboard.
- const sx=box.x+box.w-260;
- ctx.fillStyle='#080808';ctx.fillRect(sx,box.y+194,220,152);ctx.strokeStyle='#444';ctx.lineWidth=2;ctx.strokeRect(sx,box.y+194,220,152);
- font(13,'#666','center');ctx.fillText('BATTLE RECORD',sx+110,box.y+207);
- font(25,'#fff','center');ctx.fillText(`${menuTotalOutcome('kills')} KILLS`,sx+110,box.y+240);
- font(25,'#fff','center');ctx.fillText(`${menuTotalOutcome('spares')} SPARES`,sx+110,box.y+277);
- const modsOn=activeModCount();
- font(14,modsOn?'#ff8cff':(hardModeEnabled?'#ff4040':'#777'),'center');
- ctx.fillText(modsOn?`MODS // ${modsOn} ACTIVE`:(hardModeEnabled?'HARD MODE // ON':(vanillaMode?'VANILLA RULES':'SANDBOX RULES')),sx+110,box.y+318);
- ctx.restore();
-
- // Bottom command rail.
- const railY=878;
- ctx.save();ctx.globalAlpha=entry;ctx.fillStyle='#080808';ctx.fillRect(150,railY,1148,68);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(150,railY,1148,68);
- font(17,'#aaa','left');ctx.fillText('◀  A / LEFT',178,railY+20);font(17,'#aaa','right');ctx.fillText('D / RIGHT  ▶',1270,railY+20);
- const confirmPulse=uiReducedMotion?1:(.75+.25*Math.sin(now/360));font(20,`rgba(255,255,0,${confirmPulse})`,'center');ctx.fillText('Z / ENTER  //  OPEN',W/2,railY+17);
- font(14,'#555','center');ctx.fillText('F2 DEBUG LAB   •   F11 FULLSCREEN',W/2,977);
- ctx.restore();
 }
 function drawEnemySelect(now=performance.now()){
  drawMenuBackdrop(now,'#ffff00');
@@ -20098,24 +20399,24 @@ function render(now){
  uiTrackScreen(now);
 
  if(screen==='loading'){drawLoading();return}
- if(screen==='tutorialPrompt'){drawTutorialPrompt(now);drawUiScreenCurtain(now);return}
- if(screen==='tutorial'){drawTutorial();drawUiScreenCurtain(now);return}
- if(screen==='title'){drawTitle(now);drawUiScreenCurtain(now);return}
- if(screen==='enemies'){drawEnemySelect(now);drawUiScreenCurtain(now);return}
- if(screen==='supportselect'){drawSupportSelect(now);drawUiScreenCurtain(now);return}
- if(screen==='customhub'){drawCustomHub(now);drawUiScreenCurtain(now);return}
- if(screen==='creator'){drawCharacterCreator(now);drawUiScreenCurtain(now);return}
- if(screen==='customize'){drawCustomEditor();drawUiScreenCurtain(now);return}
- if(screen==='kills'){drawHistoryScreen('kills',now);drawUiScreenCurtain(now);return}
- if(screen==='spares'){drawHistoryScreen('spares',now);drawUiScreenCurtain(now);return}
- if(screen==='shop'){drawShop(now);drawUiScreenCurtain(now);return}
- if(screen==='bossrush'){drawBossRushHub(now);drawUiScreenCurtain(now);return}
- if(screen==='bossrushBreak'){drawBossRushBreak(now);drawUiScreenCurtain(now);return}
- if(screen==='bossrushCodex'){drawBossRushCodex(now);drawUiScreenCurtain(now);return}
- if(screen==='bossrushResults'){drawBossRushResults(now);drawUiScreenCurtain(now);return}
- if(screen==='settings'){drawSettings(now);drawUiScreenCurtain(now);return}
- if(screen==='mods'){drawMods(now);drawUiScreenCurtain(now);return}
- if(screen==='lvselect'){drawLevelSelect(now);drawUiScreenCurtain(now);return}
+ if(screen==='tutorialPrompt'){withMenuSkin(()=>drawTutorialPrompt(now));drawUiScreenCurtain(now);return}
+ if(screen==='tutorial'){withMenuSkin(()=>drawTutorial());drawUiScreenCurtain(now);return}
+ if(screen==='title'){withMenuSkin(()=>drawTitle(now));drawUiScreenCurtain(now);return}
+ if(screen==='enemies'){withMenuSkin(()=>drawEnemySelect(now));drawUiScreenCurtain(now);return}
+ if(screen==='supportselect'){withMenuSkin(()=>drawSupportSelect(now));drawUiScreenCurtain(now);return}
+ if(screen==='customhub'){withMenuSkin(()=>drawCustomHub(now));drawUiScreenCurtain(now);return}
+ if(screen==='creator'){withMenuSkin(()=>drawCharacterCreator(now));drawUiScreenCurtain(now);return}
+ if(screen==='customize'){withMenuSkin(()=>drawCustomEditor());drawUiScreenCurtain(now);return}
+ if(screen==='kills'){withMenuSkin(()=>drawHistoryScreen('kills',now));drawUiScreenCurtain(now);return}
+ if(screen==='spares'){withMenuSkin(()=>drawHistoryScreen('spares',now));drawUiScreenCurtain(now);return}
+ if(screen==='shop'){withMenuSkin(()=>drawShop(now));drawUiScreenCurtain(now);return}
+ if(screen==='bossrush'){withMenuSkin(()=>drawBossRushHub(now));drawUiScreenCurtain(now);return}
+ if(screen==='bossrushBreak'){withMenuSkin(()=>drawBossRushBreak(now));drawUiScreenCurtain(now);return}
+ if(screen==='bossrushCodex'){withMenuSkin(()=>drawBossRushCodex(now));drawUiScreenCurtain(now);return}
+ if(screen==='bossrushResults'){withMenuSkin(()=>drawBossRushResults(now));drawUiScreenCurtain(now);return}
+ if(screen==='settings'){withMenuSkin(()=>drawSettings(now));drawUiScreenCurtain(now);return}
+ if(screen==='mods'){withMenuSkin(()=>drawMods(now));drawUiScreenCurtain(now);return}
+ if(screen==='lvselect'){withMenuSkin(()=>drawLevelSelect(now));drawUiScreenCurtain(now);return}
 
  if(state==='encounterIntro'){drawEncounterIntro(now);return}
  if(state==='death'){drawDeath(now);return}
