@@ -3732,6 +3732,24 @@ function deathImageForTarget(id,now=performance.now()){
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
+// UNDERTALE monster vaporize, rebuilt from the decompiled GameMaker objects:
+//
+//  obj_vaporized_new (Draw event, runs every 30fps step):
+//    draw_sprite_part_ext(sprite, 0, line*2, wd, sprite_height-line*2, x, y+line*2)
+//    repeat(4){ read one row of vapor data; for each opaque 2px run:
+//      if(wd>120) one obj_whtpxlgrav at (x+ww, y+line*2) with image_xscale=run
+//      else       one obj_whtpxlgrav per 2px at (x+ww, y+line*2+2)
+//      line++ }
+//  obj_whtpxlgrav (spr_pixwht: 2x2, 12 frames, image_speed 1):
+//    Create: gravity_direction=90, gravity=random(0.5)+0.2, hspeed=random(4)-2
+//    Animation End: instance_destroy()
+//
+// The vapor data table (scr_newvapordata) is a run-length silhouette of each
+// monster sprite; it is rebuilt here from the actual death sprite on a 2px grid.
+const UT_VAPOR_ROWS_PER_STEP=4;
+const UT_PIXWHT_FRAMES=12;
+const UT_PIXWHT_SHADES=[73,109,146,182,219,251,251,251,251,251,251,255];
+
 function makeDustFromSprite(dustSource,rect){
  const particles=[];
  if(!dustSource||!rect)return particles;
@@ -3741,64 +3759,57 @@ function makeDustFromSprite(dustSource,rect){
  try{ox.clearRect(0,0,ow,oh);ox.drawImage(dustSource,0,0,ow,oh)}catch(e){return particles}
  let data;try{data=ox.getImageData(0,0,ow,oh).data}catch(e){return particles}
 
- // V58 UNDERTALE VAPORIZATION: obj_vaporized_new removes the monster from the
- // TOP downward in 2-native-pixel rows, processing four rows per 30fps step.
- // Each erased white run becomes obj_whtpxlgrav: a tiny white pixel with only
- // random(-2..2) horizontal speed and a 90-degree (upward) gravity pull.
- // Sample dynamically from the actual hurt/death sprite so every enemy keeps
- // its own silhouette without needing the game's hard-coded vapor data table.
- const sourcePixel=Math.max(2,Math.round(2*UT_SCALE));
- const maxCandidates=12000;
- const step=Math.max(sourcePixel,Math.ceil(Math.sqrt((ow*oh)/maxCandidates)));
- const vaporRowsPerSecond=240; // 4 rows * 2 native px * 30 fps
- const vaporSpeed=vaporRowsPerSecond*UT_SCALE;
- const durationMs=Math.max(420,Math.ceil((oh/vaporSpeed)*1000)+120);
+ const cell=2*UT_SCALE; // one vapor-data unit = 2 room pixels
+ const cols=Math.max(1,Math.ceil(ow/cell)),rows=Math.max(1,Math.ceil(oh/cell));
+ const wide=(rect.w/UT_SCALE)>120;
+ const opaque=(cx,cy)=>{
+   const sx=Math.min(ow-1,Math.floor((cx+.5)*cell)),sy=Math.min(oh-1,Math.floor((cy+.5)*cell));
+   const i=(sy*ow+sx)*4;
+   if(data[i+3]<128)return false;
+   return (data[i]+data[i+1]+data[i+2])/3>=25;
+ };
 
- // Arrays can carry the shared renderer metadata without changing all existing
- // call sites that already expect killParticles to be an array.
  particles.vaporSource=dustSource;
  particles.vaporRect={x:rect.x,y:rect.y,w:rect.w,h:rect.h};
- particles.vaporSpeed=vaporSpeed;
- particles.vaporDurationMs=durationMs;
- particles.vaporPixelSize=sourcePixel;
+ particles.vaporCell=cell;
+ particles.vaporRows=rows;
+ const lastStep=Math.floor((rows-1)/UT_VAPOR_ROWS_PER_STEP);
+ particles.vaporDurationMs=Math.ceil((lastStep+1+UT_PIXWHT_FRAMES)/30*1000);
 
- for(let y=0;y<oh;y+=step){for(let x=0;x<ow;x+=step){
-   const i=(y*ow+x)*4,a=data[i+3];if(a<40)continue;
-   const lum=Math.round((data[i]+data[i+1]+data[i+2])/3);if(lum<25)continue;
-   // The source creates the dust for a row when that row is erased. No random
-   // x-delay and no radial burst: the dissolve front is strictly top -> bottom.
-   const delay=(y/vaporSpeed);
-   particles.push({
-     x:rect.x+x,y:rect.y+y,ox:rect.x+x,oy:rect.y+y,
-     vx:(Math.random()*4-2)*UT_SCALE*30,
-     vy:0,
-     ay:-(.2+Math.random()*.5)*UT_SCALE*30*30,
-     size:sourcePixel,life:0,delay,
-     ttl:1.45,lum:255
-   });
- }}
+ for(let r=0;r<rows;r++){
+   const step=Math.floor(r/UT_VAPOR_ROWS_PER_STEP);
+   const y=rect.y+r*cell+(wide?0:cell);
+   for(let c=0;c<cols;){
+     if(!opaque(c,r)){c++;continue}
+     let run=1;while(c+run<cols&&opaque(c+run,r))run++;
+     const count=wide?1:run;
+     for(let k=0;k<count;k++){
+       particles.push({
+         x0:rect.x+(c+k)*cell,y0:y,
+         w:(wide?run:1)*cell,h:cell,
+         hs:(Math.random()*4-2)*UT_SCALE,
+         g:(Math.random()*.5+.2)*UT_SCALE,
+         step
+       });
+     }
+     c+=run;
+   }
+ }
  return particles;
 }
 
-function updateVaporParticles(particles,elapsed,dt){
- for(const p of particles){
-   const local=elapsed-p.delay;
-   if(local<=0||local>=p.ttl)continue;
-   p.life=local;
-   p.x+=p.vx*dt;
-   p.y+=p.vy*dt;
-   p.vy+=(p.ay||0)*dt;
- }
-}
+// Particles are evaluated in closed form on UNDERTALE's 30fps step grid, so
+// there is nothing to integrate per frame. Kept for existing call sites.
+function updateVaporParticles(particles,elapsed,dt){}
 
 function drawVaporParticles(particles,elapsed){
  if(!particles)return;
+ const frame=Math.floor(Math.max(0,elapsed)*30);
  const src=particles.vaporSource,rect=particles.vaporRect;
- // UNDERTALE keeps the untouched lower portion of the actual monster sprite
- // visible while the dissolve front works downward. This is the biggest visual
- // difference from the old full-body particle explosion.
  if(src&&rect){
-   const cut=Math.min(rect.h,Math.max(0,elapsed*(particles.vaporSpeed||240*UT_SCALE)));
+   // The undissolved lower part of the sprite stays fully visible; the cut
+   // advances 4 rows (8 room px) per step, exactly like draw_sprite_part_ext.
+   const cut=Math.min(rect.h,frame*UT_VAPOR_ROWS_PER_STEP*(particles.vaporCell||2*UT_SCALE));
    if(cut<rect.h){
      const ih=Math.max(1,src.naturalHeight||src.height||1);
      const iw=Math.max(1,src.naturalWidth||src.width||1);
@@ -3811,13 +3822,16 @@ function drawVaporParticles(particles,elapsed){
      }
    }
  }
- ctx.save();ctx.fillStyle='#fff';ctx.globalAlpha=1;
+ ctx.save();ctx.globalAlpha=1;
+ let shade=-1;
  for(const p of particles){
-   const local=elapsed-p.delay;
-   if(local<=0||local>=p.ttl)continue;
-   // obj_whtpxlgrav is a solid white pixel sprite; it does not fade while it is
-   // on-screen, so keep these crisp and opaque rather than alpha-fading them.
-   ctx.fillRect(Math.round(p.x),Math.round(p.y),p.size,p.size);
+   const k=frame-p.step;
+   if(k<0||k>=UT_PIXWHT_FRAMES)continue;
+   // GameMaker applies gravity to speed, then moves: y after k steps.
+   const x=p.x0+p.hs*k,y=p.y0-p.g*k*(k+1)/2;
+   const s=UT_PIXWHT_SHADES[k];
+   if(s!==shade){shade=s;ctx.fillStyle=`rgb(${s},${s},${s})`}
+   ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(p.w)),Math.max(1,Math.round(p.h)));
  }
  ctx.restore();
 }
