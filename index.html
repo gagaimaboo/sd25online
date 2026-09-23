@@ -98,6 +98,8 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-napstablook">napstablook</button>
     <button data-debug="boss-maddummy">mad dummy</button>
     <button data-debug="boss-doggo">doggo</button>
+    <button data-debug="boss-lesserdog">lesser dog</button>
+    <button data-debug="boss-greaterdog">greater dog</button>
     <button data-debug="boss-papyrus">papyrus</button>
     <button data-debug="boss-snowdrake">snowdrake</button>
     <button data-debug="boss-icecap">icecap</button>
@@ -320,6 +322,22 @@ const IMG={
  wormBul:[0,1].map(i=>RAW+`sprites/images/spr_wormbul_${i}.png`),
  circleBulletB:RAW+'sprites/images/spr_circlebulletb_0.png',
  bulletMd:RAW+'sprites/images/spr_bulletmd_0.png',
+ // Lesser Dog / Greater Dog (exported frame order is swapped for spr_greatdog and spr_dogspear).
+ lesserDogBody:[0,1].map(i=>RAW+`sprites/images/spr_lesserdoge_${i}.png`),
+ lesserDogHead:[0,1].map(i=>RAW+`sprites/images/spr_lesserdogehead_${i}.png`),
+ lesserDogHurt:RAW+'sprites/images/spr_lesserdogehurt_0.png',
+ greatDogBody:[0,1].map(i=>RAW+`sprites/images/spr_greatdog_n_${i}.png`),
+ greatDogHurt:RAW+'sprites/images/spr_greatdog_0.png',
+ tinyPomWag:[0,1].map(i=>RAW+`sprites/images/spr_tinypomwag_${i}.png`),
+ tinyPomWalk:[0,1].map(i=>RAW+`sprites/images/spr_tinypomwalk_${i}.png`),
+ tinyPomJump:RAW+'sprites/images/spr_tinypomjump_0.png',
+ tinyPomBark:RAW+'sprites/images/spr_tinypombark_0.png',
+ blueSpear:RAW+'sprites/images/spr_bluespear_0.png',
+ whiteSpear:RAW+'sprites/images/spr_whitespear_0.png',
+ dogSpear:[0,1].map(i=>RAW+`sprites/images/spr_dogspear_${i}.png`),
+ sleepDog:[0,1].map(i=>RAW+`sprites/images/spr_sleepdog_${i}.png`),
+ wakeDog:[0,1].map(i=>RAW+`sprites/images/spr_wakedog_${i}.png`),
+ barkBullet:RAW+'sprites/images/spr_barkbullet_0.png',
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -419,6 +437,12 @@ const IMG={
  },
  whimsunButterfly:[0,1].map(i=>RAW+`sprites/images/spr_butterflybllt_${i}.png`),
  snowCrescent:RAW+'sprites/images/spr_spinbullet_0.png',
+ // obj_4sidegen bullets (Snowdrake): blt_clawbullet_white / blt_4sidebullet.
+ rotClawBullet:RAW+'sprites/images/spr_rotclawbullet_0.png',
+ clawBullet:[0,1,2,3].map(i=>RAW+`sprites/images/spr_clawbullet_${i}.png`),
+ roachBullet:[0,1].map(i=>RAW+`sprites/images/spr_roachbullet_${i}.png`),
+ butterflyBullet:[0,1].map(i=>RAW+`sprites/images/spr_butterflybullet_${i}.png`),
+ butterflyBulletGreen:[0,1].map(i=>RAW+`sprites/images/spr_butterflybullet_green_${i}.png`),
  looxOrb:RAW+'sprites/images/spr_circlebulletb_0.png',
  looxWorm:RAW+'sprites/images/spr_wormbul_0.png',
  // obj_hoopgen1 / blt_hoopbullet1 / blt_hoopbullet2 source sprites.
@@ -612,6 +636,7 @@ const IMG={
  }
 };
 const SFX={
+ pomBark:RAW+'sound/audio/snd_pombark.wav',
  // UNDERTALE encounter transition flicker sound. The original battle transition
  // toggles the SOUL while playing snd_noise.
  encounterNoise:RAW+'sound/audio/snd_noise.wav',
@@ -995,6 +1020,8 @@ const VANILLA_REWARDS={
  shyren:{exp:52,killGold:25,spareGold:30},
  moldbygg:{exp:46,killGold:30,spareGold:50},
  temmie:{exp:40,killGold:50,spareGold:50},
+ lesserdog:{exp:18,killGold:15,spareGold:15},
+ greaterdog:{exp:80,killGold:60,spareGold:60},
  tsunderplane:{exp:95,killGold:45,spareGold:60},
  vulkin:{exp:70,killGold:50,spareGold:40},
  undyne:{exp:500,killGold:0,spareGold:0},
@@ -2316,7 +2343,7 @@ const ENEMY_LAYOUTS={
  maddummy:{x:259,y:76,w:122,h:174},
  doggo:{x:253,y:0,w:134,h:250},
  papyrus:{x:246,y:42,w:148,h:208},
- snowdrake:{x:245,y:51,w:150,h:175},
+ snowdrake:{x:245,y:25,w:150,h:175},
  icecap:{x:268,y:87,w:104,h:153},
  // Native Flowey is 42x44; preserve that near-square flower silhouette.
  flowey:{x:278,y:132,w:84,h:88},
@@ -2325,11 +2352,15 @@ const ENEMY_LAYOUTS={
  migosp:{x:276,y:116,w:88,h:120},
  whimsun:{x:275,y:132,w:90,h:98},
  whimsalot:{x:263,y:112,w:114,h:126},
- aaron:{x:272,y:72,w:97,h:170},
+ aaron:{x:272,y:30,w:97,h:170},
  shyren:{x:269,y:41,w:102,h:199},
  // Moldbygg canvas holds the disguise (bottom) and the risen 2x stem (top).
  moldbygg:{x:261,y:40,w:118,h:198},
- temmie:{x:268,y:140,w:104,h:104},
+ // Temmie sits above her tall border-7/10 boards; blt_temhand starts at y+96.
+ temmie:{x:268,y:94,w:104,h:104},
+ // Dog canvases are tall/wide so Lesser Dog's neck and a closer Greater Dog fit.
+ lesserdog:{x:269,y:0,w:102,h:250},
+ greaterdog:{x:110,y:0,w:420,h:250},
  // Exact battle composite is 190x160. Keep that broad aircraft silhouette.
  tsunderplane:{x:225,y:82,w:190,h:160},
  vulkin:{x:271,y:120,w:97,h:120},
@@ -2346,7 +2377,7 @@ const PAIR_MAIN_LAYOUTS={
  maddummy:{x:190,y:80,w:116,h:166},
  doggo:{x:183,y:20,w:107,h:200},
  papyrus:{x:177,y:54,w:118,h:166},
- snowdrake:{x:183,y:72,w:126,h:147},
+ snowdrake:{x:183,y:53,w:126,h:147},
  icecap:{x:205,y:116,w:90,h:118},
  flowey:{x:216,y:145,w:76,h:80},
  loox:{x:202,y:130,w:92,h:107},
@@ -2354,10 +2385,12 @@ const PAIR_MAIN_LAYOUTS={
  migosp:{x:210,y:124,w:80,h:109},
  whimsun:{x:210,y:138,w:82,h:89},
  whimsalot:{x:198,y:119,w:104,h:115},
- aaron:{x:201,y:82,w:90,h:158},
+ aaron:{x:201,y:42,w:90,h:158},
  shyren:{x:203,y:60,w:92,h:180},
  moldbygg:{x:197,y:54,w:106,h:178},
- temmie:{x:203,y:146,w:94,h:94},
+ temmie:{x:203,y:100,w:94,h:94},
+ lesserdog:{x:200,y:0,w:102,h:250},
+ greaterdog:{x:40,y:0,w:420,h:250},
  tsunderplane:{x:145,y:96,w:176,h:148},
  vulkin:{x:202,y:128,w:92,h:114},
  undyne:{x:168,y:24,w:151,h:209},
@@ -2375,14 +2408,14 @@ const PAIR_SUPPORT_LAYOUTS={
  // tiny slot made tall monsters look like they were standing on its head.
  doggo:{x:333,y:0,w:134,h:250},
  papyrus:{x:326,y:42,w:148,h:208},
- snowdrake:{x:325,y:51,w:150,h:175},
+ snowdrake:{x:325,y:25,w:150,h:175},
  icecap:{x:350,y:105,w:96,h:126},
  loox:{x:350,y:122,w:100,h:116},
  moldsmal:{x:349,y:148,w:102,h:84},
  migosp:{x:356,y:116,w:88,h:120},
  whimsun:{x:355,y:132,w:90,h:98},
  whimsalot:{x:343,y:112,w:114,h:126},
- aaron:{x:352,y:72,w:97,h:170},
+ aaron:{x:352,y:30,w:97,h:170},
  shyren:{x:349,y:45,w:100,h:195}
 };
 
@@ -2849,6 +2882,10 @@ function shyrenSpawnIntervalMs(hum){
  const steps=Math.max(3.8,8-hum/1.5);
  return steps*(1000/30);
 }
+function shyrenNoteOrigin(owner='main'){
+ const r=owner==='main'?enemyDraw:(typeof targetRectFor==='function'?targetRectFor(owner):enemyDraw);
+ return {x:r.x+36*UT_SCALE,y:r.y+62*UT_SCALE};
+}
 function spawnShyrenNote(now,owner='main',damage=5){
  const hum=shyrenHumForOwner(owner),fast=hum>0;
  const a=(250+Math.random()*60)*Math.PI/180;
@@ -2857,8 +2894,9 @@ function spawnShyrenNote(now,owner='main',damage=5){
  const gravityDir=gravChoices[Math.floor(Math.random()*gravChoices.length)]*Math.PI/180;
  bullets.push({
    kind:'shyrenNote',owner,
-   x:ARENA.x+ARENA.w/2+(Math.random()*28-14)*UT_SCALE,
-   y:ARENA.y-8*UT_SCALE,
+   // obj_musbulgen is created at Shyren's mouth: (x+36, y+62).
+   x:shyrenNoteOrigin(owner).x,
+   y:shyrenNoteOrigin(owner).y,
    vx:Math.cos(a)*speed,vy:-Math.sin(a)*speed,
    born:now,gravityAt:now+(40+Math.random()*20)*(1000/30),
    gravityDir,gravityAccel:.1*30*30*UT_SCALE,
@@ -3170,6 +3208,8 @@ const BOSS_OPTIONS=[
  {id:'napstablook',label:'NAPSTABLOOK',area:'RUINS MINI-BOSS',hp:88,atk:10,def:10,encounter:'* Here comes Napstablook.',noelleEncounter:'* Noelle encountered Napstablook.'},
  {id:'maddummy',label:'MAD DUMMY',area:'WATERFALL BOSS',hp:200,atk:30,def:999,encounter:'* Mad Dummy blocks the way!',noelleEncounter:'* Noelle encountered Mad Dummy.'},
  {id:'doggo',label:'DOGGO',area:'SNOWDIN',hp:70,atk:6,def:1,encounter:'* Doggo blocks the way!',noelleEncounter:'* Noelle encountered Doggo.'},
+ {id:'lesserdog',label:'LESSER DOG',area:'SNOWDIN',hp:60,atk:6,def:0,encounter:'* Lesser Dog appears.',noelleEncounter:'* Noelle encountered Lesser Dog.'},
+ {id:'greaterdog',label:'GREATER DOG',area:'SNOWDIN',hp:105,atk:6,def:4,encounter:'* Greater Dog bounds into view!',noelleEncounter:'* Noelle encountered Greater Dog.'},
  {id:'papyrus',label:'PAPYRUS',area:'SNOWDIN BOSS',hp:680,atk:8,def:2,encounter:'* Papyrus blocks the way!',noelleEncounter:'* Noelle faces Papyrus.'},
  {id:'snowdrake',label:'SNOWDRAKE',area:'SNOWDIN',hp:74,atk:12,def:2,encounter:'* Snowdrake flutters forth!',noelleEncounter:'* Noelle encountered Snowdrake.'},
  {id:'icecap',label:'ICE CAP',area:'SNOWDIN',hp:48,atk:11,def:4,encounter:'* Ice Cap struts into view.',noelleEncounter:'* Noelle encountered Ice Cap.'},
@@ -3755,7 +3795,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -3938,7 +3978,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4069,6 +4109,8 @@ const NOELLE_N_ACTIONS={
  snowdrake:{gain:45,text:"* Noelle laughs politely at Snowdrake's joke.\n* Snowdrake decides polite laughter still counts."},
  icecap:{gain:55,text:"* Noelle notices Ice Cap's hat immediately.\n* Ice Cap has been waiting its entire life for this moment."},
  loox:{gain:50,text:"* Noelle avoids staring and quietly apologizes for the eye contact.\n* Loox relaxes a little."},
+ lesserdog:{gain:60,text:"* Noelle pets Lesser Dog.\n* Its neck grows a little. Noelle pretends not to notice."},
+ greaterdog:{gain:40,text:"* Noelle calls Greater Dog over.\n* It is delighted and extremely slobbery."},
  moldbygg:{gain:40,text:"* Noelle politely does NOT hug Moldbygg.\n* Moldbygg appreciates the personal space."},
  temmie:{gain:60,text:"* Noelle says hOI to Temmie.\n* Temmie vibrates so hard she nearly phases through the floor."},
  moldsmal:{gain:50,text:"* Noelle attempts Moldsmal's wiggle.\n* It is not a good wiggle, but Moldsmal appreciates the effort."},
@@ -4097,6 +4139,8 @@ const SUSIE_S_ACTIONS={
  snowdrake:{gain:55,text:"* Susie laughs way too loudly at Snowdrake's joke.\n* Snowdrake immediately decides it was a masterpiece."},
  icecap:{gain:60,text:"* Susie says Ice Cap's hat looks badass.\n* Ice Cap may never emotionally recover from this compliment."},
  loox:{gain:35,text:"* Susie tells Loox to quit staring.\n* Then she admits the eye thing is kind of cool."},
+ lesserdog:{gain:65,text:"* Susie pets Lesser Dog way too hard.\n* Its neck launches upward in joy."},
+ greaterdog:{gain:45,text:"* Susie throws a snowball for Greater Dog.\n* It brings back the entire snowbank."},
  moldbygg:{gain:35,text:"* Susie hugs Moldbygg anyway.\n* She is now covered in slime and extremely proud of it."},
  temmie:{gain:55,text:"* Susie flexes at Temmie.\n* Temmie screams, then asks for an autograph."},
  moldsmal:{gain:45,text:"* Susie tries to imitate Moldsmal's wiggle.\n* It looks more like a threat, but Moldsmal approves."},
@@ -4157,6 +4201,8 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='loox')return ['Check','Pick On',"Don't Pick On"];
  if(id==='moldsmal')return ['Check','Imitate','Flirt'];
  if(id==='moldbygg')return moldbyggActOptions();
+ if(id==='lesserdog')return lesserDogActOptions();
+ if(id==='greaterdog')return greatDogActOptions();
  if(id==='temmie')return temmieActOptions();
  if(id==='migosp')return ['Check','Talk'];
  if(id==='aaron')return ['Check','Flex','Shoo'];
@@ -4509,6 +4555,10 @@ function performAct(targetId,choice){
    else if(choice===1){vulkinDiscouraged=true;vulkinEncouraged=false;vulkinForceLavaTurn=false;setText('* You tell Vulkin that its attacks are NOT helpful.\n* Vulkin stands in the corner.',()=>beginEnemyTurn())}
    else if(choice===2){vulkinDiscouraged=false;vulkinEncouraged=true;vulkinForceLavaTurn=true;mercy=100;setText(`* You tell Vulkin it's doing a great job.\n* Its cheeks glow with a bright heat.`,()=>beginEnemyTurn())}
    else{vulkinDiscouraged=false;vulkinEncouraged=false;vulkinForceLavaTurn=false;mercy=100;setText('* You give Vulkin a hug.\n* It warms your heart... and your whole body!',()=>beginEnemyTurn())}
+ }else if(currentBoss==='lesserdog'){
+   handleLesserDogAct(choice);
+ }else if(currentBoss==='greaterdog'){
+   handleGreatDogAct(choice);
  }else if(currentBoss==='moldbygg'){
    handleMoldbyggAct(choice);
  }else if(currentBoss==='temmie'){
@@ -4893,7 +4943,10 @@ function buildUndyneIdleFrames(){
    const s=Math.sin(siner/6),s2=Math.sin(siner/3);
    const hairIndex=Math.floor(i*.25)%4; // source hair.image_speed = 0.25
    const face=u.faces[0];               // normal first-battle idle face
-   const idleLegs=u.legs[0];            // source forces legs.image_index = 0 while idle
+   // The exported spr_undyneb_legs frames are swapped relative to the source
+   // indices: _1 is the planted, feet-on-ground idle stance and _0 is the
+   // airborne jump pose. Idle must use the grounded legs.
+   const idleLegs=u.legs[1]||u.legs[0];
 
    // GameMaker: larger depth draws behind smaller depth. Source depths are:
    // head5, hair6, armor7, rarm8, pants9, larm10, legs11.
@@ -5059,7 +5112,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -5730,6 +5783,7 @@ function attackSpeechForCurrentBoss(){
  if(enemyDead||currentBoss==='toriel'||currentBoss==='dummy')return '';
  if(currentBoss==='sans5000')return battleSpeechTurn===0?'heya.\nwatch this.':'';
  if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
+ if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
 
  if(currentBoss==='doggo'){
    if(doggoPets>=5)return "OK. That's enough.";
@@ -7150,8 +7204,12 @@ function startAttack(now){
  }else if(currentBoss==='loox'){
    // obj_loox randomly chooses between its two obj_hoopgen1 bullet types.
    attackWave=Math.random()<.5?0:1;
+ }else if(SRC_ATTACK_BOSSES.has(currentBoss)){
+   srcStartAttack(now);
  }else if(currentBoss==='whimsalot'){
    attackWave=whimsalotPrayPending?0:1;
+ }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
+   dogStartAttack(now);
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
    waterfallStartAttack(now);
  }else if(['snowdrake','moldsmal','migosp','whimsun','aaron'].includes(currentBoss)){
@@ -7640,6 +7698,8 @@ function returnMenu(){
    if(vulkinDiscouraged)setText('* Vulkin stands in the corner.');
    else if(mercy>=100)setText('* Vulkin parades around you proudly.');
    else{const lines=['* Vulkin parades around the room.','* Vulkin is making coffee in its crater.','* Vulkin is wiggling its weird rump.','* Vulkin makes a smoke hoop and jumps through it.','* Smells like a lava lamp.'];setText(lines[Math.floor(Math.random()*lines.length)])}
+ }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
+   setText(dogFlavorText());
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
    setText(waterfallFlavorText());
  }else if(currentBoss==='moldsmal'){
@@ -8877,7 +8937,7 @@ function normalizeEnemyAssetTransparency(){
   'dummy','dummyDeath',
   'froggit','froggitHead','froggitLegs','finalFroggitIdle','finalFroggitHurt','finalFroggitBody','finalFroggitHead','finalFroggitHeadHurt',
   'whimsun','whimsunHurt','whimsalotHead','whimsalotBody','whimsalotWing','whimsalotHurt',
-  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt',
+  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt',
   'shyren','shyrenBody','shyrenTurn','shyrenSing','shyrenAgent',
   'undyneArmorBase','undyneHurt','undyneFatal','undyneMelt','undyneLastMelt',
   'tsunderplaneRaw','tsunderplaneHat','tsunderplaneCloud','tsunderplaneIdle',
@@ -10902,7 +10962,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -10923,6 +10983,7 @@ function reset(){
  resetCustomActProgress();
  if(currentBoss==='moldsmal'||currentBoss==='whimsun')mercy=100;
  resetWaterfallEnemies();
+ resetDogEnemies();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -12150,6 +12211,7 @@ function madDummyAttackDuration(){
 }
 
 function spawnSimpleNewBossBullet(now){
+ if((SRC_ATTACK_BOSSES.has(currentBoss)||(currentBoss==='moldbygg'&&attackWave<2))&&spawnSourceAttack(now))return;
  const cx=ARENA.x+ARENA.w/2,cy=ARENA.y+ARENA.h/2;
  const left=ARENA.x+8*UT_SCALE,right=ARENA.x+ARENA.w-8*UT_SCALE;
  const top=ARENA.y+8*UT_SCALE,bottom=ARENA.y+ARENA.h-8*UT_SCALE;
@@ -12430,6 +12492,7 @@ function spawnSimpleNewBossBullet(now){
  }
 
  if(spawnWaterfallBullets(now))return;
+ if(spawnDogAttack(now))return;
  // Disguised Moldbygg uses Moldsmal's obj_1sidegen bullet types.
  if(currentBoss==='moldsmal'||currentBoss==='moldbygg'){
    if(attackWave===0){
@@ -12738,7 +12801,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13667,7 +13730,7 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(updateWaterfallBullet(b,now,dt)){
+     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)){
        // Moldbygg/Temmie bullets step on the 30fps source grid.
      }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
@@ -14271,7 +14334,7 @@ function update(dt,now){
      // the enemy turn itself (or explicit expiry), matching the attack object.
      if(b.kind==='icecapTeeth'||b.kind==='finalFrog')return true;
      // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
-     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter')return true;
+     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep')return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
        // Keep the scripted tutorial hazards alive long enough to move, render,
        // collide, and (for the betrayal ring) close around the SOUL.
@@ -14316,7 +14379,7 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(waterfallBulletCollide(b,now)){
+     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)){
        // handled above
      }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
@@ -14499,7 +14562,7 @@ function update(dt,now){
    if(currentBoss==='froggit')attackDuration=3400;
    else if(currentBoss==='finalfroggit')attackDuration=5000;
    else if(currentBoss==='toriel')attackDuration=torielDuration;
-   else if(currentBoss==='vegetoid')attackDuration=4750;
+   else if(currentBoss==='vegetoid')attackDuration=110*(1000/30); // obj_vegetoid turntimer 110
    else if(currentBoss==='napstablook')attackDuration=hardBossActive('napstablook')?(attackWave===3?3200:(attackWave===2?5600:6200)):(attackWave===2?3000:(attackWave===3?3200:5000));
    else if(currentBoss==='maddummy')attackDuration=madDummyAttackDuration();
    else if(currentBoss==='doggo')attackDuration=4000;
@@ -14512,6 +14575,9 @@ function update(dt,now){
    else if(currentBoss==='undyne')attackDuration=(soulMode==='green'?30000:(200*(1000/30)));
    else if(currentBoss==='loox')attackDuration=3667;
    else if(currentBoss==='moldbygg'||currentBoss==='temmie')attackDuration=waterfallAttackDuration();
+   else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
+   else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
+   else if(currentBoss==='icecap')attackDuration=(liveMonsterPopulation()<=1?100:150)*(1000/30); // obj_icecap turntimer
    else if(['snowdrake','icecap','moldsmal','migosp','whimsun','whimsalot','aaron'].includes(currentBoss))attackDuration=4500;
    const shyrenSupportFinale=supportParty.some(sp=>sp&&!sp.dead&&sp.id==='shyren'&&sp.actState?.finalePending);
    if(shyrenSupportFinale)attackDuration=Math.max(attackDuration,10333);
@@ -15305,10 +15371,15 @@ function waterfallStartAttack(now){
      moldbyggRevealPending=false;moldbyggStage=1;moldbyggRevealStart=now;moldbyggRevealSpeech=true;
      setEnemyVisuals();
    }
-   attackWave=moldbyggStage===0?(moldbyggCommand<=50?1:0):(moldbyggCommand<=50?2:3);
+   // Disguised: obj_1sidegen type 3 (pollen) or 2 (splinterbig) at firingrate 90.
+   attackWave=moldbyggStage===0?(moldbyggCommand<=50?0:1):(moldbyggCommand<=50?2:3);
  }else if(currentBoss==='temmie'){
    temmieCommand=Math.round(Math.random()*100);
    attackWave=temmieCommand<25?0:1;
+   // obj_tembattle: global.border=7 for blt_temhand, 10 for obj_maintem
+   // (SCR_BORDERSETUP: [227,407,200,385] and [147,487,200,385]).
+   ARENA=attackWave===0?utRect(227,200,180,185):utRect(147,200,340,185);
+   box={...ARENA};soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2;
  }
 }
 function waterfallAttackSpeech(){
@@ -15572,11 +15643,597 @@ function drawWaterfallBullet(b,now){
  return false;
 }
 
+// ================= SOURCE ATTACKS (Ruins/Snowdin/Waterfall regulars) =================
+// Rebuilt from UNDERTALE's generator/bullet objects and stepped on the 30fps grid:
+//  Moldsmal   obj_1sidegen type 3 (blt_pollendrop) / type 2 (blt_splinterbig -> 9 blt_splinter)
+//  Snowdrake  obj_4sidegen type 1 (blt_4sidebullet pairs) / type 0 (blt_clawbullet_white streams)
+//  Migosp     obj_1sidegen type 4 (blt_roachbullet from both walls) / type 1 (blt_flybullet) / blt_roachdance
+//  Whimsun    scr_rotategen(10,20,blt_butterfly1) / obj_butterfly2gen (blt_butterfly2)
+//  Whimsalot  obj_butterflybullet_gen_2 (rising) / obj_butterflybullet_gen (18-ring, green on prayer)
+//  Aaron      obj_muscbulgen (blt_muscbul) / obj_sweatbulgen (blt_sweatdrop)
+// Coordinates are room pixels relative to the board, scaled by UT_SCALE.
+const SRC_ATTACK_BOSSES=new Set(['moldsmal','snowdrake','migosp','whimsun','whimsalot','aaron']);
+let srcAttackCommand=0;
+function srcBoard(){return {L:ARENA.x,T:ARENA.y,R:ARENA.x+ARENA.w,B:ARENA.y+ARENA.h,U:UT_SCALE}}
+function srcSteps(frames){return frames*(1000/30)}
+// SCR_BORDERSETUP boards used by these monsters' attacks.
+function srcAttackBoard(id){
+ if(id==='snowdrake'||id==='aaron')return utRect(227,200,180,185); // border 7
+ return utRect(237,250,160,135);                                    // border 3
+}
+function srcStartAttack(now){
+ const id=currentBoss;
+ srcAttackCommand=Math.round(Math.random()*100);
+ const m=srcAttackCommand;
+ if(id==='moldsmal')attackWave=m<=50?0:1;            // 0 pollen, 1 splinterbig
+ else if(id==='snowdrake')attackWave=m<=50?0:1;      // 0 4side pairs, 1 white claw streams
+ else if(id==='migosp')attackWave=supportPartyCountAlive()===0?2:(m<5?1:0); // 0 roaches, 1 flies, 2 dance
+ else if(id==='whimsun')attackWave=m<=50?0:1;        // 0 ring, 1 rising moths
+ else if(id==='whimsalot')attackWave=whimsalotPrayPending?1:0; // 0 rising trio, 1 green ring
+ else if(id==='aaron')attackWave=m<=50?0:1;          // 0 muscles, 1 sweat
+ ARENA=srcAttackBoard(id);
+ box={...ARENA};soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2;
+}
+function srcAttackDuration(){
+ const id=currentBoss;
+ if(id==='moldsmal'||id==='snowdrake')return srcSteps(120);
+ if(id==='migosp')return srcSteps(attackWave===2?120:110);
+ if(id==='whimsun')return srcSteps(100);
+ if(id==='whimsalot')return srcSteps(150);
+ if(id==='aaron')return srcSteps(160);
+ return 4500;
+}
+function srcDamage(fallback){return Math.max(1,Number(bossData()?.atk)||fallback)}
+
+function spawnSourceAttack(now){
+ const {L,T,R,B,U}=srcBoard(),id=currentBoss==='moldbygg'?'moldsmal':currentBoss,w=attackWave;
+ const moldDisguise=currentBoss==='moldbygg';
+ const heartX=soul.x,heartY=soul.y;
+ if(id==='moldsmal'){
+   const x=L+Math.round(Math.random()*(R-L));
+   if(w===0){
+     // blt_pollendrop at SCR_BORDER top, scr_edge(20,6).
+     let px=x;if(px>R-20*U)px-=20*U;if(px<L+6*U)px+=6*U;
+     bullets.push({kind:'srcPollen',owner:'main',x:px,y:T,hs:1.5,vs:1.2,flipAt:10,step:0,damage:srcDamage(6),born:now});
+     nextSpawn=now+srcSteps(moldDisguise?90:15);
+   }else{
+     let px=x;if(px>R-6*U)px-=6*U;if(px<L+10*U)px+=10*U;
+     bullets.push({kind:'srcSplinterBig',owner:'main',x:px,y:T,burstAt:20+Math.random()*20,step:0,damage:srcDamage(6),born:now});
+     nextSpawn=now+srcSteps(moldDisguise?90:30);
+   }
+   return true;
+ }
+ if(id==='snowdrake'){
+   const side=Math.floor(Math.random()*4);
+   if(w===0){
+     // blt_4sidebullet via SCR_BORDER_X_X(side,14,0): one of six slots per edge.
+     const where=Math.floor(1+Math.random()*6)/8,s=24*U;
+     let x,y;
+     if(side===0){x=L+(R-L)*where-s;y=T-14*U}
+     else if(side===1){x=L+(R-L)*where-s;y=B}
+     else if(side===2){y=T+(B-T)*where-s;x=L-14*U}
+     else{y=T+(B-T)*where-s;x=R}
+     const dir=[270,90,0,180][side],sp=2+Math.random()*1.5;
+     bullets.push({kind:'srcClaw',owner:'main',x,y,x0:x,y0:y,dir,sp,rot:0,fric:0,clones:1,cloneEvery:26,cloneAt:26,step:0,alpha:0,sprite:'claw',damage:srcDamage(12),born:now});
+     nextSpawn=now+srcSteps(16);
+   }else{
+     // blt_clawbullet_white via SCR_BORDER_X(side,14,50), then x-=12,y-=12.
+     const s=24*U;let x,y;
+     if(side===0){x=L+50*U+Math.random()*(R-L-50*U-s);y=T-14*U}
+     else if(side===1){x=L+50*U+Math.random()*(R-L-50*U-s);y=B}
+     else if(side===2){y=T+25*U+Math.random()*(B-T-50*U-s);x=L-14*U}
+     else{y=T+25*U+Math.random()*(B-T-50*U-s);x=R}
+     x-=12*U;y-=12*U;
+     let g=Math.random()<.5?1:0;
+     if(y<T)g=x>L+(R-L)/2?0:1;
+     if(y>B)g=x>L+(R-L)/2?1:0;
+     const rot=g?1+Math.random():-1-Math.random();
+     const dir=[270,90,0,180][side],sp=1.5+Math.random()*.5;
+     const limit=4+Math.round(Math.random()*3);
+     bullets.push({kind:'srcClaw',owner:'main',x,y,x0:x,y0:y,dir,sp,rot,fric:-.1,clones:limit,cloneEvery:6,cloneAt:6,step:0,alpha:0,sprite:'rotclaw',damage:srcDamage(12),born:now});
+     nextSpawn=now+srcSteps(24);
+   }
+   return true;
+ }
+ if(id==='migosp'){
+   if(w===2){
+     if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+     specialSpawnCount=1;
+     bullets.push({kind:'migospDance',owner:'main',baseX:L+(R-L)/2,baseY:B-20*U,x:L+(R-L)/2,y:B-20*U,vx:0,vy:0,damage:0,born:now});
+     nextSpawn=now+99999;return true;
+   }
+   if(w===1){
+     const x=L+Math.round(Math.random()*(R-L));
+     bullets.push({kind:'srcFly',owner:'main',x,y:T,step:0,sp:2.5,dx:0,dy:0,aimed:false,damage:srcDamage(7),born:now});
+     nextSpawn=now+srcSteps(15);return true;
+   }
+   // obj_1sidegen type 4: one roach from each wall, y in [T+30, B-30].
+   for(const side of [-1,1]){
+     const y=T+30*U+Math.round(Math.random()*Math.max(0,(B-T)/U-60))*U;
+     const x=side<0?L:R-4*U;
+     const up=Math.random()<.5; // blt_roachbullet: grchoice 1 -> up; 0 keeps default down (source typo)
+     bullets.push({kind:'srcRoach',owner:'main',x,y,hs:side<0?1+Math.random()*2:-1-Math.random()*2,vs:0,grav:(.2+Math.random()*.1)*(up?-1:1),damage:srcDamage(7),born:now});
+   }
+   nextSpawn=now+srcSteps(7);return true;
+ }
+ if(id==='whimsun'){
+   if(w===0){
+     if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+     specialSpawnCount=1;
+     // scr_rotategen(10,20,blt_butterfly1,heart.x,heart.y+42): a 10-gon of side 20.
+     let x=heartX,y=heartY+42*U,angle=0;
+     for(let i=0;i<10;i++){
+       bullets.push({kind:'srcMothRing',owner:'main',x,y,angle,visibleAt:1,step:0,damage:srcDamage(4),born:now});
+       x+=Math.cos(angle*Math.PI/180)*20*U;y-=Math.sin(angle*Math.PI/180)*20*U;angle+=36;
+     }
+     nextSpawn=now+99999;return true;
+   }
+   for(const dx of [-40,40]){
+     const x=heartX+dx*U;
+     if(x<L||x>R-16*U)continue;
+     bullets.push({kind:'srcMothRise',owner:'main',x,y:B-4*U,vs:-(.2+Math.random()*2),damage:srcDamage(4),born:now});
+   }
+   nextSpawn=now+srcSteps(7+Math.random()*3);return true;
+ }
+ if(id==='whimsalot'){
+   if(w===1){
+     if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+     specialSpawnCount=1;whimsalotPrayPending=false;
+     // obj_butterflybullet_gen with green=1: 18 butterflies, two adjacent green.
+     const j=Math.floor(Math.random()*16),cx=L+(R-L)/2,cy=T+(B-T)/2-20*U;
+     for(let i=0;i<18;i++)bullets.push({kind:'srcWhimRing',owner:'main',initx:cx,inity:cy,siner:i*20,siner2:0,sf:64,sineradd:6,s2:0,green:i===j||i===j+1,frame:Math.floor(i*.2),x:cx,y:cy,damage:srcDamage(34),born:now});
+     nextSpawn=now+99999;return true;
+   }
+   // obj_butterflybullet_gen_2: three risers relative to the SOUL every firingrate (22).
+   for(const dx of [-50,10,70])bullets.push({kind:'srcWhimRise',owner:'main',x:heartX+dx*U,y:B+20*U,vs:-5,dirJitter:Math.random()*20-10,alpha:1,off:false,damage:srcDamage(34),born:now});
+   nextSpawn=now+srcSteps(22);return true;
+ }
+ if(id==='aaron'){
+   if(w===0){
+     // obj_muscbulgen: alternating sides, firing speed shrinks by 2 each arm.
+     if(specialSpawnCount===0){aaronMuscSide=Math.random()<.5?-1:1;aaronMuscRate=26}
+     const side=aaronMuscSide,armW=88*U;
+     const x=side===1?L+4*U:R-4*U-(armW-2*U);
+     bullets.push({kind:'srcMuscle',owner:'main',side:side===1?-1:1,x,y:B+12*U,xs:x,vs:-3,flexAt:15,frame:0,step:0,damage:8,born:now});
+     aaronMuscSide=-aaronMuscSide;
+     specialSpawnCount++;
+     nextSpawn=now+srcSteps(Math.max(1,aaronMuscRate));aaronMuscRate-=2;
+     return true;
+   }
+   // obj_sweatbulgen: blt_sweatdrop cycling top, top, left, right.
+   const gg=aaronSweatCount++%4;
+   let x,y,dir;
+   if(gg<2){x=L+Math.random()*(R-L);y=T-40*U;dir=270}
+   else if(gg===2){x=L-16*U;y=T-40*U+Math.random()*118*1.5*U;dir=310}
+   else{x=R+16*U;y=T-40*U+Math.random()*118*1.5*U;dir=235}
+   const a=dir*Math.PI/180;
+   bullets.push({kind:'srcSweat',owner:'main',x,y,dx:Math.cos(a)*3.5*U,dy:-Math.sin(a)*3.5*U,alpha:0,damage:8,born:now});
+   nextSpawn=now+srcSteps(5);return true;
+ }
+ return false;
+}
+let aaronMuscSide=1,aaronMuscRate=26,aaronSweatCount=0;
+
+function updateSourceAttackBullet(b,now,dt){
+ const k=b.kind;
+ if(!k||!k.startsWith('src'))return false;
+ const {L,T,R,B,U}=srcBoard();
+ wfSteps(b,dt,q=>{
+   q.step=(q.step||0)+1;
+   if(k==='srcPollen'){
+     if(q.step>=q.flipAt){q.hs=-q.hs;q.flipAt=q.step+20}
+     q.vs+=.02;q.x+=q.hs*U;q.y+=q.vs*U;
+     if(q.y>B+20*U)q.expired=true;
+   }else if(k==='srcSplinterBig'){
+     if(q.step>=q.burstAt){
+       q.expired=true;
+       for(let i=0;i<9;i++){const a=i*40*Math.PI/180;bullets.push({kind:'srcSplinter',owner:'main',x:q.x+3*U,y:q.y+3*U,dx:Math.cos(a)*1.5*U,dy:-Math.sin(a)*1.5*U,damage:q.damage,born:now})}
+       return;
+     }
+     q.y+=2*U;
+   }else if(k==='srcSplinter'){
+     q.x+=q.dx;q.y+=q.dy;
+     if(q.x<L-12*U||q.x>R+12*U||q.y<T-12*U||q.y>B+12*U)q.expired=true;
+   }else if(k==='srcClaw'){
+     q.alpha=Math.min(1,q.alpha+.1);
+     if(q.step>=2){
+       if(q.clones>1&&q.step>=q.cloneAt){
+         q.clones--;q.cloneAt=q.step+q.cloneEvery;
+         bullets.push({...q,acc:0,step:0,x:q.x0,y:q.y0,dir:q.dirStart??q.dir,sp:q.spStart??q.sp,clones:0,alpha:0});
+       }
+       if(q.dirStart===undefined){q.dirStart=q.dir;q.spStart=q.sp}
+       if(q.fric)q.sp-=q.fric;
+       q.dir+=q.rot;
+       const a=q.dir*Math.PI/180;q.x+=Math.cos(a)*q.sp*U;q.y-=Math.sin(a)*q.sp*U;
+       // scr_bordercross(12)
+       const a2=q.dir*Math.PI/180,hx=Math.cos(a2),hy=-Math.sin(a2);
+       if((hx<0&&q.x<L-12*U)||(hx>0&&q.x>R+12*U)||(hy<0&&q.y<T-12*U)||(hy>0&&q.y>B+12*U))q.expired=true;
+     }
+   }else if(k==='srcRoach'){
+     // friction .15 on horizontal motion, gravity on vertical.
+     const sp=Math.abs(q.hs);q.hs=sp>.15?q.hs-Math.sign(q.hs)*.15:0;
+     q.vs+=q.grav;q.x+=q.hs*U;q.y+=q.vs*U;
+     if(q.y<T-30*U||q.y>B+30*U)q.expired=true;
+   }else if(k==='srcFly'){
+     const aim=spd=>{const cx=q.x+6*U,cy=q.y+6*U,a=Math.atan2(soul.y-cy,soul.x-cx);q.dx=Math.cos(a)*spd*U;q.dy=Math.sin(a)*spd*U};
+     if(!q.aimed){q.aimed=true;aim(2.5);q.stopAt=30;q.reaimAt=45}
+     if(q.step===q.stopAt){q.dx=0;q.dy=0}
+     if(q.step===q.reaimAt){aim(3);q.stopAt=q.step+30;q.reaimAt=q.step+45}
+     q.x+=q.dx;q.y+=q.dy;
+   }else if(k==='srcMothRing'){
+     const a=q.angle*Math.PI/180;q.x+=Math.cos(a)*2*U;q.y-=Math.sin(a)*2*U;q.angle+=3;
+   }else if(k==='srcMothRise'){
+     q.vs-=.1;q.y+=q.vs*U;
+     if(q.y<T)q.expired=true;
+   }else if(k==='srcWhimRing'){
+     q.siner+=q.sineradd;q.siner2+=q.s2;
+     const r=q.siner*Math.PI/180;
+     q.x=q.initx+Math.sin(r)*q.sf*U;q.y=q.inity+Math.cos(r)*q.sf*U;
+     q.sf-=Math.sin(q.siner2/6)*1.2;
+     q.x+=Math.sin(q.siner2/12)*14*U;q.y+=Math.cos(q.siner2/12)*14*U;
+   }else if(k==='srcWhimRise'){
+     if(q.vs<-1.5)q.vs+=.15;
+     const a=(90+q.dirJitter)*Math.PI/180,sp=-q.vs;
+     q.x+=Math.cos(a)*sp*U;q.y-=Math.sin(a)*sp*U;
+     if(q.y<T-20*U)q.off=true;
+     if(q.off){q.alpha-=.05;if(q.alpha<.1)q.expired=true}
+   }else if(k==='srcMuscle'){
+     q.vs-=.02;
+     if(q.step>=q.flexAt){q.frame^=1;q.flexAt=q.step+15}
+     q.y+=q.vs*U;
+     q.x=q.xs+Math.round(Math.sin(q.step/20)*2)*U;
+     if(q.y<150*U)q.expired=true;
+   }else if(k==='srcSweat'){
+     q.alpha=Math.min(1,q.alpha+.05);q.x+=q.dx;q.y+=q.dy;
+     if(q.y>B+30*U)q.expired=true;
+   }
+ });
+ return true;
+}
+function srcBulletRect(b){
+ const U=UT_SCALE;
+ switch(b.kind){
+   case 'srcPollen':case 'srcSplinterBig':return {x:b.x,y:b.y,w:12*U,h:12*U};
+   case 'srcSplinter':return {x:b.x,y:b.y,w:6*U,h:6*U};
+   case 'srcClaw':return b.sprite==='rotclaw'?{x:b.x-8*U,y:b.y-8*U,w:16*U,h:16*U}:{x:b.x+4*U,y:b.y+4*U,w:16*U,h:16*U};
+   case 'srcRoach':return {x:b.x+2*U,y:b.y+3*U,w:12*U,h:10*U};
+   case 'srcFly':return {x:b.x+1*U,y:b.y+1*U,w:10*U,h:10*U};
+   case 'srcMothRing':case 'srcMothRise':return {x:b.x+3*U,y:b.y+3*U,w:14*U,h:14*U};
+   case 'srcWhimRing':case 'srcWhimRise':return {x:b.x-8*U,y:b.y-8*U,w:16*U,h:16*U};
+   case 'srcMuscle':return {x:b.x+(b.side<0?0:20*U),y:b.y+10*U,w:68*U,h:54*U};
+   case 'srcSweat':return {x:b.x+2*U,y:b.y+2*U,w:8*U,h:9*U};
+ }
+ return null;
+}
+function sourceAttackCollide(b,now){
+ if(!b.kind||!b.kind.startsWith('src'))return false;
+ if(b.kind==='srcMothRing'&&b.step<1)return true;
+ const r=srcBulletRect(b);if(!r)return true;
+ if(!rectHit(soul.x-7,soul.y-7,14,14,r.x,r.y,r.w,r.h))return true;
+ if(b.kind==='srcWhimRing'&&b.green){b.expired=true;whimsalotCatchGreen(b.owner||'main');return true}
+ hurtPlayer(now,b.damage||5,b.owner||'main');
+ return true;
+}
+function drawSourceAttackBullet(b,now){
+ if(!b.kind||!b.kind.startsWith('src'))return false;
+ const U=UT_SCALE;
+ const draw=(im,x,y,w,h,ang=null)=>{
+   if(!im){ctx.fillStyle='#fff';ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));return}
+   ctx.imageSmoothingEnabled=false;
+   if(ang===null){ctx.drawImage(im,Math.round(x),Math.round(y),Math.round(w),Math.round(h));return}
+   ctx.save();ctx.translate(x,y);ctx.rotate(-ang*Math.PI/180);ctx.drawImage(im,-w/2,-h/2,w,h);ctx.restore();
+ };
+ const anim=(set,fps)=>{const a=set||[];return a[Math.floor(now/(1000/fps))%Math.max(1,a.length)]||a[0]};
+ switch(b.kind){
+   case 'srcPollen':case 'srcSplinterBig':draw(images.bulletMd,b.x,b.y,12*U,12*U);break;
+   case 'srcSplinter':draw(images.moldPellet,b.x,b.y,6*U,6*U);break;
+   case 'srcClaw':
+     ctx.globalAlpha=b.alpha;
+     if(b.sprite==='rotclaw')draw(images.rotClawBullet,b.x,b.y,24*U,24*U,b.dir+b.rot*2);
+     else draw(anim(images.clawBullet,15),b.x,b.y,24*U,24*U);
+     break;
+   case 'srcRoach':{
+     const im=anim(images.roachBullet,15);
+     if(b.hs<0){ctx.save();ctx.translate(b.x+16*U,b.y+16*U);ctx.rotate(Math.PI);draw(im,0,0,16*U,16*U);ctx.restore()}
+     else draw(im,b.x,b.y,16*U,16*U);
+     break;
+   }
+   case 'srcFly':draw(anim(images.froggitFly,15),b.x,b.y,12*U,12*U);break;
+   case 'srcMothRing':draw(anim(images.whimsunButterfly,7.5),b.x+10*U,b.y+10*U,20*U,20*U,b.angle);break;
+   case 'srcMothRise':draw(anim(images.whimsunButterfly,7.5),b.x+10*U,b.y+10*U,20*U,20*U,90);break;
+   case 'srcWhimRing':draw(anim(b.green?images.butterflyBulletGreen:images.butterflyBullet,6),b.x,b.y,22*U,22*U,b.siner);break;
+   case 'srcWhimRise':ctx.globalAlpha=Math.max(0,b.alpha);draw(anim(images.butterflyBullet,Math.max(1,-b.vs/8*30)),b.x,b.y,22*U,22*U,90+b.dirJitter);break;
+   case 'srcMuscle':{
+     const set=b.side<0?(images.aaronArmL||[]):(images.aaronArmR||[]);
+     draw(set[b.frame%2]||set[0],b.x,b.y,88*U,64*U);break;
+   }
+   case 'srcSweat':ctx.globalAlpha=b.alpha;draw(images.napstaTear,b.x,b.y,12*U,13*U);break;
+   default:return false;
+ }
+ return true;
+}
+
+// ================= SNOWDIN DOGS: LESSER DOG + GREATER DOG =================
+// From obj_lesserdoge (+ obj_lesserdogehead) and obj_greatdog (+ obj_greatdogbody).
+// Attacks: blt_tinypom_leap / blt_bluespear+blt_whitespear (Lesser Dog, border 8),
+// obj_sleepdog+blt_barkbullet (border 3) / blt_dogspear (border 8) for Greater Dog.
+let lesserDogMercy=0,lesserDogTurn=0,lesserDogCommand=0;
+let greatDogClose=0,greatDogIgnore=0,greatDogPet=0,greatDogCommand=0;
+let lesserDogCanvas=null,lesserDogHurtCanvas=null,greatDogCanvas=null,greatDogHurtCanvas=null;
+const LESSER_W=102,LESSER_H=250,LESSER_Y=70;
+const GREAT_W=420,GREAT_H=250,GREAT_X=126,GREAT_Y=30;
+function resetDogEnemies(){
+ lesserDogMercy=0;lesserDogTurn=0;lesserDogCommand=0;
+ greatDogClose=0;greatDogIgnore=0;greatDogPet=0;greatDogCommand=0;
+}
+function makeLesserDogComposite(now=performance.now(),hurt=false){
+ if(hurt){
+   if(!images.lesserDogHurt)return null;
+   if(!lesserDogHurtCanvas){
+     lesserDogHurtCanvas=document.createElement('canvas');lesserDogHurtCanvas.width=LESSER_W;lesserDogHurtCanvas.height=LESSER_H;
+     const g=lesserDogHurtCanvas.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(images.lesserDogHurt,0,LESSER_Y-4,102,184);
+   }
+   return lesserDogHurtCanvas;
+ }
+ const body=images.lesserDogBody||[],head=images.lesserDogHead||[];
+ if(!body.length)return null;
+ if(!lesserDogCanvas){lesserDogCanvas=document.createElement('canvas');lesserDogCanvas.width=LESSER_W;lesserDogCanvas.height=LESSER_H}
+ const c=lesserDogCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ const step=now/(1000/30);
+ g.drawImage(body[Math.floor(step*.1)%body.length]||body[0],0,LESSER_Y,102,180);
+ if(head.length){
+   // obj_lesserdogehead: head rises mercymod/4 and wags faster the more it is pet.
+   const rise=lesserDogMercy/4,hx=34,hy=LESSER_Y+36-rise;
+   g.fillStyle='#fff';
+   if(rise>0)g.fillRect(hx+11,hy+30,22,rise+8);
+   const hs=Math.min(.5,lesserDogMercy/900);
+   g.drawImage(head[Math.floor(step*hs)%head.length]||head[0],hx,Math.round(hy),44,42);
+ }
+ return c;
+}
+function makeGreatDogComposite(now=performance.now(),hurt=false){
+ if(hurt){
+   if(!images.greatDogHurt)return null;
+   if(!greatDogHurtCanvas){
+     greatDogHurtCanvas=document.createElement('canvas');greatDogHurtCanvas.width=GREAT_W;greatDogHurtCanvas.height=GREAT_H;
+     const g=greatDogHurtCanvas.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(images.greatDogHurt,GREAT_X,GREAT_Y,200,200);
+   }
+   return greatDogHurtCanvas;
+ }
+ const body=images.greatDogBody||[];
+ if(!body.length)return null;
+ if(!greatDogCanvas){greatDogCanvas=document.createElement('canvas');greatDogCanvas.width=GREAT_W;greatDogCanvas.height=GREAT_H}
+ const c=greatDogCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ const im=body[Math.floor(now/(1000/3))%body.length]||body[0];
+ // obj_greatdogbody: each IGNORE brings it closer (bigger), clipped at the board top (y=250).
+ const sc=[2,3,4,5][Math.min(3,greatDogIgnore)];
+ const sw=84*sc;
+ let x=GREAT_X,y=GREAT_Y;
+ if(greatDogIgnore===1){x=GREAT_X-.2*sw;y=GREAT_Y+30}
+ else if(greatDogIgnore===2){x=GREAT_X-.25*sw;y=GREAT_Y+70}
+ else if(greatDogIgnore>=3){x=GREAT_X-sw/3;y=250-85}
+ if(greatDogIgnore<=2){
+   const vis=Math.max(0,Math.min(94,(250-y)/sc));
+   g.drawImage(im,0,0,84,vis,Math.round(x),Math.round(y),sw,vis*sc);
+ }else{
+   const vis=Math.max(0,(250-y)/sc);
+   g.drawImage(im,43,0,17,vis,Math.round(x+44*sc),Math.round(y),17*sc,vis*sc);
+ }
+ return c;
+}
+
+// ---------- ACTs ----------
+function lesserDogActOptions(){return ['Check','Pet','Pet','Pet','Pet','Pet']}
+function greatDogActOptions(){return ['Check','Pet','Beckon','Play','Ignore']}
+function handleLesserDogAct(choice){
+ if(choice===0){setText('* LESSER DOG - ATK 12 DEF 2\n* Wields a stone dogger made\n  of pomer-granite.',()=>beginEnemyTurn());return}
+ const m=lesserDogMercy;let t="* You barely lifted your\n  hand and Lesser Dog\n  got excited.";
+ const lines=[[40,"* You lightly touched the\n  Dog. It's already\n  overexcited..."],[90,'* You pet the Dog.\n* It raises its head up\n  to meet your hand.'],[140,'* You pet the Dog.\n* It was a good Dog.'],[190,'* You pet the Dog.\n* Its excitement knows no\n  bounds.'],[240,'* Critical pet!\n* Dog excitement increased.'],[290,'* You have to jump up\n  to pet the Dog.'],[340,"* You don't even pet it.\n* It gets more excited."],[390,'* There is no way to\n  stop this madness.'],[440,'* Lesser Dog enters the\n  realm of the clouds.'],[490,'* You call the Dog but it\n  is too late.\n* It cannot hear you.'],[540,'* ...'],[590,'* You can reach Lesser Dog\n  again.'],[640,'* You pet Lesser Dog.'],[900,"* It's possible that you\n  may have a problem."]];
+ for(const [th,l] of lines)if(m>th)t=l;
+ lesserDogMercy+=50;mercy=100;
+ setText(t,()=>beginEnemyTurn());
+}
+function handleGreatDogAct(choice){
+ // Menu order Check, Pet, Beckon, Play, Ignore -> source whatiheard 0,3,1,4,2.
+ const w=[0,3,1,4,2][choice]??0;
+ if(w===0){setText("* GREATER DOG - ATK 15 DEF 8\n* It's so excited that it\n  thinks fighting is just play.",()=>beginEnemyTurn());return}
+ if(w===1){
+   if(greatDogClose){setText("* The Greater Dog's ears\n  perk up.\n* Nothing else happens.",()=>beginEnemyTurn());return}
+   greatDogClose=1;
+   setText('* You call the Greater Dog.\n* It bounds towards you,\n  flecking slobber into your face.',()=>beginEnemyTurn());
+   return;
+ }
+ if(w===2){
+   if(greatDogIgnore<4){greatDogIgnore++;greatDogClose=1}
+   if(greatDogIgnore>=4){
+     setText('* Greater Dog decides you are\n  too boring.',()=>{mercy=100;startEnemySpare()});
+     return;
+   }
+   setText('* Greater Dog inches closer.',()=>beginEnemyTurn());
+   return;
+ }
+ if(w===3){
+   let t='* You pet the dog.';
+   if(greatDogPet===4)t='* Tummy rubs are forbidden.';
+   else if(greatDogPet===3){greatDogPet=4;mercy=100;if(battleSoulSpeedStacks<0)battleSoulSpeedStacks=0;t='* You pet decisively.\n* Pet capacity reaches 100\n  percent. The dog flops over.'}
+   else if(greatDogPet===2){greatDogPet=3;if(battleSoulSpeedStacks>-1)battleSoulSpeedStacks--;t="* As you pet the dog, it\n  sinks its weight into you.\n* Your movements slow."}
+   else if(greatDogPet===1)t="* Greater Dog's excitement is\n  creating a power field that\n  prevents petting.";
+   else if(greatDogClose&&greatDogPet===0){greatDogPet=1;t='* Greater Dog curls up in your\n  lap and falls asleep...\n* Then it wakes up! So excited!'}
+   else if(!greatDogClose)t='* Greater Dog is too far\n  away to pet.\n* You just pet the air.';
+   setText(t,()=>beginEnemyTurn());
+   return;
+ }
+ let t='* You play with the dog.';
+ if(greatDogPet>1)t='* Greater Dog is too tired\n  to play.';
+ else if(greatDogPet===1){greatDogPet=2;t='* You throw a snowball.\n* Greater Dog brings you all\n  the snow in the area. Tired...'}
+ else t='* Greater Dog is not excited\n  enough to play with.';
+ setText(t,()=>beginEnemyTurn());
+}
+
+// ---------- turns ----------
+function dogStartAttack(now){
+ if(currentBoss==='lesserdog'){
+   lesserDogCommand=Math.round(Math.random()*100);
+   if(lesserDogTurn===0)lesserDogCommand=10;
+   if(lesserDogTurn===1)lesserDogCommand=90;
+   lesserDogTurn++;
+   attackWave=lesserDogCommand<50?0:1;
+   ARENA=utRect(202,290,230,95); // border 8
+ }else if(currentBoss==='greaterdog'){
+   greatDogCommand=Math.round(Math.random()*100);
+   attackWave=greatDogCommand<=50?0:1;
+   ARENA=attackWave===0?utRect(237,250,160,135):utRect(202,290,230,95); // border 3 / 8
+ }
+ box={...ARENA};soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2;
+}
+function dogAttackSpeech(){
+ if(currentBoss!=='lesserdog')return '';
+ const m=lesserDogCommand,mm=lesserDogMercy;
+ let t=m>=75?'(Tiny\nbark)':m>=50?'(Thinks\nof\nfood)':m>=25?'(Wag\nwag)':'(Pant\npant)';
+ for(const [th,l] of [[90,'(Pant!\nPant!)'],[190,'(Excited\nnoises)'],[340,'(Motor\nrevving)'],[390,'(Plane\ntakeoff)'],[440,'(Kettle\nwhistle)'],[490,'(...)'],[540,'(Faraway\nbark)'],[590,'(...)'],[640,'(Bark)'],[690,'(Pant\npant)']])if(mm>th)t=l;
+ return t;
+}
+function dogFlavorText(){
+ if(currentBoss==='lesserdog'){
+   if(enemyHp<enemyMaxHp/3)return '* Lesser Dog tucks its tail\n  between its legs.';
+   const mm=lesserDogMercy,m=lesserDogCommand;
+   if(mm>=700)return '* Lesser Dog is lowering.';
+   if(mm>=400)return '* Lesser Dog shows no signs\n  of stopping.';
+   if(mm>=200)return '* Lesser Dog is overstimulated.';
+   if(mm>=40)return '* Lesser Dog is barking\n  excitedly.';
+   if(m>=85)return '* Smells like dog chow.';
+   if(m>=60)return '* Lesser Dog is really not\n  paying attention.';
+   if(m>=30)return '* Lesser Dog thinks your\n  weapon is a dog treat.';
+   return '* Lesser Dog cocks its head\n  to one side.';
+ }
+ if(currentBoss==='greaterdog'){
+   if(enemyHp<30)return '* Greater Dog is panting\n  slowly.';
+   if(greatDogPet===4)return '* Greater Dog is contented.';
+   if(greatDogPet===3)return '* Pet capacity is 40-percent.';
+   if(greatDogPet===2)return '* Greater Dog wants some TLC.';
+   if(greatDogPet===1)return '* Greater Dog is patting the\n  ground with its front paws.';
+   if(greatDogIgnore>2)return '* Greater Dog is making\n  puppy-dog eyes.';
+   if(greatDogIgnore>0)return '* Greater Dog just wants\n  affection.';
+   if(greatDogClose)return '* Greater Dog is seeking\n  affection.';
+   const m=greatDogCommand;
+   if(m>=90)return '* It smells like freshly-\n  squeezed puppy juice.';
+   if(m>=45)return '* Greater Dog is waiting for\n  your command.';
+   return '* Greater Dog is watching you\n  intently.';
+ }
+ return '';
+}
+function dogAttackDuration(){
+ if(currentBoss==='lesserdog')return 110*(1000/30);
+ if(currentBoss==='greaterdog')return (attackWave===0?120:90)*(1000/30);
+ return 4000;
+}
+function spawnDogAttack(now){
+ if(currentBoss!=='lesserdog'&&currentBoss!=='greaterdog')return false;
+ if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+ specialSpawnCount=1;nextSpawn=now+99999;
+ const U=UT_SCALE,L=ARENA.x,T=ARENA.y,R=ARENA.x+ARENA.w,B=ARENA.y+ARENA.h,dmg=Math.max(1,bossData()?.atk||6);
+ if(currentBoss==='lesserdog'){
+   if(attackWave===0)bullets.push({kind:'dogPom',owner:'main',x:R-50*U,y:B-38*U,hs:0,vs:0,grav:0,mode:'wag',barked:0,alarm1:10,alarm2:-1,alarm3:-1,step:0,damage:dmg,born:now});
+   else bullets.push({kind:'dogBlueSpear',owner:'main',x:R+20*U,y:T+40*U,x0:R+20*U,y0:T+40*U,hs:-4,whiteAt:20+Math.random()*10,step:0,damage:dmg,born:now});
+ }else{
+   if(attackWave===0)bullets.push({kind:'dogSleep',owner:'main',x:L+(R-L)/2-29*U,y:B-30*U,hmove:0,awake:false,alarms:{},step:0,frame:0,damage:5,born:now});
+   else bullets.push({kind:'dogSpear',owner:'main',x:R-16*U,y:B+4*U,hs:0,vs:-4,stage:0,blut:Math.round(Math.random()*35),blue:false,step:0,damage:7,born:now});
+ }
+ return true;
+}
+function updateDogBullet(b,now,dt){
+ const k=b.kind;
+ if(k!=='dogPom'&&k!=='dogBlueSpear'&&k!=='dogWhiteSpear'&&k!=='dogSleep'&&k!=='dogBark'&&k!=='dogSpear')return false;
+ const U=UT_SCALE,L=ARENA.x,T=ARENA.y,R=ARENA.x+ARENA.w,B=ARENA.y+ARENA.h;
+ wfSteps(b,dt,q=>{
+   q.step++;
+   if(k==='dogPom'){
+     const tick=a=>{if(q[a]>0){q[a]--;return q[a]===0}return false};
+     if(tick('alarm1')){
+       if(q.barked<2){q.mode='bark';q.alarm2=4;q.alarm1=8;q.barked++;play('pomBark')}
+       else{q.alarm3=10;q.mode='walk'}
+     }
+     if(tick('alarm2'))q.mode='wag';
+     if(tick('alarm3')){
+       q.alarm3=4;
+       q.hs+=soul.x<q.x?-.4:.4;
+       if(q.grav===0&&soul.y<q.y&&Math.abs(q.x-soul.x)<50*U){q.grav=.22;q.vs=-5;q.mode='jump'}
+     }
+     q.vs+=q.grav;q.x+=q.hs*U;q.y+=q.vs*U;
+     if(q.y>B+60*U)q.expired=true;
+   }else if(k==='dogBlueSpear'){
+     q.x+=q.hs*U;
+     if(q.step===Math.round(q.whiteAt)&&supportPartyCountAlive()===0){
+       const fromRight=Math.random()<.5;
+       bullets.push({kind:'dogWhiteSpear',owner:'main',x:fromRight?R+20*U:L-20*U,y:T+7*U,hs:fromRight?-7:7,acc:0,ax:fromRight?.13:-.13,step:0,damage:q.damage,born:now});
+     }
+     if(q.x<L-60*U)q.expired=true;
+   }else if(k==='dogWhiteSpear'){
+     q.hs+=q.ax;q.x+=q.hs*U;
+     if(q.step>60&&(q.x<L-40*U||q.x>R+40*U))q.expired=true;
+   }else if(k==='dogSleep'){
+     if(!q.awake){
+       q.frame=Math.floor(q.step*.1)%2;
+       if(soulMoving)q.hmove++;
+       if(q.hmove>7){q.awake=true;q.frame=0;q.alarms={a2:2}}
+     }else{
+       for(const key of Object.keys(q.alarms)){q.alarms[key]--;}
+       const fire=()=>{const vx=(soul.x-(q.px??soul.x))*30,vy=(soul.y-(q.py??soul.y))*30;const tx=soul.x+vx-8*U,ty=soul.y+vy,ox=q.x+20*U,oy=q.y+8*U,a=Math.atan2(ty-oy,tx-ox);bullets.push({kind:'dogBark',owner:'main',x:ox,y:oy,dx:Math.cos(a)*7*U,dy:Math.sin(a)*7*U,damage:7,born:now})};
+       if(q.alarms.a2===0){q.frame=1;fire();q.alarms.a3=8;q.alarms.a4=20;q.alarms.a2=40}
+       if(q.alarms.a3===0)fire();
+       if(q.alarms.a4===0)q.frame=0;
+     }
+     q.px=soul.x;q.py=soul.y;
+   }else if(k==='dogBark'){
+     q.x+=q.dx;q.y+=q.dy;
+     if(q.x<L-80*U||q.x>R+80*U||q.y<T-80*U||q.y>B+80*U)q.expired=true;
+   }else if(k==='dogSpear'){
+     q.blut++;
+     if(q.blut>21)q.blue=true;
+     if(q.blut>42){q.blut=0;q.blue=false}
+     if(q.stage===0&&q.y<T){q.stage=1;q.y=T;q.vs=0;q.hs=-4}
+     q.x+=q.hs*U;q.y+=q.vs*U;
+     if(q.x<L-40*U)q.expired=true;
+   }
+ });
+ return true;
+}
+function dogBulletRects(b){
+ const U=UT_SCALE;
+ if(b.kind==='dogPom')return [{x:b.x+6*U,y:b.y+8*U,w:42*U,h:28*U}];
+ if(b.kind==='dogBlueSpear'||b.kind==='dogWhiteSpear'||b.kind==='dogSpear')return [{x:b.x+6*U,y:b.y,w:8*U,h:90*U}];
+ if(b.kind==='dogSleep')return [{x:b.x+4*U,y:b.y+6*U,w:50*U,h:24*U}];
+ if(b.kind==='dogBark')return [{x:b.x,y:b.y,w:60*U,h:40*U}];
+ return null;
+}
+function dogBulletCollide(b,now){
+ const rs=dogBulletRects(b);if(!rs)return false;
+ const blue=b.kind==='dogBlueSpear'||(b.kind==='dogSpear'&&b.blue);
+ for(const r of rs)if(rectHit(soul.x-7,soul.y-7,14,14,r.x,r.y,r.w,r.h)){
+   if(!blue||soulMoving)hurtPlayer(now,b.damage||6,b.owner||'main');
+   break;
+ }
+ return true;
+}
+function drawDogBullet(b,now){
+ const U=UT_SCALE,d=(im,x,y,w,h)=>{if(im){ctx.imageSmoothingEnabled=false;ctx.drawImage(im,Math.round(x),Math.round(y),Math.round(w),Math.round(h))}else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}};
+ const f=(a,fps)=>{a=a||[];return a[Math.floor(now/(1000/fps))%Math.max(1,a.length)]||a[0]};
+ if(b.kind==='dogPom'){const P=images.tinyPom||{};const im=b.mode==='bark'?P.bark:b.mode==='jump'?P.jump:b.mode==='walk'?f(P.walk,10):f(P.wag,10);d(im,b.x,b.y,54*U,38*U);return true}
+ if(b.kind==='dogBlueSpear'){d(images.blueSpear,b.x,b.y,20*U,90*U);return true}
+ if(b.kind==='dogWhiteSpear'){d(images.whiteSpear,b.x,b.y,20*U,90*U);return true}
+ if(b.kind==='dogSpear'){const s=images.dogSpear||[];d(b.blue?s[0]:(s[1]||images.whiteSpear),b.x,b.y,20*U,90*U);return true}
+ if(b.kind==='dogSleep'){const set=b.awake?images.wakeDog:images.sleepDog;d((set||[])[b.frame%2]||(set||[])[0],b.x,b.y,58*U,30*U);return true}
+ if(b.kind==='dogBark'){d(images.barkBullet,b.x,b.y,60*U,40*U);return true}
+ return false;
+}
+
 function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='whimsun')return whimsunDrawImage(now,hurt);
  if(id==='whimsalot')return hurt?(images.whimsalotHurt||images.whimsalot):(images.whimsalot||images.whimsalotHurt);
  if(id==='vulkin')return makeVulkinComposite(now,hurt);
  if(id==='moldbygg')return makeMoldbyggComposite(now,hurt);
+ if(id==='lesserdog')return makeLesserDogComposite(now,hurt);
+ if(id==='greaterdog')return makeGreatDogComposite(now,hurt);
  if(id==='temmie')return makeTemmieComposite(now,hurt);
  const hurtImage=images[id+'Hurt']||null;
  if(hurt&&hurtImage)return hurtImage;
@@ -16099,7 +16756,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -17426,7 +18083,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
-   else if(drawWaterfallBullet(b,now)){continue}
+   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -18288,7 +18945,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -18349,7 +19006,7 @@ function drawEnemySelect(now=performance.now()){
  font(15,'#777','left');ctx.fillText((b.area||'UNKNOWN').toUpperCase(),info.x+28,info.y+106);
  const stats=[['HP',b.hp],['AT',b.atk],['DF',b.def]];
  stats.forEach((v,i)=>{const x=info.x+28+i*133;ctx.fillStyle='#050505';ctx.fillRect(x,info.y+139,116,62);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(x,info.y+139,116,62);font(12,'#666','center');ctx.fillText(v[0],x+58,info.y+148);font(24,'#fff','center');ctx.fillText(String(v[1]),x+58,info.y+169)});
- const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
+ const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
  font(13,'#888','left');ctx.fillText(descMap[b.id]||'CUSTOM ENCOUNTER',info.x+28,info.y+212);
  const rp=rewardPreview(b.id),sandboxPay=!vanillaMode;
  const killExpText=b.id==='loox'&&!hardModeEnabled?`${rp.killExp} EXP (3-24 VIA ACT)`: `${rp.killExp} EXP`;
@@ -20673,7 +21330,7 @@ function runDebugCommand(raw){
    if(c==='help'){
      debugLog([
        'boss <id> [classic|noelle]  | hp <n> | enemyhp <n> | tp <n> | mercy <n>',
-       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
+       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
        'soul <red|blue> | scene <name> | face <emotion> | attack | end | kill | spare',
        'scene maddummy-napstablook (alias: madnap) // Mad Dummy ending interruption',
        'hard <on|off|toggle> | papwave <-1..15> | gameover <normal|toriel|aaron|papyrus|napstablook>',
@@ -21830,6 +22487,8 @@ async function boot(){
  IMG.moldbyggTop.forEach((u,i)=>add(`Moldbygg top ${i+1}`,async()=>{images.moldbyggTop=images.moldbyggTop||[];images.moldbyggTop[i]=await needImage(u)}));
  add('Moldbygg stem',async()=>images.moldbyggPart=await needImage(IMG.moldbyggPart));
  for(const k of ['temmieBody','temmieFace','temmieHurt','temHand','temFront','temBack','temFoot','circleBulletB','bulletMd'])add(`Temmie/Moldbygg ${k}`,async()=>images[k]=await needImage(IMG[k]));
+ for(const k of ['lesserDogBody','lesserDogHead','greatDogBody','tinyPomWag','tinyPomWalk','dogSpear','sleepDog','wakeDog'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
+ for(const k of ['lesserDogHurt','greatDogHurt','tinyPomJump','tinyPomBark','blueSpear','whiteSpear','barkBullet'])add(`dog ${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
@@ -21885,6 +22544,8 @@ async function boot(){
  for(const [k,u] of Object.entries(IMG.alphysHints))add(`Alphys quiz hint ${k.toUpperCase()}`,async()=>{images.alphysHints=images.alphysHints||{};images.alphysHints[k]=await needImage(u)});
  IMG.whimsunButterfly.forEach((u,i)=>add(`Whimsun butterfly ${i+1}`,async()=>{images.whimsunButterfly=images.whimsunButterfly||[];images.whimsunButterfly[i]=await needImage(u)}));
  add('Snowdrake crescent bullet',async()=>images.snowCrescent=await needImage(IMG.snowCrescent));
+ add('Snowdrake rotating claw',async()=>images.rotClawBullet=await needImage(IMG.rotClawBullet));
+ for(const k of ['clawBullet','roachBullet','butterflyBullet','butterflyBulletGreen'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  add('Loox legacy orb bullet',async()=>images.looxOrb=await needImage(IMG.looxOrb));
  add('Loox legacy worm bullet',async()=>images.looxWorm=await needImage(IMG.looxWorm));
  add('Loox source medium ring',async()=>images.looxCircleMed2=await needImage(IMG.looxCircleMed2));
@@ -22075,7 +22736,8 @@ async function boot(){
    images.whimsunFrozen=makeFrozenSprite(whimCrit);
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
- for(const id of ['moldbygg','temmie']){
+ images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
