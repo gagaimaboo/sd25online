@@ -107,6 +107,8 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-whimsalot">whimsalot</button>
     <button data-debug="boss-aaron">aaron</button>
     <button data-debug="boss-shyren">shyren</button>
+    <button data-debug="boss-moldbygg">moldbygg</button>
+    <button data-debug="boss-temmie">temmie</button>
     <button data-debug="boss-tsunderplane">tsunderplane</button>
     <button data-debug="boss-vulkin">vulkin</button>
     <button data-debug="boss-undyne">undyne</button>
@@ -304,6 +306,20 @@ const IMG={
  loox:[0,1,2,3,4].map(i=>RAW+`sprites/images/spr_loox_${i}.png`),
  looxHurt:RAW+'sprites/images/spr_looxhurt_0.png',
  moldsmal:[0,1].map(i=>RAW+`sprites/images/spr_moldsmal_${i}.png`),
+ // Moldbygg (obj_moldsmalx): disguised as spr_moldsmal, revealed as spr_moldsmalx_up over spr_moldsmalx_part stems.
+ moldbyggTop:[0,1].map(i=>RAW+`sprites/images/spr_moldsmalx_up_${i}.png`),
+ moldbyggPart:RAW+'sprites/images/spr_moldsmalx_part_0.png',
+ // Temmie (obj_tembattle): obj_tembody + spr_temface normally; spr_tembattle_0 is the hurt pose.
+ temmieBody:RAW+'sprites/images/spr_tembody_0.png',
+ temmieFace:RAW+'sprites/images/spr_temface_0.png',
+ temmieHurt:RAW+'sprites/images/spr_tembattle_0.png',
+ temHand:RAW+'sprites/images/spr_temhand_0.png',
+ temFront:RAW+'sprites/images/spr_temfront_0.png',
+ temBack:RAW+'sprites/images/spr_temback_0.png',
+ temFoot:RAW+'sprites/images/spr_temfoot_0.png',
+ wormBul:[0,1].map(i=>RAW+`sprites/images/spr_wormbul_${i}.png`),
+ circleBulletB:RAW+'sprites/images/spr_circlebulletb_0.png',
+ bulletMd:RAW+'sprites/images/spr_bulletmd_0.png',
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -977,6 +993,8 @@ const VANILLA_REWARDS={
  whimsalot:{exp:110,killGold:80,spareGold:50},
  aaron:{exp:52,killGold:25,spareGold:30},
  shyren:{exp:52,killGold:25,spareGold:30},
+ moldbygg:{exp:46,killGold:30,spareGold:50},
+ temmie:{exp:40,killGold:50,spareGold:50},
  tsunderplane:{exp:95,killGold:45,spareGold:60},
  vulkin:{exp:70,killGold:50,spareGold:40},
  undyne:{exp:500,killGold:0,spareGold:0},
@@ -2309,6 +2327,9 @@ const ENEMY_LAYOUTS={
  whimsalot:{x:263,y:112,w:114,h:126},
  aaron:{x:272,y:72,w:97,h:170},
  shyren:{x:269,y:41,w:102,h:199},
+ // Moldbygg canvas holds the disguise (bottom) and the risen 2x stem (top).
+ moldbygg:{x:261,y:40,w:118,h:198},
+ temmie:{x:268,y:140,w:104,h:104},
  // Exact battle composite is 190x160. Keep that broad aircraft silhouette.
  tsunderplane:{x:225,y:82,w:190,h:160},
  vulkin:{x:271,y:120,w:97,h:120},
@@ -2335,6 +2356,8 @@ const PAIR_MAIN_LAYOUTS={
  whimsalot:{x:198,y:119,w:104,h:115},
  aaron:{x:201,y:82,w:90,h:158},
  shyren:{x:203,y:60,w:92,h:180},
+ moldbygg:{x:197,y:54,w:106,h:178},
+ temmie:{x:203,y:146,w:94,h:94},
  tsunderplane:{x:145,y:96,w:176,h:148},
  vulkin:{x:202,y:128,w:92,h:114},
  undyne:{x:168,y:24,w:151,h:209},
@@ -2598,6 +2621,8 @@ let maliceFizzleUntil=0;
 let bullets=[],attackStart=0,nextSpawn=0,invUntil=0,attackWave=0,froggitSpawnCount=0,torielSpawnCount=0,specialSpawnCount=0;
 let finalFroggitMercyMod=15,finalFroggitAtkDrop=0,finalFroggitDefDrop=0,finalFroggitLastAct=-1;
 let vegetoidDinner=false,vegetoidGreenPending=false;
+let moldbyggStage=0,moldbyggRevealPending=false,moldbyggRevealStart=0,moldbyggRevealSpeech=false,moldbyggCommand=0,moldbyggUnhugged=false;
+let temmieCommand=0,temmieHeard='',temmieDiesSpeech=false,temmieCameoStart=0,temmieHandActive=false,temmieBattleStart=0,temmieJitterSince=0;
 let snowdrakeJokeReady=false,icecapIgnoreCount=0,icecapHatStolen=false,icecapAttackTurn=0,looxPicked=false,looxExpReward=7,aaronFlexCount=0;
 let whimsalotPrayCount=0,whimsalotPrayPending=false,whimsalotBlessingCaught=false;
 let vulkinDiscouraged=false,vulkinEncouraged=false,vulkinAttackTurn=0,vulkinForceLavaTurn=false;
@@ -3154,6 +3179,8 @@ const BOSS_OPTIONS=[
  {id:'whimsalot',label:'WHIMSALOT',area:'CORE',hp:95,atk:34,def:12,encounter:'* Whimsalot rushed in!',noelleEncounter:'* Noelle encountered Whimsalot.'},
  {id:'aaron',label:'AARON',area:'WATERFALL',hp:98,atk:24,def:2,encounter:'* Aaron flexes in!',noelleEncounter:'* Noelle encountered Aaron.'},
  {id:'shyren',label:'SHYREN',area:'WATERFALL',hp:66,atk:7,def:2,encounter:'* Shyren hides in the corner, but somehow encounters you anyway.',noelleEncounter:'* Noelle encountered Shyren.'},
+ {id:'moldbygg',label:'MOLDBYGG',area:'WATERFALL',hp:70,atk:7,def:4,encounter:'* Moldsmal blocked the way!',noelleEncounter:'* Noelle encountered Moldsmal...?'},
+ {id:'temmie',label:'TEMMIE',area:'WATERFALL',hp:5,atk:7,def:-20,encounter:'* Special enemy Temmie appears here to defeat you!!',noelleEncounter:'* Noelle encountered Temmie.'},
  {id:'undyne',label:'UNDYNE',area:'WATERFALL BOSS',hp:1500,atk:7,def:0,encounter:'* Undyne attacks!',noelleEncounter:'* Noelle faces Undyne.'},
  {id:'tsunderplane',label:'TSUNDERPLANE',area:'HOTLAND',hp:80,atk:25,def:26,encounter:'* Tsunderplane swoops into your way... accidentally, apparently.',noelleEncounter:'* Noelle encountered Tsunderplane.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
@@ -3728,7 +3755,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -3911,7 +3938,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4042,6 +4069,8 @@ const NOELLE_N_ACTIONS={
  snowdrake:{gain:45,text:"* Noelle laughs politely at Snowdrake's joke.\n* Snowdrake decides polite laughter still counts."},
  icecap:{gain:55,text:"* Noelle notices Ice Cap's hat immediately.\n* Ice Cap has been waiting its entire life for this moment."},
  loox:{gain:50,text:"* Noelle avoids staring and quietly apologizes for the eye contact.\n* Loox relaxes a little."},
+ moldbygg:{gain:40,text:"* Noelle politely does NOT hug Moldbygg.\n* Moldbygg appreciates the personal space."},
+ temmie:{gain:60,text:"* Noelle says hOI to Temmie.\n* Temmie vibrates so hard she nearly phases through the floor."},
  moldsmal:{gain:50,text:"* Noelle attempts Moldsmal's wiggle.\n* It is not a good wiggle, but Moldsmal appreciates the effort."},
  migosp:{gain:40,text:"* Noelle gives Migosp plenty of personal space.\n* Migosp seems surprisingly grateful."},
  whimsun:{gain:0,text:"* Noelle lowers her voice so she does not startle Whimsun.\n* Whimsun was already ready to leave."},
@@ -4068,6 +4097,8 @@ const SUSIE_S_ACTIONS={
  snowdrake:{gain:55,text:"* Susie laughs way too loudly at Snowdrake's joke.\n* Snowdrake immediately decides it was a masterpiece."},
  icecap:{gain:60,text:"* Susie says Ice Cap's hat looks badass.\n* Ice Cap may never emotionally recover from this compliment."},
  loox:{gain:35,text:"* Susie tells Loox to quit staring.\n* Then she admits the eye thing is kind of cool."},
+ moldbygg:{gain:35,text:"* Susie hugs Moldbygg anyway.\n* She is now covered in slime and extremely proud of it."},
+ temmie:{gain:55,text:"* Susie flexes at Temmie.\n* Temmie screams, then asks for an autograph."},
  moldsmal:{gain:45,text:"* Susie tries to imitate Moldsmal's wiggle.\n* It looks more like a threat, but Moldsmal approves."},
  migosp:{gain:40,text:"* Susie tells everybody to give Migosp some room.\n* Migosp appreciates the backup."},
  whimsun:{gain:0,text:"* Susie notices Whimsun flinch and lowers her voice.\n* \"Uh... sorry.\""},
@@ -4125,6 +4156,8 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='flowey')return ['Check','Talk'];
  if(id==='loox')return ['Check','Pick On',"Don't Pick On"];
  if(id==='moldsmal')return ['Check','Imitate','Flirt'];
+ if(id==='moldbygg')return moldbyggActOptions();
+ if(id==='temmie')return temmieActOptions();
  if(id==='migosp')return ['Check','Talk'];
  if(id==='aaron')return ['Check','Flex','Shoo'];
  if(id==='shyren')return ['Check','Hum','Smile','Conduct'];
@@ -4476,6 +4509,10 @@ function performAct(targetId,choice){
    else if(choice===1){vulkinDiscouraged=true;vulkinEncouraged=false;vulkinForceLavaTurn=false;setText('* You tell Vulkin that its attacks are NOT helpful.\n* Vulkin stands in the corner.',()=>beginEnemyTurn())}
    else if(choice===2){vulkinDiscouraged=false;vulkinEncouraged=true;vulkinForceLavaTurn=true;mercy=100;setText(`* You tell Vulkin it's doing a great job.\n* Its cheeks glow with a bright heat.`,()=>beginEnemyTurn())}
    else{vulkinDiscouraged=false;vulkinEncouraged=false;vulkinForceLavaTurn=false;mercy=100;setText('* You give Vulkin a hug.\n* It warms your heart... and your whole body!',()=>beginEnemyTurn())}
+ }else if(currentBoss==='moldbygg'){
+   handleMoldbyggAct(choice);
+ }else if(currentBoss==='temmie'){
+   handleTemmieAct(choice);
  }else if(currentBoss==='moldsmal'){
    if(choice===0)setText('* MOLDSMAL - ATK 6 DEF 0\n* It can be spared immediately.',()=>beginEnemyTurn());
    else if(choice===1){mercy=100;setText('* You imitate Moldsmal.\n* You wiggle together.',()=>beginEnemyTurn())}
@@ -5022,7 +5059,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -5692,6 +5729,7 @@ function startSpecialBattleSpeech(lines,onDone=null){
 function attackSpeechForCurrentBoss(){
  if(enemyDead||currentBoss==='toriel'||currentBoss==='dummy')return '';
  if(currentBoss==='sans5000')return battleSpeechTurn===0?'heya.\nwatch this.':'';
+ if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
 
  if(currentBoss==='doggo'){
    if(doggoPets>=5)return "OK. That's enough.";
@@ -7114,6 +7152,8 @@ function startAttack(now){
    attackWave=Math.random()<.5?0:1;
  }else if(currentBoss==='whimsalot'){
    attackWave=whimsalotPrayPending?0:1;
+ }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
+   waterfallStartAttack(now);
  }else if(['snowdrake','moldsmal','migosp','whimsun','aaron'].includes(currentBoss)){
    attackWave=(attackWave+1)%2;
  }else if(currentBoss==='papyrus'){
@@ -7600,6 +7640,8 @@ function returnMenu(){
    if(vulkinDiscouraged)setText('* Vulkin stands in the corner.');
    else if(mercy>=100)setText('* Vulkin parades around you proudly.');
    else{const lines=['* Vulkin parades around the room.','* Vulkin is making coffee in its crater.','* Vulkin is wiggling its weird rump.','* Vulkin makes a smoke hoop and jumps through it.','* Smells like a lava lamp.'];setText(lines[Math.floor(Math.random()*lines.length)])}
+ }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
+   setText(waterfallFlavorText());
  }else if(currentBoss==='moldsmal'){
    setText(mercy>=100?'* Moldsmal wiggles happily.':'* Moldsmal burbles quietly.');
  }else if(currentBoss==='migosp'){
@@ -8835,7 +8877,7 @@ function normalizeEnemyAssetTransparency(){
   'dummy','dummyDeath',
   'froggit','froggitHead','froggitLegs','finalFroggitIdle','finalFroggitHurt','finalFroggitBody','finalFroggitHead','finalFroggitHeadHurt',
   'whimsun','whimsunHurt','whimsalotHead','whimsalotBody','whimsalotWing','whimsalotHurt',
-  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody',
+  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt',
   'shyren','shyrenBody','shyrenTurn','shyrenSing','shyrenAgent',
   'undyneArmorBase','undyneHurt','undyneFatal','undyneMelt','undyneLastMelt',
   'tsunderplaneRaw','tsunderplaneHat','tsunderplaneCloud','tsunderplaneIdle',
@@ -10860,7 +10902,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -10880,6 +10922,7 @@ function reset(){
  state='menu';selected=0;sub=0;damageStart=0;mercyImpactStart=0;mercyImpactWatch=null;mercy=0;enemyTired=false;tp=0;defending=false;attackWave=-1;
  resetCustomActProgress();
  if(currentBoss==='moldsmal'||currentBoss==='whimsun')mercy=100;
+ resetWaterfallEnemies();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -12386,7 +12429,9 @@ function spawnSimpleNewBossBullet(now){
    return;
  }
 
- if(currentBoss==='moldsmal'){
+ if(spawnWaterfallBullets(now))return;
+ // Disguised Moldbygg uses Moldsmal's obj_1sidegen bullet types.
+ if(currentBoss==='moldsmal'||currentBoss==='moldbygg'){
    if(attackWave===0){
      if(specialSpawnCount>=13){nextSpawn=now+99999;return}
      const x=left+Math.random()*(right-left);
@@ -12693,7 +12738,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13121,7 +13166,7 @@ function updateSoulMovement(dt,now){
  soulMoving=!!(dx||dy);
 
  if(currentBoss==='doggo'&&soulMoving)doggoMovedDuringAttack=true;
- const battleSpeedMul=1+Math.min(4,Math.max(0,Number(battleSoulSpeedStacks)||0))*.25;
+ const battleSpeedMul=1+Math.min(4,Math.max(-1,Number(battleSoulSpeedStacks)||0))*.25;
 
  if(soulMode==='green'&&currentBoss==='undyne'){
    // Source site codes: 0=left, 1=right, 2=down, 3=up. Collision uses the new ideal
@@ -13622,7 +13667,9 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(b.kind==='customBullet'){
+     if(updateWaterfallBullet(b,now,dt)){
+       // Moldbygg/Temmie bullets step on the 30fps source grid.
+     }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
        if(b.customCurve){const a=b.customCurve*dt,c=Math.cos(a),si=Math.sin(a),vx=b.vx*c-b.vy*si,vy=b.vx*si+b.vy*c;b.vx=vx;b.vy=vy}
        b.vy+=(b.ay||0)*dt;
@@ -14223,6 +14270,8 @@ function update(dt,now){
      // the ordinary off-screen point-bullet test is invalid for it. Its lifetime is
      // the enemy turn itself (or explicit expiry), matching the attack object.
      if(b.kind==='icecapTeeth'||b.kind==='finalFrog')return true;
+     // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
+     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter')return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
        // Keep the scripted tutorial hazards alive long enough to move, render,
        // collide, and (for the betrayal ring) close around the SOUL.
@@ -14267,7 +14316,9 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(b.kind==='customBullet'){
+     if(waterfallBulletCollide(b,now)){
+       // handled above
+     }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
        if(rectHit(soul.x-7,soul.y-7,14,14,b.x-sz/2,b.y-sz/2,sz,sz))hurtPlayer(now,b.damage||4,b.owner||'main');
      }else if(b.kind==='doggoSword'){
@@ -14460,6 +14511,7 @@ function update(dt,now){
    else if(currentBoss==='vulkin')attackDuration=vulkinDiscouraged?900:5333;
    else if(currentBoss==='undyne')attackDuration=(soulMode==='green'?30000:(200*(1000/30)));
    else if(currentBoss==='loox')attackDuration=3667;
+   else if(currentBoss==='moldbygg'||currentBoss==='temmie')attackDuration=waterfallAttackDuration();
    else if(['snowdrake','icecap','moldsmal','migosp','whimsun','whimsalot','aaron'].includes(currentBoss))attackDuration=4500;
    const shyrenSupportFinale=supportParty.some(sp=>sp&&!sp.dead&&sp.id==='shyren'&&sp.actState?.finalePending);
    if(shyrenSupportFinale)attackDuration=Math.max(attackDuration,10333);
@@ -15104,10 +15156,428 @@ function makeVulkinComposite(now=performance.now(),hurt=false){
  return c;
 }
 
+// WATERFALL: MOLDBYGG + TEMMIE
+// Rebuilt from UNDERTALE's GameMaker objects: obj_moldsmalx (+ _body/_part),
+// obj_8smallgen/blt_splinter, obj_stalkergen/blt_stalk1/2/blt_stalkloop,
+// obj_tembattle/obj_tembody, blt_temhand and obj_maintem/obj_temleg.
+// All motion runs on the source's 30fps step grid, in room pixels * UT_SCALE.
+const WF_STEP=1/30;
+function wfSteps(b,dt,fn){
+ b.acc=(b.acc||0)+Math.min(dt,.25);
+ while(b.acc>=WF_STEP){b.acc-=WF_STEP;fn(b);if(b.expired)break}
+ b.vx=0;b.vy=0; // positions are owned by the step function, not the generic integrator
+}
+
+// ---------- MOLDBYGG composite ----------
+// Canvas is in room pixels. obj_moldsmalx_body draws spr_moldsmal with plain
+// draw_sprite (no scale) while disguised. Once revealed, spr_moldsmalx_up rises
+// 4px/step for 28 steps above four 2x spr_moldsmalx_part stem segments.
+const MOLDBYGG_W=118,MOLDBYGG_H=198,MOLDBYGG_OX=8,MOLDBYGG_BASE=112;
+let moldbyggCanvas=null,moldbyggHurtCanvas=null;
+function moldbyggPartOffsets(){return [{dy:170,c:1},{dy:140,c:0},{dy:110,c:1},{dy:80,c:0}]}
+function makeMoldbyggComposite(now=performance.now(),hurt=false){
+ if(hurt){
+   // obj_moldsmalx hurt event: shows spr_moldsmal frame 1 at xstart/ystart and
+   // destroys the stem parts, even after the reveal.
+   const im=images.moldsmal?.[1]||images.moldsmal?.[0];
+   if(!im)return null;
+   if(!moldbyggHurtCanvas){
+     moldbyggHurtCanvas=document.createElement('canvas');moldbyggHurtCanvas.width=MOLDBYGG_W;moldbyggHurtCanvas.height=MOLDBYGG_H;
+     const g=moldbyggHurtCanvas.getContext('2d');g.imageSmoothingEnabled=false;
+     g.drawImage(im,MOLDBYGG_OX,MOLDBYGG_BASE,102,84);
+   }
+   return moldbyggHurtCanvas;
+ }
+ if(!moldbyggCanvas){moldbyggCanvas=document.createElement('canvas');moldbyggCanvas.width=MOLDBYGG_W;moldbyggCanvas.height=MOLDBYGG_H}
+ const c=moldbyggCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ const anim=Math.floor(now/(1000/3)); // image_speed .1 at 30fps
+ if(moldbyggStage===0||!images.moldbyggTop?.length||!images.moldbyggPart){
+   const frames=images.moldsmal||[];
+   const im=frames[anim%Math.max(1,frames.length)]||frames[0];
+   if(im)g.drawImage(im,MOLDBYGG_OX,MOLDBYGG_BASE,102,84);
+   return c;
+ }
+ const steps=Math.max(0,(now-moldbyggRevealStart)/(1000/30));
+ const rise=Math.min(28,Math.floor(steps));
+ const settled=Math.max(0,steps-28);
+ const topIm=images.moldbyggTop[anim%images.moldbyggTop.length]||images.moldbyggTop[0];
+ const xsin2=Math.cos(settled/10)*4;
+ g.drawImage(topIm,Math.round(MOLDBYGG_OX+xsin2),MOLDBYGG_BASE-rise*4,90,82);
+ for(const p of moldbyggPartOffsets()){
+   const sl2=(p.c?Math.cos(settled/10):Math.sin(settled/10))*8;
+   g.drawImage(images.moldbyggPart,Math.round(MOLDBYGG_OX+sl2),MOLDBYGG_BASE+p.dy-rise*4,88,28);
+ }
+ return c;
+}
+
+// ---------- TEMMIE composite ----------
+// obj_tembody: spr_tembody at 2x vibrating by random(r), r creeping from .5 to 2
+// (reset to 0 while blt_temhand is out), plus spr_temface at (22,40).
+let temmieCanvas=null,temmieBlankCanvas=null,temmieJitterStep=-1,temmieJitter=[0,0,0,0];
+function makeTemmieComposite(now=performance.now(),hurt=false){
+ if(hurt)return images.temmieHurt||null;
+ const hidden=(temmieDiesSpeech&&state==='battleSpeech')||(temmieCameoStart&&specialBattleSpeechIndex>=2);
+ if(hidden){
+   if(!temmieBlankCanvas){temmieBlankCanvas=document.createElement('canvas');temmieBlankCanvas.width=104;temmieBlankCanvas.height=104}
+   return temmieBlankCanvas;
+ }
+ const body=images.temmieBody,face=images.temmieFace;
+ if(!body||!face)return images.temmieHurt||null;
+ if(!temmieCanvas){temmieCanvas=document.createElement('canvas');temmieCanvas.width=104;temmieCanvas.height=104}
+ const step=Math.floor(now/(1000/30));
+ if(step!==temmieJitterStep){
+   temmieJitterStep=step;
+   const since=Math.max(0,(now-temmieJitterSince)/(1000/30));
+   const r=temmieHandActive?0:Math.min(2,(temmieJitterSince===temmieBattleStart?.5:0)+since*.01);
+   temmieJitter=[Math.random()*r,Math.random()*r,Math.random()*r,Math.random()*r];
+ }
+ const c=temmieCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ g.drawImage(body,Math.round(temmieJitter[0]),Math.round(temmieJitter[1]),98,96);
+ const faceDrift=Math.min(78,Math.max(0,(now-temmieBattleStart)/(1000/30)-300)*.01);
+ g.drawImage(face,Math.round(22+faceDrift+temmieJitter[2]),Math.round(40+temmieJitter[3]),30,22);
+ return c;
+}
+
+// Flex -> Aaron cameo (obj_tembattle dunk 1..3): Aaron fades in beside Temmie.
+function drawWaterfallExtras(now=performance.now()){
+ if(currentBoss!=='temmie'||!temmieCameoStart||screen!=='battle')return;
+ const im=images.aaronBody||images.aaron?.[0];if(!im)return;
+ const a=clamp((now-temmieCameoStart)/600,0,1);
+ const bob=Math.round(Math.sin(now/(1000/30)/6)*2*UT_SCALE);
+ ctx.save();ctx.globalAlpha=a;ctx.imageSmoothingEnabled=false;
+ const r=utRect(420,38,97,170);
+ ctx.drawImage(im,Math.round(r.x),Math.round(r.y+bob),Math.round(r.w),Math.round(r.h));
+ ctx.restore();
+}
+
+// ---------- ACTs ----------
+function moldbyggActOptions(){return moldbyggStage===0?['Check','Imitate','Flirt']:['Check','Lie Down','Hug','Unhug']}
+function temmieActOptions(){return ['Check','Flex','Temmie Flakes','Talk']}
+function handleMoldbyggAct(choice){
+ if(moldbyggStage===0){
+   if(choice===0){setText("* MOLDSMAL? - ATK 6 DEF 0\n* It's a slime mold...?",()=>beginEnemyTurn());return}
+   moldbyggRevealPending=true;
+   setText(choice===1?'* You approach Moldsmal.\n* Suddenly...!':'* You wiggle your hips.\n* Suddenly...!',()=>beginEnemyTurn());
+   return;
+ }
+ if(choice===0)setText('* MOLDBYGG - ATK 18 DEF 18\n* One size greater than\n  Moldaverage.',()=>beginEnemyTurn());
+ else if(choice===1)setText('* You lie down.\n* Moldbygg lies down too.\n* Moldbygg understands life now.',()=>beginEnemyTurn());
+ else if(choice===2){
+   // obj_moldsmalx: if(global.sp > 3) global.sp--;
+   if(battleSoulSpeedStacks>-1)battleSoulSpeedStacks--;
+   setText('* You hug Moldbygg.\n* Gross slime covers you.\n* Your SPEED decreased.',()=>beginEnemyTurn());
+ }else{
+   mercy=100;moldbyggUnhugged=true;
+   setText("* You don't hug Moldbygg.\n* It appreciates your respect\n  of its boundaries.",()=>beginEnemyTurn());
+ }
+}
+function handleTemmieAct(choice){
+ if(choice===0){setText("* TEMMIE - RATED TEM OUTTA TEM\n* Loves to pet cute humans.\n* But you're allergic!",()=>beginEnemyTurn());return}
+ if(choice===1){
+   setText('* You flex at Temmie...',()=>{
+     temmieCameoStart=performance.now();
+     startSpecialBattleSpeech([
+       {text:'NO!!!!!\nmuscles\nr.....\nNOT CUTE'},
+       {text:'Ooh, I\nhave to\ndisagree\n; )',voiceBoss:'aaron'},
+       {text:'NO!!!!!\n!!!!!!!'}
+     ],()=>{mercy=100;startEnemySpare()});
+   });
+   return;
+ }
+ if(choice===2){
+   const idx=inventory.findIndex(it=>it&&(it.id==='temmie_flakes'||/^temmie flakes$/i.test(String(it.name||''))));
+   if(idx<0){temmieHeard='hungry';setText('* Temmie only wants the\n  Temmie Flakes.',()=>beginEnemyTurn());return}
+   const it=inventory.splice(idx,1)[0];consumeVanillaInventoryItem(it?.id);
+   temmieHeard='flakes';mercy=100;
+   setText('* You give Temmie the Temmie Flakes.',()=>beginEnemyTurn());
+   return;
+ }
+ temmieHeard='talk';mercy=100;
+ setText('* You say hello to Temmie.',()=>beginEnemyTurn());
+}
+
+// ---------- turn setup, speech, flavor ----------
+function waterfallStartAttack(now){
+ if(currentBoss==='moldbygg'){
+   moldbyggCommand=Math.round(Math.random()*100);
+   moldbyggRevealSpeech=false;
+   if(moldbyggRevealPending&&moldbyggStage===0){
+     moldbyggRevealPending=false;moldbyggStage=1;moldbyggRevealStart=now;moldbyggRevealSpeech=true;
+     setEnemyVisuals();
+   }
+   attackWave=moldbyggStage===0?(moldbyggCommand<=50?1:0):(moldbyggCommand<=50?2:3);
+ }else if(currentBoss==='temmie'){
+   temmieCommand=Math.round(Math.random()*100);
+   attackWave=temmieCommand<25?0:1;
+ }
+}
+function waterfallAttackSpeech(){
+ if(currentBoss==='moldbygg'){
+   if(moldbyggStage===0)return '...';
+   if(moldbyggRevealSpeech)return 'Guoooh!';
+   const m=moldbyggCommand;
+   if(m>=75)return '*Chaste\nwiggle*';
+   if(m>=50)return '*Slime\nsounds*';
+   if(m>=25)return 'Roar.';
+   return 'Guoooh!';
+ }
+ if(currentBoss==='temmie'){
+   const heard=temmieHeard;temmieHeard='';temmieDiesSpeech=false;
+   if(heard==='flakes')return 'FOOB!!!';
+   if(heard==='talk')return "hOI!!!\ni'm\ntEMMIE!!";
+   if(heard==='hungry'){temmieDiesSpeech=true;return 'NO!!!\nso\nhungr...\n(dies)'}
+   const m=Math.round(Math.random()*100);
+   if(m>=75)return 'fhsdhjf\ndsfjsd\ndshjfsd';
+   if(m>=50)return "hOI!!!\ni'm\nTEMMIE!!";
+   if(m>25){temmieDiesSpeech=true;return 'OMG!!\nhumans\nTOO CUTE\n(dies)'}
+   return 'awwAwa\ncute!!\n(pets u)';
+ }
+ return '';
+}
+function waterfallFlavorText(){
+ if(currentBoss==='moldbygg'){
+   const m=moldbyggCommand;
+   if(moldbyggStage===0){
+     if(enemyHp<15)return '* Quite impossible.';
+     if(m>=90)return '* Smells like a bait shop.';
+     if(m>=70)return '* Moldsmal is having quiet\n  time.';
+     if(m>=30)return '* Moldsmal is very normal.';
+     return '* Moldsmal sits motionless.';
+   }
+   if(enemyHp<30)return '* Moldbygg has seen better days.';
+   if(moldbyggUnhugged)return '* Moldbygg seems comfortable\n  with your presence.';
+   if(m>=90)return '* Smells like a bait shop.';
+   if(m>=70)return '* Moldbygg mills about in the\n  corner.';
+   if(m>=30)return '* Moldbygg gyrates reservedly.';
+   return '* Moldbygg needs some distance.';
+ }
+ if(currentBoss==='temmie'){
+   const m=temmieCommand;
+   if(enemyHp<3)return "* How'd you do that?";
+   if(m>=90)return '* Smells like Temmie Flakes.';
+   if(m>=83)return '* Temmiy accidentally misspells\n  her own name.';
+   if(m>=75)return '* Temmie is doing her hairs.';
+   if(m>=50)return '* Temmie vibrates intensely.';
+   if(m>=25)return '* Temmie forgot her other\n  attack.';
+   return '* Temmie is trying to glomp\n  you.';
+ }
+ return '';
+}
+function waterfallAttackDuration(){
+ if(currentBoss==='moldbygg')return moldbyggStage===0?4500:180*(1000/30);
+ if(currentBoss==='temmie')return attackWave===0?200*(1000/30):160*(1000/30);
+ return 4500;
+}
+function resetWaterfallEnemies(now=performance.now()){
+ moldbyggStage=0;moldbyggRevealPending=false;moldbyggRevealStart=0;moldbyggRevealSpeech=false;moldbyggCommand=0;moldbyggUnhugged=false;
+ temmieCommand=0;temmieHeard='';temmieDiesSpeech=false;temmieCameoStart=0;temmieHandActive=false;
+ temmieBattleStart=now;temmieJitterSince=now;
+}
+
+// ---------- attacks ----------
+// Returns true when it handled the spawn for the current boss/wave.
+function spawnWaterfallBullets(now){
+ const U=UT_SCALE,L=ARENA.x,T=ARENA.y,R=ARENA.x+ARENA.w,B=ARENA.y+ARENA.h;
+ if(currentBoss==='moldbygg'&&attackWave===2){
+   // obj_8smallgen, solo encounter: four bursts, 40 steps apart.
+   if(specialSpawnCount>=4){nextSpawn=now+99999;return true}
+   specialSpawnCount++;
+   const cx=L+(20+Math.random()*116)*U,cy=T+(20+Math.random()*117)*U;
+   const hdist=Math.abs(L-cx)-Math.abs(R-cx),vdist=Math.abs(T-cy)-Math.abs(B-cy);
+   let hd2;
+   if(Math.abs(vdist)>Math.abs(hdist))hd2=vdist>=0?cy-T:B-cy;
+   else hd2=hdist>=0?cx-L:R-cx;
+   hd2*=1.5;let hd1=hd2*2/3;
+   hd1*=1.8;hd2*=1.8;
+   const cs=(2.4+Math.random()*.2)*2.2*U;
+   const life=Math.max(1,Math.round(hd2/cs));
+   const spots=[[-hd2,0,0],[-hd1,-hd1,315],[0,-hd2,270],[hd1,-hd1,225],[hd2,0,180],[hd1,hd1,135],[0,hd2,90],[-hd1,hd1,45]];
+   spots.forEach(([ox,oy,dir],i)=>{
+     const a=dir*Math.PI/180;
+     bullets.push({kind:'mbSplinter',owner:'main',x:cx+ox,y:cy+oy,sx:Math.cos(a)*cs,sy:-Math.sin(a)*cs,alpha:0,life,step:0,leader:i===0,cx,cy,size:12,damage:8,born:now});
+   });
+   nextSpawn=now+40*(1000/30);
+   return true;
+ }
+ if(currentBoss==='moldbygg'&&attackWave===3){
+   // obj_stalkergen: a worm rises from under the board every 35 steps.
+   const x=L+(8+Math.random()*115)*U,y=B+10*U;
+   bullets.push({kind:'mbStalk',owner:'main',x,y,head:true,c:0,speed:4*U,dir:-1,friction:.1*U,step:0,sinr:0,fired:0,damage:6,born:now});
+   [[25,1],[50,0],[75,1]].forEach(([dy,c])=>bullets.push({kind:'mbStalk',owner:'main',x,y:y+dy*U,head:false,c,speed:4*U,dir:-1,friction:.1*U,step:0,sinr:0,damage:6,born:now}));
+   specialSpawnCount++;nextSpawn=now+35*(1000/30);
+   return true;
+ }
+ if(currentBoss==='temmie'&&attackWave===0){
+   if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+   specialSpawnCount++;
+   const sx=enemyDraw.x+enemyDraw.w*.24,sy=enemyDraw.y+enemyDraw.h*.96;
+   temmieHandActive=true;temmieJitterSince=now;
+   bullets.push({kind:'temHand',owner:'main',x:sx,y:sy,x0:sx,y0:sy,dir:270,path:[{x:sx,y:sy,dir:270}],alarm:20+Math.random()*20,turns:0,retract:false,damage:Math.max(1,bossData().atk||7),born:now});
+   nextSpawn=now+99999;
+   return true;
+ }
+ if(currentBoss==='temmie'&&attackWave===1){
+   if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+   specialSpawnCount++;
+   bullets.push({kind:'temWalker',owner:'main',x:L+(80+Math.random()*20)*U,y:T,length:65,height:86,hs:0,siner:0,legs:[{dx:20,s:0},{dx:30,s:Math.PI*2},{dx:105,s:0},{dx:115,s:Math.PI*2}],damage:10,born:now});
+   nextSpawn=now+99999;
+   return true;
+ }
+ return false;
+}
+
+function temHandDirVec(d){return d===0?[1,0]:d===180?[-1,0]:d===90?[0,-1]:[0,1]}
+function stepTemHand(b){
+ const U=UT_SCALE,sp=(b.retract?12:4)*U;
+ const dx=b.x-soul.x,dy=b.y-soul.y;
+ if(!b.retract){
+   // blt_temhand Draw: turn sooner when the hand lines up with the SOUL.
+   if(Math.abs(dx)<20*U&&b.alarm>5)b.alarm-=2;
+   if(Math.abs(dy)<20*U&&b.alarm>5)b.alarm-=2;
+   if(Math.abs(dx)<10*U&&b.alarm>4)b.alarm/=2;
+   if(Math.abs(dy)<10*U&&b.alarm>4)b.alarm/=2;
+   b.alarm--;
+   if(b.alarm<=0){
+     if(b.turns>=8){b.retract=true}
+     else{
+       let d=Math.abs(dx)-Math.abs(dy)<=0?(dy>=0?90:270):(dx>=0?180:0);
+       if(Math.abs(d-b.dir)===180)d=(d+270)%360;
+       if(d!==b.dir){b.turns++;b.dir=d;b.path.push({x:b.x,y:b.y,dir:d})}
+       b.alarm=60+Math.random()*20;
+     }
+   }
+   const [vx,vy]=temHandDirVec(b.dir);b.x+=vx*sp;b.y+=vy*sp;
+   return;
+ }
+ // Retract along the recorded path at speed 12.
+ const seg=b.path[b.path.length-1];
+ const tx=seg.x,ty=seg.y,dist=Math.hypot(tx-b.x,ty-b.y);
+ if(dist<=sp){
+   b.x=tx;b.y=ty;
+   if(b.path.length<=1){b.expired=true;temmieHandActive=false;temmieJitterSince=performance.now();return}
+   b.path.pop();
+ }else{b.x+=(tx-b.x)/dist*sp;b.y+=(ty-b.y)/dist*sp}
+}
+function temHandRects(b){
+ const U=UT_SCALE,w=10*U,out=[];
+ for(let i=0;i<b.path.length;i++){
+   const p=b.path[i],q=i+1<b.path.length?b.path[i+1]:{x:b.x,y:b.y};
+   out.push({x:Math.min(p.x,q.x)-w/2,y:Math.min(p.y,q.y)-w/2,w:Math.abs(q.x-p.x)+w,h:Math.abs(q.y-p.y)+w});
+ }
+ return out;
+}
+function stepTemWalker(b){
+ const U=UT_SCALE,soulMid=soul.x;
+ const mid=b.x+((b.legs[0].dx+b.legs[3].dx)/2)*U;
+ if(soulMid<=mid)b.hs-=.15;
+ if(soulMid>=mid)b.hs+=.15;
+ b.siner++;
+ let hadd=Math.sin(b.siner/10)*.1;
+ if(Math.abs(b.hs)<.4){b.siner++;hadd*=1.5}
+ b.hs+=hadd;
+ b.x+=b.hs*U;
+ for(const l of b.legs)l.s-=b.hs;
+}
+function temWalkerRects(b){
+ const U=UT_SCALE,x=b.x,y=b.y,len=b.length;
+ const rects=[{x:x+13*U,y:y+36*U,w:(37+len)*U,h:27*U,dmg:b.damage}];
+ for(const l of b.legs){
+   const xadd=Math.sin(l.s/4)*4,yadd=Math.cos(l.s/4)*4;
+   const lx=x+(l.dx+xadd)*U,top=y+56*U,bottom=y+(b.height*2+yadd)*U;
+   rects.push({x:lx,y:top,w:4*U,h:bottom-top,dmg:b.damage-3,foot:{x:lx-5*U,y:bottom}});
+ }
+ return rects;
+}
+function stepStalk(b){
+ const U=UT_SCALE;
+ b.step++;b.sinr++;
+ b.x+=((b.c?Math.cos(b.sinr/10):Math.sin(b.sinr/10))/2)*U;
+ if(b.step===40){b.speed=0;b.friction=0;b.y=Math.round(b.y);b.x=Math.round(b.x)}
+ if(b.head&&b.step>=46&&b.step<=62&&(b.step-46)%8===0&&b.fired<3){
+   b.fired++;
+   const ox=b.x+13*U,oy=b.y+13*U,a=Math.atan2(soul.y-oy,soul.x-ox);
+   bullets.push({kind:'mbStalkLoop',owner:'main',x:ox,y:oy,sx:Math.cos(a)*3*U,sy:Math.sin(a)*3*U,scale:.2,scaleadd:.1,damage:8,born:performance.now()});
+ }
+ if(b.step===70){b.speed=2*U;b.dir=1;b.friction=-.2*U}
+ if(b.step>=130){b.expired=true;return}
+ if(b.friction>0)b.speed=Math.max(0,b.speed-b.friction);else if(b.friction<0)b.speed-=b.friction;
+ b.y+=b.dir*b.speed;
+}
+function updateWaterfallBullet(b,now,dt){
+ if(b.kind==='mbSplinter'){
+   wfSteps(b,dt,q=>{
+     q.step++;q.alpha=Math.min(1,q.alpha+.1);
+     if(q.step>=q.life){
+       q.expired=true;
+       if(q.leader)bullets.push({kind:'mbCenter',owner:'main',x:q.cx,y:q.cy,speed:1.5*UT_SCALE,size:12,damage:8,born:now});
+       return;
+     }
+     q.x+=q.sx;q.y+=q.sy;
+   });
+   return true;
+ }
+ if(b.kind==='mbCenter'){wfSteps(b,dt,q=>{q.speed+=.2*UT_SCALE;q.y-=q.speed});return true}
+ if(b.kind==='mbStalk'){wfSteps(b,dt,stepStalk);return true}
+ if(b.kind==='mbStalkLoop'){wfSteps(b,dt,q=>{q.scale+=q.scaleadd;q.scaleadd/=1.1;q.x+=q.sx;q.y+=q.sy});return true}
+ if(b.kind==='temHand'){wfSteps(b,dt,stepTemHand);return true}
+ if(b.kind==='temWalker'){wfSteps(b,dt,stepTemWalker);return true}
+ return false;
+}
+function waterfallBulletCollide(b,now){
+ const hit=(x,y,w,h)=>rectHit(soul.x-7,soul.y-7,14,14,x,y,w,h);
+ if(b.kind==='mbSplinter'||b.kind==='mbCenter'){
+   const s=(b.size||12)*UT_SCALE;if(hit(b.x-s/2,b.y-s/2,s,s))hurtPlayer(now,b.damage||8,b.owner||'main');return true;
+ }
+ if(b.kind==='mbStalk'){
+   const s=20*UT_SCALE;if(hit(b.x+2*UT_SCALE,b.y+2*UT_SCALE,s,s))hurtPlayer(now,b.damage||6,b.owner||'main');return true;
+ }
+ if(b.kind==='mbStalkLoop'){
+   const s=17*UT_SCALE*b.scale;if(hit(b.x-s/2,b.y-s/2,s,s))hurtPlayer(now,b.damage||8,b.owner||'main');return true;
+ }
+ if(b.kind==='temHand'){
+   for(const r of temHandRects(b))if(hit(r.x,r.y,r.w,r.h)){hurtPlayer(now,b.damage||7,b.owner||'main');break}
+   return true;
+ }
+ if(b.kind==='temWalker'){
+   for(const r of temWalkerRects(b))if(hit(r.x,r.y,r.w,r.h)){hurtPlayer(now,r.dmg||10,b.owner||'main');break}
+   return true;
+ }
+ return false;
+}
+function drawWaterfallBullet(b,now){
+ const U=UT_SCALE,draw=(im,x,y,w,h)=>{if(im)ctx.drawImage(im,Math.round(x),Math.round(y),Math.round(w),Math.round(h));else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}};
+ ctx.imageSmoothingEnabled=false;
+ if(b.kind==='mbSplinter'){ctx.globalAlpha=b.alpha;const s=12*U;draw(images.moldPellet,b.x-s/2,b.y-s/2,s,s);return true}
+ if(b.kind==='mbCenter'){const s=12*U;draw(images.bulletMd,b.x-s/2,b.y-s/2,s,s);return true}
+ if(b.kind==='mbStalk'){const f=images.wormBul||[];draw(f[b.head?1:0]||f[0],b.x,b.y,24*U,24*U);return true}
+ if(b.kind==='mbStalkLoop'){const s=17*U*b.scale;draw(images.circleBulletB,b.x-s/2,b.y-s/2,s,s);return true}
+ if(b.kind==='temHand'){
+   ctx.fillStyle='#fff';
+   for(const r of temHandRects(b))ctx.fillRect(Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.round(r.h));
+   const s=10*U;draw(images.temHand,b.x-s/2,b.y-s/2,s,s);
+   return true;
+ }
+ if(b.kind==='temWalker'){
+   const x=b.x,y=b.y,len=b.length;
+   ctx.fillStyle='#fff';
+   for(const r of temWalkerRects(b).slice(1)){
+     ctx.fillRect(Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.round(r.h));
+     draw(images.temFoot,r.foot.x,r.foot.y,10*U,9*U);
+   }
+   draw(images.temFront,x,y,50*U,64*U);
+   ctx.fillStyle='#fff';ctx.fillRect(Math.round(x+48*U),Math.round(y+36*U),Math.round((len+3)*U),Math.round(27*U));
+   draw(images.temBack,x+(50+len)*U,y,64*U,64*U);
+   return true;
+ }
+ return false;
+}
+
 function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='whimsun')return whimsunDrawImage(now,hurt);
  if(id==='whimsalot')return hurt?(images.whimsalotHurt||images.whimsalot):(images.whimsalot||images.whimsalotHurt);
  if(id==='vulkin')return makeVulkinComposite(now,hurt);
+ if(id==='moldbygg')return makeMoldbyggComposite(now,hurt);
+ if(id==='temmie')return makeTemmieComposite(now,hurt);
  const hurtImage=images[id+'Hurt']||null;
  if(hurt&&hurtImage)return hurtImage;
  const frames=images[id];
@@ -15629,7 +16099,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -15798,6 +16268,7 @@ function drawTop(now=performance.now()){
  }
 
  drawSupportDeathEffects(now);
+ drawWaterfallExtras(now);
 
  // Frozen enemies remain visible for the rest of the encounter.
  // During Toriel's Boss Monster SOUL scene, keep Toriel in-frame as a muted
@@ -16781,7 +17252,8 @@ function drawAttack(now){
  ctx.save();
  for(const b of bullets){
    ctx.save();
-   const allowOutside=currentBoss==='undyne'&&undyneNoBorderKinds.has(b.kind);
+   // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
+   const allowOutside=(currentBoss==='undyne'&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand';
    if(!allowOutside){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
@@ -16954,6 +17426,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
+   else if(drawWaterfallBullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -17440,7 +17913,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -17575,7 +18048,7 @@ function drawEnemySelect(now=performance.now()){
  font(15,'#777','left');ctx.fillText((b.area||'UNKNOWN').toUpperCase(),info.x+28,info.y+106);
  const stats=[['HP',b.hp],['AT',b.atk],['DF',b.def]];
  stats.forEach((v,i)=>{const x=info.x+28+i*133;ctx.fillStyle='#050505';ctx.fillRect(x,info.y+139,116,62);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(x,info.y+139,116,62);font(12,'#666','center');ctx.fillText(v[0],x+58,info.y+148);font(24,'#fff','center');ctx.fillText(String(v[1]),x+58,info.y+169)});
- const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
+ const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
  font(13,'#888','left');ctx.fillText(descMap[b.id]||'CUSTOM ENCOUNTER',info.x+28,info.y+212);
  const rp=rewardPreview(b.id),sandboxPay=!vanillaMode;
  const killExpText=b.id==='loox'&&!hardModeEnabled?`${rp.killExp} EXP (3-24 VIA ACT)`: `${rp.killExp} EXP`;
@@ -19899,7 +20372,7 @@ function runDebugCommand(raw){
    if(c==='help'){
      debugLog([
        'boss <id> [classic|noelle]  | hp <n> | enemyhp <n> | tp <n> | mercy <n>',
-       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
+       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
        'soul <red|blue> | scene <name> | face <emotion> | attack | end | kill | spare',
        'scene maddummy-napstablook (alias: madnap) // Mad Dummy ending interruption',
        'hard <on|off|toggle> | papwave <-1..15> | gameover <normal|toriel|aaron|papyrus|napstablook>',
@@ -21005,6 +21478,11 @@ async function boot(){
  loadDone=0;loadFailures=[];const tasks=[];
  const needImage=async src=>{const im=await loadImage(src);if(!im)throw new Error('image load failed');return im};
  const add=(label,fn)=>tasks.push(()=>tracked(label,fn));
+ // Soundtracks are the largest files by far. Only the menu theme and the
+ // standard battle theme gate the loading screen; every other track streams in
+ // afterwards (all music reads are null-safe and fall back to Enemy Approaching).
+ const bgTasks=[];
+ const addBg=(label,fn)=>bgTasks.push(async()=>{try{await fn()}catch(e){loadFailures.push(`${label}: ${e?.message||e}`)}});
  add('uploaded weapon sprite sheet',loadWeaponSpriteAtlas);
  add('battle reference',async()=>images.base=await needImage(EMBED.base));
  add('Sans tutorial sprite',async()=>images.sans=await needImage(IMG.sans));
@@ -21048,6 +21526,10 @@ async function boot(){
  IMG.loox.forEach((u,i)=>add(`Loox frame ${i+1}`,async()=>{images.loox=images.loox||[];images.loox[i]=await needImage(u)}));
  add('Loox hurt sprite',async()=>images.looxHurt=await needImage(IMG.looxHurt));
  IMG.moldsmal.forEach((u,i)=>add(`Moldsmal frame ${i+1}`,async()=>{images.moldsmal=images.moldsmal||[];images.moldsmal[i]=await needImage(u)}));
+ IMG.moldbyggTop.forEach((u,i)=>add(`Moldbygg top ${i+1}`,async()=>{images.moldbyggTop=images.moldbyggTop||[];images.moldbyggTop[i]=await needImage(u)}));
+ add('Moldbygg stem',async()=>images.moldbyggPart=await needImage(IMG.moldbyggPart));
+ for(const k of ['temmieBody','temmieFace','temmieHurt','temHand','temFront','temBack','temFoot','circleBulletB','bulletMd'])add(`Temmie/Moldbygg ${k}`,async()=>images[k]=await needImage(IMG[k]));
+ IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
  IMG.aaron.forEach((u,i)=>add(`Aaron static base ${i+1}`,async()=>{images.aaron=images.aaron||[];images.aaron[i]=await needImage(u)}));
@@ -21227,29 +21709,33 @@ async function boot(){
  for(const [name,url] of Object.entries(SFX))add(`SFX ${name}`,async()=>sounds[name]=await loadAudioAsset(url,name==='encounterNoise'?.93:((name==='text'||name==='torielText')?.18:(name==='susieText'?.22:(name==='noelleText'?.18:(name==='papyrusText'?.28:(name==='sansText'?.22:(name==='asgoreText'?.24:(name==='icespell'||name==='petrify'?.78:.66))))))),false));
  add('Menu Theme',async()=>music.menu=await loadAudioAsset(MUSIC.menu,.36,true));
  add('Enemy Approaching',async()=>music.battle=await loadAudioAsset(MUSIC.battle,.48,true));
- add('CORE',async()=>music.core=await loadAudioAsset(MUSIC.core,.48,true));
- add('Your Best Friend / Flowey',async()=>music.flowey=await loadAudioAsset(MUSIC.flowey,.48,true));
- add('Heartache',async()=>music.toriel=await loadAudioAsset(MUSIC.toriel,.50,true));
- add('Ghost Fight',async()=>music.napstablook=await loadAudioAsset(MUSIC.napstablook,.50,true));
- add('Dummy!',async()=>music.maddummy=await loadAudioAsset(MUSIC.maddummy,.50,true));
- add('Nyeh Heh Heh!',async()=>music.papyrusIntro=await loadAudioAsset(MUSIC.papyrusIntro,.50,true));
- add('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
- add('Undyne exact music slot',async()=>music.undyne=await loadSavedOrLocalUndyneMusic());
- add('Undyne An Ending excerpt 1',async()=>music.undyneEnding1=await loadAudioAsset(MUSIC.undyneEnding1,.50,false));
- add('Undyne An Ending excerpt 2',async()=>music.undyneEnding2=await loadAudioAsset(MUSIC.undyneEnding2,.50,false));
- add('sans.',async()=>music.sans=await loadAudioAsset(MUSIC.sans,.44,true));
- add('Flashback (Excerpt)',async()=>music.flashback=await loadAudioAsset(MUSIC.flashback,.52,true));
- add('game over music',async()=>music.gameover=await loadAudioAsset(MUSIC.gameover,.55,true));
- add('Mettaton Quiz Show',async()=>music.mettatonQuiz=await loadAudioAsset(MUSIC.mettatonQuiz,.52,true));
+ addBg('CORE',async()=>music.core=await loadAudioAsset(MUSIC.core,.48,true));
+ addBg('Your Best Friend / Flowey',async()=>music.flowey=await loadAudioAsset(MUSIC.flowey,.48,true));
+ addBg('Heartache',async()=>music.toriel=await loadAudioAsset(MUSIC.toriel,.50,true));
+ addBg('Ghost Fight',async()=>music.napstablook=await loadAudioAsset(MUSIC.napstablook,.50,true));
+ addBg('Dummy!',async()=>music.maddummy=await loadAudioAsset(MUSIC.maddummy,.50,true));
+ addBg('Nyeh Heh Heh!',async()=>music.papyrusIntro=await loadAudioAsset(MUSIC.papyrusIntro,.50,true));
+ addBg('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
+ addBg('Undyne exact music slot',async()=>music.undyne=await loadSavedOrLocalUndyneMusic());
+ addBg('Undyne An Ending excerpt 1',async()=>music.undyneEnding1=await loadAudioAsset(MUSIC.undyneEnding1,.50,false));
+ addBg('Undyne An Ending excerpt 2',async()=>music.undyneEnding2=await loadAudioAsset(MUSIC.undyneEnding2,.50,false));
+ addBg('sans.',async()=>music.sans=await loadAudioAsset(MUSIC.sans,.44,true));
+ addBg('Flashback (Excerpt)',async()=>music.flashback=await loadAudioAsset(MUSIC.flashback,.52,true));
+ addBg('game over music',async()=>music.gameover=await loadAudioAsset(MUSIC.gameover,.55,true));
+ addBg('Mettaton Quiz Show',async()=>music.mettatonQuiz=await loadAudioAsset(MUSIC.mettatonQuiz,.52,true));
  loadTotal=tasks.length;
- // iOS Safari/WebViews are much happier with a small request pool than ~150
- // simultaneous image/audio loads. Six workers still boot quickly but avoid
- // socket/memory stampedes, and every successful remote file is persisted.
+ // iOS Safari/WebViews are much happier with a small request pool than ~500
+ // simultaneous image/audio loads, so they keep 4 workers. Desktop/hosted pages
+ // talk to the CDN over HTTP/2 and can safely keep 10 requests in flight, which
+ // cuts the first (uncached) boot several times over. Every successful remote
+ // file is still persisted, so later boots come from the local asset vault.
  let taskCursor=0;
- const workers=Array.from({length:Math.min(3,tasks.length)},async()=>{
+ const workers=Array.from({length:Math.min(localMobileAssetContext()?4:10,tasks.length)},async()=>{
    while(taskCursor<tasks.length){const i=taskCursor++;await tasks[i]()}
  });
  await Promise.all(workers);
+ // Remaining soundtracks load in the background with a small pool.
+ {let bgCursor=0;for(let w=0;w<2;w++)(async()=>{while(bgCursor<bgTasks.length){const i=bgCursor++;await bgTasks[i]()}})()}
  normalizeEnemyAssetTransparency();
  // Ice Cap uses the same generated IceShock shell/shadow pipeline as the rest of the roster.
  if(images.icecap?.[0]){images.icecapFrozen=makeFrozenSprite(images.icecap[0])||images.icecap[0];images.icecapIceShadow=makeIceSilhouette(images.icecap[0])||images.icecap[0];}
@@ -21287,6 +21773,12 @@ async function boot(){
    const whimCrit=images.whimsunHurt||images.whimsun[0];
    images.whimsunFrozen=makeFrozenSprite(whimCrit);
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
+ }
+ for(const id of ['moldbygg','temmie']){
+   const crit=addedEnemyIdleImage(id,performance.now(),true);
+   if(!crit)continue;
+   images[id+'Frozen']=makeFrozenSprite(crit)||crit;
+   images[id+'IceShadow']=makeIceSilhouette(crit,'#010061')||crit;
  }
  for(const id of ['snowdrake','loox','moldsmal','migosp','aaron','vulkin']){
    const frames=images[id];
@@ -22280,7 +22772,7 @@ function mpUpdateOneSoul(p, dt) {
   let { dx, dy } = mpInputAxis(p); p.moving = !!(dx || dy);
 
   if(currentBoss==='doggo'&&p.moving)doggoMovedDuringAttack=true;
-  const battleSpeedMul=1+Math.min(4,Math.max(0,Number(battleSoulSpeedStacks)||0))*.25;
+  const battleSpeedMul=1+Math.min(4,Math.max(-1,Number(battleSoulSpeedStacks)||0))*.25;
 
   if(currentBoss==='undyne'&&soulMode==='green'){
     if(p.keys.ArrowUp||p.keys.w){p.guardDir=3;p.guardIdeal=270}
