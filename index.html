@@ -118,6 +118,7 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-pyrope">pyrope</button>
     <button data-debug="boss-undyne">undyne</button>
     <button data-debug="boss-undyneex">undyne the undying</button>
+    <button data-debug="boss-mettatonex">mettaton ex</button>
     <button data-debug="boss-mettaton">mettaton quiz</button>
     <button data-debug="boss-custom">custom</button>
     <button data-debug="mode-classic">classic mode</button>
@@ -391,6 +392,52 @@ const IMG={
  uxMelt:[0,1].map(i=>RAW+`sprites/images/spr_undynex_melt_${i}.png`),
  uxSmear:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_smear_${i}.png`),
  uxFollowSpear:RAW+'sprites/images/spr_followspear_2_0.png',
+ // Mettaton EX (obj_mettb_body parts, ratings props and every bullet sprite).
+ mexUpper:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_mettb_upperbody_${i}.png`),
+ mexUpperHeart:RAW+'sprites/images/spr_mettb_upperbodyheart_0.png',
+ mexFace1:[0,1,2,3,4,5,6,7,8].map(i=>RAW+`sprites/images/spr_mettface1_${i}.png`),
+ mexFaceDef:[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>RAW+`sprites/images/spr_mettface_defeated_${i}.png`),
+ mexFaceGen:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_mettface_general_${i}.png`),
+ mexFaceHurt:[0,1,2].map(i=>RAW+`sprites/images/spr_mettface_hurt_${i}.png`),
+ mexLeg1:RAW+'sprites/images/spr_mettleg1_0.png',
+ mexLeg2:RAW+'sprites/images/spr_mettleg2_0.png',
+ mexLeg3:RAW+'sprites/images/spr_mettleg3_0.png',
+ mexLeg4:RAW+'sprites/images/spr_mettleg4_0.png',
+ mexLeg5:RAW+'sprites/images/spr_mettleg5_0.png',
+ mexLeg2Flip:RAW+'sprites/images/spr_mettleg2_flip_0.png',
+ mexLeg2FlipV:RAW+'sprites/images/spr_mettleg2_flip_v_0.png',
+ mexLeg2Unflip:RAW+'sprites/images/spr_mettleg2_unflip_0.png',
+ mexLeg2UnflipV:RAW+'sprites/images/spr_mettleg2_unflip_v_0.png',
+ mexBox:RAW+'sprites/images/spr_blackbox_pl_0.png',
+ mexBomb:[0,1].map(i=>RAW+`sprites/images/spr_plusbomb_${i}.png`),
+ mexBlastC:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_plusbomb_coreblast_${i}.png`),
+ mexBlastH:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_plusbomb_horblast_${i}.png`),
+ mexBlastV:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_plusbomb_verblast_${i}.png`),
+ mexLight:RAW+'sprites/images/spr_mettlightning_pl_0.png',
+ mexFodder:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(i=>RAW+`sprites/images/spr_parasolmett_${i}.png`),
+ mexKiss:RAW+'sprites/images/spr_kissbullet_0.png',
+ mexSparkle:[0,1,2,3,4].map(i=>RAW+`sprites/images/spr_tinysparkle_${i}.png`),
+ mexDance:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_tinydancemett_${i}.png`),
+ mexDanceTell:[0,1].map(i=>RAW+`sprites/images/spr_tinydancemett_tell_${i}.png`),
+ mexLegBulL:RAW+'sprites/images/spr_mettlegbullet_l_0.png',
+ mexLegBulR:RAW+'sprites/images/spr_mettlegbullet_r_0.png',
+ mexHandL:RAW+'sprites/images/spr_metthand_pl_0.png',
+ mexHandR:RAW+'sprites/images/spr_metthand_r_0.png',
+ mexTrig:[0,1,2].map(i=>RAW+`sprites/images/spr_yellowtrigger_pl_${i}.png`),
+ mexTrigOff:RAW+'sprites/images/spr_yellowtrigger_off_pl_0.png',
+ mexRec:[0,1].map(i=>RAW+`sprites/images/spr_recbox_${i}.png`),
+ mexRew:[0,1].map(i=>RAW+`sprites/images/spr_rewbox_${i}.png`),
+ mexDisco:RAW+'sprites/images/spr_discoball_pl_0.png',
+ mexDiscoInv:RAW+'sprites/images/spr_discoball_invert_pl_0.png',
+ mexHeart:[0,1].map(i=>RAW+`sprites/images/spr_mettheart_${i}.png`),
+ mexHeartC:[0,1].map(i=>RAW+`sprites/images/spr_mettheart_centered_${i}.png`),
+ mexStar:RAW+'sprites/images/spr_starburst_x_0.png',
+ mexExcl:[0,1].map(i=>RAW+`sprites/images/spr_exclamationpoint_${i}.png`),
+ mexBreak:[0,1].map(i=>RAW+`sprites/images/spr_happybreaktime_${i}.png`),
+ mexShot:[0].map(i=>RAW+`sprites/images/spr_heartbullet_${i}.png`),
+ mexSoul:[0,1].map(i=>RAW+`sprites/images/spr_heartyellow_flip_${i}.png`),
+ mexStageLight:[0,1].map(i=>RAW+`sprites/images/spr_stagelight_bad_${i}.png`),
+ mexArm:[1,2,3,4,5,6,7,8].map(i=>RAW+`sprites/images/spr_mettarm${i}_0.png`),
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -691,6 +738,26 @@ const IMG={
 const SFX={
  impact:RAW+'sound/audio/snd_impact.wav',
  bombTick:RAW+'sound/audio/snd_bomb.wav',
+ mexShoot:RAW+'sound/audio/snd_heartshot.wav',
+ mexBurst:RAW+'sound/audio/snd_mtt_burst.wav',
+ mexBurstSmall:RAW+'sound/audio/snd_mtt_burst.wav',
+ mexHit:RAW+'sound/audio/snd_mtt_hit.wav',
+ mexPrebomb:RAW+'sound/audio/snd_mtt_prebomb.wav',
+ mexSwallow:RAW+'sound/audio/snd_swallow.wav',
+ mexPhone:RAW+'sound/audio/snd_phone.wav',
+ mexBlock:RAW+'sound/audio/snd_block2.wav',
+ mexCreate:RAW+'sound/audio/mus_create.ogg',
+ mexExplosion:RAW+'sound/audio/mus_explosion.ogg',
+ mtt1:RAW+'sound/audio/snd_mtt1.wav',
+ mtt2:RAW+'sound/audio/snd_mtt2.wav',
+ mtt3:RAW+'sound/audio/snd_mtt3.wav',
+ mtt4:RAW+'sound/audio/snd_mtt4.wav',
+ mtt5:RAW+'sound/audio/snd_mtt5.wav',
+ mtt6:RAW+'sound/audio/snd_mtt6.wav',
+ mtt7:RAW+'sound/audio/snd_mtt7.wav',
+ mtt8:RAW+'sound/audio/snd_mtt8.wav',
+ mtt9:RAW+'sound/audio/snd_mtt9.wav',
+ txtUnd:RAW+'sound/audio/snd_txtund.wav',
  pomBark:RAW+'sound/audio/snd_pombark.wav',
  // UNDERTALE encounter transition flicker sound. The original battle transition
  // toggles the SOUL while playing snd_noise.
@@ -764,6 +831,10 @@ const MUSIC={
  undyne:RAW+'sound/audio/mus_undyneboss.ogg',
  // Battle Against a True Hero (scr_battlegroup case 25: music/x_undyne.ogg).
  undyneex:RAW+'sound/audio/mus_x_undyne.ogg',
+ // Death by Glamour, its pre-transform intro and the phone-call ending.
+ mettatonEx:RAW+'sound/audio/mus_mettaton_ex.ogg',
+ mettatonPre:RAW+'sound/audio/mus_mettaton_pretransform.ogg',
+ mettSad:RAW+'sound/audio/mus_mettsad.ogg',
  // Source death persistence switches away from Spear of Justice into the two
  // An Ending excerpts. These are exact resource hooks; there is no generated substitute.
  undyneEnding1:RAW+'sound/audio/endingexcerpt1.ogg',
@@ -1087,6 +1158,7 @@ const VANILLA_REWARDS={
  woshua:{exp:52,killGold:25,spareGold:25},
  pyrope:{exp:80,killGold:40,spareGold:40},
  undyneex:{exp:1500,killGold:0,spareGold:0},
+ mettatonex:{exp:800,killGold:0,spareGold:0},
  jerry:{exp:1,killGold:55,spareGold:55},
  tsunderplane:{exp:95,killGold:45,spareGold:60},
  vulkin:{exp:70,killGold:50,spareGold:40},
@@ -2292,7 +2364,7 @@ const MENU_MUSIC_SCREENS=new Set(['title','enemies','kills','spares','settings',
 let menuMusicAutoplayTried=false;
 function menuMusicScreen(){return MENU_MUSIC_SCREENS.has(screen)}
 function battleMusicTracks(){
- return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
+ return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.mettatonEx,music.mettatonPre,music.mettSad,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
 }
 function stopBattleMusicTracks(){for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}}
 function stopMenuMusic(reset=true){
@@ -2358,6 +2430,7 @@ function startBattleMusic(){
  else if(currentBoss==='papyrus'){
    track=papyrusBlue?(music.papyrus||music.papyrusIntro||music.battle):(music.papyrusIntro||music.battle);
  }else if(currentBoss==='undyneex')track=uxDying?null:(music.undyneex||null);
+ else if(currentBoss==='mettatonex')track=(mex.phase==='battle'&&!mex.killed)?(music.mettatonEx||null):null;
  else if(currentBoss==='undyne')track=undyneDying?(undyneDeathTrackPhase>=2?(music.undyneEnding2||null):(music.undyneEnding1||null)):(music.undyne||null);
  else if(currentBoss==='mettaton')track=music.mettatonQuiz||music.battle;
 
@@ -2433,6 +2506,8 @@ const ENEMY_LAYOUTS={
  pyrope:{x:245,y:0,w:150,h:250},
  // obj_undynex_body at (210,20); canvas spans room x 180..440, y -20..260.
  undyneex:{x:180,y:-20,w:260,h:280},
+ // obj_mettb_body at (240, box top - 136); canvas spans room x 180..460, y -10..260.
+ mettatonex:{x:180,y:-10,w:280,h:270},
  jerry:{x:245,y:150,w:150,h:72},
  // Exact battle composite is 190x160. Keep that broad aircraft silhouette.
  tsunderplane:{x:225,y:82,w:190,h:160},
@@ -2468,6 +2543,7 @@ const PAIR_MAIN_LAYOUTS={
  woshua:{x:200,y:100,w:100,h:102},
  pyrope:{x:180,y:0,w:135,h:225},
  undyneex:{x:110,y:-20,w:260,h:280},
+ mettatonex:{x:110,y:-10,w:280,h:270},
  tsunderplane:{x:145,y:96,w:176,h:148},
  vulkin:{x:202,y:128,w:92,h:114},
  undyne:{x:168,y:24,w:151,h:209},
@@ -3307,6 +3383,7 @@ const BOSS_OPTIONS=[
  {id:'tsunderplane',label:'TSUNDERPLANE',area:'HOTLAND',hp:80,atk:25,def:26,encounter:'* Tsunderplane swoops into your way... accidentally, apparently.',noelleEncounter:'* Noelle encountered Tsunderplane.'},
  {id:'pyrope',label:'PYROPE',area:'HOTLAND',hp:110,atk:8,def:1,encounter:'* Pyrope bounces into view!',noelleEncounter:'* Noelle encountered Pyrope.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
+ {id:'mettatonex',label:'METTATON EX',area:'CORE // THE PREMIERE',hp:1600,atk:8,def:1,encounter:'* Mettaton EX makes his premiere!',noelleEncounter:'* Mettaton EX makes his premiere!'},
  {id:'mettaton',label:'METTATON',area:'HOTLAND QUIZ SHOW',hp:9999,atk:30,def:255,encounter:'* Mettaton attacks!',noelleEncounter:'* Mettaton attacks!'},
  {id:'custom',label:'CUSTOM',area:'CREATOR',hp:120,atk:8,def:2,encounter:'* A custom monster appeared!',noelleEncounter:'* Noelle encountered a custom monster.'}
 ];
@@ -3602,6 +3679,8 @@ function targetDefense(id){
  if(vanillaMode&&eid==='undyne'&&id==='main'&&Number.isFinite(undyneDefAdjust)){
    def=undyneDefAdjust;
  }
+ // Mettaton EX's DEF drops by 5 every turn once the attack list loops (type >= 50).
+ if(vanillaMode&&eid==='mettatonex'&&id==='main')def=mexDef();
  return def;
 }
 
@@ -3879,7 +3958,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -4062,7 +4141,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4196,6 +4275,7 @@ const NOELLE_N_ACTIONS={
  loox:{gain:50,text:"* Noelle avoids staring and quietly apologizes for the eye contact.\n* Loox relaxes a little."},
  dogi:{gain:45,text:"* Noelle rolls in the snow with the Dogs.\n* They decide she smells like family."},
  woshua:{gain:50,text:"* Noelle lets Woshua scrub her sleeve.\n* It is thrilled to have something to clean."},
+ mettatonex:{gain:0,text:"* Noelle waves at the camera.\n* The ratings tick up a little."},
  undyneex:{gain:0,text:"* Noelle begs Undyne to stop.\n* Undyne doesn't even hear her."},
  pyrope:{gain:40,text:"* Noelle warms her hands near Pyrope.\n* Pyrope is flattered by the attention."},
  lesserdog:{gain:60,text:"* Noelle pets Lesser Dog.\n* Its neck grows a little. Noelle pretends not to notice."},
@@ -4230,6 +4310,7 @@ const SUSIE_S_ACTIONS={
  loox:{gain:35,text:"* Susie tells Loox to quit staring.\n* Then she admits the eye thing is kind of cool."},
  dogi:{gain:45,text:"* Susie pets both Dogs at once.\n* Their minds have been expanded."},
  woshua:{gain:40,text:"* Susie tells Woshua a filthy joke.\n* Its powers are neutralized."},
+ mettatonex:{gain:0,text:"* Susie flexes for the audience.\n* Mettaton calls it a stunning cameo."},
  undyneex:{gain:0,text:"* Susie tells Undyne to back off.\n* Undyne laughs and raises her spear."},
  pyrope:{gain:50,text:"* Susie cranks the heat way up.\n* Pyrope loves her immediately."},
  lesserdog:{gain:65,text:"* Susie pets Lesser Dog way too hard.\n* Its neck launches upward in joy."},
@@ -4299,6 +4380,7 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='woshua')return woshuaActOptions();
  if(id==='pyrope')return pyropeActOptions();
  if(id==='undyneex')return ['Check'];
+ if(id==='mettatonex')return mettatonExActOptions();
  if(id==='jerry')return ['Check','Ditch'];
  if(id==='greaterdog')return greatDogActOptions();
  if(id==='temmie')return temmieActOptions();
@@ -4660,6 +4742,8 @@ function performAct(targetId,choice){
    handleDogiAct(choice);
  }else if(currentBoss==='woshua'){
    handleWoshuaAct(choice);
+ }else if(currentBoss==='mettatonex'){
+   handleMettatonExAct(choice);
  }else if(currentBoss==='undyneex'){
    setText(undyingCheckText(),()=>beginEnemyTurn());
  }else if(currentBoss==='pyrope'){
@@ -5238,7 +5322,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -5324,6 +5408,7 @@ function finishEncounterIntro(){
  const cb=encounterIntroDone,text=encounterIntroText;
  encounterIntroDone=null;encounterIntroText='';
  state='menu';
+ if(currentBoss==='mettatonex'&&!mex.introDone){mexBeginIntro();return}
  setText(text);
  if(audioUnlocked&&screen==='battle')startBattleMusic();
  if(cb)cb();
@@ -5911,7 +5996,7 @@ function attackSpeechForCurrentBoss(){
  if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
  if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
  if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')return snowdin2Speech();
- if(currentBoss==='undyneex')return '';
+ if(currentBoss==='undyneex'||currentBoss==='mettatonex')return '';
 
  if(currentBoss==='doggo'){
    if(doggoPets>=5)return "OK. That's enough.";
@@ -7403,6 +7488,8 @@ function startAttack(now){
  // Actual Undertale battle dialogue lives in white speech bubbles beside the
  // enemy. Unlike the old implementation, the attack clock does NOT run behind
  // the bubble. The player has to finish/skip the speech before bullets begin.
+ // Mettaton EX talks every turn (obj_mettatonex alarm 6) and may end the show on ratings.
+ if(currentBoss==='mettatonex'&&!enemyDead&&mexBeginTalk(now))return;
  if(beginBattleAttackSpeech(now)){
    state='battleSpeech';
    bullets=[];
@@ -7834,6 +7921,8 @@ function returnMenu(){
    if(vulkinDiscouraged)setText('* Vulkin stands in the corner.');
    else if(mercy>=100)setText('* Vulkin parades around you proudly.');
    else{const lines=['* Vulkin parades around the room.','* Vulkin is making coffee in its crater.','* Vulkin is wiggling its weird rump.','* Vulkin makes a smoke hoop and jumps through it.','* Smells like a lava lamp.'];setText(lines[Math.floor(Math.random()*lines.length)])}
+ }else if(currentBoss==='mettatonex'){
+   setText(mexFlavor());
  }else if(currentBoss==='undyneex'){
    setText(undyingFlavor());
  }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
@@ -8029,6 +8118,10 @@ function startEnemyKill(now=performance.now()){
  }
  if(currentBoss==='undyneex'){
    startUndyingDeath(now);
+   return;
+ }
+ if(currentBoss==='mettatonex'){
+   mexStartDeath(now);
    return;
  }
 
@@ -8488,7 +8581,7 @@ function startEnemySpare(targetId=null,now=performance.now()){
 }
 
 
-const MAJOR_BOSS_IDS=new Set(['toriel','napstablook','maddummy','papyrus','mettaton']);
+const MAJOR_BOSS_IDS=new Set(['toriel','napstablook','maddummy','papyrus','mettaton','mettatonex']);
 
 function activeEncounterEnemyIds(){
  const ids=[];
@@ -8503,6 +8596,7 @@ function activeEncounterEnemyIds(){
 function fleeBlocker(){
  if(currentBoss==='undyne'&&!enemyDead&&(soulMode==='green'||undyneDying))return {id:'undyne',slot:'main'};
  if(currentBoss==='undyneex'&&!enemyDead)return {id:'undyneex',slot:'main'};
+ if(currentBoss==='mettatonex'&&!enemyDead)return {id:'mettatonex',slot:'main'};
  return activeEncounterEnemyIds().find(v=>MAJOR_BOSS_IDS.has(v.id))||null;
 }
 
@@ -8549,6 +8643,7 @@ function fleeBlockedText(blocker){
      :'* You try to flee.\n* Papyrus dramatically points back toward the battle box.\n* The escape attempt has been captured.';
  }
 
+ if(blocker.id==='mettatonex')return '* You try to flee.\n* The cameras follow you everywhere.';
  if(blocker.id==='undyneex')return '* You try to flee.\n* Undyne the Undying blocks the way.';
  if(blocker.id==='undyne'){
    return undyneDying?'* You try to flee.\n* Undyne refuses to let the battle end here.':'* You try to flee.\n* The green SOUL cannot leave the spear formation.';
@@ -9083,7 +9178,7 @@ function normalizeEnemyAssetTransparency(){
   'dummy','dummyDeath',
   'froggit','froggitHead','froggitLegs','finalFroggitIdle','finalFroggitHurt','finalFroggitBody','finalFroggitHead','finalFroggitHeadHurt',
   'whimsun','whimsunHurt','whimsalotHead','whimsalotBody','whimsalotWing','whimsalotHurt',
-  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxFaceLaugh','uxFaceE','uxMelt','uxEyebeam','uxSmear','uxFollowSpear','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
+  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','mexUpper','mexUpperHeart','mexFace1','mexFaceDef','mexFaceGen','mexFaceHurt','mexLeg1','mexLeg2','mexLeg3','mexLeg4','mexLeg5','mexLeg2Flip','mexLeg2FlipV','mexLeg2Unflip','mexLeg2UnflipV','mexArm','uxFace1','uxFaceDamage','uxFaceLaugh','uxFaceE','uxMelt','uxEyebeam','uxSmear','uxFollowSpear','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
   'shyren','shyrenBody','shyrenTurn','shyrenSing','shyrenAgent',
   'undyneArmorBase','undyneHurt','undyneFatal','undyneMelt','undyneLastMelt',
   'tsunderplaneRaw','tsunderplaneHat','tsunderplaneCloud','tsunderplaneIdle',
@@ -10124,7 +10219,7 @@ function snowgraveTightFit(im,r){
 // body is the forced case). Undyne the Undying shrugs off 1/50 of her max HP
 // per cast, so it takes 20 SnowGraves to put her down.
 const SNOWGRAVE_DAMAGE=2986;
-const SNOWGRAVE_FORCED_KILL=new Set(['mettaton']);
+const SNOWGRAVE_FORCED_KILL=new Set(['mettaton','mettatonex']);
 function snowgraveForcedKill(target){return SNOWGRAVE_FORCED_KILL.has(targetEnemyId(target))}
 function snowgraveDamageFor(target){
  if(targetEnemyId(target)==='undyneex')return Math.ceil(targetMaxHp(target)/UX_SNOWGRAVES_TO_KILL);
@@ -11175,7 +11270,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -11199,6 +11294,7 @@ function reset(){
  resetDogEnemies();
  resetSnowdin2Enemies();
  resetUndying();
+ resetMettatonEx();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -11609,7 +11705,7 @@ function chooseConfirm(){
    if(typeof mpBattleActive!=='undefined'&&mpBattleActive&&typeof mpItemTargets==='function'){
      mpItemPendingIndex=clamp(sub,0,inventory.length-1);state='itemTarget';sub=0;return;
    }
-   const it=inventory.splice(sub,1)[0],before=hp;consumeVanillaInventoryItem(it?.id);hp=Math.min(maxHp,hp+battleItemHealing(it));applyBattleItemBonus(it);play('item');setTimeout(()=>play('heal'),90);
+   const it=inventory.splice(sub,1)[0],before=hp;consumeVanillaInventoryItem(it?.id);hp=Math.min(maxHp,hp+battleItemHealing(it));applyBattleItemBonus(it);if(currentBoss==='mettatonex')mexItemUsed(it);play('item');setTimeout(()=>play('heal'),90);
    if(it.lastDream)setText(`* Through DETERMINATION, the dream became true.\n* You recovered ${hp-before} HP!`,()=>beginEnemyTurn());
    else if(it.id==='sea_tea')setText(`* You drank the Sea Tea.\n* You recovered ${hp-before} HP!\n* Your SPEED increased!`,()=>beginEnemyTurn());
    else if(it.id==='legendary_hero')setText(`* You ate the Legendary Hero.\n* You recovered ${hp-before} HP!\n* Your ATTACK increased!`,()=>beginEnemyTurn());
@@ -12997,6 +13093,7 @@ function spawnSupportNoCooldown(now){
 }
 
 function spawnBullet(now){
+ if(currentBoss==='mettatonex'){nextSpawn=now+999999;return}
  if(currentBoss==='sans5000'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
    const b=createPapBone('right',70,false,3,false,10,'main');
@@ -13019,7 +13116,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13228,6 +13325,7 @@ function spawnBullet(now){
  nextSpawn=now+(attackWave===2?260:210);
 }
 function hurtPlayer(now,amount=4,owner='main',opts=null){
+ // opts.noBracket: scr_damagestandard_x style hits that skip the HP-bracket bonus.
  if(debugMode&&debugInvincible){invUntil=now+140;return}
  if(now<invUntil)return;
  if(modBattleEnabled('godMode')){invUntil=now+140;return}
@@ -13247,7 +13345,7 @@ function hurtPlayer(now,amount=4,owner='main',opts=null){
  if(vanillaMode){
    let bonus=0;
    for(const th of [21,30,40,50,60,70,80,90])if(hp>=th)bonus++;
-   scaled=Math.round(amount+bonus-effectivePlayerStats().def/5);
+   scaled=Math.round(amount+(opts?.noBracket?0:bonus)-effectivePlayerStats().def/5);
  }
  if(typeof bossRushActive!=='undefined'&&bossRushActive)scaled*=bossRushDifficultyData().damageMul;
  // V153: armor can reduce damage heavily, but real damaging attacks keep a
@@ -13535,6 +13633,7 @@ function update(dt,now){
  }
  if(screen!=='battle')return;
  updateUndyingDeath(now);
+ updateMettatonEx(dt,now);
  undyingSyncIceSpeech();
  updateMercyImpactWatch(now);
  if(state==='encounterIntro'){
@@ -13638,7 +13737,7 @@ function update(dt,now){
        const ch=battleSpeech.text[battleSpeech.char-1];
        if(ch&&ch!==' '&&ch!=='\n'&&battleSpeech.char%2===0){
          const speechBoss=battleSpeech.voiceBoss||currentBoss;
-         const voice=speechBoss==='papyrus'?'papyrusText':'text';
+         const voice=speechBoss==='papyrus'?'papyrusText':(speechBoss==='mettatonex'?('mtt'+(1+Math.floor(Math.random()*9))):((speechBoss==='undyne'&&currentBoss==='undyneex')?'txtUnd':'text'));
          play(voice,speechBoss==='papyrus'?1:(.98+Math.random()*.04));
        }
      }
@@ -13697,6 +13796,7 @@ function update(dt,now){
        setTargetHp(hitTarget,Math.max(0,before-hitDamage));
        maybeMakeTargetTiredAfterDamage(hitTarget,before,targetHp(hitTarget));
        if(hitTarget==='main'&&currentBoss==='undyne'&&targetHp('main')>0)undyneApplyHpProgression();
+       if(hitTarget==='main'&&currentBoss==='mettatonex'&&hitDamage>0)mexOnPlayerHit();
        play('damage');
      }
    }
@@ -14817,6 +14917,7 @@ function update(dt,now){
    else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
    else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')attackDuration=snowdin2Duration();
    else if(currentBoss==='undyneex')attackDuration=uxDuration();
+   else if(currentBoss==='mettatonex')attackDuration=99999999;
    else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
    else if(currentBoss==='icecap')attackDuration=(liveMonsterPopulation()<=1?100:150)*(1000/30); // obj_icecap turntimer
    else if(['snowdrake','icecap','moldsmal','migosp','whimsun','whimsalot','aaron'].includes(currentBoss))attackDuration=4500;
@@ -15316,7 +15417,9 @@ function drawDamageWriter(now){
  // obj_undyne_ex creates its dmgwriter at (x, y+150): below her face, on screen.
  const yStart=targetEnemyId(hitTarget)==='doggo'
    ?Math.max(rawYStart,58*S)
-   :(targetEnemyId(hitTarget)==='undyneex'?r.y+(UX_OBJ_Y+150-UX_CANVAS_Y)*(r.w/UX_CANVAS_W)-24*S:rawYStart);
+   :(targetEnemyId(hitTarget)==='undyneex'?r.y+(UX_OBJ_Y+150-UX_CANVAS_Y)*(r.w/UX_CANVAS_W)-24*S
+   // obj_mettatonex: dmgwriter at (x, y+100) with the monster at (210, 60).
+   :(targetEnemyId(hitTarget)==='mettatonex'?r.y+(160+10)*(r.w/280)-24*S:rawYStart));
  const barW=100*S,barTop=yStart+8*S,barBottom=yStart+20*S,barH=barBottom-barTop;
  ctx.fillStyle='#000';ctx.fillRect(Math.round(writerX-1*S),Math.round(barTop-1*S),Math.round(barW+2*S),Math.round(barH+2*S));
  ctx.fillStyle='#404040';ctx.fillRect(Math.round(writerX),Math.round(barTop),Math.round(barW),Math.round(barH));
@@ -17237,7 +17340,8 @@ function undyingCollide(b,now){
  if(!UX_KINDS.has(b.kind))return false;
  const U=UT_SCALE;
  if(b.kind==='uxRise'){
-   if(!b.visible||b.part>=4||b.deact)return true;
+   // obj_heart vs obj_risespearbullet: only while part > 0 && part < 4.
+   if(!b.visible||b.part<1||b.part>=4||b.deact)return true;
    // Clip the hitbox to the board, like draw_self_border_ext clips the sprite.
    const x0=b.x+6*U,y0=Math.max(ARENA.y,b.y),y1=Math.min(ARENA.y+ARENA.h,b.y+60*U);
    if(y1>y0&&rectHit(soul.x-6*U,soul.y-6*U,12*U,12*U,x0,y0,12*U,y1-y0))hurtPlayer(now,b.damage,'main');
@@ -17484,6 +17588,1321 @@ function updateUndyingDeath(now){
  }
 }
 
+// ===================== METTATON EX =====================
+// Rebuilt from UNDERTALE's obj_mett_bossintro, obj_mettatonex, obj_mettb_body,
+// obj_ratingsmaster, obj_mettattackgen and every bullet object it spawns
+// (obj_blackbox_pl, obj_plusbomb(+_explosion), obj_mettleg_l/r, obj_metthand_l/r,
+// obj_mettfodder, obj_dancemett, obj_kissybullet_pl, obj_mettlightning_pl,
+// obj_discoball_pl, obj_blackbox_rewinder, obj_essaystuff, obj_mettheart_1..4,
+// obj_bulletblocker, obj_bulletbomb, obj_legline_l/r, obj_mettheart_burst).
+// Everything is stepped at 30fps in room pixels and drawn * UT_SCALE.
+const MEX_STEP=1000/30,MEX_BX=240;
+const MEX_BORDERS={0:[32,602,250,385],24:[235,405,250,385],26:[295,345,250,385],27:[270,370,250,385]};
+let mex=null;
+function mexChoose(...a){return a[Math.floor(Math.random()*a.length)]}
+function mexRand(n){return Math.random()*n}
+function mexNewBody(){
+ return {legl:0,legr:0,arml:0,armr:0,leglh:0,legrh:0,xoffl:0,xoffr:0,yoffl:0,yoffr:0,siner:0,lsin:0,rsin:0,faceno:0,
+   hurt:2,hurtface:0,myalpha:1,myblend:1,sineron:1,pause:0,dancewait:25,alarm5:125,alarm6:5,dsf:0,ds1:0,ds2:0,
+   fadewhite:0,whiteval:0,bodyopen:0,bodyimg:0,heartdead:0,dance:1,noarm:0,noleg:0,endface:0,faceSet:0,legh:72,offangle:0,
+   exhaust:[],limbs:[]};
+}
+function resetMettatonEx(){
+ mex={turns:0,ratings:4000,rq:Array.from({length:6},()=>({n:'',v:0,s:900})),rp:[],accu:0,ralarm:6,typeuse:{},
+   boast:false,heel:false,checkHp:null,timeloss:0,oo:0,oob:0,active:true,siner:0,
+   specialdam:[0,0,0],attacktype:29,def:1,border:24,body:mexNewBody(),faceEmotion:0,
+   gen:null,objs:[],fx:[],charge:0,acc:0,lastStep:-1,prevZ:false,
+   introDone:false,intro:null,phase:'battle',essay:null,seq:null,caller:null,killed:false,endFade:null};
+ const thisi=Math.floor(Math.random()*8);
+ for(let i=0;i<10;i++)mex.rp.push(i===thisi?4000:4000-Math.random()*500);
+}
+resetMettatonEx();
+
+// ---------- ratings (obj_ratingsmaster) ----------
+const MEX_RQ={1:'Violence',2:'Disappoint',3:'Justice',4:'Action',8:'EatingGarbage?',9:'OnBrandFood',10:'OnBrandFood',11:'Dramatic',12:'Writing',13:'OnBrandFood'};
+function mexRate(curtype,essay=0){
+ if(!mex.active)return;
+ const tu=mex.typeuse,u=tu[curtype]||0;let v=0;
+ if(curtype===1)v=[50,25,20,15][u]??10;
+ if(curtype===2){v=-100;if(u>=5)v=-50;if(u>=20)v=-1;mex.boast=false}
+ if(curtype===3)v=100;
+ if(curtype===4)v=[300,200,150,100][u]??50;
+ if(curtype===8)v=-50;
+ if(curtype===9)v=u===0?300:200;
+ if(curtype===10)v=u===0?500:300;
+ if(curtype===11){
+   v=100;
+   if(hp<maxHp/1.5)v=150;if(hp<maxHp/2)v=250;if(hp<maxHp/4)v=400;if(hp<4)v=500;if(hp===1)v=600;
+ }
+ if(curtype===12)v=essay;
+ if(curtype===13)v=700;
+ tu[curtype]=u+1;
+ if(mex.turns>=20&&v>0)v*=2;
+ mex.rq.unshift({n:MEX_RQ[curtype]||'',v,s:0});mex.rq.length=6;
+ mex.ratings+=v;
+}
+function mexAddRatings(n){if(mex.active)mex.ratings+=n}
+function mexRatingsStep(){
+ if(!mex.active)return;
+ mex.siner++;
+ if(--mex.ralarm<=0){
+   mex.ralarm=6;
+   for(let i=9;i>0;i--)mex.rp[i]=mex.rp[i-1];
+   mex.rp[0]=mex.ratings-Math.random()*(mex.ratings/2);
+   if(mex.accu===6)mex.rp[0]=mex.ratings;
+   mex.accu=(mex.accu+1)%10;
+ }
+ for(let i=0;i<6;i++)mex.rq[i].s+=(i+2)/2;
+ if(mex.checkHp==null)mex.checkHp=hp;
+ if(mex.checkHp>hp){
+   let t=1;if(mex.boast){t=2;mex.boast=false}if(mex.heel)t=3;
+   mexRate(t);
+ }
+ mex.checkHp=hp;
+ if(mex.boast){
+   if(state==='attack'){
+     mex.oob^=1;mex.ratings+=mex.oob===0?1:2;
+     if(mex.turns>=20)mex.ratings+=2;
+   }
+   if(state==='menu')mex.boast=false;
+   if(mex.essay)mex.boast=false;
+ }
+ if(mex.heel&&state==='menu')mex.heel=false;
+ if(state==='menu'){
+   mex.timeloss++;mex.oo=(mex.oo+1)%4;
+   if(mex.timeloss<4000&&mex.oo===0)mex.ratings--;
+ }
+}
+function drawMexRatings(){
+ if(!mex.active||mex.phase==='intro')return;
+ const U=UT_SCALE,X=20,Y=10,s=mex.siner;
+ ctx.save();
+ ctx.fillStyle='#fff';
+ ctx.font=`${Math.round(13*U)}px "DTM Mono", "Determination Mono", monospace`;
+ ctx.textBaseline='top';ctx.textAlign='left';
+ ctx.save();ctx.translate((X+20+Math.sin(s/4))*U,(Y+Math.cos(s/4))*U);ctx.scale(1-Math.sin(s/4)*.025,1-Math.cos(s/4)*.025);
+ ctx.fillText('RATINGS '+Math.round(mex.ratings),0,0);ctx.restore();
+ ctx.font=`${Math.round(7*U)}px "DTM Mono", "Determination Mono", monospace`;
+ for(let i=0;i<6;i++){
+   const q=mex.rq[i];if(!q.n&&!q.v)continue;
+   let a=1;if(q.s>120)a=clamp((170-q.s)/50,0,1);
+   const xx=q.s<10?Math.cos(q.s)*21/(q.s*2+1):0;
+   ctx.globalAlpha=a;
+   ctx.fillStyle=q.v>=0?'#00ff00':'#ff0000';
+   ctx.fillText(q.n,(X+60+xx)*U,(Y+140+i*12)*U);
+   ctx.fillText((q.v>=0?'+':'')+q.v,(X+130+xx)*U,(Y+140+i*12)*U);
+ }
+ ctx.globalAlpha=1;
+ ctx.strokeStyle='#fff';ctx.lineWidth=3*U;
+ ctx.beginPath();ctx.moveTo((X+10)*U,(Y+40)*U);ctx.lineTo((X+10)*U,(Y+130)*U);ctx.lineTo((X+180)*U,(Y+130)*U);ctx.stroke();
+ ctx.lineWidth=U;ctx.strokeStyle='#ffff00';
+ ctx.beginPath();ctx.moveTo((X+10)*U,(Y+55)*U);ctx.lineTo((X+180)*U,(Y+55)*U);ctx.stroke();
+ const ry=Math.min(95,mex.ratings*.0075);
+ ctx.strokeStyle='#00ffff';ctx.beginPath();ctx.moveTo((X+10)*U,(Y+130-ry)*U);ctx.lineTo((X+180)*U,(Y+130-ry)*U);ctx.stroke();
+ ctx.strokeStyle='#ff00ff';ctx.lineWidth=2*U;ctx.beginPath();
+ for(let i=0;i<9;i++){
+   const a=Math.min(95,mex.rp[i]*.0075),b2=Math.min(95,mex.rp[i+1]*.0075);
+   ctx.moveTo((X+10+i*20)*U,(Y+130-a)*U);ctx.lineTo((X+30+i*20)*U,(Y+130-b2)*U);
+ }
+ ctx.stroke();
+ ctx.restore();
+}
+
+// ---------- body (obj_mettb_body) ----------
+const MEX_LEGS={0:['mexLeg1',-14,10,36],1:['mexLeg2',-16,6,8],2:['mexLeg3',-10,14,60],3:['mexLeg4',-10,14,30],4:['mexLeg5',-18,2,42]};
+const MEX_LEGS_L_SPLIT={9:['mexLeg2Flip',-5,2,6],10:['mexLeg2FlipV',0,5,2]};
+const MEX_LEGS_R_SPLIT={9:['mexLeg2Unflip',20,6,8],10:['mexLeg2UnflipV',15,2,0]};
+const MEX_LEG_ORIG={mexLeg1:[12,12],mexLeg2:[6,2],mexLeg3:[8,10],mexLeg4:[4,10],mexLeg5:[3,4],mexLeg2Flip:[92,2],mexLeg2FlipV:[92,13],mexLeg2Unflip:[6,2],mexLeg2UnflipV:[6,13]};
+const MEX_ARM_ORIG=[[33,0],[38,11],[25,1],[22,35],[5,2],[21,25],[52,0],[3,58]];
+function mexBodyY(){return (box.y/UT_SCALE)-136}
+function mexBodyRandomize(bd){
+ bd.legr=Math.floor(mexRand(5));bd.legl=Math.floor(mexRand(5));
+ bd.arml=Math.floor(mexRand(8));bd.armr=Math.floor(mexRand(8));bd.faceno=Math.floor(mexRand(9));
+}
+function mexBodyOpen(bd){
+ bd.legl=bd.legr=bd.arml=bd.armr=0;bd.leglh=bd.legrh=0;bd.xoffr=bd.yoffl=0;bd.siner=bd.lsin=bd.rsin=0;bd.faceno=0;bd.bodyopen=1;
+}
+function mexLegInfo(bd,side){
+ const v=side==='l'?bd.legl:bd.legr;
+ if(v===9||v===10)return (side==='l'?MEX_LEGS_L_SPLIT:MEX_LEGS_R_SPLIT)[v];
+ return MEX_LEGS[v]||MEX_LEGS[0];
+}
+function mexBodyStep(bd){
+ // alarm[5]: strike a new random pose whenever the player is choosing a command.
+ if(--bd.alarm5<=0){bd.alarm5=bd.dancewait;if(state==='menu'&&bd.dance===1)mexBodyRandomize(bd)}
+ if(--bd.alarm6<=0){
+   bd.alarm6=10;
+   if(bd.noarm===1){
+     for(const dx of [36,110])bd.exhaust.push({x:MEX_BX+dx+Math.sin(bd.siner/3.5),y:mexBodyY()-bd.legh+80+Math.cos(bd.siner/3.5)*2,hs:(dx<100?-1:1)*(1+mexRand(1)),vs:1+mexRand(1),a:1});
+   }
+ }
+ for(const e of bd.exhaust){e.x+=e.hs;e.y+=e.vs;e.a-=.08}
+ bd.exhaust=bd.exhaust.filter(e=>e.a>0);
+ for(const l of bd.limbs){l.vs+=l.grav;l.x+=l.hs;l.y+=l.vs;l.ang+=l.aa;
+   if(l.y>520&&!l.done){l.done=true;play('impact')}}
+ bd.limbs=bd.limbs.filter(l=>l.y<560);
+ if(bd.noleg===0){
+   const L=mexLegInfo(bd,'l'),R=mexLegInfo(bd,'r');
+   bd.xoffl=L[1];bd.yoffl=L[2];bd.leglh=L[3];bd.xoffr=R[1];bd.yoffr=R[2];bd.legrh=R[3];
+ }
+ const split=[9,10].includes(bd.legl)||[9,10].includes(bd.legr);
+ if(!split){
+   bd.offangle=0;
+   if(bd.leglh>10||bd.legrh>10&&bd.sineron===1)bd.siner++;
+   if(bd.sineron===1){bd.rsin++;bd.lsin++}
+   if(bd.leglh>bd.legrh){bd.legh=bd.leglh*2;bd.lsin=0}else{bd.legh=bd.legrh*2;bd.rsin=0}
+   if(Math.abs(bd.leglh-bd.legrh)<5){bd.lsin=0;bd.rsin=0}
+ }else{
+   bd.legh=Math.max(bd.leglh,bd.legrh)*2;
+   if(bd.legl===10)bd.lsin=0;
+   if(bd.sineron===1){bd.siner++;bd.rsin++;bd.lsin++}
+   bd.offangle=10;
+ }
+ bd.ds1=mexRand(bd.dsf*2)-bd.dsf;bd.ds2=mexRand(bd.dsf*2)-bd.dsf;
+ if(bd.bodyopen===1){if(bd.bodyimg<5)bd.bodyimg+=.25}else if(bd.bodyimg>0)bd.bodyimg-=.25;
+ if(bd.pause===1&&bd.hurt===0){bd.hurt=1;bd.hurtface=mexChoose(0,1)}
+ if(bd.pause===2&&bd.hurt===0){bd.hurt=1;bd.hurtface=2}
+ if(bd.pause>0&&bd.pause<3&&state!=='fightHit')bd.pause=0;
+ if(bd.pause===0)bd.hurt=0;
+ if(bd.noleg===1){
+   bd.legrh=bd.legrh>6?bd.legrh-4:6;bd.leglh=bd.leglh>6?bd.leglh-4:6;bd.legh=bd.legh>6?bd.legh-4:6;
+ }
+ if(bd.fadewhite===1)bd.whiteval+=.2;
+}
+function mexDropArms(bd){
+ if(bd.noarm)return;bd.noarm=1;
+ const y=mexBodyY();
+ bd.limbs.push({key:'mexArm',idx:bd.arml,x:MEX_BX+36+Math.sin(bd.siner/3.5),y:y-bd.legh+80,sx:2,grav:.3+mexRand(.1),vs:0,hs:-2,aa:2,ang:0,orig:MEX_ARM_ORIG[bd.arml]});
+ bd.limbs.push({key:'mexArm',idx:bd.armr,x:MEX_BX+110+Math.sin(bd.siner/3.5),y:y-bd.legh+80,sx:-2,grav:.3+mexRand(.1),vs:0,hs:2,aa:-2,ang:0,orig:MEX_ARM_ORIG[bd.armr]});
+}
+function mexDropLegs(bd){
+ if(bd.noleg)return;
+ bd.dance=0;bd.noleg=1;
+ const y=mexBodyY(),L=mexLegInfo(bd,'l'),R=mexLegInfo(bd,'r');
+ bd.limbs.push({key:L[0],x:MEX_BX+90-bd.xoffl-32,y:y+120+bd.yoffl-bd.legh,sx:-2,grav:.3+mexRand(.1),vs:0,hs:-2,aa:2,ang:0,orig:MEX_LEG_ORIG[L[0]]});
+ bd.limbs.push({key:R[0],x:MEX_BX+90+bd.xoffr,y:y+120+bd.yoffr-bd.legh,sx:2,grav:.3+mexRand(.1),vs:0,hs:2,aa:-2,ang:0,orig:MEX_LEG_ORIG[R[0]]});
+}
+function mexDrawSprite(g,im,rx,ry,ox,oy,sx,sy,deg,alpha,k,X0,Y0){
+ if(!im)return;
+ g.save();g.globalAlpha*=clamp(alpha,0,1);
+ g.translate(X0+rx*k,Y0+ry*k);g.rotate(-deg*Math.PI/180);g.scale(sx*k,sy*k);
+ g.drawImage(im,-ox,-oy);g.restore();
+}
+function mexFaceImage(bd){
+ if(bd.endface)return (images.mexFaceGen||[])[clamp(mex.faceEmotion,0,9)];
+ if(bd.hurt===1)return (images.mexFaceHurt||[])[bd.hurtface];
+ if(bd.hurt===2||bd.faceSet===1)return (images.mexFaceDef||[])[clamp(mex.faceEmotion,0,11)];
+ return (images.mexFace1||[])[bd.faceno];
+}
+// Draws the whole body in room space; X0/Y0 is the screen position of room (0,0).
+function mexDrawBody(g,k,X0,Y0,alpha=1){
+ const bd=mex.body,y=mexBodyY(),x=MEX_BX,s=bd.siner,legh=bd.legh;
+ const a=bd.myalpha*alpha;
+ const sp=(key,rx,ry,sx,sy,deg,orig)=>mexDrawSprite(g,images[key],rx,ry,orig[0],orig[1],sx,sy,deg,a,k,X0,Y0);
+ if(bd.noleg===0){
+   const R=mexLegInfo(bd,'r'),L=mexLegInfo(bd,'l');
+   sp(R[0],x+90+bd.xoffr,y+120+bd.yoffr-legh-Math.sin(s/2)*.05,2,2-Math.sin(s/3.5)*.05,Math.sin(bd.rsin/7)*10-bd.offangle,MEX_LEG_ORIG[R[0]]);
+   sp(L[0],x+90-bd.xoffl-32,y+120+bd.yoffl-legh-Math.sin(s/2)*.05,-2,2-Math.sin(s/3.5)*.05,Math.sin(bd.lsin/7)*10,MEX_LEG_ORIG[L[0]]);
+ }
+ const arm=(i,rx,sx)=>mexDrawSprite(g,(images.mexArm||[])[i],rx,y-legh+80+Math.cos(s/3.5)*2,MEX_ARM_ORIG[i][0],MEX_ARM_ORIG[i][1],sx,2,0,a,k,X0,Y0);
+ if(bd.noarm===0){
+   if(bd.arml!==5)arm(bd.arml,x+36+Math.sin(s/3.5),2);
+   if(bd.armr!==5)arm(bd.armr,x+110+Math.sin(s/3.5),-2);
+ }
+ // spr_mettb_upperbody: the exported frames are trimmed; they share the top edge,
+ // so anchor them 64px above the source draw point with the face over the collar.
+ const bi=Math.floor(bd.bodyimg),ub=(images.mexUpper||[])[clamp(bi,0,5)];
+ const bx=x+72+Math.sin(s/3.5)+bd.ds1,by=y-legh+134+Math.cos(s/3.5)*2+bd.ds2;
+ mexDrawSprite(g,ub,bx,by,36,32,2,2,0,a,k,X0,Y0);
+ const coreOut=mex.objs.some(o=>o.t==='heart'||o.t==='burst');
+ if(!coreOut&&bd.heartdead===0)mexDrawSprite(g,images.mexUpperHeart,bx,by,36-37,32-11,2,2,0,a,k,X0,Y0);
+ const fx=x+68,fy=y+40-legh+Math.cos(s/3.5)*3;
+ const face=mexFaceImage(bd),shake=(bd.hurt===2||bd.faceSet===1)?1:0;
+ mexDrawSprite(g,face,fx-bd.ds1*shake,fy-bd.ds2*shake,19,17,2,2,0,a,k,X0,Y0);
+ if(bd.noarm===0){
+   if(bd.arml===5)arm(bd.arml,x+42+Math.sin(s/3.5),2);
+   if(bd.armr===5)arm(bd.armr,x+110+Math.sin(s/3.5),-2);
+ }
+}
+function mexDrawLimbsAndExhaust(k,X0,Y0){
+ const bd=mex.body;
+ for(const l of bd.limbs){
+   const im=l.key==='mexArm'?(images.mexArm||[])[l.idx]:images[l.key];
+   mexDrawSprite(ctx,im,l.x,l.y,l.orig[0],l.orig[1],l.sx,2,l.ang,1,k,X0,Y0);
+ }
+ ctx.save();ctx.fillStyle='#fff';
+ for(const e of bd.exhaust){ctx.globalAlpha=clamp(e.a,0,1)*.8;ctx.beginPath();ctx.arc(X0+e.x*k,Y0+e.y*k,3*k,0,Math.PI*2);ctx.fill()}
+ ctx.restore();
+}
+let mexCompositeCanvas=null;
+function makeMettatonExComposite(now=performance.now(),hurt=false){
+ if(!images.mexUpper?.length)return null;
+ if(!mexCompositeCanvas){mexCompositeCanvas=document.createElement('canvas');mexCompositeCanvas.width=280;mexCompositeCanvas.height=270}
+ const c=mexCompositeCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ // Layout canvas covers room x 180..460, y -10..260.
+ mexDrawBody(g,1,-180,10);
+ return c;
+}
+function drawMettatonExMain(now,hit,offset=0){
+ if(mex.hideBody)return true;
+ const r=enemyDraw,k=r.w/280;
+ const X0=r.x+offset-180*k,Y0=r.y+10*k;
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ if(mex.phase==='intro'&&mex.intro){
+   // obj_mett_bossintro: a black silhouette fading in under the stage lights.
+   const a=mex.body.myalpha;
+   if(a>0){
+     const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;
+     const tg=tmp.getContext('2d');tg.imageSmoothingEnabled=false;
+     const save=mex.body.myalpha;mex.body.myalpha=1;mexDrawBody(tg,k,X0,Y0,1);mex.body.myalpha=save;
+     if(mex.body.myblend===0){tg.globalCompositeOperation='source-in';tg.fillStyle='#000';tg.fillRect(0,0,W,H)}
+     ctx.globalAlpha=clamp(a,0,1);ctx.drawImage(tmp,0,0);
+   }
+ }else{
+   mexDrawBody(ctx,k,X0,Y0,1);
+ }
+ mexDrawLimbsAndExhaust(k,X0,Y0);
+ ctx.restore();
+ return true;
+}
+function mexRoomToScreen(){const r=enemyDraw,k=r.w/280;return {k,X0:r.x-180*k,Y0:r.y+10*k}}
+
+// ---------- yellow SOUL shots (obj_heart shot / obj_heartshot) ----------
+function mexHeartRoom(){return {x:soul.x/UT_SCALE-8,y:soul.y/UT_SCALE-8}}
+function mexTryShoot(){
+ if(state!=='attack'||soulMode!=='yellow'||mex.essay)return;
+ const hasShot=mex.objs.some(o=>o.t==='shot');
+ if(hasShot&&mex.charge>=0)return;
+ mex.charge=14;
+ const h=mexHeartRoom();
+ mex.objs.push({t:'shot',x:h.x+4,y:h.y+2,vs:-16,ys:1});
+ play('mexShoot');
+}
+function mexShotHits(o,x0,y0,x1,y1){
+ // collision_rectangle(...) vs obj_heartshot (8x13 sprite, image_yscale grows).
+ return o.x<x1&&o.x+8>x0&&o.y<y1&&o.y+13*o.ys>y0;
+}
+function mexFindShot(x0,y0,x1,y1){return mex.objs.find(o=>o.t==='shot'&&!o.dead&&mexShotHits(o,x0,y0,x1,y1))}
+function mexHeartHits(x0,y0,x1,y1){
+ const h=mexHeartRoom();
+ return h.x+2<x1&&h.x+14>x0&&h.y+2<y1&&h.y+14>y0;
+}
+function mexHeartOnLine(x0,y0,x1,y1){
+ const h=mexHeartRoom(),cx=h.x+8,cy=h.y+8;
+ const vx=x1-x0,vy=y1-y0,l2=vx*vx+vy*vy||1,t=clamp(((cx-x0)*vx+(cy-y0)*vy)/l2,0,1);
+ return Math.hypot(x0+vx*t-cx,y0+vy*t-cy)<=6;
+}
+// obj_metttestbulletparent user event 11: damage depends on current HP.
+function mexHurt(now){
+ if(now<invUntil)return;
+ let dmg=9;
+ const heart=mex.objs.find(o=>o.t==='heart');
+ if(!heart){
+   const at=mex.attacktype;
+   if(at===37)mex.specialdam[0]++;
+   if(at===39)mex.specialdam[1]++;
+   if(at===43)mex.specialdam[2]++;
+   dmg=hp>=30?10:hp>=20?9:hp>=5?8:6;
+ }else if(heart.n!==4){
+   dmg=hp>=24?9:hp>=16?8:hp>=8?7:hp>=3?6:5;
+ }else dmg=hp>=30?9:hp>=20?8:hp>=12?7:hp>=4?6:5;
+ hurtPlayer(now,dmg,'main',{noBracket:true});
+}
+
+// ---------- objects ----------
+function mexObj(t,x,y,extra={}){const o={t,x,y,xs:x,ys0:y,hs:0,vs:0,fric:0,grav:0,gdir:270,s:0,sf:0,sp:10,...extra};mex.objs.push(o);return o}
+function mexMove(o){
+ if(o.fric){const sp=Math.hypot(o.hs,o.vs);if(sp>0){let n=sp-o.fric;if(o.fric>0&&n<0)n=0;o.hs*=n/sp;o.vs*=n/sp}}
+ if(o.grav){const d=o.gdir*Math.PI/180;o.hs+=Math.cos(d)*o.grav;o.vs-=Math.sin(d)*o.grav}
+ o.x+=o.hs;o.y+=o.vs;
+}
+function mexSetDir(o,speed,dir){const d=dir*Math.PI/180;o.hs=Math.cos(d)*speed;o.vs=-Math.sin(d)*speed}
+function mexDir(o){return Math.atan2(-o.vs,o.hs)*180/Math.PI}
+function mexPiece(img,x,y,frame=0){mex.fx.push({t:'piece',img,x,y,frame,siner:0,a:.8})}
+function mexBorder(){return MEX_BORDERS[mex.border]||MEX_BORDERS[24]}
+function mexBox(x,y,vs=4,extra={}){return mexObj('box',x,y,{vs,...extra})}
+function mexBomb(x,y,vs=4,extra={}){return mexObj('bomb',x,y,{vs,side:0,shot:0,shot2:0,...extra})}
+function mexLight(x,y,extra={}){return mexObj('light',x,y,{vs:4+mexRand(.1),...extra})}
+function mexFodder(x,y,extra={}){return mexObj('fodder',x,y,{vs:4,flash:0,alarm4:-1,early:20,type:0,img:0,imgspd:0,...extra})}
+function mexDance(x,y,extra={}){return mexObj('dance',x,y,{vs:3,flash:0,alarm4:-1,siner:0,timer:0,img:0,imgspd:0,tell:false,...extra})}
+function mexKiss(x,y,speed,dir,extra={}){const o=mexObj('kiss',x,y,{siner:0,size:.1,spr:'kiss',...extra});if(speed!=null)mexSetDir(o,speed,dir);return o}
+function mexLeg(side,x,y,extra={}){
+ const o=mexObj(side==='l'?'legL':'legR',x,y,{vs:3,on:1,s:0,sf:30,sp:6,c:0,init:1,visible:false,...extra});
+ if(side==='r')o.x+=216;
+ o.xinit=side==='l'?x:x;
+ return o;
+}
+function mexHand(side,x,y,extra={}){
+ const o=mexObj(side==='l'?'handL':'handR',x,y,{segx:x,segxinit:x,on:0,xm:0,s:0,sf:25,sp:15,vs:2,yseg:60,anim:0,...extra});
+ if(o.ysegi==null)o.ysegi=o.yseg;
+ return o;
+}
+function mexRowG(){const g0=mexChoose(0,1),g1=g0+mexChoose(1,2),g2=g1+mexChoose(1,2);return [g0,g1,g2,mexChoose(5,6)]}
+
+// ---------- turn talk (obj_mettatonex alarm 6) ----------
+function mexTalkLines(t){
+ const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',mE:e});
+ switch(t){
+   case 1:return [L('Lights!\nCamera!\nAction!')];
+   case 2:return [L('Drama!\nRomance!\nBlood-\nshed!')];
+   case 3:return [L("I'm the\nidol\neveryone\ncraves!")];
+   case 4:return [L('Smile\nfor the\ncamera!')];
+   case 5:return [L("Oooh, it's time\nfor a pop quiz!"),L('I hope you brought\na keyboard...'),L("This one's an\nessay question!")];
+   case 6:return [L('Your essay really\nshowed everyone\nyour heart.'),L("Why don't I show\nyou mine?")];
+   case 7:return [L("Ooooh,\nI'm just\nwarming\nup!")];
+   case 8:return [L('But how are you\non the dance floor!?')];
+   case 9:return [L('Can you\nkeep up\nthe\npace!?')];
+   case 10:return [L('Lights!\nCamera\nBombs!')];
+   case 11:return [L('Things\nare\nblowing\nup!')];
+   case 12:return [L('Time for our union-\nregulated break!')];
+   case 13:return [L("We've grown so\ndistant, darling..."),L('How about another\nheart-to-heart?')];
+   case 14:return [L('A.. arms?\nWh... who needs arms\nwith legs like\nthese?',8),L("I'm still going\nto win!",8)];
+   case 15:return [L('Come on\n...!',8)];
+   case 16:return [L('The show\n...\nmust go\non!',8)];
+   case 17:return [L('Dr...\nDrama!\nA...\nAction!',8)];
+   case 18:return [L('L... lights...\nC... camera...',5),L('Enough of this!\nDo you really want\nhumanity to perish!?',5),L('... or do you just\nbelieve in yourself\nthat much?',7)];
+   case 19:return [L('Haha, how inspiring!',5),L("Well, darling!\nIt's either me\nor you!",5),L("But I think we both\nalready know who's\ngoing to win.",4),L("Witness the true\npower of humanity's\nstar!",8)];
+   case 20:return [L('... then...',7),L('Are YOU the star?',8),L('Can you really\nprotect humanity!?',8)];
+ }
+ return [L('...')];
+}
+function mexBeginTalk(now){
+ const bd=mex.body;
+ // Ratings milestone: con = 90 instead of another round.
+ if((mex.turns>=19&&mex.ratings>=10000)||(mex.turns<19&&mex.ratings>=12000)){mexBeginRatingsEnding(now);return true}
+ mex.turns++;
+ const t=mex.turns;
+ const waits={6:20,7:18,8:15,9:12,10:9,11:6,12:3,13:60,14:80,15:120,16:180,17:240};
+ if(waits[t])bd.dancewait=waits[t];
+ if(t>=14&&t<=17)bd.faceSet=1;
+ if(t>=18&&t<=20){bd.faceSet=1;bd.dance=-1}
+ mex.border=24;
+ if([14,15,23].includes(t))mex.border=27;
+ if([10,11,18,24].includes(t))mex.border=26;
+ if(t===5)mex.border=0;
+ if([6,13,19,20,25].includes(t))mexBodyOpen(bd);
+ const b=mexBorder();
+ ARENA=utRect(b[0],b[2],b[1]-b[0],b[3]-b[2]);box={...ARENA};
+ soul.x=ut((b[0]+b[1])/2);soul.y=ut((b[2]+b[3])/2);
+ const lines=mexTalkLines(t);
+ bullets=[];
+ startSpecialBattleSpeech(lines,()=>{mexStartAttack(performance.now())});
+ mexSyncSpeechFace();
+ return true;
+}
+function mexSyncSpeechFace(){
+ if(state!=='battleSpeech')return;
+ const line=specialBattleSpeechQueue[specialBattleSpeechIndex];
+ if(line&&Number.isFinite(line.mE))mex.faceEmotion=line.mE;
+}
+
+// ---------- attack generator (obj_mettattackgen) ----------
+function mexStartAttack(now){
+ activateEnemyAttack(now);
+ soulMode='yellow';
+ const b=mexBorder();
+ ARENA=utRect(b[0],b[2],b[1]-b[0],b[3]-b[2]);box={...ARENA};
+ soul.x=ut((b[0]+b[1])/2);soul.y=ut((b[2]+b[3])/2);
+ let type=29+mex.turns;
+ if(type===54){mex.turns-=5;type=49}
+ if(type>=50){
+   if(mex.def>=-10)mex.def=-10;
+   mex.def-=5;
+   if(type===50)type=38;if(type===51)type=54;if(type===52)type=56;
+ }
+ mex.attacktype=type;
+ mex.objs=mex.objs.filter(o=>o.t==='shot');
+ mex.gen={type,turntimer:12,specialtimer:0,dark:1,darkamt:0,siner:0};
+ mexGenCreate(mex.gen);
+ nextSpawn=now+999999;
+}
+function mexGenCreate(g){
+ const type=g.type,B=mexBorder(),gil=B[0],gir=B[1];
+ const H=mexHeartRoom();
+ if(type===30){
+   g.turntimer=200;
+   [[ 'l',gil-45,60,0,80],['r',gil,-80,0,80],['l',gil-70,-240,1,30],['r',gil+90,-240,1,30],['l',gil-140,-380,1,30],['r',gil+30,-380,1,30]]
+     .forEach(([s,x,y,on,sf])=>mexLeg(s,x,y,{on,sf,vs:4}));
+ }
+ if(type===31){
+   g.turntimer=190;
+   for(let i=0;i<4;i++){mexFodder(gil,-50-i*70,{vs:5,type:2});mexFodder(gir-25,-50-i*70,{vs:5,type:2})}
+   for(let i=0;i<5;i++)mexBomb(gil+25+mexRand(gir-gil-75),-50*i,4);
+ }
+ if(type===32){
+   g.turntimer=210;
+   for(const y of [60,20,-20])mexLeg('l',gil-45,y,{on:0,sf:60,vs:3.3});
+   for(const y of [-200,-240,-280])mexLeg('r',gil,y,{on:0,sf:60,vs:3.3});
+   for(const y of [-175,-50,-150,-75])mexBox(gil+75,y,3.3,{sf:20,sp:10});
+ }
+ if(type===33){
+   g.turntimer=190;
+   mexHand('l',gil,-25,{sf:20,sp:7,vs:3.5,yseg:999,ysegi:40});
+   mexHand('r',gir,-235,{sf:20,sp:7,vs:3.5,yseg:999,ysegi:40});
+   for(let i=0;i<5;i++)mexFodder(gil+25+i*25,-80,{vs:3.5,type:2,early:80});
+ }
+ if(type===34){g.turntimer=90;mexStartEssay()}
+ if(type===35){g.turntimer=600;mexHeartCore(1,320,162)}
+ if(type===36){
+   g.turntimer=250;g.specialtimer=1;
+   for(let j=0;j<3;j++)for(let i=0;i<3;i++)mexFodder(gil+mexRand(150),0-j*90-i*30,{vs:5});
+ }
+ if(type===37||type===38||type===51){
+   g.turntimer=type===37?270:(type===38?193:160);
+   const d=mexObj('disco',308,B[2]-(type===51?0:10),{diff:type===37?0:(type===38?1:2),dtype:0,swap:0,snd:0,rottimer:0,laserno:0});
+   if(type===38&&mex.specialdam[0]>1){d.diff=0;g.turntimer=270}
+   if(type!==51){soul.x+=ut(7);soul.y+=ut(10)}
+   mexDiscoInit(d);
+ }
+ if(type===39||type===40){
+   g.turntimer=type===39?210:160;g.specialtimer=2;
+   const oo=gil+5;
+   for(let j=0;j<(type===39?2:3);j++){
+     const a=mexBomb(oo,-200-j*260,4,{side:1}),b=mexBomb(oo+20,-200-j*260+120,4,{side:2});
+     if(type===40&&mex.specialdam[1]<2){a.vs+=3;b.vs+=3}
+   }
+ }
+ if(type===41){g.turntimer=110;mex.fx.push({t:'break',x:gil+30,y:B[2]+10,img:0})}
+ if(type===42){g.turntimer=600;mexHeartCore(2,320,162)}
+ if(type===43||type===44||type===56){
+   g.turntimer=type===43?200:(type===44?220:260);
+   const gap=type===43?180:(type===44?250:240),off=type===43?0:(type===44?-60:-100);
+   for(let j=0;j<8;j++){
+     const bm1=mexChoose(0,1,2,3,4);let bm2=mexChoose(0,1,2,3,4);if(bm2===bm1)bm2++;
+     for(let i=0;i<4;i++){
+       const x=gil+i*25,y=off-j*gap;
+       if(bm1===i||bm2===i||j===i)mexBomb(x,y,4);else mexBox(x,y,4);
+     }
+   }
+   const add=type===43?3:(type===44?6:5);
+   for(const o of mex.objs)if(o.t==='bomb'||o.t==='box')o.vs+=add;
+   const rw=mexObj('rew',0,0,{rew:0,rewed:0,maxrw:12,img:0});
+   if(type===43)rw.maxrw=10;
+   if(type===44&&mex.specialdam[2]>2){rw.maxrw=10;for(const o of mex.objs)if(o.t==='bomb'||o.t==='box')o.vs--}
+   if(type===56)rw.rew=-40;
+ }
+ if(type===45||type===46||type===52){
+   g.turntimer=type===45?165:(type===46?140:150);
+   const rows=type===52?9:10,gap=type===46?54:45,rnd=type===45?20:25;
+   for(let j=0;j<rows;j++){
+     const gg=mexRowG(),b=mexChoose(0,1,2,3),b2=mexChoose(0,1,2,3),b3=mexChoose(0,1,2,3);let bm=0;
+     for(let i=0;i<4;i++){
+       const x=gil+gg[i]*25,y=0-j*gap+mexRand(rnd);
+       if(b===i||b2===i||(b3===i&&bm<3)){bm++;mexBomb(x,y,4)}else mexBox(x,y,4);
+     }
+   }
+   const add=type===46?2.5:1;
+   for(const o of mex.objs)if(o.t==='bomb'||o.t==='box')o.vs+=add+mexRand(.5)-.2;
+ }
+ if(type===47||type===53){
+   g.turntimer=200;g.specialtimer=2;
+   const hx=gil;soul.x=ut(hx+8);
+   if(type===53){B[1]=B[0]+50;mex.border53=true;ARENA=utRect(B[0],B[2],50,B[3]-B[2]);box={...ARENA}}
+   for(let j=0;j<(type===47?6:7);j++){
+     if(type===47){
+       const ch=mexChoose(5,25);mexBomb(hx+ch,-100-j*180,4,{side:ch===5?1:2});
+     }else{
+       const ch=mexChoose(0,20);mexBomb(gil+5+ch,-100-j*170,4,{side:ch===0?1:2});
+     }
+   }
+   for(const o of mex.objs)if(o.t==='bomb'){o.vs+=type===47?3:3.5;if(type===47&&mex.specialdam[1]>3)o.vs--}
+ }
+ if(type===48){g.turntimer=700;mexHeartCore(3,320,162)}
+ if(type===49){g.turntimer=800;mexHeartCore(4,320,232)}
+ if(type===54){
+   g.turntimer=250;g.specialtimer=1;
+   for(let j=0;j<4;j++)for(let i=0;i<3;i++){
+     mexFodder(gil+mexRand(150),0-j*120-i*40,{vs:4.5});
+     const t=mexLight(gil+mexRand(150),0-j*120-i*40-20);
+     const dir=270+mexRand(20)-10,sp=Math.hypot(t.hs,t.vs);mexSetDir(t,sp,dir);t.vs+=2;t.fric=-.02;
+   }
+ }
+}
+function mexGenStep(g,now){
+ g.siner++;
+ g.turntimer--;
+ if(g.turntimer<=9)g.dark=0;
+ if(g.dark===1&&g.darkamt<.5)g.darkamt+=.05;
+ if(g.dark===0&&g.darkamt>0)g.darkamt-=.05;
+ if(g.specialtimer===1&&!mex.objs.some(o=>o.t==='fodder')&&g.turntimer>9)g.turntimer=9;
+ if(g.specialtimer===2&&!mex.objs.some(o=>o.t==='bomb')&&g.turntimer>9)g.turntimer=9;
+ if(g.turntimer<=0){
+   mex.body.bodyopen=0;
+   if(g.type===48)mexDropLegs(mex.body);
+   mex.gen=null;mex.border53=false;
+   mex.objs=[];
+   endAttack(now);
+ }
+}
+
+// ---------- essay (obj_essaystuff) ----------
+function mexStartEssay(){
+ const n=mexEssayCount();
+ mex.essay={text:' ',alarm0:450,con:0,cantype:1,dotimer:0,drawOn:1,endbuffer:n>=3?100:(n===2?120:(n===1?150:180))};
+ mex.gen.dark=0;mex.gen.turntimer=99999;
+}
+function mexEssayCount(){try{return Number(localStorage.getItem('utbg.mttEssayNo')||0)||0}catch(_){return 0}}
+function mexEssayKey(e){
+ const es=mex.essay;if(!es||es.cantype!==1)return false;
+ e.preventDefault?.();
+ const k=e.key;
+ if(k==='Backspace'){if(es.text.length>1)es.text=es.text.slice(0,-1);return true}
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Shift','Enter','Escape'].includes(k))return true;
+ if(k.length===1){if(es.endbuffer<30)es.endbuffer=30;es.text+=k}
+ return true;
+}
+function mexEssayStep(now){
+ const es=mex.essay;if(!es)return;
+ if(es.alarm0>0&&--es.alarm0===0){es.cantype=0;es.con=1}
+ es.dotimer++;if(es.dotimer>4){es.drawOn^=1;es.dotimer=0}
+ es.endbuffer--;
+ if(es.endbuffer<0&&es.alarm0>10)es.alarm0=10;
+ if(es.con===1){
+   es.con=4;
+   const {lines,rating}=mexEssayVerdict(es.text);
+   try{localStorage.setItem('utbg.mttEssayNo',String(mexEssayCount()+1))}catch(_){}
+   mexRate(12,rating);
+   mex.gen=null;
+   startSpecialBattleSpeech(lines.map(t=>({text:t,wide:true,voiceBoss:'mettatonex'})),()=>{
+     mex.essay=null;
+     state='boxOpen';transitionStart=performance.now();box={...ARENA};bullets=[];mex.objs=[];
+     mex.pendingFlavor='* Mettaton is saving your\n  essay for future use.';
+   });
+ }
+}
+function mexEssayVerdict(str){
+ const len=str.length,s=str.toLowerCase();let msg=['Speechless...?\nWho can blame you?'];
+ if(len===2)msg=["Well... that's concise."];
+ if(len>2)msg=['Beautiful. Sometimes\nthe fewest words\nspeak the loudest.'];
+ if(len>13)msg=['Nice. You get a\ngold star.'];
+ if(len>50)msg=['Oh my... what a\ngreat answer.'];
+ if(len>90)msg=['Oooooh, you said so\nmuch about me...','I love how\npassionate you are.',"... even though I\ndon't understand\nwhat you said..."];
+ if(len>140)msg=["Beautiful.\nWhy don't you\nwrite a book?"];
+ let spec=0,swear=0,beaut=0;
+ for(const w of ['beaut','hot','sexy','pretty','handsome','gorgeous','sparkl','charm','attract','cute','smokin','elegant','good look','goodlook','good-look','grace','comely','fine','foxy','looker','dreamboat','stun','shapely','ravishing','allur','entic','seduct','enchant','appeal','tantaliz','adorable','radiant','capitvat'])if(s.includes(w))beaut+=2;
+ if(s.includes('leg')){beaut+=2;spec=1}
+ if(s.includes('arm')){beaut+=2;spec=2}
+ if(s.includes('hair')){beaut+=2;spec=3}
+ if(beaut>1)msg=["Nice detail...\nYou're right, I do\nlook quite nice."];
+ if(beaut>3)msg=['Wonderful! Amazing! A+...\nI AM completely stunning.'];
+ if(beaut>5)msg=["Oh, I'm blushing...\nYou're completely right,\nI am beautiful in\nevery way."];
+ if(beaut>7)msg=["Oh my... I'm speechless...\nYou've completely\ncaptured how\nbeautiful I am."];
+ if(spec===1)msg=["That's right.\nLegs was the\ncorrect answer!"];
+ if(spec===2)msg=['How creative. Arms...\nmost people just\nthink about my legs.'];
+ if(spec===3)msg=['My hair... yes,\nI use metal hair\ngel.'];
+ if(s.includes('personality'))spec=3.1;
+ if(s.includes('voice'))spec=3.2;
+ if(s.includes('dancing')||s.includes('dance'))spec=3.3;
+ if(spec===3.1)msg=["Yes, my personality\nis quite charming,\nisn't it?"];
+ if(spec===3.2)msg=['They say I have\nthe voice of a\nSiren...','... awooga!'];
+ if(spec===3.3)msg=["Dancing...?\nThank you, I'm\nself-taught."];
+ for(const w of ['ugly','hideous','repulsive','unattractive','look bad','stupid','idiot','jerk','asshole','loser','dumbass','douche','creep'])if(s.includes(w))spec=4;
+ if(spec===4)msg=['Huh? This essay is\nsupposed to be about\nme, not about you...'];
+ if(s.includes('i love you'))spec=5;
+ if(s.includes('i love your'))spec=0;
+ if(spec===5)msg=["What a touching\nconfession! I'll add\nit to the pile."];
+ if(s.includes('toby'))spec=6;
+ if(spec===6)msg=['Toby? What the hell\nis that?\nSounds... sexy.'];
+ for(const w of ['fuck','shit','cock','pussy','penis','vagina','anus','poop','tity','titty','bepis'])if(s.includes(w))swear=1;
+ if(swear)msg=['Oh my! This is a family\nfriendly TV show.','Now stand still while\nI murder you.'];
+ let r=null;
+ if(swear)r=-150;
+ else if(spec===6)r=300;
+ else if(spec===5)r=250;
+ else if(spec===4)r=-200;
+ else if(spec===1)r=350;
+ else if(spec===2||spec===3)r=250;
+ else if(spec>3&&spec<4)r=250;
+ else if(beaut>0)r=beaut>=7?360:(beaut>=5?280:(beaut>=3?250:200));
+ else r=len>=140?180:(len>=90?150:(len>=50?120:(len>=13?100:80)));
+ return {lines:msg,rating:r};
+}
+function drawMexEssay(now){
+ const es=mex.essay;if(!es)return;
+ const U=UT_SCALE,B=MEX_BORDERS[0];
+ ctx.save();ctx.fillStyle='#fff';ctx.textBaseline='top';ctx.textAlign='left';
+ ctx.font=`${Math.round(13*U)}px "DTM Sans", "Determination Sans", "8bitoperator JVE", monospace`;
+ const maxW=(B[1]-B[0]-50)*U;let line='',y=(B[2]+15)*U;const lines=[];
+ for(const ch of es.text){const t=line+ch;if(ctx.measureText(t).width>maxW){lines.push(line);line=ch}else line=t}
+ lines.push(line);
+ lines.forEach((l,i)=>ctx.fillText(l,(B[0]+25)*U,y+i*25*U));
+ if(es.cantype===1){
+   ['ESSAY PROMPT:','Why do you','love most about','Mettaton?','(No X or Z)'].forEach((l,i)=>ctx.fillText(l,430*U,(50+i*17)*U));
+ }else ctx.fillText('TIME UP!!!',430*U,200*U);
+ if(es.drawOn&&es.text.length<3)ctx.fillText('[START TYPING]',soul.x-38*U,soul.y+12*U);
+ ctx.restore();
+}
+
+// ---------- disco ball (obj_discoball_pl) ----------
+function mexDiscoInit(d){
+ if(d.diff===0){d.maxlaser=5;d.laser=[1,1,2,1,1];d.laserdist=72;d.rotspeed=2;d.rottimer=80;d.rot=20}
+ if(d.diff===1){d.maxlaser=5;d.laser=[1,1,1,2,1];d.laserdist=72;d.rotspeed=4;d.rot=0}
+ if(d.diff===2){d.maxlaser=4;d.laser=[1,1,2,1,1];d.laserdist=90;d.rotspeed=4.75;d.rot=0}
+ d.laserno=0;
+}
+function mexDiscoLasers(d){
+ const B=mexBorder(),out=[];
+ for(let i=0;i<d.maxlaser;i++){
+   const a=(d.rot+d.laserdist*i)*Math.PI/180;
+   let xx=d.x+Math.cos(a)*160+20,yy=d.y-Math.sin(a)*160+30;
+   xx=clamp(xx,B[0],B[1]);yy=clamp(yy,B[2],B[3]);
+   const blue=(d.laser[i]===1)===(d.dtype===0);
+   out.push({i,xx,yy,blue,active:yy>B[2]});
+ }
+ return out;
+}
+function mexDiscoStep(d,now){
+ d.snd--;d.swap--;
+ for(const L of mexDiscoLasers(d)){
+   if(L.active){
+     if(mexHeartOnLine(d.x+20,d.y+30,L.xx,L.yy)&&(!L.blue||soulMoving))mexHurt(now);
+   }else if(d.laserno>0){
+     let v=mexChoose(1,2,3);
+     if(v===3){const prev=L.i>0?d.laser[L.i-1]:d.laser[d.maxlaser-1];v=prev===1?2:1}
+     d.laser[L.i]=v;
+   }
+ }
+ d.rottimer--;
+ if(d.rottimer<0)d.rot-=d.rotspeed;
+ if(d.rot<-180){d.laserno++;d.rot+=360}
+ const sh=mexFindShot(d.x,d.y,d.x+40,d.y+60);
+ if(sh){sh.dead=true;d.dtype^=1;d.swap=3;if(d.snd<0){play('encounterNoise');d.snd=2}mexAddRatings(5)}
+}
+
+// ---------- heart cores (obj_mettheart_1..4) ----------
+function mexHeartCore(n,x,y){
+ const h=mexObj('heart',x,y,{n,s:0,sf:15,sp:15,s2:0,sf2:30,s3:88,img:0,imgspd:0,lt:30,shake:0,memx:x,memy:y,life:800,movetype:0,kids:[]});
+ if(n===2){h.sf=30;h.sp=20;h.lt=20;for(let i=0;i<8;i++)h.kids.push(mexObj('blocker',x,y,{visible:true,parent:h}))}
+ if(n===3){h.sf=40;h.sp=15;h.sf2=40;h.lt=20;h.life=700;for(let i=0;i<2;i++)h.kids.push(mexObj('bbomb',x,y,{visible:true,shot:0,shot2:0,parent:h}))}
+ if(n===4){h.sf=40;h.sp=15;h.lt=20;h.shake=3;h.life=1000;h.moving=3;h.alarm3=60;h.vs=-1.5;h.ltimer=0;h.size=1}
+ return h;
+}
+function mexLightRing(h,count,offset,fric){
+ for(let i=0;i<count;i++){const lt=mexLight(h.x,h.y);lt.fric=fric;mexSetDir(lt,2,(i+offset)*360/count+h.ddir)}
+}
+function mexHeartStep(h,now){
+ const B=mexBorder();
+ if(h.n===2||h.n===3){
+   h.s2+=h.n===2?.2:.08;h.s3++;
+   const rad=h.n===2?[20,10]:[14,15];
+   h.kids.forEach((k,q)=>{
+     if(k.dead||(k.t==='bbomb'&&k.shot))return;
+     const gr=q*2*Math.PI/h.kids.length+h.s2;
+     k.x=h.x+Math.sin(gr)*h.sf2-(h.n===2?10:14);k.y=h.y+Math.cos(gr)*h.sf2-(h.n===2?10:15);
+   });
+ }
+ if(h.n!==4&&h.movetype===0){
+   h.x=h.xs+Math.sin(h.s/h.sp)*h.sf;
+   if(h.n!==1)h.y=h.ys0+Math.sin(h.s/h.sp*2)*h.sf/3;
+   if(h.shake===0)h.s++;
+   if(h.shake>0){h.x=h.memx+mexRand(h.shake*2)-h.shake;h.y=h.memy+mexRand(h.shake*2)-h.shake;h.shake--}
+ }
+ h.lt++;
+ if(h.n===1){
+   if(h.lt>50&&h.lt<60){h.ddir=mexRand(360);h.imgspd=.5}
+   if(h.lt===60||h.lt===72){h.imgspd=0;mexLightRing(h,10,0,-.1)}
+   if(h.lt===66){h.imgspd=0;mexLightRing(h,10,.5,-.1)}
+   if(h.lt===95){mexFodder(B[0],-20,{vs:5,type:2,early:200});mexFodder(B[1]-25,-20,{vs:5,type:2,early:200})}
+   if(h.lt===130)h.lt=36;
+   h.life--;
+ }
+ if(h.n===2){
+   if(h.lt>40&&h.lt<50){h.ddir=mexRand(360);h.imgspd=.5}
+   if(h.lt===50||h.lt===62){h.imgspd=0;mexLightRing(h,11,0,-.09)}
+   if(h.lt===56){h.imgspd=0;mexLightRing(h,11,.5,-.09)}
+   if(h.lt>100&&h.lt<145){h.s2-=.17;h.sf2+=9}
+   if(h.lt===145)h.kids.forEach(k=>k.visible=true);
+   if(h.lt>145&&h.lt<300){h.s2-=.15;h.sf2-=8;if(h.sf2<35){h.sf2=30;h.lt=40}}
+   if(mex.gen&&mex.gen.turntimer<5)mexDropArms(mex.body);
+   h.life--;
+ }
+ if(h.n===3){
+   if(h.lt>40&&h.lt<50){h.ddir=mexRand(360);h.imgspd=.5}
+   if(h.lt===50||h.lt===62){h.imgspd=0;mexLightRing(h,11,0,-.09)}
+   if(h.lt===56||h.lt===68){h.imgspd=0;mexLightRing(h,11,.5,-.09)}
+   if(h.lt===110)mexObj('legline',0,0,{side:'l',con:0,eo:0,alarm0:1,alarm4:-1,myx:0,shake:0});
+   if(h.lt===140)mexObj('legline',0,0,{side:'r',con:0,eo:0,alarm0:1,alarm4:-1,myx:0,shake:0});
+   if(h.lt===160)h.lt=20;
+   h.life-=1.25;
+ }
+ if(h.n===4){
+   h.life--;
+   if(h.life<500&&h.shake<2)h.shake=2;
+   if(h.alarm3>0&&--h.alarm3===0){h.moving++;h.hs=h.vs=0}
+   if(h.movetype===0){
+     if(h.moving===0){
+       const nx=h.xs+mexRand(60)-mexRand(60),ny=h.ys0+mexRand(20)-mexRand(20);
+       const d=Math.hypot(nx-h.x,ny-h.y)/20;mexSetDir(h,d,Math.atan2(-(ny-h.y),nx-h.x)*180/Math.PI);
+       h.alarm3=8;h.moving=1;h.imgspd=.5;
+     }
+     if(h.moving===2){
+       h.imgspd=0;h.img=0;h.chch=mexChoose(0,1);
+       const H=mexHeartRoom();h.tx=H.x+10;h.ty=H.y+10;h.ltimer=100;h.hs=h.vs=0;h.moving=3;h.alarm3=30;
+     }
+     if(h.moving===4)h.moving=0;
+     if(h.shake>0){h.x+=mexRand(h.shake)-mexRand(h.shake);h.y+=mexRand(h.shake)-mexRand(h.shake);h.shake--}
+   }
+   h.x+=h.hs;h.y+=h.vs;
+   if(h.ltimer>=100){
+     h.ltimer++;
+     const aim=Math.atan2(-(h.ty-h.y),h.tx-h.x)*180/Math.PI;
+     const fire=off=>{const lt=mexLight(h.x,h.y);lt.fric=-.1;mexSetDir(lt,8,aim+off)};
+     if([100,102,104,106].includes(h.ltimer))fire(0);
+     if([108,110,112,114].includes(h.ltimer))fire(h.chch===1?-10:10);
+     if([116,118,120,122].includes(h.ltimer))fire(h.chch===1?10:-10);
+     if(h.ltimer===125)h.ltimer=0;
+   }
+   if(h.size>1){h.size-=.5;if(h.size===1)h.img=0}
+ }
+ h.img+=h.imgspd;
+ // Shot hits (collision with obj_heartshot): shake, -40 life, +20 ratings.
+ const sh=mexFindShot(h.x-12,h.y-12,h.x+12,h.y+12);
+ if(sh&&h.movetype!==1){
+   sh.dead=true;play('mexHit');
+   if(h.n===4){h.shake=10;h.img=1;h.size=2}else{h.memx=h.x;h.memy=h.y;h.shake=6}
+   h.life-=40;mexAddRatings(20);
+   if(h.life<1){
+     if(h.n===4){if(mex.gen&&mex.gen.turntimer>0)mex.gen.turntimer=0}
+     else{
+       mex.objs=mex.objs.filter(o=>!['box','light','kiss'].includes(o.t));
+       for(const o of mex.objs)if(o.t==='fodder'){o.flash=5;o.type=2}
+       h.movetype=1;h.hidden=true;
+       h.kids.forEach(k=>k.visible=false);
+       mexObj('burst',h.x,h.y,{homex:h.xs,homey:h.ys0,size:1,timer:-6,shake:0,alarm1:1,img:0});
+       if(h.n===2)mexDropArms(mex.body);
+     }
+   }
+ }
+}
+function mexBurstStep(b){
+ if(b.alarm1>0&&--b.alarm1===0){const d=Math.hypot(b.homex-5-b.x,b.homey-b.y);mexSetDir(b,d/5,Math.atan2(-(b.homey-b.y),b.homex-5-b.x)*180/Math.PI)}
+ b.timer++;
+ mex.body.hurt=2;mex.body.dsf=2;mex.faceEmotion=6;
+ if(mex.gen)mex.gen.dark=0;
+ if(b.timer===0){b.shake=5;b.hs=b.vs=0;b.x=b.homex;b.y=b.homey}
+ if(b.timer>=0&&b.timer<4){b.shake--;b.img+=.5;b.size-=.2}
+ if(b.timer===7){
+   play('mexBurst');b.shake=0;
+   for(let i=0;i<12;i++){const st={t:'star',x:b.x,y:b.y,size:3,ang:mexRand(360),aspeed:60,a:1,hs:0,vs:0,fric:.24+mexRand(.02)};mexSetDir(st,5.7+mexRand(.6),i*30+mexRand(5));mex.fx.push(st)}
+ }
+ if(b.timer>7&&b.timer<10){b.shake+=6;b.size+=.75}
+ if(b.timer===13){b.img=0;b.size=1}
+ if(b.timer>=13){b.shake-=2;if(b.shake<1)b.shake=0}
+ if(b.timer>20){if(mex.gen&&mex.gen.turntimer>9)mex.gen.turntimer=9;mex.body.dsf=0}
+ b.x+=b.hs;b.y+=b.vs;
+}
+
+// ---------- per-step object logic ----------
+function mexObjStep(o,now){
+ const B=mexBorder();
+ if(o.t==='shot'){o.y+=o.vs;o.ys+=.2;o.vs-=.2;if(o.y<0)o.dead=true;return}
+ if(o.t==='box'){
+   if(mexHeartHits(o.x,o.y,o.x+24,o.y+24))mexHurt(now);
+   const sh=mexFindShot(o.x+2,o.y+2,o.x+22,o.y+22);
+   if(sh){sh.dead=true;mexAddRatings(20);play('mexBurstSmall');mexPiece('mexBox',o.x,o.y);o.dead=true;return}
+   o.s++;o.x=o.xs+Math.sin(o.s/o.sp)*o.sf;o.y+=o.vs;return;
+ }
+ if(o.t==='bomb'){
+   let col=mexHeartHits(o.x,o.y,o.x+24,o.y+30);
+   if(o.side===1&&mexHeartHits(o.x+25,o.y,o.x+49,o.y+30))col=true;
+   if(o.side===2&&mexHeartHits(o.x-25,o.y,o.x-1,o.y+30))col=true;
+   if(col)mexHurt(now);
+   const sh=mexFindShot(o.x+2,o.y+6,o.x+22,o.y+28);
+   if(sh){sh.dead=true;mexAddRatings(20);if(o.shot===0){o.shot=1;play('mexPrebomb')}}
+   if(o.side===1){const s2=mexFindShot(o.x+27,o.y+6,o.x+47,o.y+28);if(s2)s2.dead=true}
+   if(o.side===2){const s2=mexFindShot(o.x-23,o.y+6,o.x-3,o.y+28);if(s2)s2.dead=true}
+   o.s++;
+   if(o.shot>0){o.shot2++;o.img=(o.img||0)+1;if(o.shot2>=6){play('bombTick');mexObj('expl',o.x+2,o.y+6,{anim:0});o.dead=true;return}}
+   o.x=o.xs+Math.sin(o.s/o.sp)*o.sf;o.y+=o.vs;return;
+ }
+ if(o.t==='expl'){
+   if(o.anim>1&&o.anim<3){
+     if(mexHeartHits(0,o.y+4,640,o.y+16)||mexHeartHits(o.x+4,0,o.x+16,480))mexHurt(now);
+   }
+   o.anim++;if(o.anim>=7)o.dead=true;return;
+ }
+ if(o.t==='light'){mexMove(o);if(mexHeartHits(o.x-6,o.y-6,o.x+6,o.y+6))mexHurt(now);if(o.y>560||o.y<-400||o.x<-100||o.x>740)o.dead=true;return}
+ if(o.t==='kiss'){
+   o.siner++;if(o.size<1)o.size+=.1;mexMove(o);
+   const r=o.spr==='sparkle'?6:7;
+   if(mexHeartHits(o.x-r,o.y-r,o.x+r,o.y+r))mexHurt(now);
+   if(o.y>560||o.y<-300)o.dead=true;return;
+ }
+ if(o.t==='fodder'){
+   if(o.alarm4>0&&--o.alarm4===0)o.flash++;
+   if(o.y>B[2]-o.early-15&&o.flash===0){o.flash=1;o.alarm4=20}
+   if(o.flash===1&&o.early<=20&&o.vs>1.5)o.vs-=.15;
+   if(o.early>20&&o.y>B[2]-20-15&&o.vs>1.5)o.vs-=.15;
+   if(o.flash===2){o.flash=3;o.alarm4=30}
+   if(o.flash===3&&o.alarm4<26)o.imgspd=.5;
+   if(o.flash===4){
+     const H=mexHeartRoom(),k=mexKiss(o.x+10,o.y+10,5,Math.atan2(-(H.y+10-(o.y+10)),H.x+10-(o.x+10))*180/Math.PI);
+     o.flash=5;
+   }
+   if(o.flash===5){
+     o.flash=1;o.alarm4=30;
+     if(o.type===2){o.flash=9;o.grav=.5;o.fric=.2;o.gdir=o.x<320?180:0}
+   }
+   mexMove(o);
+   if(o.y>480||o.x<-80||o.x>720)o.dead=true;
+   const sh=mexFindShot(o.x+2,o.y+2,o.x+22,o.y+22);
+   if(sh){sh.dead=true;play('mexBurstSmall');mexAddRatings(20);mexPiece('mexFodder',o.x-20,o.y-23,Math.floor(o.img));o.dead=true;return}
+   o.img+=o.imgspd;if(o.img>16&&o.imgspd>0){o.img=0;o.imgspd=0}
+   return;
+ }
+ if(o.t==='dance'){
+   if(o.alarm4>0&&--o.alarm4===0)o.flash++;
+   if(o.y>B[2]-80&&o.flash===0){o.tell=true;o.flash=1}
+   if(o.flash===1){o.timer+=o.vs;o.imgspd=o.timer/60;if(o.timer>60)o.flash=2}
+   if(o.flash===2){o.img=0;o.tell=false;o.flash=3;o.imgspd=.5}
+   if(o.flash===3&&Math.floor(o.img)===2)o.flash=4;
+   if(o.flash===4){for(let i=0;i<2;i++){const k=mexKiss(o.x+10,o.y+10,1,i*180,{spr:'sparkle',grav:.1+mexRand(.05)});k.vs=-1;k.hs+=o.hs+mexRand(.5)-.25}o.flash=5}
+   if(o.flash===5&&Math.floor(o.img)===6)o.flash=6;
+   if(o.flash===6){const k=mexKiss(o.x+10,o.y+10,2,90,{spr:'sparkle',grav:.1+mexRand(.05)});k.vs=-1.5+mexRand(.5)-.25;k.hs+=o.hs+mexRand(.5)-.25;o.flash=9}
+   if(o.flash===9){o.flash=10;o.alarm4=40}
+   o.y+=o.vs;o.siner++;o.x=o.xs+Math.sin(o.siner/6)*10;
+   o.img+=o.imgspd;const n=o.tell?2:10;if(o.img>=n)o.img-=n;
+   if(o.y>480)o.dead=true;
+   const sh=mexFindShot(o.x+2,o.y+2,o.x+22,o.y+22);
+   if(sh){sh.dead=true;mexPiece(o.tell?'mexDanceTell':'mexDance',o.x-15,o.y-6,Math.floor(o.img));o.dead=true}
+   return;
+ }
+ if(o.t==='legL'||o.t==='legR'){
+   const L=o.t==='legL';
+   if(o.init){
+     o.init=0;
+     if(L){
+       o.s=o.sp*Math.PI/2;
+       if(o.c===2){o.s=-o.sp*Math.PI/2;o.xinit+=Math.sin(o.s/o.sp)*o.sf;o.x=o.xinit+Math.sin(o.s/o.sp)*o.sf;o.c=0}
+       else if(o.c===1){o.xinit-=Math.cos(o.s/o.sp)*o.sf;o.x=o.xinit+Math.cos(o.s/o.sp)*o.sf}
+       else{o.xinit-=Math.sin(o.s/o.sp)*o.sf;o.x=o.xinit+Math.sin(o.s/o.sp)*o.sf}
+     }else{
+       o.s=-o.sp*Math.PI/2;
+       if(o.c===2){o.s=o.sp*Math.PI/2;o.xinit+=Math.sin(o.s/o.sp)*o.sf;o.x=o.xinit+216+Math.sin(o.s/o.sp)*o.sf;o.c=0}
+       else if(o.c===1){o.xinit-=Math.cos(o.s/o.sp)*o.sf;o.x=o.xinit+216+Math.cos(o.s/o.sp)*o.sf}
+       else{o.xinit-=Math.sin(o.s/o.sp)*o.sf;o.x=o.xinit+216+Math.sin(o.s/o.sp)*o.sf}
+     }
+     o.visible=true;
+   }
+   const x0=L?o.x:o.x-216,x1=L?o.x+216-5:o.x-5;
+   const sh=mexFindShot(L?o.x:o.x-216+5,o.y+1,L?o.x+216-5:o.x,o.y+20);
+   if(sh){sh.dead=true;play('mexSwallow');mexAddRatings(5);o.on^=1}
+   if(o.on===1){
+     if(L){o.s--;o.x=o.xinit+(o.c===1?Math.cos(o.s/o.sp):Math.sin(o.s/o.sp))*o.sf}
+     else{o.s++;o.x=o.xinit+216+(o.c===1?Math.cos(o.s/o.sp):Math.sin(o.s/o.sp))*o.sf}
+   }
+   o.y+=o.vs;
+   if(mexLegMaskHit(o))mexHurt(now);
+   return;
+ }
+ if(o.t==='handL'||o.t==='handR'){
+   const L=o.t==='handL';
+   o.anim+=.25;
+   const tx=L?o.segx+o.yseg:o.segx-o.yseg;
+   const sh=mexFindShot(tx,o.y,tx+20,o.y+14);
+   if(sh){sh.dead=true;play('mexBurstSmall');o.on^=1}
+   const sh2=L?mexFindShot(o.segx+3,o.y-4,B[1],o.y+10):mexFindShot(B[0],o.y-4,o.segx+16,o.y+10);
+   if(sh2){sh2.dead=true;o.vs+=.75;o.y+=3;play('mexSwallow')}
+   if(L?mexHeartHits(o.segx+5,o.y+4,B[1],o.y+14):mexHeartHits(B[0],o.y+4,o.segx+12,o.y+14))mexHurt(now);
+   if(L){
+     if(o.on===1){if(o.segx<B[1]+5){if(o.xm<=0)o.xm=2;o.xm+=2;o.segx+=o.xm}else{o.xm=0;o.segx=B[1]+5}}
+     else{if(o.segx>o.segxinit){if(o.xm>=0)o.xm=-1;o.xm--;o.segx+=o.xm}else{o.xm=0;o.segx=o.segxinit}}
+   }else{
+     if(o.on===1){if(o.segx>B[0]-25){if(o.xm>=0)o.xm=-2;o.xm-=2;o.segx+=o.xm}else{o.xm=0;o.segx=B[0]-25}}
+     else{if(o.segx<o.segxinit){o.xm=1;o.segx+=o.xm}else{o.xm=0;o.segx=o.segxinit}}
+   }
+   o.s++;o.yseg=o.ysegi+Math.sin(o.s/o.sp)*o.sf;
+   o.y+=o.vs;return;
+ }
+ if(o.t==='rew'){
+   o.rew++;o.img+=.1;
+   if(o.rewed===0&&o.rew>95){o.rewed=1;o.vsp=(mex.objs.find(q=>q.t==='box'||q.t==='bomb')?.vs)??4}
+   if(o.rewed===1){o.vsp-=.4;if(o.vsp>=-o.maxrw)for(const q of mex.objs)if(q.t==='box'||q.t==='bomb')q.vs=o.vsp}
+   return;
+ }
+ if(o.t==='disco'){mexDiscoStep(o,now);return}
+ if(o.t==='heart'){mexHeartStep(o,now);return}
+ if(o.t==='burst'){mexBurstStep(o);return}
+ if(o.t==='blocker'){
+   if(!o.visible)return;
+   if(mexHeartHits(o.x,o.y,o.x+24,o.y+24))mexHurt(now);
+   const sh=mexFindShot(o.x,o.y,o.x+24,o.y+24);
+   if(sh){sh.dead=true;mexAddRatings(20);play('mexBurstSmall');mexPiece('mexBox',o.x,o.y);o.visible=false}
+   return;
+ }
+ if(o.t==='bbomb'){
+   if(!o.visible)return;
+   if(mexHeartHits(o.x,o.y,o.x+24,o.y+30))mexHurt(now);
+   const sh=mexFindShot(o.x,o.y,o.x+24,o.y+30);
+   if(sh&&o.shot===0){sh.dead=true;o.shot=1;o.nowx=o.x;o.nowy=o.y;play('mexPrebomb');mexAddRatings(15)}
+   if(o.shot>0){o.x=o.nowx;o.y=o.nowy;o.shot2++;o.img=(o.img||0)+1;if(o.shot2>=5){play('bombTick');mexObj('expl',o.x,o.y,{anim:0});o.visible=false;o.shot=-1}}
+   return;
+ }
+ if(o.t==='legline'){
+   if(o.alarm0>0&&--o.alarm0===0){o.con=1;o.alarm4=24}
+   if(o.alarm4>0&&--o.alarm4===0)o.con++;
+   if(o.con===1){o.eo=(o.eo+1)%3;if(o.eo===1)play('mexBlock')}
+   if(o.con===2){play('undyneSpearRise');o.myx=0;o.con=3}
+   if(o.con===3){o.myx+=8;if(o.myx>=85-8){o.myx=85;o.con=4;o.alarm4=6;o.shake=5}}
+   if(o.shake>0)o.shake--;
+   if(o.con===5){o.shake=0;o.myx-=8;if(o.myx<=0){o.dead=true;return}}
+   if(o.con>=3){
+     for(let i=0;i<5;i++){
+       const y0=B[2]+9+i*30;
+       if(o.side==='l'){if(mexHeartHits(B[0],y0,B[0]+o.myx-8,y0+14))mexHurt(now)}
+       else if(mexHeartHits(B[1]-o.myx+8,y0,B[1],y0+14))mexHurt(now);
+     }
+   }
+   return;
+ }
+}
+// obj_mettleg collision is precise against spr_mettlegbullet: sample its alpha mask.
+let mexLegMasks={};
+function mexLegMask(key){
+ if(mexLegMasks[key]!==undefined)return mexLegMasks[key];
+ const im=images[key];if(!im)return null;
+ try{
+   const c=document.createElement('canvas');c.width=216;c.height=26;const g=c.getContext('2d');g.drawImage(im,0,0);
+   const d=g.getImageData(0,0,216,26).data,m=new Uint8Array(216*26);
+   for(let i=0;i<m.length;i++)m[i]=d[i*4+3]>100?1:0;
+   mexLegMasks[key]=m;
+ }catch(_){mexLegMasks[key]=null}
+ return mexLegMasks[key];
+}
+function mexLegMaskHit(o){
+ const m=mexLegMask('mexLegBulL');const H=mexHeartRoom();
+ for(const [px,py] of [[H.x+4,H.y+4],[H.x+12,H.y+4],[H.x+4,H.y+12],[H.x+12,H.y+12],[H.x+8,H.y+8]]){
+   let mx=o.t==='legL'?Math.floor(px-o.x):Math.floor(o.x-px);
+   const my=Math.floor(py-o.y);
+   if(mx<0||my<0||mx>=216||my>=26)continue;
+   if(!m){if(my>8&&my<20)return true;continue}
+   if(m[my*216+mx])return true;
+ }
+ return false;
+}
+function mexFxStep(){
+ for(const f of mex.fx){
+   if(f.t==='piece'){f.siner++;f.a-=.05;if(f.a<.1)f.dead=true}
+   if(f.t==='star'){mexMove(f);f.size-=.1;if(f.size>1.5)f.a-=.05;f.ang+=f.aspeed;f.aspeed-=3;if(f.a<0||f.size<.3)f.dead=true}
+   if(f.t==='break'){f.img+=.1;if(!mex.gen)f.dead=true}
+ }
+ mex.fx=mex.fx.filter(f=>!f.dead);
+}
+
+// ---------- update / draw hooks ----------
+function mexStep(now){
+ mexBodyStep(mex.body);
+ mexRatingsStep();
+ mexFxStep();
+ if(mex.charge>-1)mex.charge--;
+ if(state==='attack'&&mex.gen){
+   for(const o of mex.objs.slice())if(!o.dead)mexObjStep(o,now);
+   mex.objs=mex.objs.filter(o=>!o.dead);
+   if(mex.gen)mexGenStep(mex.gen,now);
+ }
+ if(mex.essay)mexEssayStep(now);
+ if(mex.intro)mexIntroStep(now);
+ if(mex.seq)mexSeqStep(now);
+ mexEndFadeStep(now);
+}
+function updateMettatonEx(dt,now){
+ if(currentBoss!=='mettatonex'||screen!=='battle')return;
+ mexSyncSpeechFace();
+ const z=!!(key.z||key.Z);
+ if(z&&!mex.prevZ&&state==='attack')mexTryShoot();
+ mex.prevZ=z;
+ mex.acc+=Math.min(dt,.25)*1000;
+ let n=0;
+ while(mex.acc>=MEX_STEP&&n<6){mex.acc-=MEX_STEP;mexStep(now);n++}
+}
+function mexImg(key,frame=0){const v=images[key];return Array.isArray(v)?v[Math.max(0,Math.floor(frame))%Math.max(1,v.length)]:v}
+function drawMexAttackLayer(now){
+ const U=UT_SCALE,g=mex.gen;
+ if(g&&g.darkamt>0){ctx.save();ctx.globalAlpha=g.darkamt;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.restore();drawBox(box)}
+ if(mex.essay){drawMexEssay(now)}
+ const d=(key,frame,x,y,w,h,alpha=1)=>{const im=mexImg(key,frame);if(!im)return;ctx.save();ctx.globalAlpha=clamp(alpha,0,1);ctx.drawImage(im,Math.round(x*U),Math.round(y*U),Math.round(w*U),Math.round(h*U));ctx.restore()};
+ const B=mexBorder();
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ for(const f of mex.fx)if(f.t==='break')d('mexBreak',f.img,f.x,f.y,120,40,.75);
+ for(const o of mex.objs){
+   if(o.t==='box')d('mexBox',0,o.x,o.y,24,24);
+   else if(o.t==='bomb'){d('mexBomb',o.img||0,o.x,o.y,24,30);if(o.side===1){ctx.fillStyle='#fff';ctx.fillRect((o.x+27)*U,(o.y+6)*U,20*U,22*U)}if(o.side===2){ctx.fillStyle='#fff';ctx.fillRect((o.x-23)*U,(o.y+6)*U,20*U,22*U)}}
+   else if(o.t==='expl'){
+     const f=o.anim;
+     for(let yy=o.y-20;yy>-20;yy-=20)d('mexBlastV',f,o.x,yy,20,20);
+     for(let yy=o.y+20;yy<500;yy+=20)d('mexBlastV',f,o.x,yy,20,20);
+     for(let xx=o.x-20;xx>-20;xx-=20)d('mexBlastH',f,xx,o.y,20,20);
+     for(let xx=o.x+20;xx<660;xx+=20)d('mexBlastH',f,xx,o.y,20,20);
+     d('mexBlastC',f,o.x,o.y,20,20);
+   }
+   else if(o.t==='light'){const im=mexImg('mexLight');if(im){ctx.save();ctx.translate(o.x*U,o.y*U);ctx.rotate(-mexDir(o)*Math.PI/180);ctx.drawImage(im,-12*U,-12*U,24*U,24*U);ctx.restore()}}
+   else if(o.t==='kiss'){
+     const sp=o.spr==='sparkle',im=sp?mexImg('mexSparkle',o.siner/3):mexImg('mexKiss');
+     if(im){const sc=sp?1:(o.size+Math.sin(o.siner/2)*.1);ctx.save();ctx.translate(o.x*U,o.y*U);if(!sp)ctx.rotate(-Math.sin(o.siner/4)*12*Math.PI/180);ctx.scale(sc,sc);ctx.drawImage(im,(sp?-11:-12)*U,(sp?-11:-12)*U,(sp?22:24)*U,(sp?22:24)*U);ctx.restore()}
+   }
+   else if(o.t==='fodder')d('mexFodder',o.img,o.x-20,o.y-23,58,48);
+   else if(o.t==='dance')d(o.tell?'mexDanceTell':'mexDance',o.img,o.x-15,o.y-6,52,40);
+   else if(o.t==='legL'||o.t==='legR'){
+     if(!o.visible)continue;
+     const im=mexImg('mexLegBulL');if(!im)continue;
+     ctx.save();
+     if(o.on===1){ctx.filter='sepia(1) saturate(6) hue-rotate(5deg) brightness(1.2)'}
+     if(o.t==='legL')ctx.drawImage(im,o.x*U,o.y*U,216*U,26*U);
+     else{ctx.translate(o.x*U,o.y*U);ctx.scale(-1,1);ctx.drawImage(im,0,0,216*U,26*U)}
+     ctx.restore();
+   }
+   else if(o.t==='handL'||o.t==='handR'){
+     const L=o.t==='handL';
+     ctx.fillStyle='#000';
+     if(L)ctx.fillRect((o.segx+18)*U,(o.y+2)*U,(B[1]+2-o.segx-18)*U,16*U);else ctx.fillRect(B[0]*U-2*U,(o.y+2)*U,(o.segx+2-B[0]+2)*U,16*U);
+     ctx.fillStyle='#fff';
+     if(L)ctx.fillRect((o.segx+20)*U,(o.y+4)*U,(B[1]-o.segx-20)*U,12*U);else ctx.fillRect(B[0]*U,(o.y+4)*U,(o.segx-B[0])*U,12*U);
+     ctx.fillStyle='#000';
+     if(L)for(let i=o.segx+20;i<B[1];i+=20)ctx.fillRect((i-1)*U,(o.y+2)*U,2*U,16*U);
+     else for(let i=o.segx;i>B[0];i-=20)ctx.fillRect((i-1)*U,(o.y+2)*U,2*U,16*U);
+     const tx=L?o.segx+o.yseg:o.segx-o.yseg;
+     d(o.on===0?'mexTrig':'mexTrigOff',o.anim,tx,o.y,20,20);
+     d(L?'mexHandL':'mexHandR',0,o.segx,o.y,20,20);
+   }
+   else if(o.t==='rew'){
+     const k=o.rewed?'mexRew':'mexRec',w=o.rewed?55:50,h=o.rewed?19:20;
+     d(k,o.img,B[1]-w-5,B[3]-h-5,w,h);
+   }
+   else if(o.t==='disco'){
+     ctx.save();ctx.lineWidth=3*U;
+     for(const L of mexDiscoLasers(o)){if(!L.active)continue;ctx.strokeStyle=L.blue?'#14a9ff':'#ffffff';ctx.beginPath();ctx.moveTo((o.x+20)*U,(o.y+30)*U);ctx.lineTo(L.xx*U,L.yy*U);ctx.stroke()}
+     ctx.restore();
+     d(o.swap>=0?'mexDiscoInv':'mexDisco',0,o.x,o.y,40,60);
+   }
+   else if(o.t==='heart'){if(!o.hidden){const sz=24*(o.size||1);d('mexHeart',o.img,o.x-sz/2,o.y-sz/2,sz,sz)}}
+   else if(o.t==='burst'){const sz=24*o.size,sh=o.shake>0?[o.shake-mexRand(o.shake*2),o.shake-mexRand(o.shake*2)]:[0,0];d('mexHeartC',o.img,o.x+sh[0]-sz/2,o.y+sh[1]-sz/2,sz,sz)}
+   else if(o.t==='blocker'){if(o.visible)d('mexBox',0,o.x,o.y,24,24)}
+   else if(o.t==='bbomb'){if(o.visible)d('mexBomb',o.img||0,o.x,o.y,24,30)}
+   else if(o.t==='legline'){
+     if(o.con===1){
+       const col=['#ff0000','#ffff00','#000000'][o.eo];ctx.strokeStyle=col;ctx.lineWidth=U;
+       const x0=o.side==='l'?B[0]+6:B[1]-85+6,x1=o.side==='l'?B[0]+85-6:B[1]-6;
+       ctx.strokeRect(x0*U,(B[2]+6)*U,(x1-x0)*U,(B[3]-4-B[2]-6)*U);
+       d('mexExcl',o.eo%2,(o.side==='l'?B[0]+85/2:B[1]-85/2)-12,B[2]+30,24,72);
+     }
+     if(o.con>=3){
+       const im=mexImg(o.side==='l'?'mexLegBulL':'mexLegBulR');
+       if(im)for(let i=0;i<5;i++){
+         const rr=mexRand(o.shake)-mexRand(o.shake),w=Math.max(1,o.myx+rr);
+         ctx.save();ctx.beginPath();ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);ctx.clip();
+         if(o.side==='l')ctx.drawImage(im,216-w,0,w,26,B[0]*U,(B[2]+5+i*30+rr)*U,w*U,26*U);
+         else ctx.drawImage(im,0,0,w,26,(B[1]-o.myx)*U,(B[2]+5+i*30+rr)*U,w*U,26*U);
+         ctx.restore();
+       }
+     }
+   }
+   else if(o.t==='shot')d('mexShot',0,o.x,o.y,8,13*o.ys);
+ }
+ for(const f of mex.fx){
+   if(f.t==='piece'){
+     const im=mexImg(f.img,f.frame);if(!im)continue;
+     const w=(im.naturalWidth||im.width),h=(im.naturalHeight||im.height),hw=w/2,hh=h/2;
+     ctx.save();ctx.globalAlpha=clamp(f.a,0,1);
+     ctx.drawImage(im,0,0,hw,hh,(f.x-f.siner)*U,(f.y-f.siner)*U,hw*U,hh*U);
+     ctx.drawImage(im,hw,0,hw,hh,(f.x+f.siner+hw)*U,(f.y-f.siner)*U,hw*U,hh*U);
+     ctx.drawImage(im,0,hh,hw,hh,(f.x-f.siner)*U,(f.y+f.siner+hh)*U,hw*U,hh*U);
+     ctx.drawImage(im,hw,hh,hw,hh,(f.x+f.siner+hw)*U,(f.y+f.siner+hh)*U,hw*U,hh*U);
+     ctx.restore();
+   }
+   if(f.t==='star'){const im=mexImg('mexStar');if(im){ctx.save();ctx.globalAlpha=clamp(f.a,0,1);ctx.translate(f.x*U,f.y*U);ctx.rotate(-f.ang*Math.PI/180);ctx.scale(f.size,f.size);ctx.drawImage(im,-5*U,-5*U,10*U,10*U);ctx.restore()}}
+ }
+ ctx.restore();
+}
+// Top-level overlay: ratings graph, the ending caller bubble and the white fade.
+function drawMettatonExOverlay(now){
+ if(currentBoss!=='mettatonex'||screen!=='battle')return;
+ if(mex.intro)drawMexIntroOverlay(now);
+ drawMexRatings();
+ if(mex.caller)drawMexCaller(now);
+ const bd=mex.body;
+ if(bd.fadewhite===1){
+   ctx.save();ctx.globalAlpha=clamp(bd.whiteval,0,1);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+   if(bd.whiteval>10){ctx.globalAlpha=clamp(-1+bd.whiteval/10,0,1);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H)}
+   ctx.restore();
+ }
+}
+function mexKeyDown(e,k,low){
+ if(currentBoss!=='mettatonex'||screen!=='battle')return false;
+ if(mex.essay&&state==='attack')return mexEssayKey(e);
+ if(mex.caller&&(low==='z'||k==='Enter')&&!e.repeat){mexCallerAdvance();return true}
+ if(mex.intro&&mex.phase==='intro'&&!['battleSpeech'].includes(state))return true;
+ return false;
+}
+
+// ---------- ACTs / items / FIGHT ----------
+function mettatonExActOptions(){return ['Check','Boast','Pose','Heel']}
+function handleMettatonExAct(choice){
+ if(choice===0){setText('* METTATON EX - ATK 47 DEF 47\n* His weak point is his\n  heart-shaped core.',()=>beginEnemyTurn());return}
+ if(choice===1){mex.boast=true;setText("* You say you aren't going\n  to get hit at ALL.\n* Ratings gradually increase\n  during Mettaton's turn.",()=>beginEnemyTurn());return}
+ if(choice===2){
+   let t='* You posed dramatically.\n* The audience nods.';
+   if(hp<=maxHp/2)t='* Despite being hurt, you\n  posed dramatically.\n* The audience applauds.';
+   if(hp<maxHp/4)t='* Despite being wounded, you\n  posed dramatically.\n* The audience gasps.';
+   if(hp<=3)t='* With the last of your power,\n  you pose dramatically.\n* The audience screams.';
+   mexRate(11);setText(t,()=>beginEnemyTurn());return;
+ }
+ if(choice===3){mex.heel=true;setText("* You turn and scoff at the\n  audience.\n* They're rooting for your\n  destruction this turn!",()=>beginEnemyTurn());return}
+}
+function mexItemUsed(it){
+ const id=it?.id;
+ if(id==='glamburger')mexRate(10);
+ else if(id==='starfait'||id==='legendary_hero')mexRate(9);
+ else if(id==='junk_food')mexRate(8);
+ else if(id==='face_steak')mexRate(13);
+}
+function mexOnPlayerHit(){
+ // obj_mettatonex hurt event: pause 1 early on, pause 2 once he is below half or past turn 12.
+ const bd=mex.body;
+ bd.pause=(enemyHp>enemyMaxHp/2&&mex.turns<=12)?1:2;
+ mexRate(4);
+}
+function mexFlavor(){
+ if(mex.pendingFlavor){const t=mex.pendingFlavor;mex.pendingFlavor=null;return t}
+ if(enemyHp<=enemyMaxHp/4)return '* Mettaton has low HP.';
+ return Math.random()<.1?'* Smells like Mettaton.':'* Mettaton.';
+}
+function mexDef(){return mex.def}
+
+// ---------- scripted sequences (intro, death, ratings ending) ----------
+function mexBeginIntro(){
+ mex.phase='intro';
+ const bd=mex.body;bd.myblend=0;bd.myalpha=0;bd.sineron=0;
+ mex.intro={con:0,alarm4:30,lights:[{x:10,y:-100,sx:2,img:0},{x:630,y:-100,sx:-2,img:0}],vs:0,flasher:0,flashamt:0,blacker:1};
+ state='mexIntro';stopMusic();
+}
+function mexIntroStep(now){
+ const I=mex.intro,bd=mex.body;
+ if(I.alarm4>0&&--I.alarm4===0)I.con=Math.floor(I.con)+1;
+ for(const l of I.lights)l.y+=I.vs;
+ if(I.con===1&&!I.c1){I.c1=1;I.vs=2;I.alarm4=50;I.con=1}
+ if(I.con===2&&!I.c2){I.c2=1;play('encounterNoise');I.vs=0;I.alarm4=30}
+ if(I.con===3&&!I.c3){I.c3=1;play('encounterNoise');for(const l of I.lights)l.img=1;I.alarm4=60}
+ if(I.con===4){
+   if(bd.myalpha===0&&music.mettatonPre)playMusicElement(music.mettatonPre);
+   bd.myalpha+=.015;
+   if(bd.myalpha>=1){bd.myalpha=1;I.con=5;
+     startSpecialBattleSpeech([
+       'Ohhhh my.',"If you flipped my\nswitch, that can\nonly mean one\nthing.","You're desperate\nfor the premiere\nof my new body.",'How rude...',"Lucky for you,\nI've been aching\nto show this off\nfor a long time.","So... as thanks,\nI'll give you a\nhandsome reward.","I'll make your\nlast living\nmoments..."
+     ].map(text=>({text,wide:true,voiceBoss:'mettatonex'})),()=>{I.con=6;I.flasher=1;I.flashamt=0;state='mexIntro'});
+   }
+ }
+ if(I.con===6){
+   if(I.flasher===1){I.flashamt+=.2;if(I.flashamt>2){stopMusic();play('mexCreate');I.flasher=2;I.lights=[];bd.sineron=1;bd.myblend=1;bd.myalpha=1;I.blacker=0}}
+   else if(I.flasher===2){I.flashamt-=.4;if(I.flashamt<0){I.flasher=0;I.con=7;I.alarm4=20}}
+ }
+ if(I.con===8){
+   I.con=9;
+   startSpecialBattleSpeech([{text:'ABSOLUTELY beautiful!',wide:true,voiceBoss:'mettatonex'}],()=>{
+     mex.intro=null;mex.phase='battle';mex.introDone=true;
+     state='menu';setText('* Mettaton EX makes his premiere!');
+     if(audioUnlocked)startBattleMusic();
+   });
+ }
+}
+function drawMexIntroOverlay(now){
+ const I=mex.intro,U=UT_SCALE;if(!I)return;
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ for(const l of I.lights){const im=mexImg('mexStageLight',l.img);if(!im)continue;ctx.save();ctx.translate(l.x*U,l.y*U);ctx.scale(l.sx<0?-1:1,1);ctx.drawImage(im,0,0,570*U,240*U);ctx.restore()}
+ if(I.blacker){ctx.fillStyle='#000';ctx.fillRect(0,240*U,640*U,240*U)}
+ if(I.con===6){ctx.globalAlpha=clamp(I.flashamt,0,1);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H)}
+ ctx.restore();
+}
+// Mettaton's own lines go through the battle speech bubble; phone callers use
+// their own shocked bubble in the top-right corner like obj_blconsm/spr_shockblcon2.
+function mexSay(lines,done){
+ startSpecialBattleSpeech(lines.map(l=>typeof l==='string'?{text:l,wide:true,voiceBoss:'mettatonex'}:{wide:true,voiceBoss:'mettatonex',...l}),done);
+}
+function mexStartCaller(lines,done){mex.caller={lines,i:0,char:0,done,start:performance.now()}}
+function mexCallerAdvance(){
+ const c=mex.caller;if(!c)return;
+ const t=c.lines[c.i];
+ if(c.char<t.length){c.char=t.length;return}
+ c.i++;c.char=0;
+ if(c.i>=c.lines.length){const d=c.done;mex.caller=null;d&&d()}
+}
+function drawMexCaller(now){
+ const c=mex.caller,U=UT_SCALE;if(!c)return;
+ const t=c.lines[c.i]||'';
+ if(c.char<t.length&&Math.floor(now/33)!==c.last){c.last=Math.floor(now/33);c.char++;if(t[c.char-1]&&t[c.char-1]!==' '&&c.char%2===0)play('text',.9)}
+ ctx.save();
+ const x=410*U,y=40*U,w=210*U,h=110*U;
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,w,h,12*U):ctx.rect(x,y,w,h);ctx.fill();
+ ctx.beginPath();ctx.moveTo(x+w*.55,y+h);ctx.lineTo(x+w*.7,y+h+26*U);ctx.lineTo(x+w*.72,y+h);ctx.fill();
+ ctx.fillStyle='#000';ctx.textBaseline='top';ctx.textAlign='left';ctx.font=`${Math.round(13*U)}px "DTM Sans", "Determination Sans", monospace`;
+ t.slice(0,c.char).split('\n').forEach((l,i)=>ctx.fillText(l,x+10*U,y+10*U+i*21*U));
+ ctx.restore();
+}
+function mexWait(steps,fn){mex.seq={timer:steps,fn}}
+function mexSeqStep(){const s=mex.seq;if(s&&--s.timer<=0){mex.seq=null;s.fn()}}
+function mexBeginRatingsEnding(now){
+ mex.phase='ending';bullets=[];mex.objs=[];mex.gen=null;
+ mex.faceEmotion=0;mex.body.endface=1;
+ state='mexScene';
+ const L=(text,e)=>({text,mE:e});
+ mexSay([L("OOH, LOOK AT\nTHESE RATINGS!!!",0),L("THIS IS THE MOST\nVIEWERS I'VE EVER\nHAD!!!",6),L("WE'VE REACHED THE\nVIEWER CALL-IN\nMILESTONE!",6),L('ONE LUCKY VIEWER\nWILL HAVE THE CHANCE\nTO TALK TO ME...',8),L('... BEFORE I LEAVE\nTHE UNDERGROUND\nFOREVER!!',7),L("LET'S SEE WHO\nCALLS IN FIRST!",9)],()=>{
+   stopMusic();play('mexPhone');state='mexScene';
+   mexWait(50,()=>mexSay([L("HI, YOU'RE ON TV!",0),L('WHAT DO YOU HAVE\nTO SAY ON THIS,\nOUR LAST SHOW???',0)],()=>{
+     state='mexScene';
+     if(music.mettSad)playMusicElement(music.mettSad);
+     mexStartCaller(['.....','oh........','hi... \nmettaton...','i really liked\nwatching your show...','my life is pretty\nboring... but...','seeing you on the\nscreen... brought\nexcitement to my\nlife... vicariously',"i can't tell, but...\ni guess this is\nthe last episode...?","i'll miss you...\nmettaton......","... oh... i didn't\nmean to talk so\nlong...",'oh..........'],()=>{
+       mexSay([L('NO, WAIT! \nWAIT, BL...',0),L('H...\nTHEY ALREADY HUNG\nUP.',1),L('...',3),L("I'LL TAKE ANOTHER\nCALLER!!!",0)],()=>{
+         state='mexScene';play('mexPhone');
+         mexStartCaller(['Mettaton, your show\nmade us so happy!'],()=>{
+           play('mexPhone');
+           mexStartCaller(["Mettaton, I don't\nknow what I'll\nwatch without you."],()=>{
+             play('mexPhone');
+             mexStartCaller(["Mettaton, there's\na Mettaton-shaped\nhole in my Mettaton-\nshaped heart."],()=>{
+               mexWait(30,()=>mexSay([
+                 L('AH... I...',3),L('I SEE...',3),L('...',4),L('EVERYONE...\nTHANK YOU SO MUCH.',4),L('...',4),L('DARLING.',0),
+                 L("PERHAPS... IT MIGHT BE\nBETTER IF I STAY\nHERE FOR A WHILE.",1),L('HUMANS ALREADY HAVE\nSTARS AND IDOLS,\nBUT MONSTERS...',2),L('THEY ONLY HAVE ME.',0),
+                 L('IF I LEFT...\nTHE UNDERGROUND WOULD\nLOSE ITS SPARK.',1),L("I'D LEAVE AN ACHING\nVOID THAT CAN NEVER\nBE FILLED.",3),L("SO... I THINK I'LL\nHAVE TO DELAY MY\nBIG DEBUT.",0),
+                 L('BESIDES.',2),L("YOU'VE PROVEN TO\nBE VERY STRONG.",1),L('PERHAPS... EVEN STRONG\nENOUGH TO GET PAST\nASGORE.',0),L("I'M SURE YOU'LL BE\nABLE TO PROTECT\nHUMANITY.",0),
+                 L('HA, HA...',4),L("IT'S ALL FOR THE\nBEST, ANYWAY.",4),L("THE TRUTH IS, THIS\nFORM'S ENERGY\nCONSUMPTION IS...",3),L('INEFFICIENT.',3),
+                 L("IN A FEW MOMENTS,\nI'LL RUN OUT OF\nBATTERY POWER, AND...",3),L('WELL.',4),L("I'LL BE ALRIGHT.",0),L("KNOCK 'EM DEAD,\nDARLING.",5),L('AND EVERYONE...\nTHANK YOU.',0),L("YOU'VE BEEN A\nGREAT AUDIENCE!",0)
+               ],()=>{
+                 stopMusic();play('mexCreate');state='mexScene';
+                 mex.body.fadewhite=1;mex.endFade='spare';
+               }));
+             });
+           });
+         });
+       });
+     });
+   }));
+ });
+}
+function mexStartDeath(now){
+ if(mex.killed)return;mex.killed=true;
+ mex.phase='death';mex.active=false;bullets=[];mex.objs=[];mex.gen=null;
+ stopMusic();
+ const bd=mex.body;bd.hurt=2;bd.sineron=0;bd.pause=3;bd.dsf=.5;mex.faceEmotion=0;
+ state='mexScene';
+ const L=(text,e)=>({text,mE:e});
+ mexWait(30,()=>mexSay([L('H.. ha...',0),L('So I was wrong.',0),L('Darling...',0),L('You really are\nstrong enough to\nget past ASGORE.',1),L('Well then...',0),L("It's time for\nyou to go.",0),L("Don't worry about\nme.",0),L("I might seem like\nI'm dying now,\nbut...",0),L('Dr. Alphys can\nalways repair me.',1),L('And... besides...',0),L("Even if I'm not\ncut out to be\na star...",0),L("I still got to\nperform for a\nhuman, didn't I?",1),L('So, thank you,\ndarling...',0)],()=>{
+   state='mexScene';
+   let t=45;const fade=()=>{bd.dsf=Math.max(0,bd.dsf-.012);if(--t>0)mexWait(1,fade);else{bd.dsf=0;mexSay([L("You've been a\ngreat audience!",1)],()=>{state='mexScene';bd.fadewhite=1;mex.endFade='kill';play('mexExplosion')})}};
+   mexWait(1,fade);
+ }));
+}
+function mexEndFadeStep(now){
+ const bd=mex.body;
+ if(bd.fadewhite!==1)return;
+ if(mex.endFade==='kill'&&!mex.vaporPlayed&&bd.whiteval>=10){mex.vaporPlayed=true;play('vaporized')}
+ if(bd.whiteval>=44&&!mex.endDone){
+   mex.endDone=true;
+   bd.fadewhite=0;
+   if(mex.endFade==='kill')recordOutcome('kills','mettatonex');else recordOutcome('spares','mettatonex');
+   enemyDead=true;enemyHp=mex.endFade==='kill'?0:enemyHp;
+   mex.hideBody=true;
+   win();
+ }
+}
+
 function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='whimsun')return whimsunDrawImage(now,hurt);
  if(id==='whimsalot')return hurt?(images.whimsalotHurt||images.whimsalot):(images.whimsalot||images.whimsalotHurt);
@@ -17494,6 +18913,7 @@ function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='woshua')return makeWoshuaComposite(now,hurt);
  if(id==='pyrope')return makePyropeComposite(now,hurt);
  if(id==='undyneex')return makeUndyingComposite(now,hurt);
+ if(id==='mettatonex')return makeMettatonExComposite(now,hurt);
  if(id==='greaterdog')return makeGreatDogComposite(now,hurt);
  if(id==='temmie')return makeTemmieComposite(now,hurt);
  const hurtImage=images[id+'Hurt']||null;
@@ -18022,7 +19442,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -18086,6 +19506,8 @@ function drawTop(now=performance.now()){
              drawAaronMain(now,mainHit,commonMainOffset);
            }else if(currentBoss==='undyneex'){
              drawUndyingMain(now,mainHit,commonMainOffset);
+           }else if(currentBoss==='mettatonex'){
+             drawMettatonExMain(now,mainHit,commonMainOffset);
            }else{
              if(currentBoss==='undyne'&&undyneDying&&undyneDeathStage>=5&&drawUndyneRealMelt(enemyDraw,now,commonMainOffset)){
                // V56: final determination melt uses the corrected visual frame order.
@@ -19175,6 +20597,7 @@ function drawAttack(now){
  // visibly hang outside the board. Collision behavior is unchanged.
  const undyneNoBorderKinds=new Set(['undyneDir','undyneRise','undyneChase','undyneTransition','uxRing','uxFollow2']);
  ctx.save();
+ if(currentBoss==='mettatonex')drawMexAttackLayer(now);
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
@@ -19467,7 +20890,10 @@ function drawAttack(now){
    if(now>=invUntil||Math.floor(now/70)%2===0){
      // Papyrus' blue magic overrides EVERY custom role SOUL. Noelle MALICE and
      // Toriel/Papyrus white monster SOULs return after the blue phase ends.
-     if(isUndyneFight()&&soulMode==='green'){
+     if(soulMode==='yellow'&&images.mexSoul?.[0]){
+       // spr_heartyellow_flip: the shooter SOUL points up at Mettaton.
+       ctx.drawImage(images.mexSoul[0],Math.round(soul.x-16),Math.round(soul.y-16),32,32);
+     }else if(isUndyneFight()&&soulMode==='green'){
        const frames=images.heartGreen||[],gim=frames[Math.floor(now/140)%Math.max(1,frames.length)]||frames[0]||images.heart;
        const soulSize=16*UT_SCALE,r=30*UT_SCALE;
        ctx.save();ctx.translate(Math.round(soul.x),Math.round(soul.y));
@@ -20214,7 +21640,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -20275,7 +21701,7 @@ function drawEnemySelect(now=performance.now()){
  font(15,'#777','left');ctx.fillText((b.area||'UNKNOWN').toUpperCase(),info.x+28,info.y+106);
  const stats=[['HP',b.hp],['AT',b.atk],['DF',b.def]];
  stats.forEach((v,i)=>{const x=info.x+28+i*133;ctx.fillStyle='#050505';ctx.fillRect(x,info.y+139,116,62);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(x,info.y+139,116,62);font(12,'#666','center');ctx.fillText(v[0],x+58,info.y+148);font(24,'#fff','center');ctx.fillText(String(v[1]),x+58,info.y+169)});
- const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',undyneex:'WATERFALL // THE HEROINE APPEARS',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
+ const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',undyneex:'WATERFALL // THE HEROINE APPEARS',mettatonex:'CORE // LIGHTS! CAMERA! ACTION!',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
  font(13,'#888','left');ctx.fillText(descMap[b.id]||'CUSTOM ENCOUNTER',info.x+28,info.y+212);
  const rp=rewardPreview(b.id),sandboxPay=!vanillaMode;
  const killExpText=b.id==='loox'&&!hardModeEnabled?`${rp.killExp} EXP (3-24 VIA ACT)`: `${rp.killExp} EXP`;
@@ -22392,6 +23818,7 @@ function render(now){
  drawBattleSpeech(now);
  drawStats(now);
  drawButtons();
+ drawMettatonExOverlay(now);
  // EXIT is a PC/debug convenience, not part of UNDERTALE's native battle HUD.
  // Keep it available in sandbox/debug builds without polluting VANILLA battles.
  if(!vanillaMode||debugOpen)drawExitButton();
@@ -22600,7 +24027,7 @@ function runDebugCommand(raw){
    if(c==='help'){
      debugLog([
        'boss <id> [classic|noelle]  | hp <n> | enemyhp <n> | tp <n> | mercy <n>',
-       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne undyneex tsunderplane vulkin mettaton custom flowey migosp sans5000',
+       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne undyneex mettatonex tsunderplane vulkin mettaton custom flowey migosp sans5000',
        'soul <red|blue> | scene <name> | face <emotion> | attack | end | kill | spare',
        'scene maddummy-napstablook (alias: madnap) // Mad Dummy ending interruption',
        'hard <on|off|toggle> | papwave <-1..15> | gameover <normal|toriel|aaron|papyrus|napstablook>',
@@ -22869,6 +24296,7 @@ function keyDown(e){
  }
 
  key[k]=true;key[low]=true;
+ if(mexKeyDown(e,k,low))return;
 
  // During Noelle attacks, WASD both moves MALICE and updates the stored firing
  // direction. ENTER is reserved for charging/firing, so it cannot also confirm a menu.
@@ -23763,6 +25191,8 @@ async function boot(){
  for(const k of ['mandogHurt','womandogHurt','smHeart','smHeartB','woshHanger','woshWater','woshBody','woshHead','woshFace','soapBul','pyropeFootL','pyropeFootR','pyropeHurt','ropeBul','bombExplosion','jerryHurt'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['uxFaceLaugh','uxFaceE','uxMelt','uxSmear'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxEyebeam','uxFollowSpear'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
+ for(const k of ['mexUpper', 'mexFace1', 'mexFaceDef', 'mexFaceGen', 'mexFaceHurt', 'mexBomb', 'mexBlastC', 'mexBlastH', 'mexBlastV', 'mexFodder', 'mexSparkle', 'mexDance', 'mexDanceTell', 'mexTrig', 'mexRec', 'mexRew', 'mexHeart', 'mexHeartC', 'mexExcl', 'mexBreak', 'mexShot', 'mexSoul', 'mexStageLight', 'mexArm'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
+ for(const k of ['mexUpperHeart', 'mexLeg1', 'mexLeg2', 'mexLeg3', 'mexLeg4', 'mexLeg5', 'mexLeg2Flip', 'mexLeg2FlipV', 'mexLeg2Unflip', 'mexLeg2UnflipV', 'mexBox', 'mexLight', 'mexKiss', 'mexLegBulL', 'mexLegBulR', 'mexHandL', 'mexHandR', 'mexTrigOff', 'mexDisco', 'mexDiscoInv', 'mexStar'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
@@ -23952,6 +25382,9 @@ async function boot(){
  addBg('Dummy!',async()=>music.maddummy=await loadAudioAsset(MUSIC.maddummy,.50,true));
  addBg('Nyeh Heh Heh!',async()=>music.papyrusIntro=await loadAudioAsset(MUSIC.papyrusIntro,.50,true));
  addBg('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
+ addBg('Death by Glamour',async()=>{music.mettatonEx=await loadAudioAsset(MUSIC.mettatonEx,.50,true);if(currentBoss==='mettatonex'&&screen==='battle'&&audioUnlocked&&mex.phase==='battle'&&!mex.killed)startBattleMusic()});
+ addBg('Mettaton pre-transform',async()=>music.mettatonPre=await loadAudioAsset(MUSIC.mettatonPre,.50,true));
+ addBg('Mettaton sad',async()=>music.mettSad=await loadAudioAsset(MUSIC.mettSad,.50,true));
  addBg('Battle Against a True Hero',async()=>{music.undyneex=await loadAudioAsset(MUSIC.undyneex,.50,true);if(currentBoss==='undyneex'&&screen==='battle'&&audioUnlocked&&!uxDying)startBattleMusic()});
  addBg('Undyne exact music slot',async()=>music.undyne=await loadSavedOrLocalUndyneMusic());
  addBg('Undyne An Ending excerpt 1',async()=>music.undyneEnding1=await loadAudioAsset(MUSIC.undyneEnding1,.50,false));
@@ -24012,7 +25445,7 @@ async function boot(){
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
  images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
- for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex']){
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
