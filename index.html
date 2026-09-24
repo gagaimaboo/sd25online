@@ -18608,7 +18608,8 @@ function mexStep(now){
 function updateMettatonEx(dt,now){
  if(currentBoss!=='mettatonex'||screen!=='battle')return;
  mexSyncSpeechFace();
- const z=!!(key.z||key.Z);
+ // Z or ENTER fires (ENTER stays reserved for MALICE while playing as Noelle).
+ const z=!!(key.z||key.Z||(practiceMode!=='noelle'&&key.Enter));
  if(z&&!mex.prevZ&&state==='attack')mexTryShoot();
  mex.prevZ=z;
  mex.acc+=Math.min(dt,.25)*1000;
