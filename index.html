@@ -1151,6 +1151,21 @@ const UNDERTALE_LV_CHART=[
  {lv:20,hp:99,at:38,df:4,totalExp:99999,nextExp:null}
 ];
 const LV_TOTAL_EXP=UNDERTALE_LV_CHART.map(v=>v.totalExp);
+// LV 21-30 go past UNDERTALE's chart. EXP never reaches them: they can only be
+// picked on the LV screen, and only against the bosses listed in BOSS_LV_CAPS.
+const LV_ABS_MAX=30;
+for(let lv=21;lv<=LV_ABS_MAX;lv++)UNDERTALE_LV_CHART.push({lv,hp:99+10*(lv-20),at:38+3*(lv-20),df:4+Math.floor((lv-20)/2),totalExp:99999,nextExp:null,beyond:true});
+const BOSS_LV_CAPS={undyneex:30,mettatonneo:30,mettatonex:25,undyne:25};
+function bossLvCap(id=currentBoss){
+ if(id==='papyrus')return papyrusNhbMode()?25:20;
+ return BOSS_LV_CAPS[id]||20;
+}
+// The LV actually used in battle: EXP LV, or the picked LV 21+ where the boss allows it.
+function battleLevel(){
+ const base=progressionLevel(),over=Math.floor(Number(progression.overLv)||0);
+ if(base>=20&&over>20&&!(typeof bossRushActive!=='undefined'&&bossRushActive))return Math.min(over,bossLvCap());
+ return base;
+}
 const HARD_REWARD_MULT=5;
 const HARD_CLEAR_G_BONUS=25;
 const VANILLA_REWARDS={
@@ -1309,7 +1324,7 @@ function loadProgression(){
    for(const row of SHOP_ARMOR_ENTRIES){if(p.armors?.[row.id])armors[row.id]=true}
    const equipped=(p.equippedWeapon==='stick'||SHOP_WEAPON_ENTRIES.some(v=>v.id===p.equippedWeapon&&weapons[v.id]&&!v.partyOnly))?p.equippedWeapon:'stick';
    const equippedArmor=SHOP_ARMOR_ENTRIES.some(v=>v.id===p.equippedArmor&&armors[v.id]&&!v.partyOnly)?p.equippedArmor:'bandage';
-   return {exp:Math.max(0,Math.floor(Number(p.exp)||0)),gold:Math.max(0,Math.floor(Number(p.gold)||0)),itemStock:stock,weapons,equippedWeapon:equipped,armors,equippedArmor};
+   return {overLv:Math.max(0,Math.min(30,Math.floor(Number(p.overLv)||0))),exp:Math.max(0,Math.floor(Number(p.exp)||0)),gold:Math.max(0,Math.floor(Number(p.gold)||0)),itemStock:stock,weapons,equippedWeapon:equipped,armors,equippedArmor};
  }catch(_){return emptyProgression()}
 }
 let progression=loadProgression();
@@ -1325,7 +1340,7 @@ function progressionLevel(exp=progression.exp){
  return Math.min(20,lv);
 }
 function undertaleLevelStats(lv=progressionLevel()){
- lv=Math.max(1,Math.min(20,Math.floor(Number(lv)||1)));
+ lv=Math.max(1,Math.min(LV_ABS_MAX,Math.floor(Number(lv)||1)));
  return UNDERTALE_LV_CHART[lv-1];
 }
 // UNDERTALE's NEXT value is the amount still needed from the CURRENT EXP,
@@ -1339,8 +1354,15 @@ function progressionNextExp(exp=progression.exp){
 function expForLevel(lv){
  return undertaleLevelStats(lv).totalExp;
 }
+function levelSelectBossId(){return BOSS_OPTIONS[bossSelected]?.id||currentBoss}
+function levelSelectCap(){
+ const bossCap=bossLvCap(levelSelectBossId());
+ if(vanillaMode){const a=armorLevelCap();return a<20?a:bossCap}
+ return bossCap;
+}
 function openLevelSelect(returnScreen=screen){
- levelSelectValue=Math.min(progressionLevel(),vanillaMode?armorLevelCap():20);
+ const cur=progressionLevel()>=20&&Number(progression.overLv)>20?Number(progression.overLv):progressionLevel();
+ levelSelectValue=Math.min(cur,levelSelectCap());
  levelSelectReturnScreen=['title','enemies','customhub'].includes(returnScreen)?returnScreen:'title';
  screen='lvselect';
 }
@@ -1349,9 +1371,10 @@ function cancelLevelSelect(){
  if(screen==='enemies')enemySelectFocus=5;
 }
 function confirmLevelSelect(){
- const cap=vanillaMode?armorLevelCap():20;
+ const cap=levelSelectCap();
  levelSelectValue=Math.min(levelSelectValue,cap);
- progression.exp=expForLevel(levelSelectValue);
+ progression.exp=expForLevel(Math.min(20,levelSelectValue));
+ progression.overLv=levelSelectValue>20?levelSelectValue:0;
  saveProgression();
  startPracticeMode();
 }
@@ -3653,14 +3676,14 @@ function ensureStatOverride(bucket,id,base){
  return o;
 }
 
-function levelStatGrowth(lv=progressionLevel()){
+function levelStatGrowth(lv=battleLevel()){
  const row=undertaleLevelStats(lv);
  // Values shown on UNDERTALE's STAT screen. HP is literal, while AT/DF have
  // a hidden +10 battle offset handled by effectivePlayerStats().
  return {hp:row.hp-20,atk:row.at,def:row.df};
 }
 function effectivePlayerStats(){
- const row=undertaleLevelStats((typeof bossRushActive!=='undefined'&&bossRushActive)?5:progressionLevel());
+ const row=undertaleLevelStats((typeof bossRushActive!=='undefined'&&bossRushActive)?5:battleLevel());
  // UNDERTALE's battle controller uses AT and DF internally ten points above
  // the values printed on the STAT screen. Armor layers on top of those base stats.
  const vanillaInternalAtk=row.at+10;
@@ -8529,8 +8552,15 @@ function targetIsTired(targetId){
  const si=supportIndexFromTarget(targetId),sp=si>=0?supportInstance(si):null;
  return !!(sp&&!sp.dead&&sp.tired);
 }
+// Major bosses never get TIRED (no 50% HP tired state, no SleepMist/pacify route).
+const NEVER_TIRED=new Set(['undyneex','mettatonneo','mettatonex','undyne','toriel','maddummy','sans5000','flowey']);
+function enemyNeverTired(id){
+ if(id==='papyrus')return papyrusNhbMode();
+ return NEVER_TIRED.has(id);
+}
 function setTargetTired(targetId,on=true){
  const next=!!on;
+ if(next&&enemyNeverTired(targetEnemyId(targetId)))return false;
  let changed=false;
  if(targetId==='main'){
    if(enemyDead)return false;
@@ -13663,7 +13693,9 @@ function updateSoulMovement(dt,now){
  if(soulMode==='blue'){
    // Undertale's default blue-soul horizontal movement is authored in
    // native pixels per 30Hz step rather than arbitrary canvas px/sec.
-   const horizontal=PAPYRUS_BLUE_MOVE_NATIVE*30*UT_SCALE*battleSpeedMul;
+   // Papyrus NOT HOLDING BACK: a faster blue SOUL to keep up with his attacks.
+   const nhbFast=currentBoss==='papyrus'&&papyrusNhbMode()?1.5:1;
+   const horizontal=PAPYRUS_BLUE_MOVE_NATIVE*30*UT_SCALE*battleSpeedMul*nhbFast;
    soul.x=clamp(soul.x+dx*horizontal*dt,ARENA.x+14,ARENA.x+ARENA.w-14);
 
    const floor=ARENA.y+ARENA.h-14;
@@ -21070,7 +21102,7 @@ function drawStats(now=performance.now()){
  const player=roleDisplayName(practiceMode).toUpperCase();
  drawHudMarsLine(player,31,400,18,'#fff');
  drawHudMarsLine('LV',132,400,18,'#fff');
- drawHudMarsLine(String(progressionLevel()),172,400,18,'#fff');
+ drawHudMarsLine(String(battleLevel()),172,400,18,'#fff');
  if(images.hpHudSprite){
    ctx.save();ctx.imageSmoothingEnabled=false;
    // Original battle_ui Draw event: draw_sprite(spr_battle_ui_hp,0,x+214,y+4).
@@ -24936,8 +24968,10 @@ function drawSettings(now=performance.now()){
  font(16,'#666','center');ctx.fillText('W/S OR ↑/↓ SELECT   •   A/D OR ←/→ TOGGLE   •   Z/ENTER CONFIRM   •   X/ESC BACK',W/2,970);
 }
 function levelSelectPanelRect(){return{x:(W-760)/2,y:150,w:760,h:760}}
+function levelSelectCols(){return levelSelectCap()>20?6:5}
 function levelSelectCellRect(i){
- const p=levelSelectPanelRect(),cols=5,w=112,h=82,gx=18,gy=18;
+ const compact=levelSelectCap()>20;
+ const p=levelSelectPanelRect(),cols=levelSelectCols(),w=compact?100:112,h=compact?62:82,gx=compact?12:18,gy=compact?12:18;
  const row=Math.floor(i/cols),col=i%cols;
  const total=cols*w+(cols-1)*gx;
  return{x:p.x+(p.w-total)/2+col*(w+gx),y:p.y+190+row*(h+gy),w,h};
@@ -24953,17 +24987,18 @@ function drawLevelSelect(now=performance.now()){
  ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.strokeRect(p.x,p.y,p.w,p.h);
  font(46,'#fff','center');ctx.fillText('SET YOUR LV',W/2,p.y+32);
  font(17,'#888','center');ctx.fillText('CHOOSE THE LV USED FOR THIS FIGHT',W/2,p.y+98);
- const boss=BOSS_OPTIONS[bossSelected]?.label||'ENEMY',cap=vanillaMode?armorLevelCap():20,armor=vanillaArmorData();
- font(15,cap<20?'#ffff00':'#666','center');ctx.fillText(cap<20?`${boss.toUpperCase()}  //  ${armor.label.toUpperCase()} CAPS LV AT ${cap}`:`${boss.toUpperCase()}  //  GOLD UNCHANGED`,W/2,p.y+132);
+ const boss=BOSS_OPTIONS[bossSelected]?.label||'ENEMY',cap=levelSelectCap(),armor=vanillaArmorData();
+ font(15,cap!==20?(cap>20?'#ff4040':'#ffff00'):'#666','center');ctx.fillText(cap>20?`${boss.toUpperCase()}  //  LV UP TO ${cap} UNLOCKED`:cap<20?`${boss.toUpperCase()}  //  ${armor.label.toUpperCase()} CAPS LV AT ${cap}`:`${boss.toUpperCase()}  //  GOLD UNCHANGED`,W/2,p.y+132);
 
- for(let i=0;i<20;i++){
-   const lv=i+1,r=levelSelectCellRect(i),locked=lv>cap,active=levelSelectValue===lv&&!locked;
+ const cells=Math.max(20,cap),compact=cap>20;
+ for(let i=0;i<cells;i++){
+   const lv=i+1,r=levelSelectCellRect(i),locked=lv>cap,active=levelSelectValue===lv&&!locked,beyond=lv>20;
    ctx.fillStyle=active?'#151200':'#020202';ctx.fillRect(r.x,r.y,r.w,r.h);
    ctx.strokeStyle=active?'#ffff00':(locked?'#292929':'#555');ctx.lineWidth=active?4:2;ctx.strokeRect(r.x,r.y,r.w,r.h);
    if(active){drawSelectionCorners(r,'#ffff00',now);drawUiHeart(r.x+16,r.y+r.h/2,15,1)}
-   font(14,active?'#ffff00':(locked?'#333':'#777'),'center');ctx.fillText('LV',r.x+r.w/2,r.y+12);
-   font(29,active?'#ffff00':(locked?'#333':'#fff'),'center');ctx.fillText(String(lv),r.x+r.w/2,r.y+36);
-   font(10,active?'#aaa':(locked?'#2a2a2a':'#555'),'center');ctx.fillText(locked?'ARMOR LOCK':`TOTAL ${expForLevel(lv)} EXP`,r.x+r.w/2,r.y+66);
+   font(compact?11:14,active?'#ffff00':(locked?'#333':(beyond?'#ff6060':'#777')),'center');ctx.fillText('LV',r.x+r.w/2,r.y+(compact?6:12));
+   font(compact?23:29,active?'#ffff00':(locked?'#333':(beyond?'#ff4040':'#fff')),'center');ctx.fillText(String(lv),r.x+r.w/2,r.y+(compact?20:36));
+   font(compact?9:10,active?'#aaa':(locked?'#2a2a2a':'#555'),'center');ctx.fillText(locked?'ARMOR LOCK':(beyond?'BEYOND LV 20':`TOTAL ${expForLevel(lv)} EXP`),r.x+r.w/2,r.y+(compact?46:66));
  }
 
  const selectedStats=undertaleLevelStats(levelSelectValue);
@@ -25586,11 +25621,12 @@ function keyDown(e){
 
  if(screen==='lvselect'){
    if(!e.repeat&&(low==='x'||k==='Shift'||k==='Escape')){play('select');cancelLevelSelect();return}
-   const idx=levelSelectValue-1,row=Math.floor(idx/5),col=idx%5;
-   if(!e.repeat&&(k==='ArrowLeft'||low==='a')){levelSelectValue=Math.min(row*5+((col+4)%5)+1,vanillaMode?armorLevelCap():20);play('move');return}
-   if(!e.repeat&&(k==='ArrowRight'||low==='d')){levelSelectValue=Math.min(row*5+((col+1)%5)+1,vanillaMode?armorLevelCap():20);play('move');return}
-   if(!e.repeat&&(k==='ArrowUp'||low==='w')){levelSelectValue=Math.min(((row+3)%4)*5+col+1,vanillaMode?armorLevelCap():20);play('move');return}
-   if(!e.repeat&&(k==='ArrowDown'||low==='s')){levelSelectValue=Math.min(((row+1)%4)*5+col+1,vanillaMode?armorLevelCap():20);play('move');return}
+   const cap=levelSelectCap(),C=levelSelectCols(),R=Math.ceil(Math.max(20,cap)/C);
+   const idx=levelSelectValue-1,row=Math.floor(idx/C),col=idx%C;
+   if(!e.repeat&&(k==='ArrowLeft'||low==='a')){levelSelectValue=Math.min(row*C+((col+C-1)%C)+1,cap);play('move');return}
+   if(!e.repeat&&(k==='ArrowRight'||low==='d')){levelSelectValue=Math.min(row*C+((col+1)%C)+1,cap);play('move');return}
+   if(!e.repeat&&(k==='ArrowUp'||low==='w')){levelSelectValue=Math.min(((row+R-1)%R)*C+col+1,cap);play('move');return}
+   if(!e.repeat&&(k==='ArrowDown'||low==='s')){levelSelectValue=Math.min(((row+1)%R)*C+col+1,cap);play('move');return}
    if(!e.repeat&&(low==='z'||k==='Enter')){play('select');confirmLevelSelect();return}
    return;
  }
@@ -26051,9 +26087,9 @@ canvas.addEventListener('pointerdown',e=>{
    return;
  }
  if(screen==='lvselect'){
-   for(let i=0;i<20;i++){
+   for(let i=0;i<Math.max(20,levelSelectCap());i++){
      const q=levelSelectCellRect(i);
-     if(x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h){const lv=i+1,cap=vanillaMode?armorLevelCap():20;if(lv<=cap){levelSelectValue=lv;play('move')}else play('hurt');return}
+     if(x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h){const lv=i+1,cap=levelSelectCap();if(lv<=cap){levelSelectValue=lv;play('move')}else play('hurt');return}
    }
    const cr=levelSelectConfirmRect();
    if(x>=cr.x&&x<=cr.x+cr.w&&y>=cr.y&&y<=cr.y+cr.h){play('select');confirmLevelSelect();return}
