@@ -17343,15 +17343,16 @@ function updateUndyingBullet(b,now,dt){
  const U=UT_SCALE;
  wfSteps(b,dt,b=>{
    if(b.kind==='uxRise'){
-     if(b.alarm1>0&&--b.alarm1===0){b.visible=true;b.vy=-1;play('undyneSpearAppear')}
+     if(b.alarm1>0&&--b.alarm1===0){b.visible=true;b.rv=-1;play('undyneSpearAppear')}
      if(b.alarm0>0&&--b.alarm0===0){
        if(b.part===3)b.part=4;
-       else if(b.part===2){b.vy=0;b.part=3;b.alarm0=2}
-       else if(b.part===1){b.vy=-10;play('undyneSpearRise');b.part=2;b.alarm0=6}
-       else if(b.part===0){b.part=1;b.vy=0;b.alarm0=12}
+       else if(b.part===2){b.rv=0;b.part=3;b.alarm0=2}
+       else if(b.part===1){b.rv=-10;play('undyneSpearRise');b.part=2;b.alarm0=6}
+       else if(b.part===0){b.part=1;b.rv=0;b.alarm0=12}
      }
      if(b.part===4||b.deact){b.alpha-=.1;if(b.alpha<=0)b.expired=true}
-     b.y+=b.vy*U;
+     // wfSteps clears vx/vy after every frame, so the spear keeps its own speed.
+     b.y+=(b.rv||0)*U;
      return;
    }
    if(b.kind==='uxRing'){
