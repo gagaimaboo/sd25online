@@ -117,6 +117,7 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-woshua">woshua</button>
     <button data-debug="boss-pyrope">pyrope</button>
     <button data-debug="boss-undyne">undyne</button>
+    <button data-debug="boss-undyneex">undyne the undying</button>
     <button data-debug="boss-mettaton">mettaton quiz</button>
     <button data-debug="boss-custom">custom</button>
     <button data-debug="mode-classic">classic mode</button>
@@ -375,6 +376,21 @@ const IMG={
  // Jerry (support only).
  jerry:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_jerry_${i}.png`),
  jerryHurt:RAW+'sprites/images/spr_jerryhurt_0.png',
+ // Undyne the Undying (obj_undynex_body parts) and her spear bullets.
+ uxHair:RAW+'sprites/images/spr_undynex_hair_0.png',
+ uxLegs:RAW+'sprites/images/spr_undynex_legs_0.png',
+ uxLArm:RAW+'sprites/images/spr_undynex_leftarm_0.png',
+ uxRArm:RAW+'sprites/images/spr_undynex_rightarm_0.png',
+ uxTorso:RAW+'sprites/images/spr_undynex_torso_0.png',
+ uxPants:RAW+'sprites/images/spr_undynex_pants_0.png',
+ uxFace1:RAW+'sprites/images/spr_undynex_face1_0.png',
+ uxFaceDamage:RAW+'sprites/images/spr_undynex_face_damage_0.png',
+ uxFaceLaugh:[0,1].map(i=>RAW+`sprites/images/spr_undynex_face_laugh_${i}.png`),
+ uxFaceE:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_undynex_face_e_${i}.png`),
+ uxEyebeam:RAW+'sprites/images/spr_undynex_eyebeam_0.png',
+ uxMelt:[0,1].map(i=>RAW+`sprites/images/spr_undynex_melt_${i}.png`),
+ uxSmear:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_smear_${i}.png`),
+ uxFollowSpear:RAW+'sprites/images/spr_followspear_2_0.png',
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -746,6 +762,8 @@ const MUSIC={
  papyrusIntro:RAW+'sound/audio/mus_papyrus.ogg',
  papyrus:RAW+'sound/audio/mus_papyrusboss.ogg',
  undyne:RAW+'sound/audio/mus_undyneboss.ogg',
+ // Battle Against a True Hero (scr_battlegroup case 25: music/x_undyne.ogg).
+ undyneex:RAW+'sound/audio/mus_x_undyne.ogg',
  // Source death persistence switches away from Spear of Justice into the two
  // An Ending excerpts. These are exact resource hooks; there is no generated substitute.
  undyneEnding1:RAW+'sound/audio/endingexcerpt1.ogg',
@@ -1068,6 +1086,7 @@ const VANILLA_REWARDS={
  dogi:{exp:60,killGold:50,spareGold:50},
  woshua:{exp:52,killGold:25,spareGold:25},
  pyrope:{exp:80,killGold:40,spareGold:40},
+ undyneex:{exp:1500,killGold:0,spareGold:0},
  jerry:{exp:1,killGold:55,spareGold:55},
  tsunderplane:{exp:95,killGold:45,spareGold:60},
  vulkin:{exp:70,killGold:50,spareGold:40},
@@ -2273,7 +2292,7 @@ const MENU_MUSIC_SCREENS=new Set(['title','enemies','kills','spares','settings',
 let menuMusicAutoplayTried=false;
 function menuMusicScreen(){return MENU_MUSIC_SCREENS.has(screen)}
 function battleMusicTracks(){
- return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
+ return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
 }
 function stopBattleMusicTracks(){for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}}
 function stopMenuMusic(reset=true){
@@ -2338,7 +2357,8 @@ function startBattleMusic(){
  else if(currentBoss==='sans5000')track=music.sans||music.battle;
  else if(currentBoss==='papyrus'){
    track=papyrusBlue?(music.papyrus||music.papyrusIntro||music.battle):(music.papyrusIntro||music.battle);
- }else if(currentBoss==='undyne')track=undyneDying?(undyneDeathTrackPhase>=2?(music.undyneEnding2||null):(music.undyneEnding1||null)):(music.undyne||null);
+ }else if(currentBoss==='undyneex')track=uxDying?null:(music.undyneex||null);
+ else if(currentBoss==='undyne')track=undyneDying?(undyneDeathTrackPhase>=2?(music.undyneEnding2||null):(music.undyneEnding1||null)):(music.undyne||null);
  else if(currentBoss==='mettaton')track=music.mettatonQuiz||music.battle;
 
  if(track)playMusicElement(track);
@@ -2411,6 +2431,8 @@ const ENEMY_LAYOUTS={
  dogi:{x:208,y:38,w:224,h:200},
  woshua:{x:265,y:88,w:110,h:112},
  pyrope:{x:245,y:0,w:150,h:250},
+ // obj_undynex_body at (210,20); canvas spans room x 180..440, y -20..260.
+ undyneex:{x:180,y:-20,w:260,h:280},
  jerry:{x:245,y:150,w:150,h:72},
  // Exact battle composite is 190x160. Keep that broad aircraft silhouette.
  tsunderplane:{x:225,y:82,w:190,h:160},
@@ -2445,6 +2467,7 @@ const PAIR_MAIN_LAYOUTS={
  dogi:{x:150,y:38,w:200,h:178},
  woshua:{x:200,y:100,w:100,h:102},
  pyrope:{x:180,y:0,w:135,h:225},
+ undyneex:{x:110,y:-20,w:260,h:280},
  tsunderplane:{x:145,y:96,w:176,h:148},
  vulkin:{x:202,y:128,w:92,h:114},
  undyne:{x:168,y:24,w:151,h:209},
@@ -2777,10 +2800,11 @@ function buildUndyneGreenPattern(lesson){
  return p;
 }
 // Source site codes: 0=left, 1=right, 2=down, 3=up.
+function isUndyneFight(){return currentBoss==='undyne'||currentBoss==='undyneex'}
 function undyneDirectionAngle(dir){return [0,180,90,270][dir]??270}
 function undyneOppositeSite(dir){return [1,0,3,2][dir]??3}
 function beginUndyneSoulSwitchVisual(fromMode,toMode,now=performance.now()){
- if(currentBoss!=='undyne'||fromMode===toMode)return;
+ if(!isUndyneFight()||fromMode===toMode)return;
  undyneSoulSwitchFrom=fromMode||'red';
  undyneSoulSwitchTo=toMode||'red';
  undyneSoulSwitchAt=now;
@@ -3279,6 +3303,7 @@ const BOSS_OPTIONS=[
  {id:'temmie',label:'TEMMIE',area:'WATERFALL',hp:5,atk:7,def:-20,encounter:'* Special enemy Temmie appears here to defeat you!!',noelleEncounter:'* Noelle encountered Temmie.'},
  {id:'woshua',label:'WOSHUA',area:'WATERFALL',hp:70,atk:7,def:1,encounter:'* Woshua shuffles up.',noelleEncounter:'* Noelle encountered Woshua.'},
  {id:'undyne',label:'UNDYNE',area:'WATERFALL BOSS',hp:1500,atk:7,def:0,encounter:'* Undyne attacks!',noelleEncounter:'* Noelle faces Undyne.'},
+ {id:'undyneex',label:'UNDYNE THE UNDYING',area:'WATERFALL // GENOCIDE',hp:23000,atk:12,def:5,encounter:'* The heroine appears.',noelleEncounter:'* The heroine appears.\n* Noelle grips her ring.'},
  {id:'tsunderplane',label:'TSUNDERPLANE',area:'HOTLAND',hp:80,atk:25,def:26,encounter:'* Tsunderplane swoops into your way... accidentally, apparently.',noelleEncounter:'* Noelle encountered Tsunderplane.'},
  {id:'pyrope',label:'PYROPE',area:'HOTLAND',hp:110,atk:8,def:1,encounter:'* Pyrope bounces into view!',noelleEncounter:'* Noelle encountered Pyrope.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
@@ -3634,7 +3659,7 @@ function undyneSupportShieldRadius(b){
  return 7*UT_SCALE;
 }
 function tryUndyneSupportShieldBlock(b,now=performance.now()){
- if(currentBoss!=='undyne'||state!=='attack'||soulMode!=='green'||!b||b.expired)return false;
+ if(!isUndyneFight()||state!=='attack'||soulMode!=='green'||!b||b.expired)return false;
  // Beneficial green bullets are meant to be collected, not eaten by Undyne's shield.
  if(b.green||b.kind==='vegGreen')return false;
  if(!isSupportTarget(b.owner)||b.shieldUnblockable)return false;
@@ -3854,7 +3879,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -4037,7 +4062,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4171,6 +4196,7 @@ const NOELLE_N_ACTIONS={
  loox:{gain:50,text:"* Noelle avoids staring and quietly apologizes for the eye contact.\n* Loox relaxes a little."},
  dogi:{gain:45,text:"* Noelle rolls in the snow with the Dogs.\n* They decide she smells like family."},
  woshua:{gain:50,text:"* Noelle lets Woshua scrub her sleeve.\n* It is thrilled to have something to clean."},
+ undyneex:{gain:0,text:"* Noelle begs Undyne to stop.\n* Undyne doesn't even hear her."},
  pyrope:{gain:40,text:"* Noelle warms her hands near Pyrope.\n* Pyrope is flattered by the attention."},
  lesserdog:{gain:60,text:"* Noelle pets Lesser Dog.\n* Its neck grows a little. Noelle pretends not to notice."},
  greaterdog:{gain:40,text:"* Noelle calls Greater Dog over.\n* It is delighted and extremely slobbery."},
@@ -4204,6 +4230,7 @@ const SUSIE_S_ACTIONS={
  loox:{gain:35,text:"* Susie tells Loox to quit staring.\n* Then she admits the eye thing is kind of cool."},
  dogi:{gain:45,text:"* Susie pets both Dogs at once.\n* Their minds have been expanded."},
  woshua:{gain:40,text:"* Susie tells Woshua a filthy joke.\n* Its powers are neutralized."},
+ undyneex:{gain:0,text:"* Susie tells Undyne to back off.\n* Undyne laughs and raises her spear."},
  pyrope:{gain:50,text:"* Susie cranks the heat way up.\n* Pyrope loves her immediately."},
  lesserdog:{gain:65,text:"* Susie pets Lesser Dog way too hard.\n* Its neck launches upward in joy."},
  greaterdog:{gain:45,text:"* Susie throws a snowball for Greater Dog.\n* It brings back the entire snowbank."},
@@ -4271,6 +4298,7 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='dogi')return dogiActOptions();
  if(id==='woshua')return woshuaActOptions();
  if(id==='pyrope')return pyropeActOptions();
+ if(id==='undyneex')return ['Check'];
  if(id==='jerry')return ['Check','Ditch'];
  if(id==='greaterdog')return greatDogActOptions();
  if(id==='temmie')return temmieActOptions();
@@ -4632,6 +4660,8 @@ function performAct(targetId,choice){
    handleDogiAct(choice);
  }else if(currentBoss==='woshua'){
    handleWoshuaAct(choice);
+ }else if(currentBoss==='undyneex'){
+   setText(undyingCheckText(),()=>beginEnemyTurn());
  }else if(currentBoss==='pyrope'){
    handlePyropeAct(choice);
  }else if(currentBoss==='lesserdog'){
@@ -5208,7 +5238,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -5881,6 +5911,7 @@ function attackSpeechForCurrentBoss(){
  if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
  if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
  if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')return snowdin2Speech();
+ if(currentBoss==='undyneex')return '';
 
  if(currentBoss==='doggo'){
    if(doggoPets>=5)return "OK. That's enough.";
@@ -6394,6 +6425,7 @@ function commitFightAttack(accuracy,now=performance.now()){
  if(landed&&vanillaMode&&targetEnemyId(fightTargetId)==='papyrus'&&papyrusGenocideMode())hitDamage=Math.max(hitDamage,targetHp(fightTargetId)+999);
  if(fightTargetId==='main'&&currentBoss==='mettaton')hitDamage=0;
  if(vanillaMode&&targetEnemyId(fightTargetId)==='maddummy')hitDamage=0;
+ if(landed&&fightTargetId==='main'&&currentBoss==='undyneex')hitDamage=undyingAdjustHit(hitDamage);
  if(!hitDamage)betrayalHitTarget=null;
  if(targetEnemyId(fightTargetId)==='papyrus'&&fightTargetId==='main'&&!papyrusGenocideMode())papyrusBluePending=true;
  hitStart=now;hitApplied=false;damageStart=0;hitTarget=fightTargetId;enemyHpBeforeHit=targetHp(hitTarget);
@@ -7307,6 +7339,8 @@ function startAttack(now){
    srcStartAttack(now);
  }else if(currentBoss==='whimsalot'){
    attackWave=whimsalotPrayPending?0:1;
+ }else if(currentBoss==='undyneex'){
+   uxStartAttack(now);
  }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
    snowdin2StartAttack(now);
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
@@ -7357,7 +7391,7 @@ function startAttack(now){
 
  // Soul Roulette intentionally avoids encounters whose scripts depend on a fixed
  // SOUL mode, plus Noelle/MALICE. It changes movement rules, not attack geometry.
- if(modBattleEnabled('soulRoulette')&&practiceMode==='classic'&&!['papyrus','undyne','flowey'].includes(currentBoss)){
+ if(modBattleEnabled('soulRoulette')&&practiceMode==='classic'&&!['papyrus','undyne','undyneex','flowey'].includes(currentBoss)){
    soulMode=Math.random()<.5?'red':'blue';
    soulVY=0;soulGrounded=soulMode==='blue';
    soul.x=ARENA.x+ARENA.w/2;
@@ -7709,6 +7743,7 @@ function advanceMadNapScene(now=performance.now()){
 }
 
 function endAttack(now){
+ if(currentBoss==='undyneex'&&state==='attack'&&!enemyDead)uxEndAttack(now);
  if(currentBoss==='undyne'&&state==='attack'&&!enemyDead){
    if(undyneDying){
      undyneDeathTurn++;
@@ -7799,6 +7834,8 @@ function returnMenu(){
    if(vulkinDiscouraged)setText('* Vulkin stands in the corner.');
    else if(mercy>=100)setText('* Vulkin parades around you proudly.');
    else{const lines=['* Vulkin parades around the room.','* Vulkin is making coffee in its crater.','* Vulkin is wiggling its weird rump.','* Vulkin makes a smoke hoop and jumps through it.','* Smells like a lava lamp.'];setText(lines[Math.floor(Math.random()*lines.length)])}
+ }else if(currentBoss==='undyneex'){
+   setText(undyingFlavor());
  }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
    setText(snowdin2Flavor());
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
@@ -7988,6 +8025,10 @@ function startEnemyKill(now=performance.now()){
 
  if(currentBoss==='undyne'){
    startUndyneDetermination(now);
+   return;
+ }
+ if(currentBoss==='undyneex'){
+   startUndyingDeath(now);
    return;
  }
 
@@ -8461,6 +8502,7 @@ function activeEncounterEnemyIds(){
 
 function fleeBlocker(){
  if(currentBoss==='undyne'&&!enemyDead&&(soulMode==='green'||undyneDying))return {id:'undyne',slot:'main'};
+ if(currentBoss==='undyneex'&&!enemyDead)return {id:'undyneex',slot:'main'};
  return activeEncounterEnemyIds().find(v=>MAJOR_BOSS_IDS.has(v.id))||null;
 }
 
@@ -8507,6 +8549,7 @@ function fleeBlockedText(blocker){
      :'* You try to flee.\n* Papyrus dramatically points back toward the battle box.\n* The escape attempt has been captured.';
  }
 
+ if(blocker.id==='undyneex')return '* You try to flee.\n* Undyne the Undying blocks the way.';
  if(blocker.id==='undyne'){
    return undyneDying?'* You try to flee.\n* Undyne refuses to let the battle end here.':'* You try to flee.\n* The green SOUL cannot leave the spear formation.';
  }
@@ -9040,7 +9083,7 @@ function normalizeEnemyAssetTransparency(){
   'dummy','dummyDeath',
   'froggit','froggitHead','froggitLegs','finalFroggitIdle','finalFroggitHurt','finalFroggitBody','finalFroggitHead','finalFroggitHeadHurt',
   'whimsun','whimsunHurt','whimsalotHead','whimsalotBody','whimsalotWing','whimsalotHurt',
-  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
+  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxFaceLaugh','uxFaceE','uxMelt','uxEyebeam','uxSmear','uxFollowSpear','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
   'shyren','shyrenBody','shyrenTurn','shyrenSing','shyrenAgent',
   'undyneArmorBase','undyneHurt','undyneFatal','undyneMelt','undyneLastMelt',
   'tsunderplaneRaw','tsunderplaneHat','tsunderplaneCloud','tsunderplaneIdle',
@@ -11092,7 +11135,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -11115,6 +11158,7 @@ function reset(){
  resetWaterfallEnemies();
  resetDogEnemies();
  resetSnowdin2Enemies();
+ resetUndying();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -12343,6 +12387,7 @@ function madDummyAttackDuration(){
 }
 
 function spawnSimpleNewBossBullet(now){
+ if(spawnUndying(now))return;
  if((SRC_ATTACK_BOSSES.has(currentBoss)||(currentBoss==='moldbygg'&&attackWave<2))&&spawnSourceAttack(now))return;
  const cx=ARENA.x+ARENA.w/2,cy=ARENA.y+ARENA.h/2;
  const left=ARENA.x+8*UT_SCALE,right=ARENA.x+ARENA.w-8*UT_SCALE;
@@ -12934,7 +12979,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13142,7 +13187,7 @@ function spawnBullet(now){
  else{const angle=Math.atan2(soul.y-cy,soul.x-cx)+(Math.random()-.5)*.42;bullets.push({x:cx,y:cy,vx:Math.cos(angle)*165,vy:Math.sin(angle)*165,frame:Math.floor(Math.random()*4)})}
  nextSpawn=now+(attackWave===2?260:210);
 }
-function hurtPlayer(now,amount=4,owner='main'){
+function hurtPlayer(now,amount=4,owner='main',opts=null){
  if(debugMode&&debugInvincible){invUntil=now+140;return}
  if(now<invUntil)return;
  if(modBattleEnabled('godMode')){invUntil=now+140;return}
@@ -13184,7 +13229,7 @@ function hurtPlayer(now,amount=4,owner='main'){
    return;
  }
 
- hp=Math.max(0,hp-dmg);
+ hp=Math.max(Math.max(0,Number(opts?.minHp)||0),hp-dmg);
  invUntil=now+battleInvulnerabilityMs();
  if(dmg>0)play('hurt');
  if(hp<=0)die(now);
@@ -13449,6 +13494,7 @@ function update(dt,now){
    return;
  }
  if(screen!=='battle')return;
+ updateUndyingDeath(now);
  updateMercyImpactWatch(now);
  if(state==='encounterIntro'){
    const encounterElapsed=now-encounterIntroStart;
@@ -13870,7 +13916,7 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)){
+     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateUndyingBullet(b,now,dt)){
        // Moldbygg/Temmie bullets step on the 30fps source grid.
      }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
@@ -14474,7 +14520,7 @@ function update(dt,now){
      // the enemy turn itself (or explicit expiry), matching the attack object.
      if(b.kind==='icecapTeeth'||b.kind==='finalFrog')return true;
      // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
-     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep'||b.kind==='dogiAx'||b.kind==='dogiPups'||b.kind==='pyroRope'||b.kind==='pyroFire'||b.kind==='pyroBlast')return true;
+     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep'||b.kind==='dogiAx'||b.kind==='dogiPups'||b.kind==='pyroRope'||b.kind==='pyroFire'||b.kind==='pyroBlast'||UX_KINDS.has(b.kind))return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
        // Keep the scripted tutorial hazards alive long enough to move, render,
        // collide, and (for the betrayal ring) close around the SOUL.
@@ -14519,7 +14565,7 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)){
+     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||undyingCollide(b,now)){
        // handled above
      }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
@@ -14627,7 +14673,7 @@ function update(dt,now){
          b.blockChecked=true;
          if(undyneGuardDir===(b.blockDir??b.dir)){b.expired=true;undyneBlocked++;undyneGuardFlash=now;play('undyneArrow')}
        }
-       if(!b.expired&&dist<=9*UT_SCALE){b.expired=true;hurtPlayer(now,b.damage||5,b.owner||'main')}
+       if(!b.expired&&dist<=9*UT_SCALE){b.expired=true;if(currentBoss==='undyneex'&&now>=invUntil)uxHitNo++;hurtPlayer(now,b.damage||5,b.owner||'main')}
      }else if(['undyneRise','undyneChase','undyneTransition'].includes(b.kind)){
        if(b.kind==='undyneRise'&&(!['wait','blast','stop'].includes(b.phase)||now<(b.visibleAt||0)))continue;
        if(b.kind==='undyneChase'&&b.phase!=='charge')continue;
@@ -14692,7 +14738,7 @@ function update(dt,now){
      }else madDummyWaveClearSince=0;
    }
 
-   if(state==='attack'&&currentBoss==='undyne'&&soulMode==='green'&&undyneGreenFinishedAt){
+   if(state==='attack'&&isUndyneFight()&&soulMode==='green'&&undyneGreenFinishedAt){
      const live=bullets.some(b=>!b.expired&&b.kind==='undyneDir');
      if(!live&&now-undyneGreenFinishedAt>1000){endAttack(now);return}
    }
@@ -14717,6 +14763,7 @@ function update(dt,now){
    else if(currentBoss==='moldbygg'||currentBoss==='temmie')attackDuration=waterfallAttackDuration();
    else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
    else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')attackDuration=snowdin2Duration();
+   else if(currentBoss==='undyneex')attackDuration=uxDuration();
    else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
    else if(currentBoss==='icecap')attackDuration=(liveMonsterPopulation()<=1?100:150)*(1000/30); // obj_icecap turntimer
    else if(['snowdrake','icecap','moldsmal','migosp','whimsun','whimsalot','aaron'].includes(currentBoss))attackDuration=4500;
@@ -16875,6 +16922,485 @@ function currentJerryImage(now=performance.now(),hurt=false){
  return jerryImage(now,hurt);
 }
 
+// ===================== UNDYNE THE UNDYING =====================
+// Rebuilt from UNDERTALE's obj_undyne_ex + obj_undynex_body and the generators
+// they spawn: obj_spearblocker/obj_greenspeargen (green SOUL lessons -5..-14),
+// obj_spearbulletfollowgen, obj_risespearbulletgen, obj_rotspeargen(_gen) and
+// obj_followspeargen_2. Everything runs on the source's 30fps step grid in room
+// pixels * UT_SCALE. scr_battlegroup case 25 places her at (210,20).
+const UX_OBJ_X=210,UX_OBJ_Y=20;
+const UX_CANVAS_X=180,UX_CANVAS_Y=-20,UX_CANVAS_W=260,UX_CANVAS_H=280;
+const UX_STEP_MS=1000/30;
+let uxLesson=-5,uxOrder=1,uxOrderB=0,uxRating=9,uxRatingB=0,uxHitNo=0,uxMode='green';
+let uxTurnKind='green',uxTurnSteps=300,uxFiring=10,uxRefuse=false,uxSwitchTo=null;
+let uxGenT=0,uxGenRate=20,uxGenAng=0,uxRiseMem=-1;
+let uxBody=null,uxDying=false,uxDeathPhase=0,uxMeltFrame=-1,uxLethalAt=0,uxFaceEmotion=0;
+function uxNewBody(){
+ return {siner:0,eyetimer:0,movetype:0,slashno:0,alarm1:-1,larmA:0,larmX:64,larmY:78,armV:0,
+   larmVisible:false,larmFront:false,heady:0,facetype:0,slash:null,lastStep:-1,shakeX:0,shakeY:0};
+}
+function resetUndying(){
+ uxLesson=-5;uxOrder=1;uxOrderB=0;uxRating=9;uxRatingB=0;uxHitNo=0;uxMode='green';
+ uxTurnKind='green';uxTurnSteps=300;uxFiring=10;uxRefuse=false;uxSwitchTo=null;
+ uxGenT=0;uxGenRate=20;uxGenAng=0;uxRiseMem=-1;
+ uxBody=uxNewBody();uxDying=false;uxDeathPhase=0;uxMeltFrame=-1;uxLethalAt=0;uxFaceEmotion=0;
+}
+resetUndying();
+
+// ---------- green SOUL lessons (obj_spearblocker user event 1) ----------
+function buildUndyingGreenPattern(lesson){
+ const p=[],sr=(d,t=0,tm=0,sm=0)=>p.push(undyneEntry(d,t,tm,sm));
+ switch(lesson|0){
+   case -5:
+     sr(3,0,2,.5);sr(3,0,2,.5);sr(3,0,6.5,.5);
+     [1,2,0,3,0,2,1,2,0,3].forEach(d=>sr(d,0,0,1.6));break;
+   case -6:
+     sr(0,0,0,1.8);sr(1,0,0,1.8);sr(0,0,.5,1.8);sr(0,0,0,1.8);sr(1,0,0,1.8);sr(1,0,0,1.8);
+     sr(0,0,0,1.8);sr(1,0,.5,1.8);sr(1,0,0,1.8);sr(0,0,0,1.8);
+     sr(1,0,0,2);sr(0,0,0,2);sr(1,0,0,2);sr(0,0,0,2);break;
+   case -7: for(let i=0;i<18;i++)sr(4,0,0,.4);break;
+   case -8:
+     sr(3,0,0,1);sr(0,0,0,1.8);sr(2,0,0,1);sr(1,0,0,1.8);sr(0,0,0,1);
+     sr(3,0,0,.5);sr(2,0,0,.47);sr(1,0,0,1.8);sr(0,0,0,1);break;
+   case -9:
+     [[3,.5],[3,.5],[3,.5],[3,0],[0,.5],[3,.5],[3,.5],[3,.5],[3,0],[1,.5],[3,.5],[3,.5],[3,1],
+      [0,.5],[3,.5],[3,.5],[3,1],[1,.5],[3,.5],[3,.5],[3,.5]].forEach(([d,tm])=>sr(d,0,tm,2));break;
+   case -10:
+     for(let i=0;i<4;i++){sr(0);sr(3)}
+     for(let i=0;i<3;i++){sr(0,1);sr(3,1)}
+     break;
+   case -11:
+     sr(1,1,1.25,2);sr(3,1,1.25,2);sr(0,1,1.25,2);sr(2,1,2,2);
+     sr(3,0,1.25,2);sr(0,0,1.25,2);sr(2,0,1.25,2);sr(1,0,2,2);
+     sr(2,1,1.25,2);sr(0,1,1.25,2);sr(1,1,1.25,2);sr(3,1,1.25,2);break;
+   case -12:
+     for(let i=0;i<2;i++){
+       sr(0,0,0,1.3);sr(1,0,0,1.3);sr(3,0,.1,1.3);sr(2,1,2.2,1.3);
+       sr(0,0,0,1.3);sr(1,0,0,1.3);sr(2,0,.1,1.3);sr(3,1,2.2,1.3);
+     }
+     break;
+   case -13:
+     for(let i=0;i<2;i++){
+       sr(0,0,0,1.5);sr(0,1,2,1.5);sr(2,0,0,1.5);sr(2,1,2,1.5);sr(1,0,0,1.5);sr(1,1,2.2,1.5);
+       if(i===0){sr(3,0,0,1.5);sr(3,1,2,1.5)}
+     }
+     break;
+   case -14: for(let i=0;i<24;i++)sr(4,0,0,.3);break;
+   default: return buildUndyneGreenPattern(lesson);
+ }
+ return p;
+}
+
+// ---------- turn setup (obj_undyne_ex step, mnfight==2) ----------
+const UX_BORDER={
+ green:[280,200,80,80],   // border 12
+ follow:[227,200,180,185],// border 7
+ rise:[285,300,70,85],    // border 14
+ wide:[32,100,570,285]    // border 31
+};
+function uxArena(k){const a=UX_BORDER[k];return utRect(a[0],a[1],a[2],a[3])}
+function uxStartAttack(now){
+ uxHitNo=0;uxGenT=0;uxGenRate=20;uxGenAng=0;
+ if(uxDying){soulMode='red';ARENA=uxArena('follow');box={...ARENA};return}
+ if(uxMode==='green'){
+   uxTurnKind='green';soulMode='green';undyneMode='green';attackWave=0;
+   ARENA=uxArena('green');
+   undyneRating=uxRating;
+   uxRefuse=(uxLesson===-7||uxLesson===-10||uxLesson===-14);
+   undyneGreenPattern=buildUndyingGreenPattern(uxLesson);undyneGreenFinishedAt=0;
+   uxSwitchTo=uxRefuse?'red':null;
+   uxOrder++;uxLesson--;
+ }else{
+   soulMode='red';undyneMode='red';uxRefuse=false;
+   const ob=uxOrderB;
+   if(ob===0||ob===6){uxTurnKind='follow';uxTurnSteps=240;uxRatingB=clamp(uxRatingB+1,8,10);uxFiring=18-uxRatingB;ARENA=uxArena('follow')}
+   else if(ob===1||ob===7){uxTurnKind='rise';uxTurnSteps=220;uxRatingB=clamp(uxRatingB+1,8,10);uxFiring=23-uxRatingB;ARENA=uxArena('rise')}
+   else if(ob===2||ob===3){uxTurnKind='rot0';uxTurnSteps=215;uxRatingB++;ARENA=uxArena('wide')}
+   else if(ob===4){uxTurnKind='follow2';uxTurnSteps=400;uxRatingB++;ARENA=uxArena('wide')}
+   else{uxTurnKind='rot1';uxTurnSteps=215;uxRatingB++;ARENA=uxArena('wide')}
+   uxOrderB++;if(uxOrderB>=8)uxOrderB=4;
+   uxOrder++;
+   // The generators hand the SOUL back to green when their turntimer runs out:
+   // follow/rise on order 6, the spinning rings once orderb reaches 4.
+   uxSwitchTo=null;
+   if((uxTurnKind==='follow'||uxTurnKind==='rise')&&uxOrder===6){uxSwitchTo='green';uxLesson=-8}
+   if((uxTurnKind==='rot0'||uxTurnKind==='rot1')&&uxOrderB===4){uxSwitchTo='green';if(uxOrder===11)uxLesson=-11}
+ }
+ box={...ARENA};
+ // obj_undyne_ex: heart x = room_width/2-8, y = uborder+34 (16px sprite, top-left).
+ soul.x=ut(320);soul.y=soulMode==='green'?ARENA.y+ARENA.h/2:ARENA.y+ut(42);
+ if(soulMode==='green'){undyneGuardDir=3;undyneGuardIdeal=270;undyneGuardAngle=270}
+ nextSpawn=now+(soulMode==='green'?5:(uxTurnKind==='rise'?10:1))*UX_STEP_MS;
+}
+function uxDuration(){
+ if(uxTurnKind==='green')return 30000;
+ // turntimer, plus turntimer=30 / alarm[11]=40 when the SOUL turns green again.
+ return (uxTurnSteps+(uxSwitchTo==='green'?40:0))*UX_STEP_MS;
+}
+function uxEndAttack(now){
+ // obj_undyne_ex at mnfight 4: a hit this turn raises the green rating (faster
+ // spears next time), three or more maxes it; a clean turn lowers it to 8.
+ if(uxHitNo>0){if(uxRating<10)uxRating++;if(uxHitNo>=3)uxRating=10}
+ else if(uxRating>8)uxRating--;
+ if(uxSwitchTo){
+   const from=soulMode,to=uxSwitchTo;
+   uxMode=to;uxSwitchTo=null;
+   uxStartSlash();
+   beginUndyneSoulSwitchVisual(from,to,now);
+ }
+}
+function uxStartSlash(){if(uxBody&&uxBody.movetype===0)uxBody.movetype=2}
+
+// ---------- spawning ----------
+function spawnUndying(now){
+ if(currentBoss!=='undyneex')return false;
+ const U=UT_SCALE;
+ if(soulMode==='green'){
+   const entry=undyneGreenPattern[specialSpawnCount];
+   if(!entry){if(!undyneGreenFinishedAt)undyneGreenFinishedAt=now;nextSpawn=now+99999;return true}
+   const dmg=12; // obj_greenspeargen.dmg = monsteratk
+   if(entry.type===2){
+     undyneSpawnDirectional(clamp(Math.floor(Number(entry.timemod)||0),0,3),1,entry.speedmod,now,dmg);
+     undyneSpawnDirectional(entry.dir,0,entry.speedmod,now,dmg);
+   }else undyneSpawnDirectional(entry.dir,entry.type,entry.speedmod,now,dmg);
+   specialSpawnCount++;
+   nextSpawn=now+undyneGreenCadenceMs(entry);
+   return true;
+ }
+ const elapsedSteps=(now-attackStart)/UX_STEP_MS;
+ const left=uxTurnSteps-elapsedSteps;
+ if(left<4){nextSpawn=now+99999;return true}
+ if(uxTurnKind==='follow'){
+   // obj_spearbullet_follow: appears ~140px from the SOUL, spins out, then charges.
+   const ang=Math.random()*Math.PI*2,sp=4*30*U;
+   bullets.push({kind:'undyneChase',owner:'main',x:soul.x+Math.cos(ang)*140*U,y:soul.y+Math.sin(ang)*140*U,
+     vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,damage:11,born:now,phase:'spin',direction:ang,imageAngle:ang,
+     rotspeed:32,speedNative:4,alpha:0,chargeStarted:false});
+   play('undyneSpearAppear');
+   nextSpawn=now+Math.max(1,uxFiring)*UX_STEP_MS;return true;
+ }
+ if(uxTurnKind==='rise'){
+   if(left<=8){nextSpawn=now+99999;return true}
+   let xset=Math.floor(Math.random()*3);if(xset===uxRiseMem)xset++;if(xset===3)xset=0;uxRiseMem=xset;
+   bullets.push({kind:'uxRise',owner:'main',x:ARENA.x+xset*23*U,y:ARENA.y+ARENA.h,damage:11,born:now,
+     step:0,part:0,alarm0:20,alarm1:1,vy:0,visible:false,alpha:1,vx:0});
+   nextSpawn=now+Math.max(1,uxFiring)*UX_STEP_MS;return true;
+ }
+ if(uxTurnKind==='rot0'||uxTurnKind==='rot1'){
+   let t;
+   if(uxTurnKind==='rot0'){t=uxGenT;uxGenT=uxGenT===0?1:0}
+   else t=Math.random()<.5?2:3;
+   const cfg=[[0,8,2,7,220],[0,-8,-2,7,220],[null,8,2,8,230],[null,-8,-2,8,230]][t];
+   const num=cfg[3];
+   bullets.push({kind:'uxRing',owner:'main',x:soul.x,y:soul.y,vx:0,vy:0,cx:soul.x,cy:soul.y,damage:12,born:now,
+     curang:cfg[0]==null?Math.random()*360:cfg[0],rotspeed:cfg[1],rotmin:cfg[2],num,rr:cfg[4],
+     spears:Array.from({length:num},()=>({alpha:0,deact:false,gone:false})),acc:0});
+   nextSpawn=now+(uxTurnKind==='rot0'?27:24)*UX_STEP_MS;return true;
+ }
+ if(uxTurnKind==='follow2'){
+   // obj_followspeargen_2 type 1: six spears on a 180px ring around the SOUL.
+   for(let i=0;i<6;i++){
+     const a=(uxGenAng+i/6*360)*Math.PI/180;
+     const x=soul.x+Math.cos(a)*180*U,y=soul.y-Math.sin(a)*180*U;
+     const off=Math.atan2(-(soul.y-y),soul.x-x)*180/Math.PI;
+     bullets.push({kind:'uxFollow2',owner:'main',x,y,vx:0,vy:0,damage:11,born:now,imageAngle:off+20,direction:off,
+       speed:4,friction:.2,rotspeed:38,alpha:0,timer:0,fade:1,deact:false,acc:0});
+   }
+   if(uxGenRate>10)uxGenRate--;
+   uxGenAng+=10+[10,20,30][Math.floor(Math.random()*3)];
+   nextSpawn=now+uxGenRate*UX_STEP_MS;return true;
+ }
+ nextSpawn=now+99999;return true;
+}
+
+// ---------- bullets ----------
+const UX_KINDS=new Set(['uxRise','uxRing','uxFollow2']);
+function uxDeg(a){return a*Math.PI/180}
+function updateUndyingBullet(b,now,dt){
+ if(!UX_KINDS.has(b.kind))return false;
+ const U=UT_SCALE;
+ wfSteps(b,dt,b=>{
+   if(b.kind==='uxRise'){
+     if(b.alarm1>0&&--b.alarm1===0){b.visible=true;b.vy=-1;play('undyneSpearAppear')}
+     if(b.alarm0>0&&--b.alarm0===0){
+       if(b.part===3)b.part=4;
+       else if(b.part===2){b.vy=0;b.part=3;b.alarm0=2}
+       else if(b.part===1){b.vy=-10;play('undyneSpearRise');b.part=2;b.alarm0=6}
+       else if(b.part===0){b.part=1;b.vy=0;b.alarm0=12}
+     }
+     if(b.part===4||b.deact){b.alpha-=.1;if(b.alpha<=0)b.expired=true}
+     b.y+=b.vy*U;
+     return;
+   }
+   if(b.kind==='uxRing'){
+     if(b.rotspeed>b.rotmin)b.rotspeed-=.2;
+     if(b.rotspeed<b.rotmin)b.rotspeed+=.2;
+     for(const s of b.spears){
+       if(s.gone)continue;
+       if(b.rr<8)s.deact=true;
+       if(!s.deact&&s.alpha<1)s.alpha+=.2;
+       if(s.deact){s.alpha-=.2;if(s.alpha<.3)s.gone=true}
+     }
+     if(b.rr<8){b.rr++;b.rotspeed*=.8}
+     if(b.rr<-20||b.spears.every(s=>s.gone)){b.expired=true;return}
+     b.rr-=4;b.curang+=b.rotspeed;
+     return;
+   }
+   if(b.kind==='uxFollow2'){
+     b.alpha+=.05;
+     b.imageAngle-=b.rotspeed;if(b.rotspeed>0)b.rotspeed-=2;
+     if(b.rotspeed===0&&b.speed<1){b.timer++;if(b.timer===5){b.speed=8;b.friction=-.3;b.direction=b.imageAngle}}
+     if(b.fade===1&&b.speed>=7){b.timer++;if(b.timer>=22)b.deact=true}
+     if(b.deact){b.alpha-=.25;if(b.alpha<=0){b.expired=true;return}}
+     if(b.friction>0)b.speed=Math.max(0,b.speed-b.friction);else b.speed-=b.friction;
+     b.x+=Math.cos(uxDeg(b.direction))*b.speed*U;
+     b.y-=Math.sin(uxDeg(b.direction))*b.speed*U;
+   }
+ });
+ return true;
+}
+function uxRingSpearPos(b,i){
+ const a=uxDeg(b.curang+i/b.num*360),r=b.rr*UT_SCALE;
+ const x=b.cx+Math.cos(a)*r,y=b.cy-Math.sin(a)*r;
+ // image_angle = point_direction(spear, centre)
+ const ang=Math.atan2(-(b.cy-y),b.cx-x)*180/Math.PI;
+ return {x,y,ang};
+}
+// collision_line(x - xoff/2, y - yoff/2, x + xoff, y + yoff) with xoff = lengthdir(25, angle).
+function uxSpearLineHitsSoul(x,y,angDeg){
+ const U=UT_SCALE,dx=Math.cos(uxDeg(angDeg))*25*U,dy=-Math.sin(uxDeg(angDeg))*25*U;
+ const x0=x-dx/2,y0=y-dy/2,x1=x+dx,y1=y+dy;
+ const hx=soul.x,hy=soul.y,hr=6*U;
+ const vx=x1-x0,vy=y1-y0,l2=vx*vx+vy*vy||1;
+ const t=clamp(((hx-x0)*vx+(hy-y0)*vy)/l2,0,1);
+ return Math.hypot(x0+vx*t-hx,y0+vy*t-hy)<=hr;
+}
+function undyingCollide(b,now){
+ if(!UX_KINDS.has(b.kind))return false;
+ const U=UT_SCALE;
+ if(b.kind==='uxRise'){
+   if(!b.visible||b.part>=4||b.deact)return true;
+   // Clip the hitbox to the board, like draw_self_border_ext clips the sprite.
+   const x0=b.x+6*U,y0=Math.max(ARENA.y,b.y),y1=Math.min(ARENA.y+ARENA.h,b.y+60*U);
+   if(y1>y0&&rectHit(soul.x-6*U,soul.y-6*U,12*U,12*U,x0,y0,12*U,y1-y0))hurtPlayer(now,b.damage,'main');
+   return true;
+ }
+ if(b.kind==='uxRing'){
+   for(let i=0;i<b.num;i++){
+     const s=b.spears[i];if(s.gone||s.alpha<.8)continue;
+     const p=uxRingSpearPos(b,i);
+     if(uxSpearLineHitsSoul(p.x,p.y,p.ang)){hurtPlayer(now,b.damage,'main');break}
+   }
+   return true;
+ }
+ if(b.kind==='uxFollow2'){
+   if(b.rotspeed!==0||b.deact)return true;
+   if(uxSpearLineHitsSoul(b.x,b.y,b.direction)){
+     // obj_followspear_2 leaves you at 1 HP unless you are already at 1.
+     if(hp>1)hurtPlayer(now,b.damage,'main',{minHp:1});else hurtPlayer(now,b.damage,'main');
+   }
+   return true;
+ }
+ return true;
+}
+function drawUndyingBullet(b,now){
+ if(!UX_KINDS.has(b.kind))return false;
+ const U=UT_SCALE;
+ ctx.imageSmoothingEnabled=false;
+ const spear=(x,y,angDeg,alpha)=>{
+   const im=images.uxFollowSpear;if(!im)return;
+   ctx.save();ctx.globalAlpha=clamp(alpha,0,1);ctx.translate(Math.round(x),Math.round(y));ctx.rotate(-uxDeg(angDeg));
+   ctx.drawImage(im,-30*U,-30*U,60*U,60*U);ctx.restore();
+ };
+ if(b.kind==='uxRise'){
+   if(!b.visible)return true;
+   const im=images.undyneRiseSpear;
+   ctx.save();ctx.beginPath();ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);ctx.clip();
+   ctx.globalAlpha=clamp(b.alpha,0,1);
+   if(im)ctx.drawImage(im,Math.round(b.x),Math.round(b.y),Math.round(24*U),Math.round(60*U));
+   ctx.restore();return true;
+ }
+ if(b.kind==='uxRing'){
+   for(let i=0;i<b.num;i++){const s=b.spears[i];if(s.gone)continue;const p=uxRingSpearPos(b,i);spear(p.x,p.y,p.ang,s.alpha)}
+   return true;
+ }
+ if(b.kind==='uxFollow2'){spear(b.x,b.y,b.imageAngle,b.alpha);return true}
+ return true;
+}
+
+// ---------- body (obj_undynex_body draw event) ----------
+function uxStepBody(bd,pause){
+ if(bd.alarm1>0&&--bd.alarm1===0){bd.alarm1=-1;bd.slashno=+(bd.slashno+1).toFixed(2)}
+ if(bd.movetype===2){
+   bd.larmVisible=true;
+   if(bd.slashno===0&&bd.larmA>-104){bd.facetype=1;bd.larmA-=35;bd.larmX-=4;bd.larmY-=4;bd.heady-=2}
+   if(bd.slashno===0&&bd.larmA<=-104){bd.larmA=-104;bd.alarm1=5;bd.slashno=.1}
+   if(bd.slashno===1.1){bd.slashno=1;bd.alarm1=2}
+   if(bd.slashno===1){bd.facetype=0;bd.larmFront=true;bd.larmA+=73.3333333333}
+   if(bd.slashno===2){
+     bd.larmX=64;bd.larmY=78;bd.larmA=66;
+     bd.slash={x:bd.larmX-180,y:bd.larmY+20,y2:bd.larmY+20,alpha:1,frame:0};
+     bd.slashno=3;play('undyneArrow');
+   }
+   if(bd.slashno===3){
+     if(bd.heady<6)bd.heady+=3;
+     if(bd.slash){bd.slash.alpha-=.1;bd.slash.y2+=24;bd.slash.frame++}
+     bd.larmA+=.5;
+     if(bd.larmA>70){bd.slash=null;bd.slashno=4;bd.alarm1=3}
+   }
+   if(bd.slashno===5){
+     if(bd.heady>0)bd.heady--;
+     bd.larmA-=15;
+     if(bd.larmA<=6){bd.heady=0;bd.larmFront=false;bd.larmA=0;bd.slashno=0;bd.movetype=0;bd.armV=0;bd.larmVisible=false;bd.larmX=64;bd.larmY=78}
+   }
+ }
+ bd.siner+=1.4;if(pause)bd.siner=0;
+ if(bd.facetype!==0)bd.eyetimer=0;
+ bd.eyetimer++;if(bd.eyetimer>=40)bd.eyetimer=0;
+ if(bd.movetype===2)bd.armV=1;
+ if(uxDying&&uxDeathPhase>=1){bd.shakeX=Math.random()*2-Math.random()*2;bd.shakeY=Math.random()*2-Math.random()*2}
+ else{bd.shakeX=0;bd.shakeY=0}
+}
+function uxAdvanceBody(now,pause){
+ if(!uxBody)uxBody=uxNewBody();
+ const step=Math.floor(now/UX_STEP_MS);
+ if(uxBody.lastStep<0||step-uxBody.lastStep>30)uxBody.lastStep=step-1;
+ while(uxBody.lastStep<step){uxBody.lastStep++;uxStepBody(uxBody,pause)}
+}
+function uxFaceSprite(bd,pause){
+ if(uxDying||bd.facetype===2)return {im:(images.uxFaceE||[])[clamp(uxFaceEmotion,0,5)],ox:20,oy:16};
+ if(bd.facetype===1)return {im:(images.uxFaceLaugh||[])[Math.floor(bd.siner/3)%2],ox:18,oy:16};
+ if(pause)return {im:images.uxFaceDamage,ox:20,oy:16};
+ return {im:images.uxFace1,ox:20,oy:17};
+}
+// Draws the body with room-space origin (ox,oy) mapped through scale k.
+function uxDrawBodyTo(g,bx,by,k,pause,withFx=true){
+ const bd=uxBody||uxNewBody();
+ const s_f=Math.sin(bd.siner/6),s_f2=Math.sin(bd.siner/3),s_f3=Math.sin(bd.siner/14);
+ const X=bx+bd.shakeX*k,Y=by+bd.shakeY*k;
+ const dsp=(im,rx,ry,ox,oy,sx,sy,deg,alpha=1)=>{
+   if(!im)return;
+   g.save();g.globalAlpha=clamp(alpha,0,1);g.translate(X+rx*k,Y+ry*k);g.rotate(-uxDeg(deg));g.scale(sx*k,sy*k);
+   g.drawImage(im,-ox,-oy);g.restore();
+ };
+ const larm=()=>{if(bd.larmVisible)dsp(images.uxLArm,bd.larmX,bd.larmY,33,5,2,2,bd.larmA)};
+ if(!bd.larmFront)larm();
+ dsp(images.uxHair,85,s_f*3+bd.heady+4,16,30,2,2,70-s_f*15);
+ dsp(images.uxLegs,100,164,20,10,2,2,0);
+ if(bd.armV===0)dsp(images.uxLArm,64+s_f*5,78+s_f*5,33,5,2,2,0);
+ dsp(images.uxRArm,136+s_f2*3,78+s_f*6+s_f2*2,4,6,2,2,0);
+ dsp(images.uxTorso,100,78+s_f*4,39,29,2,2,-(s_f*4));
+ dsp(images.uxPants,100,122+s_f*2,20,0,2,2,s_f*2);
+ const f=uxFaceSprite(bd,pause);
+ dsp(f.im,100,28+s_f*2+bd.heady,f.ox,f.oy,2,2,0);
+ if(bd.larmFront)larm();
+ if(!withFx)return;
+ if(bd.slash&&images.uxSmear?.length){
+   const sm=images.uxSmear[bd.slash.frame%images.uxSmear.length];
+   dsp(sm,bd.slash.x,bd.slash.y,0,0,1,1,0,bd.slash.alpha);
+   dsp(sm,bd.slash.x,bd.slash.y2,0,0,1,1,0,bd.slash.alpha);
+ }
+ if(bd.eyetimer>=10&&bd.facetype===0&&!uxDying){
+   const e=bd.eyetimer-10;
+   dsp(images.uxEyebeam,110,24+s_f*2,0,12,e/4,2.5-e/20,-(s_f3*32),1.5-e/20);
+ }
+}
+let uxCompositeCanvas=null;
+function makeUndyingComposite(now=performance.now(),hurt=false){
+ if(!images.uxTorso)return null;
+ if(!uxCompositeCanvas){uxCompositeCanvas=document.createElement('canvas');uxCompositeCanvas.width=UX_CANVAS_W;uxCompositeCanvas.height=UX_CANVAS_H}
+ const c=uxCompositeCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ if(uxMeltFrame>=0){
+   const m=(images.uxMelt||[])[uxMeltFrame];
+   if(m)g.drawImage(m,UX_OBJ_X-20-UX_CANVAS_X,-40-UX_CANVAS_Y,196,286);
+   return c;
+ }
+ uxDrawBodyTo(g,UX_OBJ_X-UX_CANVAS_X,UX_OBJ_Y-UX_CANVAS_Y,1,hurt,false);
+ return c;
+}
+function uxMainPause(){return state==='fightHit'&&hitTarget==='main'&&hitApplied&&!uxDying}
+function drawUndyingMain(now,hit,offset=0){
+ const r=enemyDraw,k=r.w/UX_CANVAS_W;
+ const pause=hit||uxMainPause();
+ const ox=r.x+offset+(UX_OBJ_X-UX_CANVAS_X)*k,oy=r.y+(UX_OBJ_Y-UX_CANVAS_Y)*k;
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ if(uxMeltFrame>=0){
+   const m=(images.uxMelt||[])[uxMeltFrame];
+   if(m&&state!=='enemyKill')ctx.drawImage(m,Math.round(r.x+offset+(UX_OBJ_X-20-UX_CANVAS_X)*k),Math.round(r.y+(-40-UX_CANVAS_Y)*k),Math.round(196*k),Math.round(286*k));
+   ctx.restore();return true;
+ }
+ uxAdvanceBody(now,pause);
+ uxDrawBodyTo(ctx,ox,oy,k,pause,true);
+ ctx.restore();
+ return true;
+}
+
+// ---------- text / ACT ----------
+function undyingFlavor(){return '* The wind is howling...'}
+function undyingCheckText(){return '* UNDYNE THE UNDYING 99ATK 99DEF\n* Heroine reformed by her own\n  DETERMINATION to save Earth.'}
+
+// ---------- damage (obj_undyne_ex hurt event) ----------
+function undyingAdjustHit(dmg){
+ // takedamage *= 21; anything under 600 becomes 600 + random(67).
+ if(!(dmg>0))return dmg;
+ let d=dmg*21;
+ if(d<600)d=600+Math.floor(Math.random()*67);
+ return d;
+}
+
+// ---------- defeat (obj_undyne_ex con 50..74) ----------
+function undyingDeathLines(){
+ const L=(text,e)=>({text,wide:true,voiceBoss:'undyne',uxE:e});
+ return [
+   L('Damn it...',0),
+   L("So even THAT\npower... It\nwasn't enough...?",0),
+   L('...',0),
+   L('Heh...',1),
+   L('Heheheh...',1),
+   L('If you...',2),
+   L("If you think I'm\ngonna give up hope,\nyou're wrong.",2),
+   L("'Cause I've...\nGot my friends\nbehind me.",2),
+   L('Alphys told me that\nshe would watch me\nfight you...',3),
+   L('And if anything went\nwrong, she would...\nevacuate everyone.',4),
+   L("By now she's called\nASGORE and told him\nto absorb the 6\nhuman SOULs.",5),
+   {text:'And with that\npower...',wide:true,voiceBoss:'undyne',uxMelt:0},
+   {text:'This world will\nlive on...!',wide:true,voiceBoss:'undyne',uxMelt:1}
+ ];
+}
+function uxSyncDeathSpeech(){
+ if(!uxDying||state!=='battleSpeech')return;
+ const line=specialBattleSpeechQueue[specialBattleSpeechIndex];
+ if(!line)return;
+ if(Number.isFinite(line.uxE))uxFaceEmotion=line.uxE;
+ if(Number.isFinite(line.uxMelt))uxMeltFrame=line.uxMelt;
+}
+function startUndyingDeath(now=performance.now()){
+ if(uxDying)return;
+ uxDying=true;uxDeathPhase=0;uxFaceEmotion=0;uxLethalAt=now;
+ if(uxBody){uxBody.facetype=2;uxBody.movetype=0;uxBody.larmVisible=false;uxBody.larmFront=false;uxBody.armV=0;uxBody.slash=null}
+ bullets=[];stopMusic();
+ ARENA={...DIALOG};box={...DIALOG};
+ state='uxDeathWait';
+}
+function updateUndyingDeath(now){
+ if(currentBoss!=='undyneex'||!uxDying)return;
+ uxSyncDeathSpeech();
+ if(state==='uxDeathWait'&&now-uxLethalAt>=90*UX_STEP_MS){
+   uxDeathPhase=1;
+   startSpecialBattleSpeech(undyingDeathLines(),()=>{
+     const m=(images.uxMelt||[])[1];
+     const k=enemyDraw.w/UX_CANVAS_W;
+     const rect={x:enemyDraw.x+(UX_OBJ_X-20-UX_CANVAS_X)*k,y:enemyDraw.y+(-40-UX_CANVAS_Y)*k,w:196*k,h:286*k};
+     recordOutcome('kills','undyneex');
+     state='enemyKill';enemyDead=true;killStart=performance.now();
+     killParticles=makeEnemyDust(m||makeUndyingComposite(),rect);
+     enemyKillPoseImage=null;enemyKillPoseRect=null;enemyKillVaporPlayed=true;
+     play('vaporized');
+   });
+   uxSyncDeathSpeech();
+ }
+}
+
 function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='whimsun')return whimsunDrawImage(now,hurt);
  if(id==='whimsalot')return hurt?(images.whimsalotHurt||images.whimsalot):(images.whimsalot||images.whimsalotHurt);
@@ -16884,6 +17410,7 @@ function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='dogi')return makeDogiComposite(now,hurt);
  if(id==='woshua')return makeWoshuaComposite(now,hurt);
  if(id==='pyrope')return makePyropeComposite(now,hurt);
+ if(id==='undyneex')return makeUndyingComposite(now,hurt);
  if(id==='greaterdog')return makeGreatDogComposite(now,hurt);
  if(id==='temmie')return makeTemmieComposite(now,hurt);
  const hurtImage=images[id+'Hurt']||null;
@@ -17412,7 +17939,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -17474,6 +18001,8 @@ function drawTop(now=performance.now()){
              drawSnowdrakeMain(now,mainHit,commonMainOffset);
            }else if(currentBoss==='aaron'){
              drawAaronMain(now,mainHit,commonMainOffset);
+           }else if(currentBoss==='undyneex'){
+             drawUndyingMain(now,mainHit,commonMainOffset);
            }else{
              if(currentBoss==='undyne'&&undyneDying&&undyneDeathStage>=5&&drawUndyneRealMelt(enemyDraw,now,commonMainOffset)){
                // V56: final determination melt uses the corrected visual frame order.
@@ -18561,12 +19090,12 @@ function drawAttack(now){
  // Every other enemy/support projectile is clipped to the battle box again.
  // This keeps Undyne's readable approach paths without letting unrelated sprites
  // visibly hang outside the board. Collision behavior is unchanged.
- const undyneNoBorderKinds=new Set(['undyneDir','undyneRise','undyneChase','undyneTransition']);
+ const undyneNoBorderKinds=new Set(['undyneDir','undyneRise','undyneChase','undyneTransition','uxRing','uxFollow2']);
  ctx.save();
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
-   const allowOutside=(currentBoss==='undyne'&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand';
+   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand';
    if(!allowOutside){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
@@ -18739,7 +19268,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
-   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)){continue}
+   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawUndyingBullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -18839,7 +19368,7 @@ function drawAttack(now){
  for(const b of bullets)prepareMaliceFrozenBulletSprite(b,now);
  for(const b of bullets){
    ctx.save();
-   if(!(currentBoss==='undyne'&&undyneNoBorderKinds.has(b.kind))){
+   if(!(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
      ctx.clip();
@@ -18855,7 +19384,7 @@ function drawAttack(now){
    if(now>=invUntil||Math.floor(now/70)%2===0){
      // Papyrus' blue magic overrides EVERY custom role SOUL. Noelle MALICE and
      // Toriel/Papyrus white monster SOULs return after the blue phase ends.
-     if(currentBoss==='undyne'&&soulMode==='green'){
+     if(isUndyneFight()&&soulMode==='green'){
        const frames=images.heartGreen||[],gim=frames[Math.floor(now/140)%Math.max(1,frames.length)]||frames[0]||images.heart;
        const soulSize=16*UT_SCALE,r=30*UT_SCALE;
        ctx.save();ctx.translate(Math.round(soul.x),Math.round(soul.y));
@@ -19602,7 +20131,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -19663,7 +20192,7 @@ function drawEnemySelect(now=performance.now()){
  font(15,'#777','left');ctx.fillText((b.area||'UNKNOWN').toUpperCase(),info.x+28,info.y+106);
  const stats=[['HP',b.hp],['AT',b.atk],['DF',b.def]];
  stats.forEach((v,i)=>{const x=info.x+28+i*133;ctx.fillStyle='#050505';ctx.fillRect(x,info.y+139,116,62);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(x,info.y+139,116,62);font(12,'#666','center');ctx.fillText(v[0],x+58,info.y+148);font(24,'#fff','center');ctx.fillText(String(v[1]),x+58,info.y+169)});
- const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
+ const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',undyneex:'WATERFALL // THE HEROINE APPEARS',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
  font(13,'#888','left');ctx.fillText(descMap[b.id]||'CUSTOM ENCOUNTER',info.x+28,info.y+212);
  const rp=rewardPreview(b.id),sandboxPay=!vanillaMode;
  const killExpText=b.id==='loox'&&!hardModeEnabled?`${rp.killExp} EXP (3-24 VIA ACT)`: `${rp.killExp} EXP`;
@@ -21987,7 +22516,7 @@ function runDebugCommand(raw){
    if(c==='help'){
      debugLog([
        'boss <id> [classic|noelle]  | hp <n> | enemyhp <n> | tp <n> | mercy <n>',
-       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
+       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne undyneex tsunderplane vulkin mettaton custom flowey migosp sans5000',
        'soul <red|blue> | scene <name> | face <emotion> | attack | end | kill | spare',
        'scene maddummy-napstablook (alias: madnap) // Mad Dummy ending interruption',
        'hard <on|off|toggle> | papwave <-1..15> | gameover <normal|toriel|aaron|papyrus|napstablook>',
@@ -23148,6 +23677,8 @@ async function boot(){
  for(const k of ['lesserDogHurt','greatDogHurt','tinyPomJump','tinyPomBark','blueSpear','whiteSpear','barkBullet'])add(`dog ${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['mandogBody','womandogBody','whiteAx','woshuaSprite','woshDuck','woshTail','waterBul','glitterBul','pyropeBody','pyropeHead','orangeFire','bombD','jerry'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['mandogHurt','womandogHurt','smHeart','smHeartB','woshHanger','woshWater','woshBody','woshHead','woshFace','soapBul','pyropeFootL','pyropeFootR','pyropeHurt','ropeBul','bombExplosion','jerryHurt'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
+ for(const k of ['uxFaceLaugh','uxFaceE','uxMelt','uxSmear'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
+ for(const k of ['uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxEyebeam','uxFollowSpear'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
@@ -23337,6 +23868,7 @@ async function boot(){
  addBg('Dummy!',async()=>music.maddummy=await loadAudioAsset(MUSIC.maddummy,.50,true));
  addBg('Nyeh Heh Heh!',async()=>music.papyrusIntro=await loadAudioAsset(MUSIC.papyrusIntro,.50,true));
  addBg('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
+ addBg('Battle Against a True Hero',async()=>{music.undyneex=await loadAudioAsset(MUSIC.undyneex,.50,true);if(currentBoss==='undyneex'&&screen==='battle'&&audioUnlocked&&!uxDying)startBattleMusic()});
  addBg('Undyne exact music slot',async()=>music.undyne=await loadSavedOrLocalUndyneMusic());
  addBg('Undyne An Ending excerpt 1',async()=>music.undyneEnding1=await loadAudioAsset(MUSIC.undyneEnding1,.50,false));
  addBg('Undyne An Ending excerpt 2',async()=>music.undyneEnding2=await loadAudioAsset(MUSIC.undyneEnding2,.50,false));
@@ -23396,7 +23928,7 @@ async function boot(){
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
  images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
- for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope']){
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
@@ -24323,7 +24855,7 @@ function mpTimeoutActive() {
 function mpInitAttackSouls() {
   const alive = mpAlivePlayers();
   alive.forEach((p, i) => {
-    if(currentBoss==='undyne'&&soulMode==='green'){
+    if(isUndyneFight()&&soulMode==='green'){
       // Green SOUL is fixed to the formation center. Every party member gets an
       // independent shield direction even though the hearts occupy the same point.
       p.soul.x=ARENA.x+ARENA.w/2;p.soul.y=ARENA.y+ARENA.h/2;
@@ -24396,7 +24928,7 @@ function mpUpdateOneSoul(p, dt) {
   if(currentBoss==='doggo'&&p.moving)doggoMovedDuringAttack=true;
   const battleSpeedMul=1+Math.min(4,Math.max(-1,Number(battleSoulSpeedStacks)||0))*.25;
 
-  if(currentBoss==='undyne'&&soulMode==='green'){
+  if(isUndyneFight()&&soulMode==='green'){
     if(p.keys.ArrowUp||p.keys.w){p.guardDir=3;p.guardIdeal=270}
     else if(p.keys.ArrowRight||p.keys.d){p.guardDir=1;p.guardIdeal=180}
     else if(p.keys.ArrowDown||p.keys.s){p.guardDir=2;p.guardIdeal=90}
@@ -24440,7 +24972,7 @@ function mpSoulRect(p){return{x:p.soul.x-7,y:p.soul.y-7,w:14,h:14}}
 function mpRectSoulHit(p,x,y,w,h){const s=mpSoulRect(p);return rectHit(s.x,s.y,s.w,s.h,x,y,w,h)}
 
 function mpTryUndyneSupportShieldBlock(p,b,now){
-  if(currentBoss!=='undyne'||state!=='attack'||soulMode!=='green'||!p?.alive||!b||b.expired)return false;
+  if(!isUndyneFight()||state!=='attack'||soulMode!=='green'||!p?.alive||!b||b.expired)return false;
   if(b.green||b.kind==='vegGreen')return false;
   if(!isSupportTarget(b.owner)||b.shieldUnblockable)return false;
   if(b.kind==='icecapTeeth'||b.kind==='migospDance'||(b.kind==='madNapTear'&&b.cutsceneDummyTear))return false;
@@ -24465,7 +24997,7 @@ function mpTryUndyneSupportShieldBlock(p,b,now){
 }
 
 function mpResolveUndyneDirectional(now){
-  if(currentBoss!=='undyne'||soulMode!=='green')return;
+  if(!isUndyneFight()||soulMode!=='green')return;
   const alive=mpAlivePlayers();
   for(const b of bullets){
     if(!b||b.expired||b.kind!=='undyneDir')continue;
@@ -24963,7 +25495,7 @@ function mpDrawSoulSprite(p, now, bright) {
   ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = bright ? 1 : .38;
   if (!bright) ctx.filter = 'grayscale(1) brightness(.85)';
 
-  if(currentBoss==='undyne'&&soulMode==='green'){
+  if(isUndyneFight()&&soulMode==='green'){
     const frames=images.heartGreen||[],gim=frames[Math.floor(now/140)%Math.max(1,frames.length)]||frames[0]||images.heart;
     const soulSize=16*UT_SCALE,r=30*UT_SCALE;
     ctx.save();ctx.translate(Math.round(p.soul.x),Math.round(p.soul.y));
