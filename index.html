@@ -13415,7 +13415,7 @@ function updateSoulMovement(dt,now){
  if(currentBoss==='doggo'&&soulMoving)doggoMovedDuringAttack=true;
  const battleSpeedMul=1+Math.min(4,Math.max(-1,Number(battleSoulSpeedStacks)||0))*.25;
 
- if(soulMode==='green'&&currentBoss==='undyne'){
+ if(soulMode==='green'&&isUndyneFight()){
    // Source site codes: 0=left, 1=right, 2=down, 3=up. Collision uses the new ideal
    // direction instantly while the visible shield eases 2/3 of the remaining angle per step.
    const mirrorGuard=modBattleEnabled('mirrorMove');
