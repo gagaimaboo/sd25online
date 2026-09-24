@@ -13374,7 +13374,7 @@ function hurtPlayer(now,amount=4,owner='main',opts=null){
 }
 
 function maliceActive(){
- return screen==='battle'&&state==='attack'&&practiceMode==='noelle'&&!(currentBoss==='papyrus'&&papyrusBlue);
+ return screen==='battle'&&state==='attack'&&practiceMode==='noelle'&&!(currentBoss==='papyrus'&&papyrusBlue)&&currentBoss!=='mettatonex';
 }
 function maliceDirectionFromKey(k,low){
  // WASD both moves MALICE and turns its stored firing direction.
@@ -17873,13 +17873,21 @@ function mexTryShoot(){
  if(state!=='attack'||soulMode!=='yellow'||mex.essay)return;
  const hasShot=mex.objs.some(o=>o.t==='shot');
  if(hasShot&&mex.charge>=0)return;
- mex.charge=14;
  const h=mexHeartRoom();
+ if(mexNoelle()){
+   // Noelle: a slower frost shard instead of the heart bullet.
+   mex.charge=20;
+   mex.objs.push({t:'shot',frost:true,x:h.x+2,y:h.y,vs:-9,ys:1,rot:0});
+   play('mexShoot',1.35);
+   return;
+ }
+ mex.charge=14;
  mex.objs.push({t:'shot',x:h.x+4,y:h.y+2,vs:-16,ys:1});
  play('mexShoot');
 }
 function mexShotHits(o,x0,y0,x1,y1){
  // collision_rectangle(...) vs obj_heartshot (8x13 sprite, image_yscale grows).
+ if(o.frost)return o.x<x1&&o.x+12>x0&&o.y<y1&&o.y+12>y0;
  return o.x<x1&&o.x+8>x0&&o.y<y1&&o.y+13*o.ys>y0;
 }
 function mexFindShot(x0,y0,x1,y1){return mex.objs.find(o=>o.t==='shot'&&!o.dead&&mexShotHits(o,x0,y0,x1,y1))}
@@ -18011,6 +18019,7 @@ function mexStartAttack(now){
    if(type===50)type=38;if(type===51)type=54;if(type===52)type=56;
  }
  mex.attacktype=type;
+ mex.snap={charging:false,charge:0,used:false};
  mex.objs=mex.objs.filter(o=>o.t==='shot');
  mex.gen={type,turntimer:12,specialtimer:0,dark:1,darkamt:0,siner:0};
  mexGenCreate(mex.gen);
@@ -18286,12 +18295,13 @@ function mexHeartStep(h,now){
    h.s2+=h.n===2?.2:.08;h.s3++;
    const rad=h.n===2?[20,10]:[14,15];
    h.kids.forEach((k,q)=>{
-     if(k.dead||(k.t==='bbomb'&&k.shot))return;
+     if(k.dead||(k.t==='bbomb'&&k.shot)||k.frozen>0)return;
      const gr=q*2*Math.PI/h.kids.length+h.s2;
      k.x=h.x+Math.sin(gr)*h.sf2-(h.n===2?10:14);k.y=h.y+Math.cos(gr)*h.sf2-(h.n===2?10:15);
    });
  }
- if(h.n!==4&&h.movetype===0){
+ const chilled=h.chill>0;if(chilled)h.chill--;
+ if(h.n!==4&&h.movetype===0&&!chilled){
    h.x=h.xs+Math.sin(h.s/h.sp)*h.sf;
    if(h.n!==1)h.y=h.ys0+Math.sin(h.s/h.sp*2)*h.sf/3;
    if(h.shake===0)h.s++;
@@ -18342,7 +18352,7 @@ function mexHeartStep(h,now){
      if(h.moving===4)h.moving=0;
      if(h.shake>0){h.x+=mexRand(h.shake)-mexRand(h.shake);h.y+=mexRand(h.shake)-mexRand(h.shake);h.shake--}
    }
-   h.x+=h.hs;h.y+=h.vs;
+   if(!chilled){h.x+=h.hs;h.y+=h.vs}
    if(h.ltimer>=100){
      h.ltimer++;
      const aim=Math.atan2(-(h.ty-h.y),h.tx-h.x)*180/Math.PI;
@@ -18361,6 +18371,7 @@ function mexHeartStep(h,now){
    sh.dead=true;play('mexHit');
    if(h.n===4){h.shake=10;h.img=1;h.size=2}else{h.memx=h.x;h.memy=h.y;h.shake=6}
    h.life-=40;mexAddRatings(20);
+   if(sh.frost)h.chill=20;
    if(h.life<1){
      if(h.n===4){if(mex.gen&&mex.gen.turntimer>0)mex.gen.turntimer=0}
      else{
@@ -18395,7 +18406,11 @@ function mexBurstStep(b){
 // ---------- per-step object logic ----------
 function mexObjStep(o,now){
  const B=mexBorder();
- if(o.t==='shot'){o.y+=o.vs;o.ys+=.2;o.vs-=.2;if(o.y<0)o.dead=true;return}
+ if(o.t==='shot'){
+   if(o.frost){o.y+=o.vs;o.vs-=.25;o.rot+=12;if(o.y<0)o.dead=true;return}
+   o.y+=o.vs;o.ys+=.2;o.vs-=.2;if(o.y<0)o.dead=true;return;
+ }
+ if(mexNoelle()&&mexFrostStep(o))return;
  if(o.t==='box'){
    if(mexHeartHits(o.x,o.y,o.x+24,o.y+24))mexHurt(now);
    const sh=mexFindShot(o.x+2,o.y+2,o.x+22,o.y+22);
@@ -18595,6 +18610,7 @@ function mexStep(now){
  mexRatingsStep();
  mexFxStep();
  if(mex.charge>-1)mex.charge--;
+ mexSnapStep();
  if(state==='attack'&&mex.gen){
    for(const o of mex.objs.slice())if(!o.dead)mexObjStep(o,now);
    mex.objs=mex.objs.filter(o=>!o.dead);
@@ -18626,6 +18642,9 @@ function drawMexAttackLayer(now){
  ctx.save();ctx.imageSmoothingEnabled=false;
  for(const f of mex.fx)if(f.t==='break')d('mexBreak',f.img,f.x,f.y,120,40,.75);
  for(const o of mex.objs){
+   const iced=o.frozen>0&&(o.frozen>12||Math.floor(o.frozen/3)%2===0);
+   ctx.save();
+   try{
    if(o.t==='box')d('mexBox',0,o.x,o.y,24,24);
    else if(o.t==='bomb'){d('mexBomb',o.img||0,o.x,o.y,24,30);if(o.side===1){ctx.fillStyle='#fff';ctx.fillRect((o.x+27)*U,(o.y+6)*U,20*U,22*U)}if(o.side===2){ctx.fillStyle='#fff';ctx.fillRect((o.x-23)*U,(o.y+6)*U,20*U,22*U)}}
    else if(o.t==='expl'){
@@ -18697,7 +18716,12 @@ function drawMexAttackLayer(now){
        }
      }
    }
-   else if(o.t==='shot')d('mexShot',0,o.x,o.y,8,13*o.ys);
+   else if(o.t==='shot'){
+     if(o.frost){const im=images.iceSnowflake;if(im){ctx.save();ctx.translate((o.x+6)*U,(o.y+6)*U);ctx.rotate(o.rot*Math.PI/180);ctx.drawImage(im,-7*U,-7*U,14*U,14*U);ctx.restore()}else{ctx.fillStyle='#bff4ff';ctx.fillRect(o.x*U,o.y*U,12*U,12*U)}}
+     else d('mexShot',0,o.x,o.y,8,13*o.ys);
+   }
+   if(o.frozen>0&&MEX_FREEZABLE.has(o.t))drawMexIceBlock(o,iced);
+   }finally{ctx.restore()}
  }
  for(const f of mex.fx){
    if(f.t==='piece'){
@@ -18719,6 +18743,7 @@ function drawMettatonExOverlay(now){
  if(currentBoss!=='mettatonex'||screen!=='battle')return;
  if(mex.intro)drawMexIntroOverlay(now);
  drawMexRatings();
+ drawMexSnapFx(now);
  if(mex.caller)drawMexCaller(now);
  const bd=mex.body;
  if(bd.fadewhite===1){
@@ -18730,15 +18755,117 @@ function drawMettatonExOverlay(now){
 function mexKeyDown(e,k,low){
  if(currentBoss!=='mettatonex'||screen!=='battle')return false;
  if(mex.essay&&state==='attack')return mexEssayKey(e);
+ if(state==='attack'&&mexNoelle()&&k==='Enter'){e.preventDefault?.();if(!e.repeat)mexSnapStart();return true}
  if(mex.caller&&(low==='z'||k==='Enter')&&!e.repeat){mexCallerAdvance();return true}
  if(mex.intro&&mex.phase==='intro'&&!['battleSpeech'].includes(state))return true;
  return false;
 }
 
+// ---------- Noelle's yellow SOUL: FROST SHARDS + COLD SNAP ----------
+// Noelle won't blow anything up for the cameras. Her yellow SOUL fires slow
+// frost shards [Z]: the first one freezes whatever it hits (harmless and
+// motionless while frozen, bombs are defused), a second one shatters it.
+// Holding [ENTER] charges a COLD SNAP that freezes the whole stage for two
+// seconds, once per turn. Frost on the heart core chills it in place.
+const MEX_FREEZABLE=new Set(['box','bomb','fodder','dance','light','kiss','blocker','bbomb']);
+function mexNoelle(){return practiceMode==='noelle'}
+function mexObjRect(o){
+ if(o.t==='box'||o.t==='blocker')return [o.x,o.y,o.x+24,o.y+24];
+ if(o.t==='bomb'||o.t==='bbomb')return [o.x,o.y,o.x+24,o.y+30];
+ if(o.t==='fodder'||o.t==='dance')return [o.x+2,o.y+2,o.x+22,o.y+22];
+ return [o.x-10,o.y-10,o.x+10,o.y+10];
+}
+function mexRateCustom(name,v){
+ if(!mex.active)return;
+ if(mex.turns>=20&&v>0)v*=2;
+ mex.rq.unshift({n:name,v,s:0});mex.rq.length=6;mex.ratings+=v;
+}
+function mexFreeze(o,steps=45){
+ o.frozen=steps;
+ if(o.t==='bomb'||o.t==='bbomb'){o.shot=0;o.shot2=0;o.img=0}
+}
+function mexShatter(o){
+ o.dead=true;
+ if(o.t==='blocker'||o.t==='bbomb'){o.dead=false;o.visible=false;o.frozen=0}
+ const key={box:'mexBox',blocker:'mexBox',bomb:'mexBomb',bbomb:'mexBomb',fodder:'mexFodder',dance:'mexDance'}[o.t];
+ if(key)mexPiece(key,o.t==='fodder'?o.x-20:(o.t==='dance'?o.x-15:o.x),o.t==='fodder'?o.y-23:(o.t==='dance'?o.y-6:o.y),Math.floor(o.img||0));
+ play('mexBurstSmall',1.3);
+ mexRateCustom('Shatter',30);
+}
+// Runs before an object's own step. Returns true when the object is frozen
+// (or was just frozen/shattered) so its normal movement and hitbox are skipped.
+function mexFrostStep(o){
+ if(!MEX_FREEZABLE.has(o.t))return false;
+ if((o.t==='blocker'||o.t==='bbomb')&&!o.visible)return false;
+ const r=mexObjRect(o);
+ if(o.frozen>0){
+   o.frozen--;
+   const sh=mexFindShot(r[0],r[1],r[2],r[3]);
+   if(sh){sh.dead=true;mexShatter(o)}
+   return true;
+ }
+ const sh=mexFindShot(r[0],r[1],r[2],r[3]);
+ if(sh&&sh.frost){sh.dead=true;mexFreeze(o);play('petrify',1.4);mexRateCustom('Frostbite',10);return true}
+ return false;
+}
+function mexSnapStart(){
+ const sn=mex.snap;if(!sn||sn.used||state!=='attack')return;
+ sn.charging=true;sn.charge=0;
+}
+function mexSnapStep(){
+ const sn=mex.snap;if(!sn)return;
+ if(sn.charging){
+   if(state!=='attack'){sn.charging=false;sn.charge=0;return}
+   sn.charge=Math.min(30,sn.charge+1);
+   if(sn.charge===30&&!sn.readyPlayed){sn.readyPlayed=true;play('mexShoot',.7)}
+ }
+ if(sn.flash>0)sn.flash-=.04;
+}
+function mexSnapRelease(){
+ const sn=mex.snap;if(!sn||!sn.charging)return;
+ sn.charging=false;sn.readyPlayed=false;
+ if(sn.charge<30){sn.charge=0;return}
+ sn.charge=0;sn.used=true;sn.flash=.7;
+ let n=0;
+ for(const o of mex.objs)if(MEX_FREEZABLE.has(o.t)&&!((o.t==='blocker'||o.t==='bbomb')&&!o.visible)){mexFreeze(o,60);n++}
+ for(const o of mex.objs)if(o.t==='heart')o.chill=60;
+ play('icespell');
+ mexRateCustom('ColdSnap',150);
+}
+// A frozen object sits inside a translucent ice block; it blinks right before thawing.
+function drawMexIceBlock(o,solid){
+ const U=UT_SCALE,r=mexObjRect(o),pad=3;
+ const x=(r[0]-pad)*U,y=(r[1]-pad)*U,w=(r[2]-r[0]+pad*2)*U,h=(r[3]-r[1]+pad*2)*U;
+ ctx.save();
+ ctx.globalAlpha=solid?1:.45;
+ ctx.fillStyle='rgba(127,233,255,.42)';ctx.fillRect(x,y,w,h);
+ ctx.strokeStyle='#dffaff';ctx.lineWidth=Math.max(1,U);ctx.strokeRect(x+.5,y+.5,w-1,h-1);
+ ctx.strokeStyle='rgba(255,255,255,.8)';ctx.beginPath();ctx.moveTo(x+3*U,y+h*.35);ctx.lineTo(x+w*.35,y+3*U);ctx.stroke();
+ const im=images.iceSnowflake;
+ if(im)ctx.drawImage(im,x+w-9*U,y+1*U,8*U,8*U);
+ ctx.restore();
+}
+function drawMexSnapFx(now){
+ const sn=mex.snap;if(!sn)return;
+ const U=UT_SCALE;
+ if(sn.flash>0){ctx.save();ctx.globalAlpha=clamp(sn.flash,0,1);ctx.fillStyle='#bff4ff';ctx.fillRect(0,0,W,H);ctx.restore()}
+ if(sn.charging&&state==='attack'){
+   const t=sn.charge/30,r=22*U;
+   ctx.save();ctx.lineWidth=2*U;
+   ctx.strokeStyle='rgba(191,244,255,.35)';ctx.beginPath();ctx.arc(soul.x,soul.y,r,0,Math.PI*2);ctx.stroke();
+   ctx.strokeStyle=t>=1&&Math.floor(now/80)%2?'#ffffff':'#7fe9ff';
+   ctx.beginPath();ctx.arc(soul.x,soul.y,r,-Math.PI/2,-Math.PI/2+t*Math.PI*2);ctx.stroke();
+   ctx.restore();
+ }
+}
+
 // ---------- ACTs / items / FIGHT ----------
 function mettatonExActOptions(){return ['Check','Boast','Pose','Heel']}
 function handleMettatonExAct(choice){
- if(choice===0){setText('* METTATON EX - ATK 47 DEF 47\n* His weak point is his\n  heart-shaped core.',()=>beginEnemyTurn());return}
+ if(choice===0){
+   if(mexNoelle()){setText('* METTATON EX - ATK 47 DEF 47\n* Weak point: his heart-shaped core.\n* Noelle\'s SOUL: [Z] frost shards freeze,\n  a second shard shatters. Hold [ENTER]: COLD SNAP.',()=>beginEnemyTurn());return}
+   setText('* METTATON EX - ATK 47 DEF 47\n* His weak point is his\n  heart-shaped core.',()=>beginEnemyTurn());return;
+ }
  if(choice===1){mex.boast=true;setText("* You say you aren't going\n  to get hit at ALL.\n* Ratings gradually increase\n  during Mettaton's turn.",()=>beginEnemyTurn());return}
  if(choice===2){
    let t='* You posed dramatically.\n* The audience nods.';
@@ -24729,6 +24856,7 @@ function keyDown(e){
 }
 function keyUp(e){
  const low=e.key.toLowerCase();
+ if(e.key==='Enter'&&typeof mex!=='undefined'&&mex?.snap?.charging)mexSnapRelease();
  if(e.key==='Enter'&&maliceCharging)releaseMaliceCharge(performance.now());
  key[e.key]=false;key[low]=false;
 }
