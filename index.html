@@ -10119,6 +10119,31 @@ function snowgraveTightFit(im,r){
  }catch(e){}
  return out;
 }
+// SnowGrave deals a flat 2986 damage. It still freezes anything that damage
+// kills, and a few enemies are always frozen outright (Mettaton's 9999 HP show
+// body is the forced case). Undyne the Undying shrugs off 1/50 of her max HP
+// per cast, so it takes 20 SnowGraves to put her down.
+const SNOWGRAVE_DAMAGE=2986;
+const SNOWGRAVE_FORCED_KILL=new Set(['mettaton']);
+function snowgraveForcedKill(target){return SNOWGRAVE_FORCED_KILL.has(targetEnemyId(target))}
+function snowgraveDamageFor(target){
+ if(targetEnemyId(target)==='undyneex')return Math.ceil(targetMaxHp(target)/UX_SNOWGRAVES_TO_KILL);
+ return SNOWGRAVE_DAMAGE;
+}
+function snowgraveResultText(fx){
+ const surv=fx?.payload?.survivors||[];
+ if(!surv.length)return '* Noelle cast SNOWGRAVE.';
+ const main=surv.find(v=>v.target==='main');
+ if(main&&currentBoss==='undyneex'){
+   const left=Math.max(1,Math.ceil(enemyHp/Math.max(1,main.dmg)));
+   return `* Noelle cast SNOWGRAVE.\n* Undyne the Undying tears through the ice!\n* (${left} more ${left===1?'SnowGrave':'SnowGraves'} would end this.)`;
+ }
+ const lines=surv.slice(0,2).map(v=>{
+   const name=(fightTargets().find(t=>t.id===v.target)?.label)||targetEnemyId(v.target).toUpperCase();
+   return `* ${name} took ${v.dmg} damage.`;
+ });
+ return '* Noelle cast SNOWGRAVE.\n'+lines.join('\n');
+}
 function freezeTargetAsSnowGraveStatue(target,now=performance.now()){
  const full=targetRectFor(target,now);
  const hurt0=criticalImageFor(target,now)||frozenSourceFor(target,now).normal;
@@ -10657,11 +10682,25 @@ function updateNoelleSpellFx(now=performance.now()){
      }
 
    }else if(fx.type==='snowgrave'){
+     const survivors=[];
      for(const target of fx.payload.targets||[]){
        if(target==='main'&&enemyDead)continue;
        const si=supportIndexFromTarget(target);
        if(si>=0&&supportInstance(si)?.dead)continue;
-       freezeTargetAsSnowGraveStatue(target,now);
+       const before=targetHp(target),dmg=snowgraveDamageFor(target);
+       if(snowgraveForcedKill(target)||dmg>=before){freezeTargetAsSnowGraveStatue(target,now);continue}
+       setTargetHp(target,before-dmg);
+       maybeMakeTargetTiredAfterDamage(target,before,before-dmg);
+       survivors.push({target,dmg});
+     }
+     fx.payload.survivors=survivors;
+     if(survivors.length){
+       const lead=survivors.find(v=>v.target==='main')||survivors[0];
+       hitTarget=lead.target;hitDamage=lead.dmg;hitApplied=true;
+       enemyHpBeforeHit=targetHp(lead.target)+lead.dmg;damageStart=now;
+       play('damage');
+       // Leave room for the damage writer before the turn text.
+       fx.duration=Math.max(fx.duration,elapsed+1100);
      }
      bullets=[];setEnemyVisuals();
    }
@@ -10717,7 +10756,8 @@ function updateNoelleSpellFx(now=performance.now()){
 
    }else if(fx.type==='snowgrave'){
      snowgraveMadRescueActive=false;
-     finishNoelleSpellTurn('* Noelle cast SNOWGRAVE.');
+     hitApplied=false;damageStart=0;
+     finishNoelleSpellTurn(snowgraveResultText(fx));
    }
  }
 }
@@ -13415,7 +13455,7 @@ function updateSoulMovement(dt,now){
  if(currentBoss==='doggo'&&soulMoving)doggoMovedDuringAttack=true;
  const battleSpeedMul=1+Math.min(4,Math.max(-1,Number(battleSoulSpeedStacks)||0))*.25;
 
- if(soulMode==='green'&&currentBoss==='undyne'){
+ if(soulMode==='green'&&isUndyneFight()){
    // Source site codes: 0=left, 1=right, 2=down, 3=up. Collision uses the new ideal
    // direction instantly while the visible shield eases 2/3 of the remaining angle per step.
    const mirrorGuard=modBattleEnabled('mirrorMove');
@@ -13495,6 +13535,7 @@ function update(dt,now){
  }
  if(screen!=='battle')return;
  updateUndyingDeath(now);
+ undyingSyncIceSpeech();
  updateMercyImpactWatch(now);
  if(state==='encounterIntro'){
    const encounterElapsed=now-encounterIntroStart;
@@ -13755,7 +13796,13 @@ function update(dt,now){
      beginTorielFullFreezeBlack(now);
    }
 
-   if(enemyFrozen&&now-freezeStart>1500){
+   if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='undyneex'&&!uxIceSpeechDone){
+     // IceShock as the final blow: Undyne the Undying keeps talking through the ice.
+     uxIceSpeechDone=true;stopMusic();
+     startSpecialBattleSpeech(undyingIceShockLines(),()=>{
+       state='iceShock';freezeStart=performance.now()-1501;
+     });
+   }else if(enemyFrozen&&now-freezeStart>1500){
      const frozenTarget=iceFrozenTarget;
      const frozenName=isSupportTarget(frozenTarget)?(targetSupportData(frozenTarget)?.label||'SUPPORT'):bossData().label;
      const lock=iceFrozenRect||targetRectFor(frozenTarget,now);
@@ -13804,6 +13851,12 @@ function update(dt,now){
 
      if(torielFrozenKill){
        startTorielSoulDeath(now,true);
+     }else if(frozenTarget==='main'&&currentBoss==='undyneex'){
+       setText('* The ice finally stops cracking.\n* Behind it, her eye is still burning.',()=>{
+         if(allEnemiesDefeated())win();
+         else beginEnemyTurn();
+       });
+       state='text';
      }else if(undyneNoelleFrozenKill){
        setText('* The cracking finally stops.\n* Noelle lowers her hand.',()=>{
          if(allEnemiesDefeated())win();
@@ -15248,7 +15301,8 @@ function apparentTargetHp(now){
  return Math.max(targetHp(hitTarget),enemyHpBeforeHit-(hitDamage/15)*steps);
 }
 function drawDamageWriter(now){
- if(!['fightHit','iceShock','fireshock','boneffication'].includes(state)||!hitApplied||!damageStart)return;
+ const snowgraveWriter=state==='noelleSpell'&&noelleSpellFx?.type==='snowgrave'&&noelleSpellFx.payload?.survivors?.length;
+ if((!['fightHit','iceShock','fireshock','boneffication'].includes(state)&&!snowgraveWriter)||!hitApplied||!damageStart)return;
  const S=UT_SCALE;
  const r=targetRectFor(hitTarget,now);
  const max=targetMaxHp(hitTarget);
@@ -15259,9 +15313,10 @@ function drawDamageWriter(now){
  // Keep the same damage animation, but lower only Doggo's writer enough that
  // the full bounce remains visible. This also covers Doggo in support slots.
  const rawYStart=r.y-24*S;
+ // obj_undyne_ex creates its dmgwriter at (x, y+150): below her face, on screen.
  const yStart=targetEnemyId(hitTarget)==='doggo'
    ?Math.max(rawYStart,58*S)
-   :rawYStart;
+   :(targetEnemyId(hitTarget)==='undyneex'?r.y+(UX_OBJ_Y+150-UX_CANVAS_Y)*(r.w/UX_CANVAS_W)-24*S:rawYStart);
  const barW=100*S,barTop=yStart+8*S,barBottom=yStart+20*S,barH=barBottom-barTop;
  ctx.fillStyle='#000';ctx.fillRect(Math.round(writerX-1*S),Math.round(barTop-1*S),Math.round(barW+2*S),Math.round(barH+2*S));
  ctx.fillStyle='#404040';ctx.fillRect(Math.round(writerX),Math.round(barTop),Math.round(barW),Math.round(barH));
@@ -16934,6 +16989,8 @@ const UX_STEP_MS=1000/30;
 let uxLesson=-5,uxOrder=1,uxOrderB=0,uxRating=9,uxRatingB=0,uxHitNo=0,uxMode='green';
 let uxTurnKind='green',uxTurnSteps=300,uxFiring=10,uxRefuse=false,uxSwitchTo=null;
 let uxGenT=0,uxGenRate=20,uxGenAng=0,uxRiseMem=-1;
+const UX_SNOWGRAVES_TO_KILL=20;
+let uxIceSpeechDone=false;
 let uxBody=null,uxDying=false,uxDeathPhase=0,uxMeltFrame=-1,uxLethalAt=0,uxFaceEmotion=0;
 function uxNewBody(){
  return {siner:0,eyetimer:0,movetype:0,slashno:0,alarm1:-1,larmA:0,larmX:64,larmY:78,armV:0,
@@ -16943,6 +17000,7 @@ function resetUndying(){
  uxLesson=-5;uxOrder=1;uxOrderB=0;uxRating=9;uxRatingB=0;uxHitNo=0;uxMode='green';
  uxTurnKind='green';uxTurnSteps=300;uxFiring=10;uxRefuse=false;uxSwitchTo=null;
  uxGenT=0;uxGenRate=20;uxGenAng=0;uxRiseMem=-1;
+ uxIceSpeechDone=false;
  uxBody=uxNewBody();uxDying=false;uxDeathPhase=0;uxMeltFrame=-1;uxLethalAt=0;uxFaceEmotion=0;
 }
 resetUndying();
@@ -17346,6 +17404,31 @@ function undyingAdjustHit(dmg){
  let d=dmg*21;
  if(d<600)d=600+Math.floor(Math.random()*67);
  return d;
+}
+
+// ---------- IceShock final blow ----------
+function undyingIceShockLines(){
+ const L=(text,e,wide=true)=>({text,wide,voiceBoss:'undyne',uxE:e});
+ const noelle=practiceMode==='noelle';
+ return [
+   L('...',0,false),
+   L(noelle?'Ice...?\nFrom a KID?':'Ice...?',0),
+   L('Heh...\nHeheheh...',1),
+   L("You really think\na little frost is\ngonna stop ME?",1),
+   L("I can't...\nfeel my arms...",0),
+   L("Doesn't matter.",2),
+   L("I'm made of more\nthan my body now.",2),
+   L("Every monster in\nthe Underground is\nstanding with me.",3),
+   L('Even if I freeze\nsolid right here...',4),
+   L('Even if I never\nmove again...',4),
+   L("You'll NEVER\nget past...",5),
+   L('...',5,false)
+ ];
+}
+function undyingSyncIceSpeech(){
+ if(currentBoss!=='undyneex'||!uxIceSpeechDone||state!=='battleSpeech')return;
+ const line=specialBattleSpeechQueue[specialBattleSpeechIndex];
+ if(line&&Number.isFinite(line.uxE))uxFaceEmotion=line.uxE;
 }
 
 // ---------- defeat (obj_undyne_ex con 50..74) ----------
@@ -22291,6 +22374,7 @@ function render(now){
  drawSpareDust();
  drawIceShock(now);
  drawNoelleSpellFx(now);
+ if(state==='noelleSpell'&&noelleSpellFx?.type==='snowgrave'&&noelleSpellFx.payload?.survivors?.length)drawDamageWriter(now);
  drawMercyImpactWriter(now);
  drawTorielSoulDeath(now);
  drawBattleChrome();
