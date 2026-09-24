@@ -673,6 +673,8 @@ const IMG={
  }
 };
 const SFX={
+ impact:RAW+'sound/audio/snd_impact.wav',
+ bombTick:RAW+'sound/audio/snd_bomb.wav',
  pomBark:RAW+'sound/audio/snd_pombark.wav',
  // UNDERTALE encounter transition flicker sound. The original battle transition
  // toggles the SOUL while playing snd_noise.
@@ -852,10 +854,13 @@ function hardBossActive(id=currentBoss){
 const hardModeSpriteCache=new WeakMap();
 function hardModeSprite(src,id=currentBoss){
  if(!src||!hardBossActive(id))return src;
- let cached=hardModeSpriteCache.get(src);if(cached)return cached;
+ // Live composites (Pyrope, Woshua, Vulkin, Temmie...) redraw into one canvas
+ // every frame, so their halo must be rebuilt each call instead of cached once.
+ const live=typeof HTMLCanvasElement!=='undefined'&&src instanceof HTMLCanvasElement;
+ let cached=hardModeSpriteCache.get(src);if(cached&&!live)return cached;
  try{
    const w=src.naturalWidth||src.width||1,h=src.naturalHeight||src.height||1;
-   const mask=document.createElement('canvas');mask.width=w;mask.height=h;
+   const mask=live&&cached?._mask?.width===w&&cached._mask.height===h?cached._mask:document.createElement('canvas');mask.width=w;mask.height=h;
    const mg=mask.getContext('2d');mg.imageSmoothingEnabled=false;
    mg.drawImage(src,0,0,w,h);
    mg.globalCompositeOperation='source-in';
@@ -863,7 +868,7 @@ function hardModeSprite(src,id=currentBoss){
    mg.fillRect(0,0,w,h);
    mg.globalCompositeOperation='source-over';
 
-   const c=document.createElement('canvas');c.width=w;c.height=h;
+   const c=live&&cached&&cached.width===w&&cached.height===h?cached:document.createElement('canvas');c.width=w;c.height=h;c._mask=mask;
    const g=c.getContext('2d');g.imageSmoothingEnabled=false;
    // Eight-neighbour dilation gives a crisp Undertale-style 1px halo.
    // Drawing the original sprite last punches its real colors back over the halo.
@@ -5003,7 +5008,7 @@ function undyneCanvasAlphaBounds(c){
 // with a glint, which reads as Undyne the Undying. Her normal battle art has a
 // white eye with a black pupil (see the canonical frame and spr_undyneface_*).
 // Rebuild that eye on a copy of the 32x28 face: sclera at cols 8-10 rows 10-13
-// (plus col 11 on row 10), pupil at col 10 rows 11-12.
+// with a centred one-pixel pupil at col 9 rows 11-12.
 let undyneNormalEyeCache=null,undyneNormalEyeSource=null;
 function undyneNormalEyeFace(face){
  const src=undyneSourcePiece(face);
@@ -5011,8 +5016,8 @@ function undyneNormalEyeFace(face){
  if(undyneNormalEyeCache&&undyneNormalEyeSource===src)return undyneNormalEyeCache;
  const c=document.createElement('canvas');c.width=src.width||32;c.height=src.height||28;
  const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);
- g.fillStyle='#fff';g.fillRect(8,10,3,4);g.fillRect(11,10,1,1);
- g.fillStyle='#000';g.fillRect(10,11,1,2);
+ g.fillStyle='#fff';g.fillRect(8,10,3,4);
+ g.fillStyle='#000';g.fillRect(9,11,1,2);
  undyneNormalEyeCache=c;undyneNormalEyeSource=src;
  return c;
 }
@@ -16373,8 +16378,10 @@ function makeDogiComposite(now=performance.now(),hurt=false){
  // Both bodies share image_index (speed .125) and swap depth each time it wraps to 0.
  const t=wfStep(now)*.125,fi=Math.floor(t)%11,loop=Math.floor(t/11);
  const a=A[fi%A.length]||A[0],b=B[fi%B.length]||B[0];
- if(loop%2===0){g.drawImage(b,0,0,182,184);g.drawImage(a,0,0,182,192)}
- else{g.drawImage(a,0,0,182,192);g.drawImage(b,0,0,182,184)}
+ // Calibrated against spr_mandoge/spr_womandoge: Dogamy's body sits at (2,8),
+ // Dogaressa's at (38,16), so they stand side by side with snouts touching.
+ if(loop%2===0){g.drawImage(b,38,16,182,184);g.drawImage(a,2,8,182,192)}
+ else{g.drawImage(a,2,8,182,192);g.drawImage(b,38,16,182,184)}
  return c;
 }
 function woshStep(now){
@@ -16390,24 +16397,25 @@ function woshStep(now){
  return w;
 }
 function makeWoshuaComposite(now=performance.now(),hurt=false){
- // The exported obj_woshbody parts do not line up with their source offsets, so
- // use the game's own complete spr_woshua frames: 1 = idle, 0 = hurt.
- if(hurt)return images.woshuaSprite?.[0]||null;
- if(images.woshuaSprite?.[1])return images.woshuaSprite[1];
+ // spr_woshua frame 1 is the hurt pose. Idle is obj_woshbody's animated parts;
+ // offsets are calibrated against that frame (duck/water/tail/head follow the
+ // source draw offsets, the tub and hanger sit at +20,+36 and +30,+6).
+ if(hurt)return images.woshuaSprite?.[1]||images.woshuaSprite?.[0]||null;
+ if(!images.woshBody)return images.woshuaSprite?.[1]||null;
  if(!woshCanvas){woshCanvas=document.createElement('canvas');woshCanvas.width=110;woshCanvas.height=112}
  const c=woshCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
  const w=woshStep(now),anim=wfStep(now)*.2;
  const d=(im,x,y,sw,sh)=>{if(im)g.drawImage(im,Math.round(x),Math.round(y),sw,sh)};
- d(images.woshHanger,0,0,52,30);
- d(images.woshDuck?.[0],46,w.ducky,26,70);
+ d(images.woshHanger,30,6,52,30);
+ d(images.woshDuck?.[0],46,w.ducky-6,26,70);
  if(images.woshWater){
    g.drawImage(images.woshWater,0,0,16,28,Math.round(40-Math.sin(anim/2)*4),34,32,56);
    g.drawImage(images.woshWater,0,0,16,28,Math.round(40+Math.sin(anim/2)*4),34,32,56);
  }
- d(images.woshBody,0,0,68,74);
- const tail=images.woshTail||[];d(tail[Math.floor(anim)%Math.max(1,tail.length)],88,50,16,22);
- d(images.woshHead,0,w.hy,44,44);
- d(images.woshFace,0,w.hy+w.fy,24,18);
+ d(images.woshBody,20,36,68,74);
+ const tail=images.woshTail||[];d(tail[Math.floor(anim)%Math.max(1,tail.length)],88,52,16,22);
+ d(images.woshHead,0,w.hy+2,44,44);
+ d(images.woshFace,4,w.hy+6+w.fy,24,18);
  return c;
 }
 function makePyropeComposite(now=performance.now(),hurt=false){
@@ -16682,11 +16690,15 @@ function updateSnowdin2Bullet(b,now,dt){
    q.step++;
    if(k==='dogiAx'){
      q.alpha=Math.min(1,q.alpha+.05);
+     if(q.y0===undefined){q.y0=q.y;q.dirSign=q.axetype===0?1:-1}
      if(--q.alarm<=0){
-       if(q.move===1){q.hs=q.axetype===0?1.8:-1.8;q.vs=-3.8;q.grav=.2;q.alarm=9999}
+       if(q.move===1){q.hs=1.8*q.dirSign;q.vs=-3.8;q.grav=.2;q.alarm=9999;q.dirSign=-q.dirSign}
        else{q.hs=0;q.alarm=10+Math.floor(Math.random()*14);q.move=1}
      }
      q.vs+=q.grav;q.x+=q.hs*U;q.y+=q.vs*U;
+     // Land back on the floor line and hop again the other way so the axes
+     // keep swinging inside the board for the whole turn.
+     if(q.grav&&q.vs>0&&q.y>=q.y0){q.y=q.y0;q.vs=0;q.hs=0;q.grav=0;q.alarm=10+Math.floor(Math.random()*14)}
    }else if(k==='dogiLoop'){
      let rc=0;
      if(q.radius<q.ideal){q.radius=Math.min(q.ideal,q.radius+2);rc=1}
@@ -16731,7 +16743,7 @@ function updateSnowdin2Bullet(b,now,dt){
      }
      if((q.type===0||q.type===2)&&(q.x>R-15*U||q.x<L+15*U)){q.x=px;q.hs=-q.hs}
      if((q.type===1||q.type===3)&&(q.y>B-15*U||q.y<T+15*U)){q.y=py;q.vs=-q.vs}
-     if(q.bounce){q.flash++;if(q.flash>14){q.flash=14;if(!q.expl){q.expl=1;q.explodeAt=q.step+15}}}
+     if(q.bounce){if(q.flash===0)play('bombTick');q.flash++;if(q.flash>14){q.flash=14;if(!q.expl){q.expl=1;q.explodeAt=q.step+15}}}
      if(q.explodeAt>0&&q.step>=q.explodeAt){q.expired=true;play('impact');bullets.push({kind:'pyroBlast',owner:'main',x:q.x,y:q.y,x0:q.x,y0:q.y,size:5,alpha:1,step:0,damage:q.damage,born:now})}
    }else if(k==='pyroBlast'){
      q.size+=.1;if(q.size>6.2)q.alpha-=.2;
