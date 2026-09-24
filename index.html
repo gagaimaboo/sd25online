@@ -194,8 +194,8 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="doggo-opening">doggo noelle opening</button>
     <button data-debug="doggo-weird">doggo weird lethal talk</button>
     <button data-debug="undyne-noelle-freeze">undyne noelle freeze</button>
-    <button data-debug="mettex-alphys-ice">mett ex alphys (iceshock)</button>
-    <button data-debug="mettex-alphys-grave">mett ex alphys (snowgrave)</button>
+    <button data-debug="mettneo-alphys-ice">mett neo alphys (iceshock)</button>
+    <button data-debug="mettneo-alphys-grave">mett neo alphys (snowgrave)</button>
     <button data-debug="maddummy-napstablook">mad dummy canon ending + napstablook</button>
     <button data-debug="attack-now">force enemy attack</button>
     <button data-debug="flashback">play flashback</button>
@@ -451,8 +451,6 @@ const IMG={
  // Alphys (Noelle's lethal-ice cutscene in the Mettaton EX fight).
  alphysR:[0,1,2,3].map(i=>RAW+`sprites/images/spr_alphys_r_${i}.png`),
  alphysFreaked:RAW+'sprites/images/spr_alphys_freaked_0.png',
- // Angry Alphys, 64x55 white battle-style sprite (outside transparent, inside black).
- alphysAngry:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAA3CAYAAAC8TkynAAAEwElEQVR4AeSXjXLbMAyDu73/O3f4eIWOliVZcuw4vfWM8EcgRSJp1v39+s9/PlKA75+fd7w3HymAF//R4dvxHfajBfDCCGH/avsrBGBpRAD4V+LXCOClEQE4ftX+OgG8MCIAx2ftowKwQAsry1C/wq+5jwrwRz/1QGfiV0R4VACWlQZ/sLMQv0lFBNA8/Em2zh8XgNm01LQIWuJL/B3oA3QeT/YjoRfV7e75CAEYtjUc+Ra0y1eNFo+eGS3O4wJokXhaw41yeTH8EXd09pgAsbVeGE4L8I5O/8kr/u6jTC6DvmofPbGAXI1HBMjDaGiWr+dqxuLG43qsQYF9LDFkW/vEGW8XwMMxhIaaXh6+a1UXnwCs4TN4oI7JgRpvFSAPxeCK63kOY9XExzoTWznOyWeQq/E2ARikvhwRRqj5jumV4fyRpabmvEWA1sXkang48vbPWglbSrNf936LAGWSCacecKKkSVGfks8+ScXl1+h2AfJlXH4X9C7HF+Nsf891uwCzA7V4q0vBXwF3frQADMhC2Bnwrhrwez5nxq0CMIAvmrHwtXBQ8cPRi3KHH+/MV0k81AECLMDPuFwABgH5krN+7tMaftSXWjDicHapADMXcmkLWjDS6hH/1Y1AL4rLN7Y4h58ElZRnhn+ZAHnQMsGkw6CqL2x85XK8EUFnU09pMHAuEUADlwEHdzWP2KR1oJ7dT0KHr5LvMkcEemlxc+4SAXJDfC3Ff3LKMORG0JxNrvIhAv2A4u6j83i4BxIWZJ+4xssCHF1QX5hjJs5xy1d/xAyIvxEkx+I1RWz1zLmXBcjNVnwNP/WFJl4sTW8tGULY5px40U9nS0KcEmD1EgbN8LDOEbfg8yNLbY9zlF8W4ILleRdpswGD5gQxiykHn7CAPOAM6wPFS+8+dUsCrFygwei/g3rscuLGxzcfiBfLcFbDPPL4cAH+KqYFOHvBykBeyDX1ncQGnOwTn8GhAGcuUc2ZWaLGIthGUi/qGZ8IuUtP3acuHgowc+noAp3V9zXj+h7VbX4l6vNmk5PJpgBcCEY9J86jXMuEPXqhH8g81RYh7GNB5vX8Gd5GAAYAvYarefWKEg0S9ugFnmrKY77yIYSt8yM7yw0BfOOoYeuMOvIzl4kDtQvO1a+c/8S733txImdbCpKj2hAspbpuCEAB6LJeONCgpVp3lL/qSlIOeZnyELtOdvOYJM5uSXLAnBkbAphI8QjmZct0xNRhWxBnkxY3hLDl0Bxy9sm3oPP4FIi7eVrco9xGgCPy5rYUuI6U/dpq6N1fdOZwZv/ddkmAK4Zj2Rpn+qpHfArO1OaaywUYfQryxT1fi8WvR+8858V9WYTLBWDAi0Sgze6Ljv4Zr4pwiwAMyPTYs3h1sdl7bxNgdoAj3oyQWayjfvX5rQLMDF8PRI3hM2L7V9tbBVgd1ovyjoJc77Ocy37Nz2cj/2ME8IJeRDF/N2y+5ZWLp7eQa3vnrfzjAsRGemG4vIB8/jmMfwXkxwMHiB55/BoQ69wovlWAo2HyIuaSAx7aeWJ8gA/HIM4wJ+d6/i0CMADoXVoPnrn24eR6x1g4wOfkDOfyuXMte4sAHqZn60FqXj73GTl8W/vEGeSNnO/5/wAAAP//n9lcWgAAAAZJREFUAwAgg4+csIE6YgAAAABJRU5ErkJggg==',
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -10511,9 +10509,9 @@ function snowgraveSpawnRescueNapstablook(now=performance.now()){
 function commitSnowGrave(targets=null,extraPayload=null){
  const chosen=(Array.isArray(targets)&&targets.length?targets:fightTargets().map(t=>t.id)).filter(Boolean);
  if(!chosen.length){returnMenu();return}
- if(chosen.includes('main')&&mexAlphysShouldIntercept('main',Infinity)){
+ if(chosen.includes('main')&&neoAlphysShouldIntercept('main',snowgraveDamageFor('main'))){
    tp=Math.max(0,tp-SNOWGRAVE_COST);
-   mexAlphysIntercept('grave');
+   neoAlphysIntercept('grave');
    return;
  }
  tp=Math.max(0,tp-SNOWGRAVE_COST);
@@ -10668,9 +10666,9 @@ function startSnowGrave(){
    startSpecialBattleSpeech(snowgraveMettatonLines(),()=>commitSnowGrave());
    return;
  }
- if(mexAlphysShouldIntercept('main',Infinity)){
+ if(neoAlphysShouldIntercept('main',snowgraveDamageFor('main'))){
    tp=Math.max(0,tp-SNOWGRAVE_COST);
-   mexAlphysIntercept('grave');
+   neoAlphysIntercept('grave');
    return;
  }
  if(!enemyDead&&currentBoss==='mettatonex'){
@@ -11175,9 +11173,9 @@ function iceShockDamageFor(target='main'){
 }
 
 function startIceShock(target='main',now=performance.now()){
- // Noelle's lethal IceShock on Mettaton EX: Alphys steps in instead, whichever
+ // Noelle's lethal IceShock on Mettaton NEO: Alphys steps in instead, whichever
  // path cast it (SPELL menu, party queue, online host).
- if(mexAlphysShouldIntercept(target,iceShockDamageFor(target))){mexAlphysIntercept('ice');return}
+ if(neoAlphysShouldIntercept(target,iceShockDamageFor(target))){neoAlphysIntercept('ice');return}
  hitTarget=target;
  magicTargetId=target;
  if(currentBoss==='papyrus'&&target==='main'&&!papyrusGenocideMode()&&!papyrusBlue)papyrusBluePending=true;
@@ -17695,7 +17693,7 @@ function resetMettatonEx(){
    boast:false,heel:false,checkHp:null,timeloss:0,oo:0,oob:0,active:true,siner:0,
    specialdam:[0,0,0],attacktype:29,def:1,border:24,body:mexNewBody(),faceEmotion:0,
    gen:null,objs:[],fx:[],charge:0,acc:0,lastStep:-1,prevZ:false,iceSpeechDone:false,
-   introDone:false,intro:null,phase:'battle',essay:null,seq:null,caller:null,killed:false,endFade:null,alphys:null};
+   introDone:false,intro:null,phase:'battle',essay:null,seq:null,caller:null,killed:false,endFade:null};
  const thisi=Math.floor(Math.random()*8);
  for(let i=0;i<10;i++)mex.rp.push(i===thisi?4000:4000-Math.random()*500);
 }
@@ -17927,7 +17925,7 @@ function makeMettatonExComposite(now=performance.now(),hurt=false){
  return c;
 }
 function drawMettatonExMain(now,hit,offset=0){
- if(mex.hideBody){drawMexAlphysMain();return true}
+ if(mex.hideBody)return true;
  const r=enemyDraw,k=r.w/280;
  const X0=r.x+offset-180*k,Y0=r.y+10*k;
  ctx.save();ctx.imageSmoothingEnabled=false;
@@ -17946,7 +17944,6 @@ function drawMettatonExMain(now,hit,offset=0){
  }
  mexDrawLimbsAndExhaust(k,X0,Y0);
  ctx.restore();
- drawMexAlphysMain();
  return true;
 }
 function mexRoomToScreen(){const r=enemyDraw,k=r.w/280;return {k,X0:r.x-180*k,Y0:r.y+10*k}}
@@ -18707,7 +18704,7 @@ function mexStep(now){
  if(mex.essay)mexEssayStep(now);
  if(mex.intro)mexIntroStep(now);
  if(mex.seq)mexSeqStep(now);
- mexAlphysStep();
+ neoAlphysStep();
  mexEndFadeStep(now);
 }
 function updateMettatonEx(dt,now){
@@ -18836,7 +18833,7 @@ function drawMettatonExOverlay(now){
  if(currentBoss==='mettatonex')drawMexRatings();
  drawMexSnapFx(now);
  if(mex.caller)drawMexCaller(now);
- drawMexAlphysOverlay();
+ drawNeoAlphysOverlay();
  const bd=mex.body;
  if(bd.fadewhite===1){
    ctx.save();ctx.globalAlpha=clamp(bd.whiteval,0,1);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
@@ -18988,225 +18985,6 @@ function mexSnowgraveLines(){
    L('Cut the cameras!\nCUT THE CAMERAS!'),
    L('...',false)
  ];
-}
-
-// ---------- Noelle's lethal ice on Mettaton EX: Alphys steps in ----------
-// Playing as Noelle, a lethal IceShock or any SnowGrave on Mettaton EX never
-// reaches him. Alphys runs onstage to finally own up to everything, gets frozen
-// the instant she is in front of him, and Mettaton uses the opening to switch
-// to his NEO body and flee.
-// Alphys runs in as spr_alphys_r (4x, room coords), plants herself in front of his
-// legs in her angry pose for the last half-second of her line, and freezes in it.
-const MEX_AL_START=-120,MEX_AL_STOP=262,MEX_AL_FEET=240,MEX_AL_HOLD=14,MEX_AL_EARLY=14;
-function mexAlphysPreLines(kind){
- const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',mE:e});
- if(kind==='ice')return [
-   L('Oh? A little\nice magic?',1),
-   L("Darling, your\nhands are\nshaking.",0),
-   L("...Wait.\nThat's aimed at\nmy CORE.",2),
-   L("Noelle, sweetie,\nthat much frost\nwon't just chill\nme. It'll...",2)
- ];
- return [
-   L('Ooh, stage fog!\nFor my finale?',1),
-   L('...Noelle, sweetie.\nWhat is THAT?',2),
-   L("That isn't fog.\nThat isn't snow.",2),
-   L("That's... a\ngrave.",2)
- ];
-}
-function mexAlphysShoutLines(){
- return [
-   'W-WAIT!!!',
-   'STOP!!! PLEASE,\nSTOP!!!',
-   "M-Mettaton didn't\ndo anything wrong!!\nIt's all MY fault!!",
-   "I-I'm finally going\nto take responsib-"
- ];
-}
-function mexAlphysAfterLines(){
- const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',mE:e});
- return [
-   L('...',2),
-   L('...Alphys?',2),
-   L('ALPHYS!!!',2),
-   L('She... she jumped\nin front of me.',3),
-   L('After everything,\nshe finally stood\nup for someone...',3),
-   L('...and you froze\nher solid for it.',4),
-   L('...',4),
-   L("Darling, I'd love\nto stay for the\nencore.",4),
-   L("But this body\nwon't survive\nanother cast.",3),
-   L("Alphys... I'm sorry.\nI'll come back for\nyou. I PROMISE.",3)
- ];
-}
-function mexAlphysNeoLines(){
- const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',nE:e});
- return [
-   L('BACKUP BODY:\nONLINE.',5),
-   L("I DON'T HAVE THE\nPOWER TO WIN THIS\nFIGHT.",4),
-   L('BUT I DO HAVE\nENOUGH TO LEAVE.',4),
-   L("NOELLE, DARLING...\nTHIS ISN'T A\nCANCELLATION.",5),
-   L("IT'S AN\nINTERMISSION.",5)
- ];
-}
-function mexAlphysShouldIntercept(target,dmg){
- return practiceMode==='noelle'&&currentBoss==='mettatonex'&&target==='main'&&!enemyDead&&
-   !mex.alphys&&!mex.killed&&Number(enemyHp)<=dmg;
-}
-function mexAlphysIntercept(kind){
- mex.active=false;mex.body.dance=0;bullets=[];mex.objs=[];mex.gen=null;mex.snap=null;
- mex.body.endface=1;mex.faceEmotion=0;
- state='mexScene';
- const A=mex.alphys={kind,phase:'pre',x:MEX_AL_START,t:0,frame:0,pose:'r',chill:0,snow:[],shards:[],
-   flash:0,shout:null,runT:0,runSteps:1,statue:null,inner:null,neo:false,neoY:0,neoV:0,neoSiner:0,trail:[]};
- mexSay(mexAlphysPreLines(kind),()=>{
-   state='mexScene';A.phase='charge';
-   play(kind==='ice'?'icespell':'snowgrave');
-   mexWait(24,()=>{
-     stopMusic();
-     const lines=mexAlphysShoutLines();
-     // Her run lasts exactly as long as lines 2..4 take to type, so she lands in
-     // front of him on the cut-off "responsib-".
-     let steps=0;for(let i=1;i<lines.length;i++)steps+=lines[i].length+(i<lines.length-1?MEX_AL_HOLD:0);
-     A.runSteps=steps-MEX_AL_EARLY;
-     A.shout={lines,i:0,char:0,hold:0,done:false};
-     A.phase='run';
-   });
- });
-}
-function mexAlphysStep(){
- const A=mex.alphys;if(!A)return;
- A.t++;
- if(isFinite(A.neoSiner))A.neoSiner++;
- neo.siner=A.neoSiner;
- if(state==='battleSpeech'){
-   const line=specialBattleSpeechQueue[specialBattleSpeechIndex];
-   if(line&&Number.isFinite(line.nE))neo.face=line.nE;
- }
- // Noelle's spell gathers while Alphys runs.
- if(A.phase==='charge'||A.phase==='run'){
-   A.chill=Math.min(1,A.chill+.02);
-   const n=A.kind==='grave'?3:1;
-   for(let i=0;i<n;i++)A.snow.push({x:Math.random()*640,y:-10,vx:(A.kind==='grave'?2.5:.6)+Math.random(),vy:2+Math.random()*(A.kind==='grave'?5:2),s:1+Math.floor(Math.random()*2)});
- }else A.chill=Math.max(0,A.chill-.04);
- for(const s of A.snow){s.x+=s.vx;s.y+=s.vy}
- A.snow=A.snow.filter(s=>s.y<490&&s.x<650);
- for(const s of A.shards){s.x+=s.vx;s.y+=s.vy;s.vy+=.35;s.a-=.03}
- A.shards=A.shards.filter(s=>s.a>0);
- if(A.flash>0)A.flash=Math.max(0,A.flash-.05);
- const sh=A.shout;
- if(sh&&!sh.done){
-   const t=sh.lines[sh.i];
-   if(sh.char<t.length){
-     sh.char++;
-     const c=t[sh.char-1];
-     if(c&&c.trim()&&sh.char%2===1)play('txtAl');
-   }else if(sh.i<sh.lines.length-1){
-     if(++sh.hold>=MEX_AL_HOLD){sh.i++;sh.char=0;sh.hold=0}
-   }else sh.done=true;
- }
- if(A.phase==='run'&&sh&&sh.i>=1){
-   A.runT++;
-   const p=Math.min(1,A.runT/A.runSteps);
-   A.x=MEX_AL_START+(MEX_AL_STOP-MEX_AL_START)*p;
-   A.frame=Math.floor(A.runT/3)%4;
-   if(p>=1&&A.pose!=='angry'){A.pose='angry';play('impact')}
-   // The moment she is in front of him, the spell lands on her instead.
-   if(p>=1&&sh.done)mexAlphysFreeze();
- }
- if(A.phase==='transform'){
-   A.flash=Math.min(1.2,A.flash+.12);
-   if(A.flash>=1.2&&!A.neo){
-     A.neo=true;mex.hideBody=true;neo.face=4;neo.shakeX=neo.shakeY=0;
-     A.neoSiner=0;play('mexCreate');
-     A.phase='neo';
-     mexWait(30,()=>mexSay(mexAlphysNeoLines(),()=>{
-       state='mexScene';A.phase='flee';neo.face=5;play('escaped');
-     }));
-   }
- }
- if(A.phase==='flee'){
-   A.neoV=Math.min(26,A.neoV+.9);A.neoY-=A.neoV;
-   if(A.t%2===0)A.trail.push({y:A.neoY,a:1});
-   if(A.neoY<-420){
-     A.phase='gone';
-     mexWait(40,()=>{
-       setText('* Alphys was frozen solid.\n* Mettaton NEO fled the stage.',()=>{
-         enemyDead=true;mex.hideBody=true;win();
-       });
-       state='text';
-     });
-   }
- }
- for(const t of A.trail)t.a-=.05;
- A.trail=A.trail.filter(t=>t.a>0);
-}
-function mexAlphysFreeze(){
- const A=mex.alphys;
- A.phase='frozen';A.shout=null;A.pose='angry';A.flash=1;
- play('petrify');
- const im=images.alphysAngry||images.alphysFreaked;
- if(A.kind==='ice')A.statue=makeFrozenSprite(im)||im;
- else A.inner=makeIceSilhouette(im,'#000000')||im;
- for(let i=0;i<22;i++){const an=Math.random()*Math.PI*2,sp=2+Math.random()*5;A.shards.push({x:320,y:MEX_AL_FEET-55,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp-3,a:1})}
- mex.faceEmotion=2;
- mexWait(50,()=>mexSay(mexAlphysAfterLines(),()=>{
-   state='mexScene';A.phase='transform';
- }));
-}
-// Enemy layer: Alphys in front of his legs, and the NEO body once he swaps.
-function drawMexAlphysMain(fromOverlay=false){
- const A=mex.alphys;if(!A)return;
- if(!fromOverlay)A.mainDrawnAt=performance.now();
- const {k,X0,Y0}=mexRoomToScreen(),U=k;
- ctx.save();ctx.imageSmoothingEnabled=false;
- if(A.neo&&A.phase!=='gone'){
-   // Afterimages as he blasts off.
-   for(const t of A.trail)neoDrawBody(ctx,k,X0,Y0+t.y*k,clamp(t.a,0,1)*.35);
-   neoDrawBody(ctx,k,X0,Y0+A.neoY*k,1);
- }
- const angry=images.alphysAngry;
- if(A.phase==='run'&&A.pose!=='angry'){
-   const im=(images.alphysR||[])[A.frame];
-   if(im)ctx.drawImage(im,X0+A.x*U,Y0+(MEX_AL_FEET-im.height*4)*U,im.width*4*U,im.height*4*U);
- }else if(A.phase!=='pre'&&A.phase!=='charge'){
-   const base=angry||images.alphysFreaked,bw=(base?.width||26)*2,bh=(base?.height||32)*2;
-   const r={x:X0+(320-bw/2)*U,y:Y0+(MEX_AL_FEET-bh)*U,w:bw*U,h:bh*U};
-   if(A.phase==='run'){if(base)ctx.drawImage(base,r.x,r.y,r.w,r.h)}
-   else if(A.kind==='ice'){
-     const s=A.statue||base;
-     if(s)ctx.drawImage(s,r.x,r.y,r.w,r.h);
-   }else{
-     const cr=snowgraveCrystalRectFor(r);
-     if(A.inner){ctx.globalAlpha=.42;ctx.drawImage(A.inner,r.x,r.y,r.w,r.h);ctx.globalAlpha=1}
-     if(images.snowgraveCrystal)ctx.drawImage(images.snowgraveCrystal,Math.round(cr.x),Math.round(cr.y),Math.round(cr.w),Math.round(cr.h));
-     if(A.inner){ctx.globalAlpha=.55;ctx.drawImage(A.inner,r.x,r.y,r.w,r.h);ctx.globalAlpha=1}
-   }
- }
- ctx.fillStyle='#dff6ff';
- for(const s of A.shards){ctx.globalAlpha=clamp(s.a,0,1);ctx.fillRect(X0+s.x*U,Y0+s.y*U,4*U,4*U)}
- ctx.restore();
-}
-// Overlay: the cold, the snow, the flash and Alphys's shout bubble.
-function drawMexAlphysOverlay(){
- const A=mex.alphys;if(!A)return;
- const U=UT_SCALE;
- // Once the battle is won the enemy layer stops drawing; keep her statue onstage.
- if(enemyDead&&performance.now()-(A.mainDrawnAt||0)>60)drawMexAlphysMain(true);
- ctx.save();
- if(A.chill>0){ctx.globalAlpha=A.chill*(A.kind==='grave'?.4:.22);ctx.fillStyle=A.kind==='grave'?'#0a1440':'#6fd3ff';ctx.fillRect(0,0,W,H)}
- ctx.globalAlpha=1;ctx.fillStyle='#fff';
- for(const s of A.snow)ctx.fillRect(s.x*U,s.y*U,s.s*2*U,s.s*2*U);
- const sh=A.shout;
- if(sh){
-   const t=sh.lines[sh.i].slice(0,sh.char);
-   const x=24*U,y=84*U,w=226*U,h=78*U;
-   const tx=clamp(A.x+58,40,600)*U;
-   ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,w,h,12*U):ctx.rect(x,y,w,h);ctx.fill();
-   ctx.beginPath();ctx.moveTo(Math.min(tx,x+w-40*U),y+h);ctx.lineTo(clamp(tx,x+16*U,x+w+60*U),(MEX_AL_FEET-128)*U);ctx.lineTo(Math.min(tx,x+w-40*U)+22*U,y+h);ctx.fill();
-   ctx.fillStyle='#000';ctx.textBaseline='top';ctx.textAlign='left';
-   ctx.font=`${Math.round(13*U)}px "DTM Sans", "Determination Sans", monospace`;
-   t.split('\n').forEach((l,i)=>ctx.fillText(l,x+10*U,y+10*U+i*21*U));
- }
- if(A.flash>0){ctx.globalAlpha=clamp(A.flash,0,1);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H)}
- ctx.restore();
 }
 
 // ---------- ACTs / items / FIGHT ----------
@@ -19395,7 +19173,7 @@ const NEO_X=314,NEO_Y=50;
 let neo=null;
 function resetMettatonNeo(){
  neo={twistDone:false,shield:0,shieldMax:100,shieldFlash:0,broken:false,turn:0,phase:1,face:0,siner:0,
-   pause:0,shakeX:0,shakeY:0,dying:false,sparks:[],lastStep:-1,phaseSaid:{2:false,3:false},barrierFx:0};
+   pause:0,shakeX:0,shakeY:0,dying:false,sparks:[],lastStep:-1,phaseSaid:{2:false,3:false},barrierFx:0,alphys:null};
 }
 resetMettatonNeo();
 function isNeo(){return currentBoss==='mettatonneo'}
@@ -19434,12 +19212,15 @@ function makeMettatonNeoComposite(now=performance.now(),hurt=false){
 }
 function neoRoom(){const r=enemyDraw,k=r.w/440;return {k,X0:r.x-100*k,Y0:r.y}}
 function drawMettatonNeoMain(now,hit,offset=0){
- if(neo.hidden)return true;
- const {k,X0,Y0}=neoRoom();
+ if(neo.hidden){drawNeoAlphysMain();return true}
+ const {k,X0,Y0:Y00}=neoRoom();
+ // Fleeing after the Alphys scene: he blasts straight up.
+ const Y0=Y00+(neo.alphys?neo.alphys.fleeY*k:0);
  ctx.save();ctx.imageSmoothingEnabled=false;
+ drawNeoAlphysTrail(k,X0+offset,Y00);
  neoDrawBody(ctx,k,X0+offset,Y0,1);
  // NEO SHIELD: a hexagon barrier that flickers when hit and shatters when broken.
- if(neo.twistDone&&neo.shield>0&&!neo.dying){
+ if(neo.twistDone&&neo.shield>0&&!neo.dying&&!neo.alphys){
    const cx=X0+(NEO_X+2)*k,cy=Y0+(NEO_Y+95)*k,rx=118*k,ry=135*k,t=now/400;
    const a=.22+.18*(neo.shield/neo.shieldMax)+(neo.shieldFlash>0?.35:0);
    ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=neo.shieldFlash>0?'#ffffff':'#ff66cc';ctx.lineWidth=2*k;
@@ -19457,6 +19238,7 @@ function drawMettatonNeoMain(now,hit,offset=0){
  ctx.fillStyle='#fff';
  for(const s of neo.sparks){ctx.globalAlpha=clamp(s.a,0,1);ctx.fillRect(X0+s.x*k,Y0+s.y*k,3*k,3*k)}
  ctx.restore();
+ drawNeoAlphysMain();
  return true;
 }
 function drawNeoHud(){
@@ -19650,6 +19432,200 @@ function neoStartTwist(now){
    }));
  }));
 }
+// ---------- Noelle's lethal ice on Mettaton NEO: Alphys steps in ----------
+// Playing as Noelle, an IceShock or SnowGrave that would finish Mettaton NEO
+// never reaches him. Alphys runs onstage to finally own up to everything, gets
+// frozen the instant she is in front of him, and NEO uses the opening to flee.
+// Alphys runs in as spr_alphys_r (4x, room coords), stands in front of his legs
+// as spr_alphys_freaked (also 4x) for the last half-second of her line, and freezes.
+const NEO_AL_START=-120,NEO_AL_STOP=262,NEO_AL_FEET=240,NEO_AL_HOLD=14,NEO_AL_EARLY=14;
+function neoAlphysPreLines(kind){
+ const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',nE:e});
+ if(kind==='ice')return [
+   L('ICE MAGIC?\nHOW QUAINT.',1),
+   L('MY SHIELD WAS BUILT\nFOR BULLETS,\nDARLING.',0),
+   L('...NOT FOR\nBLIZZARDS.',4),
+   L("NOELLE, WAIT.\nTHAT'S AIMED AT\nMY CORE-",6)
+ ];
+ return [
+   L('THE TEMPERATURE\nIS DROPPING.',0),
+   L('SENSORS READ...\nZERO. BELOW ZERO.',4),
+   L('WAY BELOW\nZERO.',6),
+   L('NOELLE, DARLING...\nWHAT ARE YOU\nDOING?',6)
+ ];
+}
+function neoAlphysShoutLines(){
+ return [
+   'W-WAIT!!!',
+   'STOP!!! PLEASE,\nSTOP!!!',
+   "M-Mettaton didn't\ndo anything wrong!!\nIt's all MY fault!!",
+   "I-I'm finally going\nto take responsib-"
+ ];
+}
+function neoAlphysAfterLines(){
+ const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',nE:e});
+ return [
+   L('...',6),
+   L('...ALPHYS?',6),
+   L('ALPHYS!!!',6),
+   L('SHE... SHE JUMPED\nIN FRONT OF ME.',3),
+   L('SHE BUILT THIS\nBODY TO PROTECT\nEVERYONE...',3),
+   L('AND THEN SHE USED\nHER OWN TO\nPROTECT IT.',3),
+   L('...AND YOU FROZE\nHER SOLID FOR IT.',4),
+   L('...',4),
+   L("I CAN'T WIN\nTHIS FIGHT.\nNOT LIKE THIS.",4),
+   L("ALPHYS... I'M SORRY.\nI'LL COME BACK FOR\nYOU. I PROMISE.",3),
+   L("NOELLE, DARLING...\nTHIS ISN'T A\nCANCELLATION.",5),
+   L("IT'S AN\nINTERMISSION.",5)
+ ];
+}
+function neoAlphysShouldIntercept(target,dmg){
+ return practiceMode==='noelle'&&currentBoss==='mettatonneo'&&target==='main'&&!enemyDead&&
+   !neo.alphys&&!neo.dying&&Number(enemyHp)<=dmg;
+}
+function neoAlphysIntercept(kind){
+ mex.active=false;bullets=[];mex.objs=[];mex.gen=null;mex.snap=null;
+ neo.face=0;neo.pause=0;
+ state='mexScene';
+ const A=neo.alphys={kind,phase:'pre',x:NEO_AL_START,t:0,frame:0,pose:'r',chill:0,snow:[],shards:[],
+   flash:0,shout:null,runT:0,runSteps:1,statue:null,inner:null,fleeY:0,fleeV:0,trail:[]};
+ mexSay(neoAlphysPreLines(kind),()=>{
+   state='mexScene';A.phase='charge';
+   play(kind==='ice'?'icespell':'snowgrave');
+   mexWait(24,()=>{
+     stopMusic();
+     const lines=neoAlphysShoutLines();
+     // Her run lasts as long as lines 2..4 take to type, minus a beat, so she
+     // lands in front of him just before the cut-off "responsib-".
+     let steps=0;for(let i=1;i<lines.length;i++)steps+=lines[i].length+(i<lines.length-1?NEO_AL_HOLD:0);
+     A.runSteps=steps-NEO_AL_EARLY;
+     A.shout={lines,i:0,char:0,hold:0,done:false};
+     A.phase='run';
+   });
+ });
+}
+function neoAlphysStep(){
+ const A=neo.alphys;if(!A)return;
+ A.t++;
+ // Noelle's spell gathers while Alphys runs.
+ if(A.phase==='charge'||A.phase==='run'){
+   A.chill=Math.min(1,A.chill+.02);
+   const n=A.kind==='grave'?3:1;
+   for(let i=0;i<n;i++)A.snow.push({x:Math.random()*640,y:-10,vx:(A.kind==='grave'?2.5:.6)+Math.random(),vy:2+Math.random()*(A.kind==='grave'?5:2),s:1+Math.floor(Math.random()*2)});
+ }else A.chill=Math.max(0,A.chill-.04);
+ for(const s of A.snow){s.x+=s.vx;s.y+=s.vy}
+ A.snow=A.snow.filter(s=>s.y<490&&s.x<650);
+ for(const s of A.shards){s.x+=s.vx;s.y+=s.vy;s.vy+=.35;s.a-=.03}
+ A.shards=A.shards.filter(s=>s.a>0);
+ if(A.flash>0)A.flash=Math.max(0,A.flash-.05);
+ const sh=A.shout;
+ if(sh&&!sh.done){
+   const t=sh.lines[sh.i];
+   if(sh.char<t.length){
+     sh.char++;
+     const c=t[sh.char-1];
+     if(c&&c.trim()&&sh.char%2===1)play('txtAl');
+   }else if(sh.i<sh.lines.length-1){
+     if(++sh.hold>=NEO_AL_HOLD){sh.i++;sh.char=0;sh.hold=0}
+   }else sh.done=true;
+ }
+ if(A.phase==='run'&&sh&&sh.i>=1){
+   A.runT++;
+   const p=Math.min(1,A.runT/A.runSteps);
+   A.x=NEO_AL_START+(NEO_AL_STOP-NEO_AL_START)*p;
+   A.frame=Math.floor(A.runT/3)%4;
+   if(p>=1&&A.pose!=='stand'){A.pose='stand';play('impact')}
+   // The moment she is in front of him, the spell lands on her instead.
+   if(p>=1&&sh.done)neoAlphysFreeze();
+ }
+ if(A.phase==='flee'){
+   A.fleeV=Math.min(26,A.fleeV+.9);A.fleeY-=A.fleeV;
+   if(A.t%2===0)A.trail.push({y:A.fleeY,a:1});
+   if(A.fleeY<-420){
+     A.phase='gone';neo.hidden=true;
+     mexWait(40,()=>{
+       setText('* Alphys was frozen solid.\n* Mettaton NEO fled the stage.',()=>{
+         enemyDead=true;win();
+       });
+       state='text';
+     });
+   }
+ }
+ for(const t of A.trail)t.a-=.05;
+ A.trail=A.trail.filter(t=>t.a>0);
+}
+function neoAlphysFreeze(){
+ const A=neo.alphys;
+ A.phase='frozen';A.shout=null;A.flash=1;
+ play('petrify');
+ const im=images.alphysFreaked;
+ if(A.kind==='ice')A.statue=makeFrozenSprite(im)||im;
+ else A.inner=makeIceSilhouette(im,'#000000')||im;
+ for(let i=0;i<22;i++){const an=Math.random()*Math.PI*2,sp=2+Math.random()*5;A.shards.push({x:320,y:NEO_AL_FEET-64,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp-3,a:1})}
+ neo.face=6;
+ mexWait(50,()=>mexSay(neoAlphysAfterLines(),()=>{
+   state='mexScene';A.phase='flee';neo.face=5;play('escaped');
+ }));
+}
+// NEO's afterimages while he blasts off (drawn under his body).
+function drawNeoAlphysTrail(k,X0,Y0){
+ const A=neo.alphys;if(!A)return;
+ for(const t of A.trail)neoDrawBody(ctx,k,X0,Y0+t.y*k,clamp(t.a,0,1)*.35);
+}
+// Enemy layer: Alphys in front of his legs.
+function drawNeoAlphysMain(fromOverlay=false){
+ const A=neo.alphys;if(!A)return;
+ if(!fromOverlay)A.mainDrawnAt=performance.now();
+ const {k,X0,Y0}=neoRoom(),U=k;
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ if(A.phase==='run'&&A.pose!=='stand'){
+   const im=(images.alphysR||[])[A.frame];
+   if(im)ctx.drawImage(im,X0+A.x*U,Y0+(NEO_AL_FEET-im.height*4)*U,im.width*4*U,im.height*4*U);
+ }else if(A.phase!=='pre'&&A.phase!=='charge'){
+   const base=images.alphysFreaked,bw=(base?.width||26)*4,bh=(base?.height||32)*4;
+   const r={x:X0+(320-bw/2)*U,y:Y0+(NEO_AL_FEET-bh)*U,w:bw*U,h:bh*U};
+   if(A.phase==='run'){if(base)ctx.drawImage(base,r.x,r.y,r.w,r.h)}
+   else if(A.kind==='ice'){
+     const s=A.statue||base;
+     if(s)ctx.drawImage(s,r.x,r.y,r.w,r.h);
+   }else{
+     const cr=snowgraveCrystalRectFor(r);
+     // Sit the crystal on the stage floor instead of over the bullet box.
+     cr.y=Math.min(cr.y,r.y+r.h+8*U-cr.h);
+     if(A.inner){ctx.globalAlpha=.42;ctx.drawImage(A.inner,r.x,r.y,r.w,r.h);ctx.globalAlpha=1}
+     if(images.snowgraveCrystal)ctx.drawImage(images.snowgraveCrystal,Math.round(cr.x),Math.round(cr.y),Math.round(cr.w),Math.round(cr.h));
+     if(A.inner){ctx.globalAlpha=.55;ctx.drawImage(A.inner,r.x,r.y,r.w,r.h);ctx.globalAlpha=1}
+   }
+ }
+ ctx.fillStyle='#dff6ff';
+ for(const s of A.shards){ctx.globalAlpha=clamp(s.a,0,1);ctx.fillRect(X0+s.x*U,Y0+s.y*U,4*U,4*U)}
+ ctx.restore();
+}
+// Overlay: the cold, the snow, the flash and Alphys's shout bubble.
+function drawNeoAlphysOverlay(){
+ const A=neo.alphys;if(!A)return;
+ const U=UT_SCALE;
+ // Once the battle is won the enemy layer stops drawing; keep her statue onstage.
+ if(enemyDead&&performance.now()-(A.mainDrawnAt||0)>60)drawNeoAlphysMain(true);
+ ctx.save();
+ if(A.chill>0){ctx.globalAlpha=A.chill*(A.kind==='grave'?.4:.22);ctx.fillStyle=A.kind==='grave'?'#0a1440':'#6fd3ff';ctx.fillRect(0,0,W,H)}
+ ctx.globalAlpha=1;ctx.fillStyle='#fff';
+ for(const s of A.snow)ctx.fillRect(s.x*U,s.y*U,s.s*2*U,s.s*2*U);
+ const sh=A.shout;
+ if(sh){
+   const t=sh.lines[sh.i].slice(0,sh.char);
+   const x=24*U,y=84*U,w=226*U,h=78*U;
+   const tx=clamp(A.x+58,40,600)*U;
+   ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,w,h,12*U):ctx.rect(x,y,w,h);ctx.fill();
+   ctx.beginPath();ctx.moveTo(Math.min(tx,x+w-40*U),y+h);ctx.lineTo(clamp(tx,x+16*U,x+w+60*U),(NEO_AL_FEET-128)*U);ctx.lineTo(Math.min(tx,x+w-40*U)+22*U,y+h);ctx.fill();
+   ctx.fillStyle='#000';ctx.textBaseline='top';ctx.textAlign='left';
+   ctx.font=`${Math.round(13*U)}px "DTM Sans", "Determination Sans", monospace`;
+   t.split('\n').forEach((l,i)=>ctx.fillText(l,x+10*U,y+10*U+i*21*U));
+ }
+ if(A.flash>0){ctx.globalAlpha=clamp(A.flash,0,1);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H)}
+ ctx.restore();
+}
+
 // ---------- the real defeat ----------
 function neoStartDeath(now){
  if(neo.dying)return;
@@ -24762,15 +24738,14 @@ async function debugAction(name){
    if(name==='papyrus-capture'){debugEnsureBoss('papyrus','classic');papyrusCapture();debugLog('papyrus capture scene');return}
    if(name==='doggo-opening'){debugSetBoss('doggo','noelle');debugLog('doggo noelle opening');return}
    if(name==='doggo-weird'){debugEnsureBoss('doggo','noelle');startSpecialBattleSpeech(doggoNoelleIceShockLines(99,true),()=>returnMenu());debugLog('doggo weird lethal dialogue');return}
-   if(name==='mettex-alphys-ice'||name==='mettex-alphys-grave'){
-     // Fresh Noelle vs Mettaton EX fight, skip his intro, then cast at 1 HP.
-     debugSetBoss('mettatonex','noelle');
+   if(name==='mettneo-alphys-ice'||name==='mettneo-alphys-grave'){
+     // Fresh Noelle vs Mettaton NEO fight, then cast at 1 HP.
+     debugSetBoss('mettatonneo','noelle');
      setTimeout(()=>{
-       mex.introDone=true;mex.intro=null;mex.phase='battle';state='menu';
-       enemyHp=1;enemyDead=false;tp=TP_MAX;
-       if(name==='mettex-alphys-ice'){tp-=ICE_COST;startIceShock('main')}else startSnowGrave();
+       state='menu';enemyHp=1;enemyDead=false;tp=TP_MAX;
+       if(name==='mettneo-alphys-ice'){tp-=ICE_COST;startIceShock('main')}else startSnowGrave();
      },900);
-     debugLog('mettaton ex alphys cutscene');return;
+     debugLog('mettaton neo alphys cutscene');return;
    }
    if(name==='undyne-noelle-freeze'){debugEnsureBoss('undyne','noelle');enemyHp=1;tp=100;startSpecialBattleSpeech(undyneNoelleLethalIceShockLines(),()=>{tp=Math.max(0,tp-ICE_COST);startIceShock('main')});debugLog('undyne noelle lethal freeze cinematic');return}
    if(name==='maddummy-napstablook'){
@@ -25991,7 +25966,6 @@ async function boot(){
  for(const k of ['neoBurst','neoLegs','neoArmR','neoArmL','neoBody'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.alphysR.forEach((u,i)=>add(`alphysR ${i+1}`,async()=>{images.alphysR=images.alphysR||[];images.alphysR[i]=await needImage(u)}));
  add('alphysFreaked',async()=>images.alphysFreaked=await needImage(IMG.alphysFreaked));
- add('alphysAngry',async()=>images.alphysAngry=await needImage(IMG.alphysAngry));
  IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
