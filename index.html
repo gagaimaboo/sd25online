@@ -10623,6 +10623,11 @@ function startSnowGrave(){
    startSpecialBattleSpeech(snowgraveMettatonLines(),()=>commitSnowGrave());
    return;
  }
+ if(!enemyDead&&currentBoss==='mettatonex'){
+   mex.active=false;mex.body.dance=0;
+   startSpecialBattleSpeech(mexSnowgraveLines(),()=>{stopMusic();commitSnowGrave(targets)});
+   return;
+ }
  if(!enemyDead&&currentBoss==='toriel'){
    if(susieIsInConfiguredParty()){
      startSusieTorielSnowgraveIntervention();
@@ -10852,6 +10857,14 @@ function updateNoelleSpellFx(now=performance.now()){
    }else if(fx.type==='snowgrave'){
      snowgraveMadRescueActive=false;
      hitApplied=false;damageStart=0;
+     if(currentBoss==='mettatonex'&&enemyDead){
+       noelleSpellFx=null;noelleSpellFxResolved=false;
+       setText('* Noelle cast SNOWGRAVE.\n* The glitter turns to frost.\n* The show is over.',()=>{
+         if(allEnemiesDefeated())win();else beginEnemyTurn();
+       });
+       state='text';
+       return;
+     }
      finishNoelleSpellTurn(snowgraveResultText(fx));
    }
  }
@@ -13896,7 +13909,13 @@ function update(dt,now){
      beginTorielFullFreezeBlack(now);
    }
 
-   if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='undyneex'&&!uxIceSpeechDone){
+   if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='mettatonex'&&!mex.iceSpeechDone){
+     // IceShock as the final blow: Mettaton EX turns his own freeze-frame into a finale.
+     mex.iceSpeechDone=true;mex.active=false;mex.objs=[];mex.gen=null;stopMusic();
+     startSpecialBattleSpeech(mexIceShockLines(),()=>{
+       state='iceShock';freezeStart=performance.now()-1501;
+     });
+   }else if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='undyneex'&&!uxIceSpeechDone){
      // IceShock as the final blow: Undyne the Undying keeps talking through the ice.
      uxIceSpeechDone=true;stopMusic();
      startSpecialBattleSpeech(undyingIceShockLines(),()=>{
@@ -13951,6 +13970,12 @@ function update(dt,now){
 
      if(torielFrozenKill){
        startTorielSoulDeath(now,true);
+     }else if(frozenTarget==='main'&&currentBoss==='mettatonex'){
+       setText('* The studio lights flicker out.\n* Somewhere, one camera is\n  still recording.',()=>{
+         if(allEnemiesDefeated())win();
+         else beginEnemyTurn();
+       });
+       state='text';
      }else if(frozenTarget==='main'&&currentBoss==='undyneex'){
        setText('* The ice finally stops cracking.\n* Behind it, her eye is still burning.',()=>{
          if(allEnemiesDefeated())win();
@@ -17611,7 +17636,7 @@ function resetMettatonEx(){
  mex={turns:0,ratings:4000,rq:Array.from({length:6},()=>({n:'',v:0,s:900})),rp:[],accu:0,ralarm:6,typeuse:{},
    boast:false,heel:false,checkHp:null,timeloss:0,oo:0,oob:0,active:true,siner:0,
    specialdam:[0,0,0],attacktype:29,def:1,border:24,body:mexNewBody(),faceEmotion:0,
-   gen:null,objs:[],fx:[],charge:0,acc:0,lastStep:-1,prevZ:false,
+   gen:null,objs:[],fx:[],charge:0,acc:0,lastStep:-1,prevZ:false,iceSpeechDone:false,
    introDone:false,intro:null,phase:'battle',essay:null,seq:null,caller:null,killed:false,endFade:null};
  const thisi=Math.floor(Math.random()*8);
  for(let i=0;i<10;i++)mex.rp.push(i===thisi?4000:4000-Math.random()*500);
@@ -18857,6 +18882,45 @@ function drawMexSnapFx(now){
    ctx.beginPath();ctx.arc(soul.x,soul.y,r,-Math.PI/2,-Math.PI/2+t*Math.PI*2);ctx.stroke();
    ctx.restore();
  }
+}
+
+// ---------- ice finales ----------
+function mexIceShockLines(){
+ const L=(text,wide=true)=>({text,wide,voiceBoss:'mettatonex'});
+ const noelle=practiceMode==='noelle';
+ const out=[
+   L('...',false),
+   L('Oh my...'),
+   L('A freeze frame?\nHow dramatic.'),
+   L("Darling... I can't\nfeel my legs."),
+   L("And they're my\nbest feature!"),
+   L('Ha... ha...'),
+   L('Well. At least\nI\'ll be preserved...'),
+   L('Forever\nbeautiful.')
+ ];
+ if(noelle)out.push(
+   L('Noelle, was it?'),
+   L("You've got real\nstar power, darling."),
+   L('Just... promise\nme one thing.'),
+   L("Don't let anyone\nelse write your\nscript.")
+ );
+ out.push(L('...\nAnd... cut.'));
+ return out;
+}
+function mexSnowgraveLines(){
+ const L=(text,wide=true)=>({text,wide,voiceBoss:'mettatonex'});
+ const noelle=practiceMode==='noelle';
+ return [
+   L('Ooh! Snow machines?\nA winter special!'),
+   L('Darling, you should\nhave told me. I\'d\nhave worn a scarf.'),
+   L('...'),
+   L("Wait. That's not\non the cue sheet."),
+   L('The ratings...\nthey\'re dropping.'),
+   L("Everyone's...\nchanging the\nchannel..."),
+   L(noelle?"Noelle... that isn't\na snowflake.\nThat's a blizzard.":"That isn't a\nsnowflake.\nThat's a blizzard."),
+   L('Cut the cameras!\nCUT THE CAMERAS!'),
+   L('...',false)
+ ];
 }
 
 // ---------- ACTs / items / FIGHT ----------
