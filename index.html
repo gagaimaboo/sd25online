@@ -119,6 +119,7 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-undyne">undyne</button>
     <button data-debug="boss-undyneex">undyne the undying</button>
     <button data-debug="boss-mettatonex">mettaton ex</button>
+    <button data-debug="boss-mettatonneo">mettaton neo</button>
     <button data-debug="boss-mettaton">mettaton quiz</button>
     <button data-debug="boss-custom">custom</button>
     <button data-debug="mode-classic">classic mode</button>
@@ -438,6 +439,13 @@ const IMG={
  mexSoul:[0,1].map(i=>RAW+`sprites/images/spr_heartyellow_flip_${i}.png`),
  mexStageLight:[0,1].map(i=>RAW+`sprites/images/spr_stagelight_bad_${i}.png`),
  mexArm:[1,2,3,4,5,6,7,8].map(i=>RAW+`sprites/images/spr_mettarm${i}_0.png`),
+ // Mettaton NEO (obj_mneo_body parts).
+ neoBurst:RAW+'sprites/images/spr_mneo_burst_0.png',
+ neoLegs:RAW+'sprites/images/spr_mneo_legs_0.png',
+ neoArmR:RAW+'sprites/images/spr_mneo_armr_0.png',
+ neoArmL:RAW+'sprites/images/spr_mneo_arml_0.png',
+ neoBody:RAW+'sprites/images/spr_mneo_body_0.png',
+ neoFace:[0,1,2,3,4,5,6].map(i=>RAW+`sprites/images/spr_mneo_face_${i}.png`),
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -835,6 +843,8 @@ const MUSIC={
  mettatonEx:RAW+'sound/audio/mus_mettaton_ex.ogg',
  mettatonPre:RAW+'sound/audio/mus_mettaton_pretransform.ogg',
  mettSad:RAW+'sound/audio/mus_mettsad.ogg',
+ // Power of NEO (scr_battlegroup case 23: music/mettaton_neo.ogg).
+ mettatonNeo:RAW+'sound/audio/mus_mettaton_neo.ogg',
  // Source death persistence switches away from Spear of Justice into the two
  // An Ending excerpts. These are exact resource hooks; there is no generated substitute.
  undyneEnding1:RAW+'sound/audio/endingexcerpt1.ogg',
@@ -1159,6 +1169,7 @@ const VANILLA_REWARDS={
  pyrope:{exp:80,killGold:40,spareGold:40},
  undyneex:{exp:1500,killGold:0,spareGold:0},
  mettatonex:{exp:800,killGold:0,spareGold:0},
+ mettatonneo:{exp:10000,killGold:0,spareGold:0},
  jerry:{exp:1,killGold:55,spareGold:55},
  tsunderplane:{exp:95,killGold:45,spareGold:60},
  vulkin:{exp:70,killGold:50,spareGold:40},
@@ -2364,7 +2375,7 @@ const MENU_MUSIC_SCREENS=new Set(['title','enemies','kills','spares','settings',
 let menuMusicAutoplayTried=false;
 function menuMusicScreen(){return MENU_MUSIC_SCREENS.has(screen)}
 function battleMusicTracks(){
- return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.mettatonEx,music.mettatonPre,music.mettSad,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
+ return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.mettatonEx,music.mettatonPre,music.mettSad,music.mettatonNeo,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
 }
 function stopBattleMusicTracks(){for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}}
 function stopMenuMusic(reset=true){
@@ -2431,6 +2442,7 @@ function startBattleMusic(){
    track=papyrusBlue?(music.papyrus||music.papyrusIntro||music.battle):(music.papyrusIntro||music.battle);
  }else if(currentBoss==='undyneex')track=uxDying?null:(music.undyneex||null);
  else if(currentBoss==='mettatonex')track=(mex.phase==='battle'&&!mex.killed)?(music.mettatonEx||null):null;
+ else if(currentBoss==='mettatonneo')track=neo.dying?null:(music.mettatonNeo||null);
  else if(currentBoss==='undyne')track=undyneDying?(undyneDeathTrackPhase>=2?(music.undyneEnding2||null):(music.undyneEnding1||null)):(music.undyne||null);
  else if(currentBoss==='mettaton')track=music.mettatonQuiz||music.battle;
 
@@ -2508,6 +2520,8 @@ const ENEMY_LAYOUTS={
  undyneex:{x:180,y:-20,w:260,h:280},
  // obj_mettb_body at (240, box top - 136); canvas spans room x 180..460, y -10..260.
  mettatonex:{x:180,y:-10,w:280,h:270},
+ // obj_mneo_body at (314,50); wings span room x 100..540.
+ mettatonneo:{x:100,y:0,w:440,h:260},
  jerry:{x:245,y:150,w:150,h:72},
  // Exact battle composite is 190x160. Keep that broad aircraft silhouette.
  tsunderplane:{x:225,y:82,w:190,h:160},
@@ -2544,6 +2558,7 @@ const PAIR_MAIN_LAYOUTS={
  pyrope:{x:180,y:0,w:135,h:225},
  undyneex:{x:110,y:-20,w:260,h:280},
  mettatonex:{x:110,y:-10,w:280,h:270},
+ mettatonneo:{x:40,y:0,w:440,h:260},
  tsunderplane:{x:145,y:96,w:176,h:148},
  vulkin:{x:202,y:128,w:92,h:114},
  undyne:{x:168,y:24,w:151,h:209},
@@ -3383,6 +3398,7 @@ const BOSS_OPTIONS=[
  {id:'tsunderplane',label:'TSUNDERPLANE',area:'HOTLAND',hp:80,atk:25,def:26,encounter:'* Tsunderplane swoops into your way... accidentally, apparently.',noelleEncounter:'* Noelle encountered Tsunderplane.'},
  {id:'pyrope',label:'PYROPE',area:'HOTLAND',hp:110,atk:8,def:1,encounter:'* Pyrope bounces into view!',noelleEncounter:'* Noelle encountered Pyrope.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
+ {id:'mettatonneo',label:'METTATON NEO',area:'CORE // THE REAL SHOW',hp:30000,atk:10,def:9,encounter:'* Mettaton NEO blocks the way!',noelleEncounter:'* Mettaton NEO blocks the way!'},
  {id:'mettatonex',label:'METTATON EX',area:'CORE // THE PREMIERE',hp:1600,atk:8,def:1,encounter:'* Mettaton EX makes his premiere!',noelleEncounter:'* Mettaton EX makes his premiere!'},
  {id:'mettaton',label:'METTATON',area:'HOTLAND QUIZ SHOW',hp:9999,atk:30,def:255,encounter:'* Mettaton attacks!',noelleEncounter:'* Mettaton attacks!'},
  {id:'custom',label:'CUSTOM',area:'CREATOR',hp:120,atk:8,def:2,encounter:'* A custom monster appeared!',noelleEncounter:'* Noelle encountered a custom monster.'}
@@ -3958,7 +3974,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -4141,7 +4157,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4275,6 +4291,7 @@ const NOELLE_N_ACTIONS={
  loox:{gain:50,text:"* Noelle avoids staring and quietly apologizes for the eye contact.\n* Loox relaxes a little."},
  dogi:{gain:45,text:"* Noelle rolls in the snow with the Dogs.\n* They decide she smells like family."},
  woshua:{gain:50,text:"* Noelle lets Woshua scrub her sleeve.\n* It is thrilled to have something to clean."},
+ mettatonneo:{gain:0,text:"* Noelle stares up at the wings.\n* Mettaton NEO strikes a pose just for her."},
  mettatonex:{gain:0,text:"* Noelle waves at the camera.\n* The ratings tick up a little."},
  undyneex:{gain:0,text:"* Noelle begs Undyne to stop.\n* Undyne doesn't even hear her."},
  pyrope:{gain:40,text:"* Noelle warms her hands near Pyrope.\n* Pyrope is flattered by the attention."},
@@ -4310,6 +4327,7 @@ const SUSIE_S_ACTIONS={
  loox:{gain:35,text:"* Susie tells Loox to quit staring.\n* Then she admits the eye thing is kind of cool."},
  dogi:{gain:45,text:"* Susie pets both Dogs at once.\n* Their minds have been expanded."},
  woshua:{gain:40,text:"* Susie tells Woshua a filthy joke.\n* Its powers are neutralized."},
+ mettatonneo:{gain:0,text:"* Susie tells NEO his wings look dumb.\n* NEO is deeply offended."},
  mettatonex:{gain:0,text:"* Susie flexes for the audience.\n* Mettaton calls it a stunning cameo."},
  undyneex:{gain:0,text:"* Susie tells Undyne to back off.\n* Undyne laughs and raises her spear."},
  pyrope:{gain:50,text:"* Susie cranks the heat way up.\n* Pyrope loves her immediately."},
@@ -4381,6 +4399,7 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='pyrope')return pyropeActOptions();
  if(id==='undyneex')return ['Check'];
  if(id==='mettatonex')return mettatonExActOptions();
+ if(id==='mettatonneo')return mettatonNeoActOptions();
  if(id==='jerry')return ['Check','Ditch'];
  if(id==='greaterdog')return greatDogActOptions();
  if(id==='temmie')return temmieActOptions();
@@ -4742,6 +4761,8 @@ function performAct(targetId,choice){
    handleDogiAct(choice);
  }else if(currentBoss==='woshua'){
    handleWoshuaAct(choice);
+ }else if(currentBoss==='mettatonneo'){
+   setText(neoCheckText(),()=>beginEnemyTurn());
  }else if(currentBoss==='mettatonex'){
    handleMettatonExAct(choice);
  }else if(currentBoss==='undyneex'){
@@ -5322,7 +5343,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -5996,7 +6017,7 @@ function attackSpeechForCurrentBoss(){
  if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
  if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
  if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')return snowdin2Speech();
- if(currentBoss==='undyneex'||currentBoss==='mettatonex')return '';
+ if(currentBoss==='undyneex'||currentBoss==='mettatonex'||currentBoss==='mettatonneo')return '';
 
  if(currentBoss==='doggo'){
    if(doggoPets>=5)return "OK. That's enough.";
@@ -6511,6 +6532,7 @@ function commitFightAttack(accuracy,now=performance.now()){
  if(fightTargetId==='main'&&currentBoss==='mettaton')hitDamage=0;
  if(vanillaMode&&targetEnemyId(fightTargetId)==='maddummy')hitDamage=0;
  if(landed&&fightTargetId==='main'&&currentBoss==='undyneex')hitDamage=undyingAdjustHit(hitDamage);
+ if(landed&&fightTargetId==='main'&&currentBoss==='mettatonneo')hitDamage=neoAdjustHit(hitDamage);
  if(!hitDamage)betrayalHitTarget=null;
  if(targetEnemyId(fightTargetId)==='papyrus'&&fightTargetId==='main'&&!papyrusGenocideMode())papyrusBluePending=true;
  hitStart=now;hitApplied=false;damageStart=0;hitTarget=fightTargetId;enemyHpBeforeHit=targetHp(hitTarget);
@@ -7490,6 +7512,7 @@ function startAttack(now){
  // the bubble. The player has to finish/skip the speech before bullets begin.
  // Mettaton EX talks every turn (obj_mettatonex alarm 6) and may end the show on ratings.
  if(currentBoss==='mettatonex'&&!enemyDead&&mexBeginTalk(now))return;
+ if(currentBoss==='mettatonneo'&&!enemyDead&&neoBeginTalk(now))return;
  if(beginBattleAttackSpeech(now)){
    state='battleSpeech';
    bullets=[];
@@ -7921,6 +7944,8 @@ function returnMenu(){
    if(vulkinDiscouraged)setText('* Vulkin stands in the corner.');
    else if(mercy>=100)setText('* Vulkin parades around you proudly.');
    else{const lines=['* Vulkin parades around the room.','* Vulkin is making coffee in its crater.','* Vulkin is wiggling its weird rump.','* Vulkin makes a smoke hoop and jumps through it.','* Smells like a lava lamp.'];setText(lines[Math.floor(Math.random()*lines.length)])}
+ }else if(currentBoss==='mettatonneo'){
+   setText(neoFlavor());
  }else if(currentBoss==='mettatonex'){
    setText(mexFlavor());
  }else if(currentBoss==='undyneex'){
@@ -8122,6 +8147,10 @@ function startEnemyKill(now=performance.now()){
  }
  if(currentBoss==='mettatonex'){
    mexStartDeath(now);
+   return;
+ }
+ if(currentBoss==='mettatonneo'){
+   if(!neo.twistDone)neoStartTwist(now);else neoStartDeath(now);
    return;
  }
 
@@ -8581,7 +8610,7 @@ function startEnemySpare(targetId=null,now=performance.now()){
 }
 
 
-const MAJOR_BOSS_IDS=new Set(['toriel','napstablook','maddummy','papyrus','mettaton','mettatonex']);
+const MAJOR_BOSS_IDS=new Set(['toriel','napstablook','maddummy','papyrus','mettaton','mettatonex','mettatonneo']);
 
 function activeEncounterEnemyIds(){
  const ids=[];
@@ -8597,6 +8626,7 @@ function fleeBlocker(){
  if(currentBoss==='undyne'&&!enemyDead&&(soulMode==='green'||undyneDying))return {id:'undyne',slot:'main'};
  if(currentBoss==='undyneex'&&!enemyDead)return {id:'undyneex',slot:'main'};
  if(currentBoss==='mettatonex'&&!enemyDead)return {id:'mettatonex',slot:'main'};
+ if(currentBoss==='mettatonneo'&&!enemyDead)return {id:'mettatonneo',slot:'main'};
  return activeEncounterEnemyIds().find(v=>MAJOR_BOSS_IDS.has(v.id))||null;
 }
 
@@ -8643,6 +8673,7 @@ function fleeBlockedText(blocker){
      :'* You try to flee.\n* Papyrus dramatically points back toward the battle box.\n* The escape attempt has been captured.';
  }
 
+ if(blocker.id==='mettatonneo')return '* You try to flee.\n* The stage lights follow you.';
  if(blocker.id==='mettatonex')return '* You try to flee.\n* The cameras follow you everywhere.';
  if(blocker.id==='undyneex')return '* You try to flee.\n* Undyne the Undying blocks the way.';
  if(blocker.id==='undyne'){
@@ -9178,7 +9209,7 @@ function normalizeEnemyAssetTransparency(){
   'dummy','dummyDeath',
   'froggit','froggitHead','froggitLegs','finalFroggitIdle','finalFroggitHurt','finalFroggitBody','finalFroggitHead','finalFroggitHeadHurt',
   'whimsun','whimsunHurt','whimsalotHead','whimsalotBody','whimsalotWing','whimsalotHurt',
-  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','mexUpper','mexUpperHeart','mexFace1','mexFaceDef','mexFaceGen','mexFaceHurt','mexLeg1','mexLeg2','mexLeg3','mexLeg4','mexLeg5','mexLeg2Flip','mexLeg2FlipV','mexLeg2Unflip','mexLeg2UnflipV','mexArm','uxFace1','uxFaceDamage','uxFaceLaugh','uxFaceE','uxMelt','uxEyebeam','uxSmear','uxFollowSpear','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
+  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','neoBurst','neoLegs','neoArmR','neoArmL','neoBody','neoFace','uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','mexUpper','mexUpperHeart','mexFace1','mexFaceDef','mexFaceGen','mexFaceHurt','mexLeg1','mexLeg2','mexLeg3','mexLeg4','mexLeg5','mexLeg2Flip','mexLeg2FlipV','mexLeg2Unflip','mexLeg2UnflipV','mexArm','uxFace1','uxFaceDamage','uxFaceLaugh','uxFaceE','uxMelt','uxEyebeam','uxSmear','uxFollowSpear','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
   'shyren','shyrenBody','shyrenTurn','shyrenSing','shyrenAgent',
   'undyneArmorBase','undyneHurt','undyneFatal','undyneMelt','undyneLastMelt',
   'tsunderplaneRaw','tsunderplaneHat','tsunderplaneCloud','tsunderplaneIdle',
@@ -10223,6 +10254,7 @@ const SNOWGRAVE_FORCED_KILL=new Set(['mettaton','mettatonex']);
 function snowgraveForcedKill(target){return SNOWGRAVE_FORCED_KILL.has(targetEnemyId(target))}
 function snowgraveDamageFor(target){
  if(targetEnemyId(target)==='undyneex')return Math.ceil(targetMaxHp(target)/UX_SNOWGRAVES_TO_KILL);
+ if(targetEnemyId(target)==='mettatonneo')return neoSnowgraveDamage();
  return SNOWGRAVE_DAMAGE;
 }
 function snowgraveResultText(fx){
@@ -10623,6 +10655,11 @@ function startSnowGrave(){
    startSpecialBattleSpeech(snowgraveMettatonLines(),()=>commitSnowGrave());
    return;
  }
+ if(!enemyDead&&currentBoss==='mettatonex'){
+   mex.active=false;mex.body.dance=0;
+   startSpecialBattleSpeech(mexSnowgraveLines(),()=>{stopMusic();commitSnowGrave(targets)});
+   return;
+ }
  if(!enemyDead&&currentBoss==='toriel'){
    if(susieIsInConfiguredParty()){
      startSusieTorielSnowgraveIntervention();
@@ -10852,6 +10889,14 @@ function updateNoelleSpellFx(now=performance.now()){
    }else if(fx.type==='snowgrave'){
      snowgraveMadRescueActive=false;
      hitApplied=false;damageStart=0;
+     if(currentBoss==='mettatonex'&&enemyDead){
+       noelleSpellFx=null;noelleSpellFxResolved=false;
+       setText('* Noelle cast SNOWGRAVE.\n* The glitter turns to frost.\n* The show is over.',()=>{
+         if(allEnemiesDefeated())win();else beginEnemyTurn();
+       });
+       state='text';
+       return;
+     }
      finishNoelleSpellTurn(snowgraveResultText(fx));
    }
  }
@@ -11270,7 +11315,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -11295,6 +11340,7 @@ function reset(){
  resetSnowdin2Enemies();
  resetUndying();
  resetMettatonEx();
+ resetMettatonNeo();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -13093,7 +13139,7 @@ function spawnSupportNoCooldown(now){
 }
 
 function spawnBullet(now){
- if(currentBoss==='mettatonex'){nextSpawn=now+999999;return}
+ if(currentBoss==='mettatonex'||currentBoss==='mettatonneo'){nextSpawn=now+999999;return}
  if(currentBoss==='sans5000'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
    const b=createPapBone('right',70,false,3,false,10,'main');
@@ -13116,7 +13162,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13374,7 +13420,7 @@ function hurtPlayer(now,amount=4,owner='main',opts=null){
 }
 
 function maliceActive(){
- return screen==='battle'&&state==='attack'&&practiceMode==='noelle'&&!(currentBoss==='papyrus'&&papyrusBlue);
+ return screen==='battle'&&state==='attack'&&practiceMode==='noelle'&&!(currentBoss==='papyrus'&&papyrusBlue)&&currentBoss!=='mettatonex';
 }
 function maliceDirectionFromKey(k,low){
  // WASD both moves MALICE and turns its stored firing direction.
@@ -13797,6 +13843,7 @@ function update(dt,now){
        maybeMakeTargetTiredAfterDamage(hitTarget,before,targetHp(hitTarget));
        if(hitTarget==='main'&&currentBoss==='undyne'&&targetHp('main')>0)undyneApplyHpProgression();
        if(hitTarget==='main'&&currentBoss==='mettatonex'&&hitDamage>0)mexOnPlayerHit();
+       if(hitTarget==='main'&&currentBoss==='mettatonneo'&&hitDamage>0)neoOnHit();
        play('damage');
      }
    }
@@ -13896,7 +13943,13 @@ function update(dt,now){
      beginTorielFullFreezeBlack(now);
    }
 
-   if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='undyneex'&&!uxIceSpeechDone){
+   if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='mettatonex'&&!mex.iceSpeechDone){
+     // IceShock as the final blow: Mettaton EX turns his own freeze-frame into a finale.
+     mex.iceSpeechDone=true;mex.active=false;mex.objs=[];mex.gen=null;stopMusic();
+     startSpecialBattleSpeech(mexIceShockLines(),()=>{
+       state='iceShock';freezeStart=performance.now()-1501;
+     });
+   }else if(enemyFrozen&&now-freezeStart>1500&&iceFrozenTarget==='main'&&currentBoss==='undyneex'&&!uxIceSpeechDone){
      // IceShock as the final blow: Undyne the Undying keeps talking through the ice.
      uxIceSpeechDone=true;stopMusic();
      startSpecialBattleSpeech(undyingIceShockLines(),()=>{
@@ -13951,6 +14004,12 @@ function update(dt,now){
 
      if(torielFrozenKill){
        startTorielSoulDeath(now,true);
+     }else if(frozenTarget==='main'&&currentBoss==='mettatonex'){
+       setText('* The studio lights flicker out.\n* Somewhere, one camera is\n  still recording.',()=>{
+         if(allEnemiesDefeated())win();
+         else beginEnemyTurn();
+       });
+       state='text';
      }else if(frozenTarget==='main'&&currentBoss==='undyneex'){
        setText('* The ice finally stops cracking.\n* Behind it, her eye is still burning.',()=>{
          if(allEnemiesDefeated())win();
@@ -14917,7 +14976,7 @@ function update(dt,now){
    else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
    else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')attackDuration=snowdin2Duration();
    else if(currentBoss==='undyneex')attackDuration=uxDuration();
-   else if(currentBoss==='mettatonex')attackDuration=99999999;
+   else if(currentBoss==='mettatonex'||currentBoss==='mettatonneo')attackDuration=99999999;
    else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
    else if(currentBoss==='icecap')attackDuration=(liveMonsterPopulation()<=1?100:150)*(1000/30); // obj_icecap turntimer
    else if(['snowdrake','icecap','moldsmal','migosp','whimsun','whimsalot','aaron'].includes(currentBoss))attackDuration=4500;
@@ -15419,7 +15478,9 @@ function drawDamageWriter(now){
    ?Math.max(rawYStart,58*S)
    :(targetEnemyId(hitTarget)==='undyneex'?r.y+(UX_OBJ_Y+150-UX_CANVAS_Y)*(r.w/UX_CANVAS_W)-24*S
    // obj_mettatonex: dmgwriter at (x, y+100) with the monster at (210, 60).
-   :(targetEnemyId(hitTarget)==='mettatonex'?r.y+(160+10)*(r.w/280)-24*S:rawYStart));
+   :(targetEnemyId(hitTarget)==='mettatonex'?r.y+(160+10)*(r.w/280)-24*S
+   // obj_mettaton_neo: dmgwriter at (x, y+200) with the monster at (210, 0).
+   :(targetEnemyId(hitTarget)==='mettatonneo'?r.y+200*(r.w/440)-24*S:rawYStart)));
  const barW=100*S,barTop=yStart+8*S,barBottom=yStart+20*S,barH=barBottom-barTop;
  ctx.fillStyle='#000';ctx.fillRect(Math.round(writerX-1*S),Math.round(barTop-1*S),Math.round(barW+2*S),Math.round(barH+2*S));
  ctx.fillStyle='#404040';ctx.fillRect(Math.round(writerX),Math.round(barTop),Math.round(barW),Math.round(barH));
@@ -17611,7 +17672,7 @@ function resetMettatonEx(){
  mex={turns:0,ratings:4000,rq:Array.from({length:6},()=>({n:'',v:0,s:900})),rp:[],accu:0,ralarm:6,typeuse:{},
    boast:false,heel:false,checkHp:null,timeloss:0,oo:0,oob:0,active:true,siner:0,
    specialdam:[0,0,0],attacktype:29,def:1,border:24,body:mexNewBody(),faceEmotion:0,
-   gen:null,objs:[],fx:[],charge:0,acc:0,lastStep:-1,prevZ:false,
+   gen:null,objs:[],fx:[],charge:0,acc:0,lastStep:-1,prevZ:false,iceSpeechDone:false,
    introDone:false,intro:null,phase:'battle',essay:null,seq:null,caller:null,killed:false,endFade:null};
  const thisi=Math.floor(Math.random()*8);
  for(let i=0;i<10;i++)mex.rp.push(i===thisi?4000:4000-Math.random()*500);
@@ -17873,13 +17934,21 @@ function mexTryShoot(){
  if(state!=='attack'||soulMode!=='yellow'||mex.essay)return;
  const hasShot=mex.objs.some(o=>o.t==='shot');
  if(hasShot&&mex.charge>=0)return;
- mex.charge=14;
  const h=mexHeartRoom();
+ if(mexNoelle()){
+   // Noelle: a slower frost shard instead of the heart bullet.
+   mex.charge=20;
+   mex.objs.push({t:'shot',frost:true,x:h.x+2,y:h.y,vs:-9,ys:1,rot:0});
+   play('mexShoot',1.35);
+   return;
+ }
+ mex.charge=14;
  mex.objs.push({t:'shot',x:h.x+4,y:h.y+2,vs:-16,ys:1});
  play('mexShoot');
 }
 function mexShotHits(o,x0,y0,x1,y1){
  // collision_rectangle(...) vs obj_heartshot (8x13 sprite, image_yscale grows).
+ if(o.frost)return o.x<x1&&o.x+12>x0&&o.y<y1&&o.y+12>y0;
  return o.x<x1&&o.x+8>x0&&o.y<y1&&o.y+13*o.ys>y0;
 }
 function mexFindShot(x0,y0,x1,y1){return mex.objs.find(o=>o.t==='shot'&&!o.dead&&mexShotHits(o,x0,y0,x1,y1))}
@@ -17906,6 +17975,8 @@ function mexHurt(now){
  }else if(heart.n!==4){
    dmg=hp>=24?9:hp>=16?8:hp>=8?7:hp>=3?6:5;
  }else dmg=hp>=30?9:hp>=20?8:hp>=12?7:hp>=4?6:5;
+ // Mettaton NEO hits harder (90 ATK in his CHECK).
+ if(isNeo())dmg+=3;
  hurtPlayer(now,dmg,'main',{noBracket:true});
 }
 
@@ -18011,6 +18082,7 @@ function mexStartAttack(now){
    if(type===50)type=38;if(type===51)type=54;if(type===52)type=56;
  }
  mex.attacktype=type;
+ mex.snap={charging:false,charge:0,used:false};
  mex.objs=mex.objs.filter(o=>o.t==='shot');
  mex.gen={type,turntimer:12,specialtimer:0,dark:1,darkamt:0,siner:0};
  mexGenCreate(mex.gen);
@@ -18286,12 +18358,13 @@ function mexHeartStep(h,now){
    h.s2+=h.n===2?.2:.08;h.s3++;
    const rad=h.n===2?[20,10]:[14,15];
    h.kids.forEach((k,q)=>{
-     if(k.dead||(k.t==='bbomb'&&k.shot))return;
+     if(k.dead||(k.t==='bbomb'&&k.shot)||k.frozen>0)return;
      const gr=q*2*Math.PI/h.kids.length+h.s2;
      k.x=h.x+Math.sin(gr)*h.sf2-(h.n===2?10:14);k.y=h.y+Math.cos(gr)*h.sf2-(h.n===2?10:15);
    });
  }
- if(h.n!==4&&h.movetype===0){
+ const chilled=h.chill>0;if(chilled)h.chill--;
+ if(h.n!==4&&h.movetype===0&&!chilled){
    h.x=h.xs+Math.sin(h.s/h.sp)*h.sf;
    if(h.n!==1)h.y=h.ys0+Math.sin(h.s/h.sp*2)*h.sf/3;
    if(h.shake===0)h.s++;
@@ -18342,7 +18415,7 @@ function mexHeartStep(h,now){
      if(h.moving===4)h.moving=0;
      if(h.shake>0){h.x+=mexRand(h.shake)-mexRand(h.shake);h.y+=mexRand(h.shake)-mexRand(h.shake);h.shake--}
    }
-   h.x+=h.hs;h.y+=h.vs;
+   if(!chilled){h.x+=h.hs;h.y+=h.vs}
    if(h.ltimer>=100){
      h.ltimer++;
      const aim=Math.atan2(-(h.ty-h.y),h.tx-h.x)*180/Math.PI;
@@ -18361,8 +18434,10 @@ function mexHeartStep(h,now){
    sh.dead=true;play('mexHit');
    if(h.n===4){h.shake=10;h.img=1;h.size=2}else{h.memx=h.x;h.memy=h.y;h.shake=6}
    h.life-=40;mexAddRatings(20);
+   if(h.neoCore)neoShieldHit(8,h.x,h.y);
+   if(sh.frost)h.chill=20;
    if(h.life<1){
-     if(h.n===4){if(mex.gen&&mex.gen.turntimer>0)mex.gen.turntimer=0}
+     if(h.n===4){if(h.neoCore)neoShieldBreak();if(mex.gen&&mex.gen.turntimer>0)mex.gen.turntimer=0}
      else{
        mex.objs=mex.objs.filter(o=>!['box','light','kiss'].includes(o.t));
        for(const o of mex.objs)if(o.t==='fodder'){o.flash=5;o.type=2}
@@ -18395,7 +18470,11 @@ function mexBurstStep(b){
 // ---------- per-step object logic ----------
 function mexObjStep(o,now){
  const B=mexBorder();
- if(o.t==='shot'){o.y+=o.vs;o.ys+=.2;o.vs-=.2;if(o.y<0)o.dead=true;return}
+ if(o.t==='shot'){
+   if(o.frost){o.y+=o.vs;o.vs-=.25;o.rot+=12;if(o.y<0)o.dead=true;return}
+   o.y+=o.vs;o.ys+=.2;o.vs-=.2;if(o.y<0)o.dead=true;return;
+ }
+ if(mexNoelle()&&mexFrostStep(o))return;
  if(o.t==='box'){
    if(mexHeartHits(o.x,o.y,o.x+24,o.y+24))mexHurt(now);
    const sh=mexFindShot(o.x+2,o.y+2,o.x+22,o.y+22);
@@ -18591,11 +18670,13 @@ function mexFxStep(){
 
 // ---------- update / draw hooks ----------
 function mexStep(now){
- mexBodyStep(mex.body);
- mexRatingsStep();
+ if(isNeo()){neoStepBody();if(mex.body.fadewhite===1)mex.body.whiteval+=.2}
+ else{mexBodyStep(mex.body);mexRatingsStep()}
  mexFxStep();
  if(mex.charge>-1)mex.charge--;
+ mexSnapStep();
  if(state==='attack'&&mex.gen){
+   if(isNeo()){neoShotStep();neoGenStep(mex.gen)}
    for(const o of mex.objs.slice())if(!o.dead)mexObjStep(o,now);
    mex.objs=mex.objs.filter(o=>!o.dead);
    if(mex.gen)mexGenStep(mex.gen,now);
@@ -18606,8 +18687,9 @@ function mexStep(now){
  mexEndFadeStep(now);
 }
 function updateMettatonEx(dt,now){
- if(currentBoss!=='mettatonex'||screen!=='battle')return;
+ if(!isMettFight()||screen!=='battle')return;
  mexSyncSpeechFace();
+ if(isNeo())neoSyncFace();
  // Z or ENTER fires (ENTER stays reserved for MALICE while playing as Noelle).
  const z=!!(key.z||key.Z||(practiceMode!=='noelle'&&key.Enter));
  if(z&&!mex.prevZ&&state==='attack')mexTryShoot();
@@ -18626,6 +18708,9 @@ function drawMexAttackLayer(now){
  ctx.save();ctx.imageSmoothingEnabled=false;
  for(const f of mex.fx)if(f.t==='break')d('mexBreak',f.img,f.x,f.y,120,40,.75);
  for(const o of mex.objs){
+   const iced=o.frozen>0&&(o.frozen>12||Math.floor(o.frozen/3)%2===0);
+   ctx.save();
+   try{
    if(o.t==='box')d('mexBox',0,o.x,o.y,24,24);
    else if(o.t==='bomb'){d('mexBomb',o.img||0,o.x,o.y,24,30);if(o.side===1){ctx.fillStyle='#fff';ctx.fillRect((o.x+27)*U,(o.y+6)*U,20*U,22*U)}if(o.side===2){ctx.fillStyle='#fff';ctx.fillRect((o.x-23)*U,(o.y+6)*U,20*U,22*U)}}
    else if(o.t==='expl'){
@@ -18697,7 +18782,12 @@ function drawMexAttackLayer(now){
        }
      }
    }
-   else if(o.t==='shot')d('mexShot',0,o.x,o.y,8,13*o.ys);
+   else if(o.t==='shot'){
+     if(o.frost){const im=images.iceSnowflake;if(im){ctx.save();ctx.translate((o.x+6)*U,(o.y+6)*U);ctx.rotate(o.rot*Math.PI/180);ctx.drawImage(im,-7*U,-7*U,14*U,14*U);ctx.restore()}else{ctx.fillStyle='#bff4ff';ctx.fillRect(o.x*U,o.y*U,12*U,12*U)}}
+     else d('mexShot',0,o.x,o.y,8,13*o.ys);
+   }
+   if(o.frozen>0&&MEX_FREEZABLE.has(o.t))drawMexIceBlock(o,iced);
+   }finally{ctx.restore()}
  }
  for(const f of mex.fx){
    if(f.t==='piece'){
@@ -18716,9 +18806,11 @@ function drawMexAttackLayer(now){
 }
 // Top-level overlay: ratings graph, the ending caller bubble and the white fade.
 function drawMettatonExOverlay(now){
- if(currentBoss!=='mettatonex'||screen!=='battle')return;
+ if(!isMettFight()||screen!=='battle')return;
+ drawNeoHud();
  if(mex.intro)drawMexIntroOverlay(now);
- drawMexRatings();
+ if(currentBoss==='mettatonex')drawMexRatings();
+ drawMexSnapFx(now);
  if(mex.caller)drawMexCaller(now);
  const bd=mex.body;
  if(bd.fadewhite===1){
@@ -18728,17 +18820,158 @@ function drawMettatonExOverlay(now){
  }
 }
 function mexKeyDown(e,k,low){
- if(currentBoss!=='mettatonex'||screen!=='battle')return false;
+ if(!isMettFight()||screen!=='battle')return false;
  if(mex.essay&&state==='attack')return mexEssayKey(e);
+ if(state==='attack'&&mexNoelle()&&k==='Enter'){e.preventDefault?.();if(!e.repeat)mexSnapStart();return true}
  if(mex.caller&&(low==='z'||k==='Enter')&&!e.repeat){mexCallerAdvance();return true}
  if(mex.intro&&mex.phase==='intro'&&!['battleSpeech'].includes(state))return true;
  return false;
 }
 
+// ---------- Noelle's yellow SOUL: FROST SHARDS + COLD SNAP ----------
+// Noelle won't blow anything up for the cameras. Her yellow SOUL fires slow
+// frost shards [Z]: the first one freezes whatever it hits (harmless and
+// motionless while frozen, bombs are defused), a second one shatters it.
+// Holding [ENTER] charges a COLD SNAP that freezes the whole stage for two
+// seconds, once per turn. Frost on the heart core chills it in place.
+const MEX_FREEZABLE=new Set(['box','bomb','fodder','dance','light','kiss','blocker','bbomb']);
+function mexNoelle(){return practiceMode==='noelle'}
+function mexObjRect(o){
+ if(o.t==='box'||o.t==='blocker')return [o.x,o.y,o.x+24,o.y+24];
+ if(o.t==='bomb'||o.t==='bbomb')return [o.x,o.y,o.x+24,o.y+30];
+ if(o.t==='fodder'||o.t==='dance')return [o.x+2,o.y+2,o.x+22,o.y+22];
+ return [o.x-10,o.y-10,o.x+10,o.y+10];
+}
+function mexRateCustom(name,v){
+ if(!mex.active)return;
+ if(mex.turns>=20&&v>0)v*=2;
+ mex.rq.unshift({n:name,v,s:0});mex.rq.length=6;mex.ratings+=v;
+}
+function mexFreeze(o,steps=45){
+ o.frozen=steps;
+ if(o.t==='bomb'||o.t==='bbomb'){o.shot=0;o.shot2=0;o.img=0}
+}
+function mexShatter(o){
+ o.dead=true;
+ if(o.t==='blocker'||o.t==='bbomb'){o.dead=false;o.visible=false;o.frozen=0}
+ const key={box:'mexBox',blocker:'mexBox',bomb:'mexBomb',bbomb:'mexBomb',fodder:'mexFodder',dance:'mexDance'}[o.t];
+ if(key)mexPiece(key,o.t==='fodder'?o.x-20:(o.t==='dance'?o.x-15:o.x),o.t==='fodder'?o.y-23:(o.t==='dance'?o.y-6:o.y),Math.floor(o.img||0));
+ play('mexBurstSmall',1.3);
+ mexRateCustom('Shatter',30);
+}
+// Runs before an object's own step. Returns true when the object is frozen
+// (or was just frozen/shattered) so its normal movement and hitbox are skipped.
+function mexFrostStep(o){
+ if(!MEX_FREEZABLE.has(o.t))return false;
+ if((o.t==='blocker'||o.t==='bbomb')&&!o.visible)return false;
+ const r=mexObjRect(o);
+ if(o.frozen>0){
+   o.frozen--;
+   const sh=mexFindShot(r[0],r[1],r[2],r[3]);
+   if(sh){sh.dead=true;mexShatter(o)}
+   return true;
+ }
+ const sh=mexFindShot(r[0],r[1],r[2],r[3]);
+ if(sh&&sh.frost){sh.dead=true;mexFreeze(o);play('petrify',1.4);mexRateCustom('Frostbite',10);return true}
+ return false;
+}
+function mexSnapStart(){
+ const sn=mex.snap;if(!sn||sn.used||state!=='attack')return;
+ sn.charging=true;sn.charge=0;
+}
+function mexSnapStep(){
+ const sn=mex.snap;if(!sn)return;
+ if(sn.charging){
+   if(state!=='attack'){sn.charging=false;sn.charge=0;return}
+   sn.charge=Math.min(30,sn.charge+1);
+   if(sn.charge===30&&!sn.readyPlayed){sn.readyPlayed=true;play('mexShoot',.7)}
+ }
+ if(sn.flash>0)sn.flash-=.04;
+}
+function mexSnapRelease(){
+ const sn=mex.snap;if(!sn||!sn.charging)return;
+ sn.charging=false;sn.readyPlayed=false;
+ if(sn.charge<30){sn.charge=0;return}
+ sn.charge=0;sn.used=true;sn.flash=.7;
+ let n=0;
+ for(const o of mex.objs)if(MEX_FREEZABLE.has(o.t)&&!((o.t==='blocker'||o.t==='bbomb')&&!o.visible)){mexFreeze(o,60);n++}
+ for(const o of mex.objs)if(o.t==='heart')o.chill=60;
+ play('icespell');
+ mexRateCustom('ColdSnap',150);
+}
+// A frozen object sits inside a translucent ice block; it blinks right before thawing.
+function drawMexIceBlock(o,solid){
+ const U=UT_SCALE,r=mexObjRect(o),pad=3;
+ const x=(r[0]-pad)*U,y=(r[1]-pad)*U,w=(r[2]-r[0]+pad*2)*U,h=(r[3]-r[1]+pad*2)*U;
+ ctx.save();
+ ctx.globalAlpha=solid?1:.45;
+ ctx.fillStyle='rgba(127,233,255,.42)';ctx.fillRect(x,y,w,h);
+ ctx.strokeStyle='#dffaff';ctx.lineWidth=Math.max(1,U);ctx.strokeRect(x+.5,y+.5,w-1,h-1);
+ ctx.strokeStyle='rgba(255,255,255,.8)';ctx.beginPath();ctx.moveTo(x+3*U,y+h*.35);ctx.lineTo(x+w*.35,y+3*U);ctx.stroke();
+ const im=images.iceSnowflake;
+ if(im)ctx.drawImage(im,x+w-9*U,y+1*U,8*U,8*U);
+ ctx.restore();
+}
+function drawMexSnapFx(now){
+ const sn=mex.snap;if(!sn)return;
+ const U=UT_SCALE;
+ if(sn.flash>0){ctx.save();ctx.globalAlpha=clamp(sn.flash,0,1);ctx.fillStyle='#bff4ff';ctx.fillRect(0,0,W,H);ctx.restore()}
+ if(sn.charging&&state==='attack'){
+   const t=sn.charge/30,r=22*U;
+   ctx.save();ctx.lineWidth=2*U;
+   ctx.strokeStyle='rgba(191,244,255,.35)';ctx.beginPath();ctx.arc(soul.x,soul.y,r,0,Math.PI*2);ctx.stroke();
+   ctx.strokeStyle=t>=1&&Math.floor(now/80)%2?'#ffffff':'#7fe9ff';
+   ctx.beginPath();ctx.arc(soul.x,soul.y,r,-Math.PI/2,-Math.PI/2+t*Math.PI*2);ctx.stroke();
+   ctx.restore();
+ }
+}
+
+// ---------- ice finales ----------
+function mexIceShockLines(){
+ const L=(text,wide=true)=>({text,wide,voiceBoss:'mettatonex'});
+ const noelle=practiceMode==='noelle';
+ const out=[
+   L('...',false),
+   L('Oh my...'),
+   L('A freeze frame?\nHow dramatic.'),
+   L("Darling... I can't\nfeel my legs."),
+   L("And they're my\nbest feature!"),
+   L('Ha... ha...'),
+   L('Well. At least\nI\'ll be preserved...'),
+   L('Forever\nbeautiful.')
+ ];
+ if(noelle)out.push(
+   L('Noelle, was it?'),
+   L("You've got real\nstar power, darling."),
+   L('Just... promise\nme one thing.'),
+   L("Don't let anyone\nelse write your\nscript.")
+ );
+ out.push(L('...\nAnd... cut.'));
+ return out;
+}
+function mexSnowgraveLines(){
+ const L=(text,wide=true)=>({text,wide,voiceBoss:'mettatonex'});
+ const noelle=practiceMode==='noelle';
+ return [
+   L('Ooh! Snow machines?\nA winter special!'),
+   L('Darling, you should\nhave told me. I\'d\nhave worn a scarf.'),
+   L('...'),
+   L("Wait. That's not\non the cue sheet."),
+   L('The ratings...\nthey\'re dropping.'),
+   L("Everyone's...\nchanging the\nchannel..."),
+   L(noelle?"Noelle... that isn't\na snowflake.\nThat's a blizzard.":"That isn't a\nsnowflake.\nThat's a blizzard."),
+   L('Cut the cameras!\nCUT THE CAMERAS!'),
+   L('...',false)
+ ];
+}
+
 // ---------- ACTs / items / FIGHT ----------
 function mettatonExActOptions(){return ['Check','Boast','Pose','Heel']}
 function handleMettatonExAct(choice){
- if(choice===0){setText('* METTATON EX - ATK 47 DEF 47\n* His weak point is his\n  heart-shaped core.',()=>beginEnemyTurn());return}
+ if(choice===0){
+   if(mexNoelle()){setText('* METTATON EX - ATK 47 DEF 47\n* Weak point: his heart-shaped core.\n* Noelle\'s SOUL: [Z] frost shards freeze,\n  a second shard shatters. Hold [ENTER]: COLD SNAP.',()=>beginEnemyTurn());return}
+   setText('* METTATON EX - ATK 47 DEF 47\n* His weak point is his\n  heart-shaped core.',()=>beginEnemyTurn());return;
+ }
  if(choice===1){mex.boast=true;setText("* You say you aren't going\n  to get hit at ALL.\n* Ratings gradually increase\n  during Mettaton's turn.",()=>beginEnemyTurn());return}
  if(choice===2){
    let t='* You posed dramatically.\n* The audience nods.';
@@ -18897,11 +19130,311 @@ function mexEndFadeStep(now){
  if(bd.whiteval>=44&&!mex.endDone){
    mex.endDone=true;
    bd.fadewhite=0;
-   if(mex.endFade==='kill')recordOutcome('kills','mettatonex');else recordOutcome('spares','mettatonex');
+   if(mex.endFade==='kill')recordOutcome('kills',currentBoss);else recordOutcome('spares',currentBoss);
+   if(isNeo())neo.hidden=true;
    enemyDead=true;enemyHp=mex.endFade==='kill'?0:enemyHp;
    mex.hideBody=true;
    win();
  }
+}
+
+// ===================== METTATON NEO: THE REAL SHOW =====================
+// UNDERTALE's obj_mettaton_neo dies to a single hit because Alphys "should have
+// worked more on the defenses". This version asks: what if she did?
+// The first lethal hit replays the source one-shot (damage writer, HP bar
+// drained, "G... GUESS SHE SHOULD HAVE..."), then his NEO SHIELD boots up and
+// the real fight starts. While the shield is up FIGHT only chips him; shoot his
+// body or break his Heart Overdrive core with the yellow SOUL to drop it, then
+// FIGHT for massive damage. It comes back at the start of each of his turns.
+// Body: obj_mneo_body parts at (obj x+104, y+50) = (314, 50); music mus_mettaton_neo.
+const NEO_X=314,NEO_Y=50;
+let neo=null;
+function resetMettatonNeo(){
+ neo={twistDone:false,shield:0,shieldMax:100,shieldFlash:0,broken:false,turn:0,phase:1,face:0,siner:0,
+   pause:0,shakeX:0,shakeY:0,dying:false,sparks:[],lastStep:-1,phaseSaid:{2:false,3:false},barrierFx:0};
+}
+resetMettatonNeo();
+function isNeo(){return currentBoss==='mettatonneo'}
+function isMettFight(){return currentBoss==='mettatonex'||currentBoss==='mettatonneo'}
+function neoPhase(){const r=enemyHp/Math.max(1,enemyMaxHp);return r<.25?3:(r<.6?2:1)}
+
+// ---------- body (obj_mneo_body) ----------
+function neoStepBody(){
+ if(neo.pause&&state!=='fightHit'&&!neo.dying&&state!=='mexScene'){neo.pause=0;neo.face=neoPhase()===3?5:(neoPhase()===2?4:0)}
+ neo.siner=neo.pause?0:neo.siner+1;
+ if(neo.shieldFlash>0)neo.shieldFlash--;
+ if(neo.barrierFx>0)neo.barrierFx-=.04;
+ for(const s of neo.sparks){s.x+=s.hs;s.y+=s.vs;s.vs+=.2;s.a-=.06}
+ neo.sparks=neo.sparks.filter(s=>s.a>0);
+ if(neo.dying){neo.shakeX=mexRand(4)-2;neo.shakeY=mexRand(4)-2}else{neo.shakeX=neo.shakeY=0}
+}
+function neoDrawBody(g,k,X0,Y0,alpha=1){
+ const s=neo.siner,x=NEO_X+neo.shakeX,y=NEO_Y+neo.shakeY;
+ const sp=(key,rx,ry,ox,oy,sx,sy,deg,a=1)=>mexDrawSprite(g,mexImg(key,key==='neoFace'?neo.face:0),rx,ry,ox,oy,sx,sy,deg,a*alpha,k,X0,Y0);
+ const burstA=Math.abs(Math.sin(s*.3))*.5+.4;
+ sp('neoBurst',x-24,y+18+Math.sin(s/3),0,0,-2,2,Math.sin(s/6)*2,burstA);
+ sp('neoBurst',x+28,y+18+Math.sin(s/3),0,0,2,2,-Math.sin(s/6)*2,burstA);
+ sp('neoLegs',x,y+196,58,56,2,2-Math.sin(s/3)*.05,0);
+ sp('neoArmR',x+40+Math.sin(s/3)*2,y+40,2,2,2,2,Math.sin(s/6)*2);
+ sp('neoArmL',x-26-Math.sin(s/3)*2,y+40,60,2,2,2,-Math.sin(s/6)*2);
+ sp('neoBody',x+4,y+36+Math.sin(s/3)*2,56,35,2,2,0);
+ sp('neoFace',x,y+Math.sin(s/3)*3,23,19,2,2,0);
+}
+let neoCompositeCanvas=null;
+function makeMettatonNeoComposite(now=performance.now(),hurt=false){
+ if(!images.neoBody)return null;
+ if(!neoCompositeCanvas){neoCompositeCanvas=document.createElement('canvas');neoCompositeCanvas.width=440;neoCompositeCanvas.height=260}
+ const c=neoCompositeCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ neoDrawBody(g,1,-100,0);
+ return c;
+}
+function neoRoom(){const r=enemyDraw,k=r.w/440;return {k,X0:r.x-100*k,Y0:r.y}}
+function drawMettatonNeoMain(now,hit,offset=0){
+ if(neo.hidden)return true;
+ const {k,X0,Y0}=neoRoom();
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ neoDrawBody(ctx,k,X0+offset,Y0,1);
+ // NEO SHIELD: a hexagon barrier that flickers when hit and shatters when broken.
+ if(neo.twistDone&&neo.shield>0&&!neo.dying){
+   const cx=X0+(NEO_X+2)*k,cy=Y0+(NEO_Y+95)*k,rx=118*k,ry=135*k,t=now/400;
+   const a=.22+.18*(neo.shield/neo.shieldMax)+(neo.shieldFlash>0?.35:0);
+   ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=neo.shieldFlash>0?'#ffffff':'#ff66cc';ctx.lineWidth=2*k;
+   ctx.beginPath();
+   for(let i=0;i<=6;i++){const an=i/6*Math.PI*2+t*.2;const px=cx+Math.cos(an)*rx,py=cy+Math.sin(an)*ry;i?ctx.lineTo(px,py):ctx.moveTo(px,py)}
+   ctx.stroke();
+   ctx.globalAlpha=a*.35;ctx.fillStyle='#ff66cc';ctx.fill();
+   ctx.restore();
+ }
+ if(neo.barrierFx>0){
+   ctx.save();ctx.globalAlpha=clamp(neo.barrierFx,0,1);ctx.fillStyle='#ffd6f2';
+   for(let i=0;i<14;i++){const an=i*2.1+neo.barrierFx*3,d=(1-neo.barrierFx)*160*k;ctx.fillRect(X0+NEO_X*k+Math.cos(an)*d,Y0+(NEO_Y+95)*k+Math.sin(an)*d,6*k,6*k)}
+   ctx.restore();
+ }
+ ctx.fillStyle='#fff';
+ for(const s of neo.sparks){ctx.globalAlpha=clamp(s.a,0,1);ctx.fillRect(X0+s.x*k,Y0+s.y*k,3*k,3*k)}
+ ctx.restore();
+ return true;
+}
+function drawNeoHud(){
+ if(!isNeo()||!neo.twistDone||neo.dying||enemyDead)return;
+ const U=UT_SCALE,x=20*U,y=46*U,w=160*U,h=10*U;
+ ctx.save();ctx.textBaseline='top';ctx.textAlign='left';
+ ctx.font=`${Math.round(9*U)}px "DTM Mono", "Determination Mono", monospace`;
+ ctx.fillStyle='#ff66cc';ctx.fillText(neo.shield>0?'NEO SHIELD':'SHIELD DOWN!',x,y-12*U);
+ ctx.fillStyle='#401030';ctx.fillRect(x,y,w,h);
+ ctx.fillStyle=neo.shield>0?'#ff66cc':'#ffffff';ctx.fillRect(x,y,w*neo.shield/neo.shieldMax,h);
+ ctx.strokeStyle='#fff';ctx.lineWidth=U;ctx.strokeRect(x,y,w,h);
+ ctx.restore();
+}
+
+// ---------- shield ----------
+function neoShieldHit(n,x,y){
+ if(!neo.twistDone||neo.shield<=0)return;
+ neo.shield=Math.max(0,neo.shield-n);neo.shieldFlash=4;
+ for(let i=0;i<4;i++)neo.sparks.push({x:x+mexRand(10)-5,y:y+mexRand(10)-5,hs:mexRand(4)-2,vs:-mexRand(3),a:1});
+ if(neo.shield<=0)neoShieldBreak();
+}
+function neoShieldBreak(){
+ neo.shield=0;neo.broken=true;neo.barrierFx=1;play('mexBurst');play('impact');
+ if(mex.gen&&mex.gen.turntimer>30)mex.gen.turntimer=30;
+}
+function neoAdjustHit(dmg){
+ if(!(dmg>0))return dmg;
+ if(!neo.twistDone)return enemyHp+4000+Math.floor(Math.random()*3289);
+ if(neo.shield>0)return Math.max(1,Math.round(dmg/20));
+ const d=dmg*25;return d<2800?2800+Math.floor(Math.random()*600):d;
+}
+function neoOnHit(){neo.face=6;neo.pause=1}
+
+// ---------- shots vs NEO's body ----------
+function neoShotStep(){
+ if(!neo.twistDone||neo.shield<=0)return;
+ for(const o of mex.objs){
+   if(o.t!=='shot'||o.dead)continue;
+   const w=o.frost?12:8,h=o.frost?12:13*o.ys;
+   if(o.x<NEO_X+55&&o.x+w>NEO_X-50&&o.y<NEO_Y+170&&o.y+h>NEO_Y+30){
+     o.dead=true;play('mexHit',1.2);neoShieldHit(o.frost?4:3,o.x,o.y);
+   }
+ }
+}
+
+// ---------- talk ----------
+function neoTalkLines(){
+ const L=(text,e=neo.face)=>({text,wide:true,voiceBoss:'mettatonex',nE:e});
+ const t=neo.turn,ph=neoPhase();
+ if(ph===2&&!neo.phaseSaid[2]){neo.phaseSaid[2]=true;return [L('HA... HA...\nIS THAT ALL?',4),L("THE AUDIENCE IS\nSTILL IN THEIR\nSEATS, DARLING.",4),L("LET'S GIVE THEM\nSOMETHING TO\nSCREAM ABOUT.",5)]}
+ if(ph===3&&!neo.phaseSaid[3]){neo.phaseSaid[3]=true;return [L('.....',6),L('WARNING LIGHTS...\nEVERYWHERE...',6),L('EVEN IF THIS BODY\nFALLS APART...',5),L("I WON'T LET YOU\nREACH THEM!",5),L('THE SHOW MUST\nGO ON!!!',5)]}
+ const pool=[
+   [L('FROM NOW ON,\nEVERY MOVE IS A\nHEADLINER.',0)],
+   [L('NO SCRIPT.\nNO RATINGS.\nNO RETAKES.',1)],
+   [L('ALPHYS BUILT THIS\nBODY TO PROTECT\nEVERYONE.',0),L('I INTEND TO\nUSE IT.',5)],
+   [L('LIGHTS!\nCAMERA!\nANNIHILATION!',5)],
+   [L('YOU WANTED A\nGRAND FINALE?',1),L("YOU'RE IN IT.",5)],
+   [L("DON'T BLINK,\nDARLING.",0)],
+   [L('EVERY MONSTER IN\nTHE UNDERGROUND\nIS WATCHING.',4)],
+   [L("THEY'RE NOT\nCHEERING FOR YOU.",5)]
+ ];
+ return pool[t%pool.length];
+}
+function neoSyncFace(){
+ if(state!=='battleSpeech')return;
+ const line=specialBattleSpeechQueue[specialBattleSpeechIndex];
+ if(line&&Number.isFinite(line.nE))neo.face=line.nE;
+}
+function neoBeginTalk(now){
+ neo.turn++;
+ const lines=neoTalkLines();
+ const plan=neoPlanTurn();
+ mex.border=plan.border;
+ const b=mexBorder();
+ ARENA=utRect(b[0],b[2],b[1]-b[0],b[3]-b[2]);box={...ARENA};
+ soul.x=ut((b[0]+b[1])/2);soul.y=ut((b[2]+b[3])/2);
+ bullets=[];
+ neo.plan=plan;
+ startSpecialBattleSpeech(lines,()=>neoStartAttack(performance.now()));
+ neoSyncFace();
+ return true;
+}
+
+// ---------- attacks ----------
+const NEO_CYCLE=['cannon','grid','core','spot','legs','core','storm','grid','core'];
+function neoPlanTurn(){
+ const kind=NEO_CYCLE[(neo.turn-1)%NEO_CYCLE.length];
+ const border={cannon:24,grid:27,core:24,spot:24,legs:24,storm:24}[kind];
+ return {kind,border};
+}
+function neoStartAttack(now){
+ activateEnemyAttack(now);
+ soulMode='yellow';
+ if(neo.twistDone&&neo.shield<=0){neo.shield=neo.shieldMax;neo.broken=false;neo.barrierFx=0}
+ neo.face=neoPhase()===3?5:(neoPhase()===2?4:0);neo.pause=0;
+ const b=mexBorder();
+ ARENA=utRect(b[0],b[2],b[1]-b[0],b[3]-b[2]);box={...ARENA};
+ soul.x=ut((b[0]+b[1])/2);soul.y=ut((b[2]+b[3])/2);
+ mex.snap={charging:false,charge:0,used:false};
+ mex.attacktype=0;
+ mex.objs=[];mex.active=false;
+ const g={type:'neo',kind:neo.plan.kind,turntimer:240,specialtimer:0,dark:1,darkamt:0,siner:0,t:0};
+ mex.gen=g;
+ neoCreate(g);
+ nextSpawn=now+999999;
+}
+function neoSpeed(){return [1,1,1.18,1.35][neoPhase()]}
+function neoCreate(g){
+ const B=mexBorder(),gil=B[0],gir=B[1],sp=neoSpeed(),ph=neoPhase();
+ if(g.kind==='cannon'){g.turntimer=250}
+ if(g.kind==='grid'){
+   g.turntimer=230;
+   for(let j=0;j<8;j++){
+     const bm1=mexChoose(0,1,2,3);let bm2=mexChoose(0,1,2,3);if(bm2===bm1)bm2=(bm2+1)%4;
+     for(let i=0;i<4;i++){const x=gil+i*25,y=-60-j*190;if(bm1===i||bm2===i||j%4===i)mexBomb(x,y,4+2*sp);else mexBox(x,y,4+2*sp)}
+   }
+   const rw=mexObj('rew',0,0,{rew:0,rewed:0,maxrw:ph>=2?12:10,img:0});
+ }
+ if(g.kind==='core'){
+   g.turntimer=ph===3?700:600;
+   const h=mexHeartCore(4,320,170);h.life=ph===3?1100:900;h.neoCore=true;
+   play('mexBurst');
+ }
+ if(g.kind==='spot'){
+   g.turntimer=220;
+   const d=mexObj('disco',308,B[2]-10,{diff:ph>=2?2:1,dtype:0,swap:0,snd:0,rottimer:0,laserno:0});
+   mexDiscoInit(d);
+ }
+ if(g.kind==='legs'){g.turntimer=240}
+ if(g.kind==='storm'){
+   g.turntimer=230;
+   mexHand('l',gil,-25,{sf:30,sp:8,vs:3.5*sp,yseg:999,ysegi:50});
+   mexHand('r',gir,-205,{sf:30,sp:8,vs:3.5*sp,yseg:999,ysegi:50});
+   for(let i=0;i<6;i++)mexFodder(gil+10+mexRand(130),-80-i*60,{vs:4*sp,type:2,early:60});
+ }
+}
+// Per-step choreography that the static spawners above don't cover.
+function neoGenStep(g){
+ g.t++;
+ const B=mexBorder(),gil=B[0],gir=B[1],sp=neoSpeed(),ph=neoPhase();
+ const H=mexHeartRoom();
+ // Arm cannon: aimed bolt bursts from NEO's right arm cannon (like heart 4, tripled).
+ const cannon=(rate)=>{
+   if(g.t%rate===20){g.aimX=H.x+10;g.aimY=H.y+10;g.chch=mexChoose(-1,1)}
+   const k=g.t%rate-20;
+   if(k>=0&&k<=14&&k%2===0){
+     const ox=NEO_X+100,oy=NEO_Y+48,aim=Math.atan2(-(g.aimY-oy),g.aimX-ox)*180/Math.PI;
+     const lt=mexLight(ox,oy);lt.fric=-.1;mexSetDir(lt,7*sp,aim+(k>=8?g.chch*12:0));play('mexShoot',.8);
+   }
+ };
+ if(g.kind==='cannon'){
+   cannon(ph===3?40:52);
+   if(g.t%45===0)mexBox(gil+25*Math.floor(mexRand(6)),-30,3*sp,{sf:20,sp:12});
+ }
+ if(g.kind==='spot'&&g.t%24===0){const k=mexKiss(gil+mexRand(gir-gil),B[2]-40,null,0);k.vs=3*sp;k.hs=mexRand(2)-1}
+ if(g.kind==='legs'){
+   if(g.t%60===5)mexObj('legline',0,0,{side:(g.t/60|0)%2?'r':'l',con:0,eo:0,alarm0:1,alarm4:-1,myx:0,shake:0});
+   if(ph>=2&&g.t%60===35)mexObj('legline',0,0,{side:(g.t/60|0)%2?'l':'r',con:0,eo:0,alarm0:1,alarm4:-1,myx:0,shake:0});
+   if(g.t%40===0)mexFodder(gil+10+mexRand(130),-40,{vs:4*sp,type:2,early:40});
+ }
+ if(g.kind==='storm'&&ph>=2)cannon(70);
+ if(g.kind==='core'&&ph===3&&g.t%50===0){for(let i=0;i<10;i++){const lt=mexLight(320,170);lt.fric=-.09;mexSetDir(lt,2,i*36+g.t)}}
+}
+
+// ---------- the twist (first "lethal" hit) ----------
+function neoStartTwist(now){
+ neo.twistDone=true;stopMusic();bullets=[];mex.objs=[];
+ enemyHp=0;neo.face=6;neo.pause=1;
+ state='mexScene';
+ const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',nE:e});
+ mexWait(45,()=>mexSay([
+   L('G...\nGUESS SHE SHOULD\nHAVE WORKED MORE\nON THE DEFENSES...',6),
+   L('...',6),
+   L("...IS WHAT I'D SAY.",4),
+   L("IF SHE HADN'T.",5)
+ ],()=>{
+   state='mexScene';
+   enemyHp=enemyMaxHp;neo.shield=neo.shieldMax;neo.pause=0;neo.face=5;neo.shieldFlash=20;
+   play('mexCreate');
+   mexWait(20,()=>mexSay([
+     L('NEO SHIELD:\nONLINE.',5),
+     L('DARLING, DID YOU\nREALLY THINK ALPHYS\nWOULD SEND ME OUT\nWITHOUT A NET?',1),
+     L('SHE STAYED UP ALL\nNIGHT ON THESE\nDEFENSES.',0),
+     L("NOW... LET'S GIVE\nTHEM A REAL SHOW.",5)
+   ],()=>{
+     if(audioUnlocked)startBattleMusic();
+     setText("* Mettaton NEO's SHIELD absorbs\n  physical attacks.\n* Shoot him on his turn to\n  break it, then strike!",()=>beginEnemyTurn());
+     state='text';
+   }));
+ }));
+}
+// ---------- the real defeat ----------
+function neoStartDeath(now){
+ if(neo.dying)return;
+ neo.dying=true;neo.face=6;stopMusic();bullets=[];mex.objs=[];mex.gen=null;
+ state='mexScene';
+ const L=(text,e)=>({text,wide:true,voiceBoss:'mettatonex',nE:e});
+ mexWait(45,()=>mexSay([
+   L('H... HA...',6),
+   L("ALL OF ALPHYS'S\nUPGRADES...",6),
+   L("AND IT STILL\nWASN'T ENOUGH.",6),
+   L('YOU MAY HAVE\nDEFEATED ME...\nBUT...',4),
+   L("THE SHOW... WAS\nSPECTACULAR,\nWASN'T IT?",0),
+   L('HA... HA.\nAT LEAST NOW,\nI CAN REST EASY.',0),
+   L('I GAVE THEM ONE\nLAST GREAT\nPERFORMANCE...',3),
+   L('ALPHYS...\nEVERYONE...\nRUN...!',3)
+ ],()=>{
+   state='mexScene';
+   mex.body.fadewhite=1;mex.body.whiteval=0;mex.endFade='kill';mex.endDone=false;mex.vaporPlayed=false;
+   play('mexExplosion');
+ }));
+}
+function neoSnowgraveDamage(){return neo.twistDone&&neo.shield>0?Math.ceil(SNOWGRAVE_DAMAGE/20):SNOWGRAVE_DAMAGE}
+function mettatonNeoActOptions(){return ['Check']}
+function neoCheckText(){
+ const s=neo.twistDone?(neo.shield>0?`\n* NEO SHIELD: ${Math.round(neo.shield)}%`:'\n* His SHIELD is down!'):'';
+ return "* METTATON NEO - 90 ATK 9 DEF\n* Dr. Alphys's greatest\n  invention."+s;
+}
+function neoFlavor(){
+ if(neo.twistDone&&neo.shield<=0)return '* The shield is down!\n* Now is your chance!';
+ if(neoPhase()===3)return '* Sparks rain from the\n  stage rigging.';
+ return '* Stage lights are blaring.';
 }
 
 function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
@@ -18915,6 +19448,7 @@ function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='pyrope')return makePyropeComposite(now,hurt);
  if(id==='undyneex')return makeUndyingComposite(now,hurt);
  if(id==='mettatonex')return makeMettatonExComposite(now,hurt);
+ if(id==='mettatonneo')return makeMettatonNeoComposite(now,hurt);
  if(id==='greaterdog')return makeGreatDogComposite(now,hurt);
  if(id==='temmie')return makeTemmieComposite(now,hurt);
  const hurtImage=images[id+'Hurt']||null;
@@ -19443,7 +19977,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -19509,6 +20043,8 @@ function drawTop(now=performance.now()){
              drawUndyingMain(now,mainHit,commonMainOffset);
            }else if(currentBoss==='mettatonex'){
              drawMettatonExMain(now,mainHit,commonMainOffset);
+           }else if(currentBoss==='mettatonneo'){
+             drawMettatonNeoMain(now,mainHit,commonMainOffset);
            }else{
              if(currentBoss==='undyne'&&undyneDying&&undyneDeathStage>=5&&drawUndyneRealMelt(enemyDraw,now,commonMainOffset)){
                // V56: final determination melt uses the corrected visual frame order.
@@ -20598,7 +21134,7 @@ function drawAttack(now){
  // visibly hang outside the board. Collision behavior is unchanged.
  const undyneNoBorderKinds=new Set(['undyneDir','undyneRise','undyneChase','undyneTransition','uxRing','uxFollow2']);
  ctx.save();
- if(currentBoss==='mettatonex')drawMexAttackLayer(now);
+ if(currentBoss==='mettatonex'||currentBoss==='mettatonneo')drawMexAttackLayer(now);
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
@@ -21641,7 +22177,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -21702,7 +22238,7 @@ function drawEnemySelect(now=performance.now()){
  font(15,'#777','left');ctx.fillText((b.area||'UNKNOWN').toUpperCase(),info.x+28,info.y+106);
  const stats=[['HP',b.hp],['AT',b.atk],['DF',b.def]];
  stats.forEach((v,i)=>{const x=info.x+28+i*133;ctx.fillStyle='#050505';ctx.fillRect(x,info.y+139,116,62);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(x,info.y+139,116,62);font(12,'#666','center');ctx.fillText(v[0],x+58,info.y+148);font(24,'#fff','center');ctx.fillText(String(v[1]),x+58,info.y+169)});
- const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',undyneex:'WATERFALL // THE HEROINE APPEARS',mettatonex:'CORE // LIGHTS! CAMERA! ACTION!',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
+ const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',undyneex:'WATERFALL // THE HEROINE APPEARS',mettatonex:'CORE // LIGHTS! CAMERA! ACTION!',mettatonneo:'CORE // THE REAL SHOW',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
  font(13,'#888','left');ctx.fillText(descMap[b.id]||'CUSTOM ENCOUNTER',info.x+28,info.y+212);
  const rp=rewardPreview(b.id),sandboxPay=!vanillaMode;
  const killExpText=b.id==='loox'&&!hardModeEnabled?`${rp.killExp} EXP (3-24 VIA ACT)`: `${rp.killExp} EXP`;
@@ -24028,7 +24564,7 @@ function runDebugCommand(raw){
    if(c==='help'){
      debugLog([
        'boss <id> [classic|noelle]  | hp <n> | enemyhp <n> | tp <n> | mercy <n>',
-       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne undyneex mettatonex tsunderplane vulkin mettaton custom flowey migosp sans5000',
+       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne undyneex mettatonex mettatonneo tsunderplane vulkin mettaton custom flowey migosp sans5000',
        'soul <red|blue> | scene <name> | face <emotion> | attack | end | kill | spare',
        'scene maddummy-napstablook (alias: madnap) // Mad Dummy ending interruption',
        'hard <on|off|toggle> | papwave <-1..15> | gameover <normal|toriel|aaron|papyrus|napstablook>',
@@ -24729,6 +25265,7 @@ function keyDown(e){
 }
 function keyUp(e){
  const low=e.key.toLowerCase();
+ if(e.key==='Enter'&&typeof mex!=='undefined'&&mex?.snap?.charging)mexSnapRelease();
  if(e.key==='Enter'&&maliceCharging)releaseMaliceCharge(performance.now());
  key[e.key]=false;key[low]=false;
 }
@@ -25194,6 +25731,8 @@ async function boot(){
  for(const k of ['uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxEyebeam','uxFollowSpear'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['mexUpper', 'mexFace1', 'mexFaceDef', 'mexFaceGen', 'mexFaceHurt', 'mexBomb', 'mexBlastC', 'mexBlastH', 'mexBlastV', 'mexFodder', 'mexSparkle', 'mexDance', 'mexDanceTell', 'mexTrig', 'mexRec', 'mexRew', 'mexHeart', 'mexHeartC', 'mexExcl', 'mexBreak', 'mexShot', 'mexSoul', 'mexStageLight', 'mexArm'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['mexUpperHeart', 'mexLeg1', 'mexLeg2', 'mexLeg3', 'mexLeg4', 'mexLeg5', 'mexLeg2Flip', 'mexLeg2FlipV', 'mexLeg2Unflip', 'mexLeg2UnflipV', 'mexBox', 'mexLight', 'mexKiss', 'mexLegBulL', 'mexLegBulR', 'mexHandL', 'mexHandR', 'mexTrigOff', 'mexDisco', 'mexDiscoInv', 'mexStar'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
+ IMG.neoFace.forEach((u,i)=>add(`neoFace ${i+1}`,async()=>{images.neoFace=images.neoFace||[];images.neoFace[i]=await needImage(u)}));
+ for(const k of ['neoBurst','neoLegs','neoArmR','neoArmL','neoBody'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
@@ -25385,6 +25924,7 @@ async function boot(){
  addBg('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
  addBg('Death by Glamour',async()=>{music.mettatonEx=await loadAudioAsset(MUSIC.mettatonEx,.50,true);if(currentBoss==='mettatonex'&&screen==='battle'&&audioUnlocked&&mex.phase==='battle'&&!mex.killed)startBattleMusic()});
  addBg('Mettaton pre-transform',async()=>music.mettatonPre=await loadAudioAsset(MUSIC.mettatonPre,.50,true));
+ addBg('Power of NEO',async()=>{music.mettatonNeo=await loadAudioAsset(MUSIC.mettatonNeo,.50,true);if(currentBoss==='mettatonneo'&&screen==='battle'&&audioUnlocked&&!neo.dying&&state!=='mexScene')startBattleMusic()});
  addBg('Mettaton sad',async()=>music.mettSad=await loadAudioAsset(MUSIC.mettSad,.50,true));
  addBg('Battle Against a True Hero',async()=>{music.undyneex=await loadAudioAsset(MUSIC.undyneex,.50,true);if(currentBoss==='undyneex'&&screen==='battle'&&audioUnlocked&&!uxDying)startBattleMusic()});
  addBg('Undyne exact music slot',async()=>music.undyne=await loadSavedOrLocalUndyneMusic());
@@ -25446,7 +25986,7 @@ async function boot(){
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
  images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
- for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex']){
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
