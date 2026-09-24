@@ -194,6 +194,7 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="doggo-opening">doggo noelle opening</button>
     <button data-debug="doggo-weird">doggo weird lethal talk</button>
     <button data-debug="undyne-noelle-freeze">undyne noelle freeze</button>
+    <button data-debug="papyrus-nhb">papyrus not holding back</button>
     <button data-debug="mettneo-alphys-ice">mett neo alphys (iceshock)</button>
     <button data-debug="mettneo-alphys-grave">mett neo alphys (snowgrave)</button>
     <button data-debug="maddummy-napstablook">mad dummy canon ending + napstablook</button>
@@ -448,6 +449,8 @@ const IMG={
  neoArmL:RAW+'sprites/images/spr_mneo_arml_0.png',
  neoBody:RAW+'sprites/images/spr_mneo_body_0.png',
  neoFace:[0,1,2,3,4,5,6].map(i=>RAW+`sprites/images/spr_mneo_face_${i}.png`),
+ // obj_gasterblaster (Papyrus: NOT HOLDING BACK).
+ gasterBlaster:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_gasterblaster_${i}.png`),
  // Alphys (Noelle's lethal-ice cutscene in the Mettaton EX fight).
  alphysR:[0,1,2,3].map(i=>RAW+`sprites/images/spr_alphys_r_${i}.png`),
  alphysFreaked:RAW+'sprites/images/spr_alphys_freaked_0.png',
@@ -772,6 +775,8 @@ const SFX={
  mtt9:RAW+'sound/audio/snd_mtt9.wav',
  txtUnd:RAW+'sound/audio/snd_txtund.wav',
  txtAl:RAW+'sound/audio/snd_txtal.wav',
+ gbCharge:RAW+'sound/audio/mus_sfx_segapower.ogg',
+ gbFire:RAW+'sound/audio/mus_sfx_rainbowbeam_1.ogg',
  pomBark:RAW+'sound/audio/snd_pombark.wav',
  // UNDERTALE encounter transition flicker sound. The original battle transition
  // toggles the SOUL while playing snd_noise.
@@ -1992,7 +1997,7 @@ function loadSandboxConfig(){
      supportOverrides:p.supportOverrides||{},
      supportParty:party.length?party:[],
      insaneSupports:!!p.insaneSupports,
-     papyrusRoute:p.papyrusRoute==='genocide'?'genocide':'normal',
+     papyrusRoute:['genocide','nhb'].includes(p.papyrusRoute)?p.papyrusRoute:'normal',
      weapon:WEAPON_OPTIONS.some(w=>w.id===p.weapon)?p.weapon:'stick',
      items:Array.isArray(p.items)?p.items.slice(0,4):fallback.items.slice(),
      ...(()=>{
@@ -2066,7 +2071,8 @@ function papyrusGenocideMode(){
  return sandboxConfig.papyrusRoute==='genocide';
 }
 function togglePapyrusRoute(){
- sandboxConfig.papyrusRoute=papyrusGenocideMode()?'normal':'genocide';
+ const r=sandboxConfig.papyrusRoute;
+ sandboxConfig.papyrusRoute=r==='normal'?'genocide':(r==='genocide'?'nhb':'normal');
  saveSandboxConfig();
 }
 function floweyFightable(){
@@ -3574,6 +3580,7 @@ function bossData(){
    if(base.id==='papyrus'&&papyrusGenocideMode()){
      return {...base,atk:3,def:-20000};
    }
+   if(base.id==='papyrus'&&papyrusNhbMode())return nhbBossData(base);
    if(base.id==='finalfroggit'){
      return {...base,atk:Math.max(0,base.atk-finalFroggitAtkDrop),def:base.def-finalFroggitDefDrop};
    }
@@ -3590,6 +3597,10 @@ function bossData(){
  if(base.id==='finalfroggit'){
    out.atk=Math.max(0,out.atk-finalFroggitAtkDrop);
    out.def=out.def-finalFroggitDefDrop;
+ }
+ if(base.id==='papyrus'&&papyrusNhbMode()){
+   const n=nhbBossData(base);
+   return {...out,encounter:n.encounter,noelleEncounter:n.noelleEncounter,hp:o.hp==null?n.hp:out.hp,atk:o.atk==null?n.atk:out.atk,def:o.def==null?n.def:out.def};
  }
  return out;
 }
@@ -4392,7 +4403,7 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='maddummy')return ['Check','Talk'];
  if(id==='toriel')return ['Check','Talk'];
  if(id==='doggo')return ['Check','Pet'];
- if(id==='papyrus')return papyrusGenocideMode()?['Check']:['Check','Flirt','Insult'];
+ if(id==='papyrus')return papyrusNhbMode()?['Check','Plead']:(papyrusGenocideMode()?['Check']:['Check','Flirt','Insult']);
  if(id==='snowdrake')return ['Check','Heckle','Laugh','Joke'];
  if(id==='icecap')return ['Check','Compliment','Ignore','Steal'];
  if(id==='flowey')return ['Check','Talk'];
@@ -4698,7 +4709,10 @@ function performAct(targetId,choice){
      }
    }
  }else if(currentBoss==='papyrus'){
-   if(papyrusGenocideMode()){
+   if(papyrusNhbMode()){
+     if(choice===0)setText(nhbCheckText(),()=>beginEnemyTurn());
+     else setText(mercy>=100?"* You ask Papyrus to stop.\n* He already has.":'* You ask Papyrus to hold back.\n* "ABSOLUTELY NOT!"',()=>beginEnemyTurn());
+   }else if(papyrusGenocideMode()){
      setText('* PAPYRUS - ATK 3 DEF 3\n* He refuses to fight you.',()=>returnMenu());
    }else if(choice===0){
      setText('* PAPYRUS - ATK 20 DEF 20\n* He likes to say: "Nyeh heh heh!"',()=>beginEnemyTurn());
@@ -6102,7 +6116,7 @@ function attackSpeechForCurrentBoss(){
  }
 
  if(currentBoss==='papyrus'){
-   if(papyrusGenocideMode())return '';
+   if(papyrusGenocideMode()||papyrusNhbMode())return '';
    if(papyrusMercyReady)return 'I WILL SPARE YOU,\nHUMAN!';
    if(!papyrusBlue)return '';
    const lines={
@@ -6581,6 +6595,7 @@ function advancePapyrusScene(){
 }
 
 function startPapyrusOpening(){
+ if(papyrusNhbMode()){nhbOpening();return}
  if(papyrusGenocideMode()){
    mercy=100;
    papyrusScene([
@@ -6722,7 +6737,9 @@ function beginPapyrusDeathFirstDialogue(){
  if(papyrusDeathPhase!==0)return;
  papyrusDeathPhase=1;
 
- const line=papyrusGenocideMode()
+ const line=papyrusNhbMode()
+   ?'* "HEH... HEH..."\n* "EVEN WITHOUT HOLDING BACK..."'
+   :papyrusGenocideMode()
    ?'* "W-WELL, THAT\'S NOT WHAT I EXPECTED..."'
    :'* "ALAS, POOR PAPYRUS!"';
 
@@ -6739,7 +6756,9 @@ function beginPapyrusDeathFinalDialogue(){
  if(papyrusDeathPhase!==2)return;
  papyrusDeathPhase=3;
 
- const line=papyrusGenocideMode()
+ const line=papyrusNhbMode()
+   ?'* "...I STILL BELIEVE IN YOU, HUMAN."\n* "PROMISE ME..."\n* "PROMISE ME YOU\'LL STOP HERE..."'
+   :papyrusGenocideMode()
    ?'* "BUT..."\\n* "ST... STILL! I BELIEVE IN YOU!"\\n* "YOU CAN DO A LITTLE BETTER!"\\n* "EVEN IF YOU DON\'T THINK SO!"\\n* "I... I PROMISE..."'
    :'* "WELL, AT LEAST I STILL HAVE MY HEAD!"';
 
@@ -6819,6 +6838,7 @@ function createPapFinalSprite(offset,yFromFloor,speed,imageKey,w,h,bbox,subtype=
  bullets.push(b);return b;
 }
 function papyrusAttackDurationMs(wave=attackWave){
+ if(papyrusNhbMode())return nhbDurationMs();
  if(!papyrusBlue)return 140/30*1000;
  const steps={[-1]:200,0:300,1:220,2:240,3:150,4:240,5:330,6:200,7:150,8:230,9:355,10:230,11:250,12:200,13:220,15:1300};
  if(wave===14){
@@ -6828,6 +6848,7 @@ function papyrusAttackDurationMs(wave=attackWave){
  return ((steps[wave]??220)/30)*1000;
 }
 function spawnPapyrusAttack(now){
+ if(papyrusNhbMode()){nhbSpawn(now);return}
  if(specialSpawnCount>0){nextSpawn=now+99999;return}
  specialSpawnCount=1;
  const floor=ARENA.y+ARENA.h;
@@ -7469,6 +7490,7 @@ function startAttack(now){
      return;
    }
 
+   if(papyrusNhbMode()){nhbPrepareTurn(now)}else{
    // Vanilla progression: one red-SOUL prelude, then fighto -1..13,
    // four fighto-14 warning turns, stolen special attack, then fighto 15.
    if(!papyrusBlue)papyrusBluePending=true;
@@ -7500,6 +7522,7 @@ function startAttack(now){
      else if(papyrusFighto===14)papyrusXFight++;
      papyrusTurn++;
    }
+   }
  }else attackWave=(attackWave+1)%3;
 
  // Soul Roulette intentionally avoids encounters whose scripts depend on a fixed
@@ -7519,6 +7542,7 @@ function startAttack(now){
  // Mettaton EX talks every turn (obj_mettatonex alarm 6) and may end the show on ratings.
  if(currentBoss==='mettatonex'&&!enemyDead&&mexBeginTalk(now))return;
  if(currentBoss==='mettatonneo'&&!enemyDead&&neoBeginTalk(now))return;
+ if(currentBoss==='papyrus'&&papyrusNhbMode()&&!enemyDead&&nhb.plan&&nhbBeginTalk(now))return;
  if(beginBattleAttackSpeech(now)){
    state='battleSpeech';
    bullets=[];
@@ -7859,6 +7883,7 @@ function advanceMadNapScene(now=performance.now()){
 }
 
 function endAttack(now){
+ if(currentBoss==='papyrus'&&papyrusNhbMode()&&state==='attack'&&!enemyDead&&nhb.plan==='final'&&!nhb.finalDone){nhbFinalAftermath(now);return}
  if(currentBoss==='undyneex'&&state==='attack'&&!enemyDead)uxEndAttack(now);
  if(currentBoss==='undyne'&&state==='attack'&&!enemyDead){
    if(undyneDying){
@@ -7993,6 +8018,7 @@ function returnMenu(){
    setText('* Mettaton.');
  }else if(currentBoss==='papyrus'){
    if(papyrusGenocideMode())setText('* Papyrus is sparing you.');
+   else if(papyrusNhbMode()&&!papyrusMercyReady)setText("* Papyrus isn't holding back.");
    else if(papyrusMercyReady)setText('* Papyrus is sparing you.');
    else if(papyrusBlue)setText('* Papyrus is preparing a bone attack.');
    else setText('* Papyrus is waiting for you to FIGHT or SPARE.');
@@ -11360,6 +11386,7 @@ function reset(){
  resetUndying();
  resetMettatonEx();
  resetMettatonNeo();
+ resetPapyrusNhb();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -11807,6 +11834,7 @@ function chooseConfirm(){
          startEnemySpare('main');
          return;
        }
+       if(papyrusNhbMode()){setText("* Papyrus won't accept mercy.\n* Not until you've seen what\n  he can really do.",()=>beginEnemyTurn());state='text';return}
        papyrusBluePending=true;
        setText('* Papyrus is not ready to accept your mercy yet.\n* He prepares to make your SOUL blue.',()=>beginEnemyTurn());
        state='text';return;
@@ -14147,7 +14175,7 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateUndyingBullet(b,now,dt)){
+     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateUndyingBullet(b,now,dt)||updateNhbBullet(b,now,dt)){
        // Moldbygg/Temmie bullets step on the 30fps source grid.
      }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
@@ -14750,6 +14778,8 @@ function update(dt,now){
      // the ordinary off-screen point-bullet test is invalid for it. Its lifetime is
      // the enemy turn itself (or explicit expiry), matching the attack object.
      if(b.kind==='icecapTeeth'||b.kind==='finalFrog')return true;
+     // Papyrus NOT HOLDING BACK bullets expire themselves (the controller lives all turn).
+     if(NHB_KINDS.has(b.kind))return !b.expired;
      // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
      if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep'||b.kind==='dogiAx'||b.kind==='dogiPups'||b.kind==='pyroRope'||b.kind==='pyroFire'||b.kind==='pyroBlast'||UX_KINDS.has(b.kind))return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
@@ -14796,7 +14826,7 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||undyingCollide(b,now)){
+     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||undyingCollide(b,now)||nhbCollide(b,now)){
        // handled above
      }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
@@ -19160,6 +19190,454 @@ function mexEndFadeStep(now){
  }
 }
 
+// ===================== PAPYRUS: NOT HOLDING BACK =====================
+// A third Papyrus route. The genocide-route Papyrus, except he stops holding
+// back: harder bone patterns, SOUL slams, bone stabs and obj_gasterblaster.
+// Blasters follow obj_gasterblaster's draw event (con 1 fly+turn, pause,
+// 4-frame mouth open, beam that swells for 4 steps and fades after `terminal`)
+// with sfx_segapower on spawn and sfx_rainbowbeam_1 on fire, like obj_sansb.
+// Everything here runs on the 30fps step grid in room pixels (x UT_SCALE).
+function papyrusNhbMode(){return sandboxConfig.papyrusRoute==='nhb'}
+function papyrusRouteLabel(){return papyrusNhbMode()?'NOT HOLDING BACK':(papyrusGenocideMode()?'GENOCIDE':'NORMAL')}
+const NHB_HP=1300,NHB_ATK=20,NHB_DEF=10;
+function nhbBossData(base){
+ return {...base,hp:NHB_HP,atk:NHB_ATK,def:NHB_DEF,
+   encounter:"* Papyrus blocks the way.\n* He isn't holding back.",
+   noelleEncounter:"* Papyrus blocks the way.\n* He isn't holding back."};
+}
+let nhb=null;
+function resetPapyrusNhb(){nhb={turn:0,plan:null,finalDone:false,t:0,events:[]}}
+resetPapyrusNhb();
+const NHB_BOXES={pap:[180,250,280,120],wide:[140,250,360,135],square:[245,235,150,150]};
+// kind: [box, soul, duration steps]
+const NHB_WAVES={
+ rush:['pap','blue',270],
+ blasters:['square','red',240],
+ cage:['wide','red',300],
+ slam:['pap','blue',290],
+ bluewhite:['wide','red',280],
+ cross:['square','red',270],
+ stairs:['pap','blue',270],
+ final:['wide','blue',640]
+};
+const NHB_ORDER=['rush','blasters','cage','slam','bluewhite','cross','stairs'];
+const NHB_LINES={
+ rush:[["LET'S START WITH A\nWARM-UP.\nFOR ME, THAT IS.",'cool'],["YOU'RE STILL\nSTANDING? GOOD.\nSO AM I.",'cool']],
+ blasters:[['YOU THOUGHT ONLY\nSANS HAD THESE?','evil'],['NYEH.\nHEH.\nHEH.','evil']],
+ cage:[['NO MORE PUZZLES.\nNO MORE SPAGHETTI.\nONLY BONES.','mad'],['UNDYNE TAUGHT ME\nTO NEVER GIVE UP!','mad']],
+ slam:[['GRAVITY IS JUST A\nSUGGESTION.\nMY SUGGESTION.','evil'],['DOWN YOU GO!','evil']],
+ bluewhite:[['BLUE MEANS STOP!\nYOU REMEMBER THAT\nMUCH, RIGHT?','side'],["STAY STILL.\nIT'S FOR YOUR\nOWN GOOD.",'side']],
+ cross:[['EVERY MONSTER YOU\nHURT...\nTHIS IS FOR THEM.','mad'],["SANS TOLD ME TO\nRUN.\nI DIDN'T.",'dejected']],
+ stairs:[["I STILL BELIEVE IN\nYOU. THAT'S WHY I\nWON'T STOP!",'mad'],['I WILL NOT LET YOU\nGO ANY FURTHER!','mad']]
+};
+function nhbPlan(){
+ if(!nhb.finalDone&&(enemyHp<=enemyMaxHp*.35||nhb.turn>NHB_ORDER.length+2))return 'final';
+ return NHB_ORDER[(nhb.turn-1)%NHB_ORDER.length];
+}
+function nhbSetBox(name){
+ const r=NHB_BOXES[name];ARENA=utRect(r[0],r[1],r[2],r[3]);box={...ARENA};
+}
+function nhbSetSoul(mode){
+ soulMode=mode;soulVY=0;soulGrounded=mode==='blue';
+ soul.x=ARENA.x+ARENA.w/2;
+ soul.y=mode==='blue'?ARENA.y+ARENA.h-14:ARENA.y+ARENA.h/2;
+}
+// Called from startAttack's Papyrus branch: pick the attack, box and SOUL.
+function nhbPrepareTurn(now){
+ nhb.turn++;
+ const plan=nhbPlan();nhb.plan=plan;
+ const w=NHB_WAVES[plan];
+ attackWave=100+Object.keys(NHB_WAVES).indexOf(plan);
+ papyrusAttackVariant=0;papyrusFinalLift=0;papyrusTurn++;
+ nhbSetBox(w[0]);nhbSetSoul(w[1]);
+}
+function nhbDurationMs(){return ((NHB_WAVES[nhb.plan]||NHB_WAVES.rush)[2]/30)*1000}
+function nhbBeginTalk(now){
+ const plan=nhb.plan;
+ let lines;
+ if(plan==='final')lines=[
+   {text:'...',emotion:'side'},
+   {text:"YOU'VE SURVIVED\nEVERYTHING I'VE\nTHROWN AT YOU.",emotion:'sweat'},
+   {text:'THEN BEHOLD...',emotion:'cool'},
+   {text:'MY ACTUAL\nSPECIAL ATTACK!!!',emotion:'evil'}
+ ];
+ else{
+   const pair=NHB_LINES[plan]||NHB_LINES.rush;
+   const l=pair[nhb.turn>NHB_ORDER.length?1:0];
+   lines=[{text:l[0],emotion:l[1]}];
+ }
+ startSpecialBattleSpeech(lines.map(l=>({...l,wide:true})),()=>activateEnemyAttack(performance.now()));
+ return true;
+}
+function nhbOpening(){
+ papyrusBlue=true;papyrusBluePending=false;
+ startSpecialBattleSpeech([
+   {text:'HUMAN.',emotion:'side'},
+   {text:'I KNOW WHAT YOU\nHAVE BEEN DOING.',emotion:'mad'},
+   {text:'SNOWDIN IS EMPTY.\nTHE DOGS ARE GONE.',emotion:'dejected'},
+   {text:'SANS SAID I SHOULD\nRUN AWAY.',emotion:'sweat'},
+   {text:'BUT THE GREAT\nPAPYRUS DOES\nNOT RUN.',emotion:'cool'},
+   {text:'I STILL BELIEVE YOU\nCAN BE A GOOD\nPERSON...',emotion:'dejected'},
+   {text:"...WHICH IS WHY I\nWON'T LET YOU GO\nANY FURTHER.",emotion:'mad'},
+   {text:"ALL THIS TIME, I'VE\nBEEN HOLDING BACK.",emotion:'cool'},
+   {text:'NOT ANYMORE.',emotion:'evil'}
+ ].map(l=>({...l,wide:true})),()=>{
+   switchPapyrusBlueMusic();
+   returnMenu();
+ });
+}
+// After the special attack Papyrus is spent, and he spares you anyway.
+function nhbFinalAftermath(now){
+ nhb.finalDone=true;bullets=[];
+ papyrusMercyReady=true;mercy=100;
+ startSpecialBattleSpeech([
+   {text:'HUFF... HUFF...',emotion:'sweat'},
+   {text:'YOU DODGED...\nMY ACTUAL SPECIAL\nATTACK.',emotion:'sweat'},
+   {text:'...',emotion:'side'},
+   {text:"I DON'T HAVE ANY\nMAGIC LEFT.",emotion:'dejected'},
+   {text:'SO I WILL DO THE\nONLY THING I HAVE\nLEFT TO DO.',emotion:'normal'},
+   {text:"I'LL SPARE YOU.\nIT'S NOT TOO LATE\nTO CHANGE, HUMAN.",emotion:'normal'}
+ ].map(l=>({...l,wide:true})),()=>{state='boxOpen';transitionStart=performance.now();box={...ARENA};bullets=[]});
+}
+function nhbCheckText(){
+ return mercy>=100
+   ?'* PAPYRUS - ATK 20 DEF 10\n* Out of magic.\n* Still sparing you.'
+   :"* PAPYRUS - ATK 20 DEF 10\n* He isn't holding back anymore.";
+}
+
+// ---------- helpers (room pixels) ----------
+function nhbHeart(){return {x:soul.x/UT_SCALE,y:soul.y/UT_SCALE}}
+function nhbBoxR(){const U=UT_SCALE;return {x:ARENA.x/U,y:ARENA.y/U,w:ARENA.w/U,h:ARENA.h/U}}
+function nhbDir(x0,y0,x1,y1){let d=Math.atan2(-(y1-y0),x1-x0)*180/Math.PI;return d<0?d+360:d}
+function nhbLdx(len,dir){return len*Math.cos(dir*Math.PI/180)}
+function nhbLdy(len,dir){return -len*Math.sin(dir*Math.PI/180)}
+function nhbAt(step,fn){nhb.events.push({step,fn})}
+
+// ---------- spawning ----------
+// A controller bullet drives the wave's timeline so it pauses with the battle.
+function nhbSpawn(now){
+ if(specialSpawnCount>0){nextSpawn=now+99999;return}
+ specialSpawnCount=1;nextSpawn=now+99999;
+ nhb.t=0;nhb.events=[];
+ const plan=nhb.plan||'rush';
+ NHB_BUILD[plan]();
+ bullets.push({kind:'nhbCtl',owner:'main',x:0,y:0,vx:0,vy:0,damage:0});
+}
+// obj_gasterblaster: starts at (x,y), flies to (ix,iy) while turning to face (tx,ty).
+function nhbBlaster(x,y,ix,iy,tx,ty,o={}){
+ const idealrot=nhbDir(ix,iy,tx,ty)+90;
+ const b={kind:'nhbGB',owner:'main',x:0,y:0,vx:0,vy:0,rx:x,ry:y,ix,iy,rot:o.rot??0,idealrot,
+   xs:o.xs||1,ys:o.ys||2,pause:o.pause??9,terminal:o.terminal??1,con:1,alarm:0,frame:0,
+   btimer:0,bt:0,bb:0,bbsiner:0,fade:1,speed:0,col:false,damage:o.damage||6};
+ bullets.push(b);play('gbCharge',1.2);
+ return b;
+}
+// obj_gasterbl_gen: a blaster somewhere around the SOUL, aimed at it.
+function nhbRandomBlaster(type=0){
+ const h=nhbHeart(),dd=Math.random()*360;
+ let ix=h.x+nhbLdx(200,dd),iy=h.y+nhbLdy(200,dd);
+ iy=clamp(iy,40,440);ix=clamp(ix,50,590);
+ const sx=h.x+nhbLdx(400,dd),sy=h.y+nhbLdy(300,dd);
+ const o=[{xs:1,pause:9},{xs:1,pause:14},{xs:2,pause:20}][type];
+ return nhbBlaster(sx,sy,ix,iy,h.x,h.y,{...o,terminal:1});
+}
+// A free bone: centre (x,y), length along its axis, moving (vx,vy) per step.
+function nhbBone(x,y,len,o={}){
+ const b={kind:'nhbBone',owner:'main',x:0,y:0,vx:0,vy:0,cx:x,cy:y,len,horiz:!!o.horiz,
+   svx:o.vx||0,svy:o.vy||0,blue:!!o.blue,damage:o.damage||5,life:o.life||400,delay:o.delay||0};
+ bullets.push(b);return b;
+}
+// obj_bonestab-style: a flashing warning box on one side of the board, then a
+// row of bones shoots out, holds, and sinks back.
+function nhbStab(side,depth,o={}){
+ const r=nhbBoxR();
+ const from=o.from??0,to=o.to??1;
+ bullets.push({kind:'nhbStab',owner:'main',x:0,y:0,vx:0,vy:0,side,depth,from,to,
+   warn:o.warn??18,stay:o.stay??14,t:0,ext:0,damage:o.damage||5,played:false});
+}
+// Blue-SOUL slam: throw the SOUL into the floor.
+function nhbSlam(){
+ if(soulMode!=='blue')return;
+ soulGrounded=false;soulVY=14;play('impact');
+}
+// Floor bones from createPapBone, just faster.
+function nhbFloorBone(side,off,h,sp,blue=false){return createPapBottomSource(side,off,h,sp,blue,'main')}
+function nhbTopBone(side,off,gap,sp,blue=false){return createPapTopSource(side,off,gap,sp,blue,'main')}
+
+const NHB_BUILD={
+ // Fast floor bones with ceiling bones mixed in: jump the short ones, stay low under the rest.
+ rush(){
+   const sp=6.2;
+   for(const [off,h] of [[20,24],[110,34],[200,24],[290,44],[380,28],[470,48],[560,24]])nhbFloorBone('right',off,h,sp);
+   for(const off of [650,690,730])nhbTopBone('right',off,26,sp);
+   for(const [off,h] of [[820,30],[900,52],[980,30]])nhbFloorBone('right',off,h,sp);
+   nhbFloorBone('right',1080,120,sp,true);
+   for(const [off,h] of [[1170,26],[1230,40],[1290,26]])nhbFloorBone('left',off-1000,h,sp);
+   for(const [off,h] of [[1400,36],[1470,36]])nhbFloorBone('right',off,h,sp);
+   nhbTopBone('right',1560,40,sp);nhbFloorBone('right',1560,20,sp);
+ },
+ // obj_gasterbl_gen type 0, then type 1, then two big ones.
+ blasters(){
+   for(let i=0;i<9;i++)nhbAt(4+i*13,()=>nhbRandomBlaster(0));
+   for(let i=0;i<4;i++)nhbAt(130+i*16,()=>nhbRandomBlaster(1));
+   nhbAt(200,()=>nhbRandomBlaster(2));
+ },
+ // Bone walls with a gap slide across the board from alternating sides.
+ cage(){
+   const r=nhbBoxR();
+   for(let i=0;i<11;i++){
+     nhbAt(i*24,()=>{
+       const fromLeft=i%2===0,gap=46,gy=r.y+14+Math.random()*(r.h-28-gap);
+       const x=fromLeft?r.x-10:r.x+r.w+10,vx=fromLeft?4.6:-4.6;
+       const topLen=gy-r.y,botLen=r.y+r.h-(gy+gap);
+       if(topLen>4)nhbBone(x,r.y+topLen/2,topLen,{vx});
+       if(botLen>4)nhbBone(x,gy+gap+botLen/2,botLen,{vx});
+     });
+   }
+   nhbAt(100,()=>nhbRandomBlaster(1));
+   nhbAt(190,()=>nhbRandomBlaster(1));
+ },
+ // Slam into the floor, then stab the half you're on; jump or run.
+ slam(){
+   for(let i=0;i<5;i++){
+     const base=6+i*52;
+     nhbAt(base,()=>nhbSlam());
+     nhbAt(base+8,()=>{
+       const r=nhbBoxR(),left=soul.x/UT_SCALE<r.x+r.w/2;
+       nhbStab('bottom',i%2?34:26,{from:left?0:.5,to:left?.5:1,warn:16,stay:10});
+     });
+     if(i>=2)nhbAt(base+30,()=>nhbTopBone(i%2?'left':'right',10,40,6));
+   }
+ },
+ // Red SOUL. Blue walls only hurt while you move; white walls have gaps.
+ bluewhite(){
+   const r=nhbBoxR();
+   for(let i=0;i<10;i++){
+     nhbAt(i*24,()=>{
+       const fromLeft=i%2===1,x=fromLeft?r.x-10:r.x+r.w+10,vx=(fromLeft?1:-1)*(i%3===2?5.4:4.2);
+       if(i%3!==1){nhbBone(x,r.y+r.h/2,r.h,{vx,blue:true});return}
+       const gap=40,gy=r.y+12+Math.random()*(r.h-24-gap);
+       const topLen=gy-r.y,botLen=r.y+r.h-(gy+gap);
+       if(topLen>4)nhbBone(x,r.y+topLen/2,topLen,{vx});
+       if(botLen>4)nhbBone(x,gy+gap+botLen/2,botLen,{vx});
+     });
+   }
+   nhbAt(230,()=>nhbRandomBlaster(0));
+ },
+ // Four blasters at once: a plus through the middle, then an X, alternating.
+ cross(){
+   const r=nhbBoxR(),cx=r.x+r.w/2,cy=r.y+r.h/2;
+   const plus=()=>{
+     nhbBlaster(cx,-80,cx,r.y-50,cx,cy,{pause:14});
+     nhbBlaster(-80,cy,r.x-50,cy,cx,cy,{pause:14});
+   };
+   const ex=()=>{
+     const d=r.w/2+40;
+     nhbBlaster(-60,-60,cx-d,cy-d,cx,cy,{pause:14});
+     nhbBlaster(700,-60,cx+d,cy-d,cx,cy,{pause:14});
+   };
+   const edges=()=>{
+     nhbBlaster(cx-35,-80,cx-35,r.y-50,cx-35,cy,{pause:14});
+     nhbBlaster(cx+35,-80,cx+35,r.y-50,cx+35,cy,{pause:14});
+   };
+   const seq=[plus,ex,edges,plus,ex];
+   seq.forEach((fn,i)=>nhbAt(4+i*38,fn));
+   for(let i=0;i<3;i++)nhbAt(200+i*18,()=>nhbRandomBlaster(0));
+ },
+ // Papyrus's staircase, faster, with a blaster raking the top of the board.
+ stairs(){
+   for(const [off,h] of [[40,20],[64,30],[88,40],[112,50],[136,40],[160,30],[184,20]])nhbFloorBone('left',off,h,5.2);
+   for(const [off,h] of [[520,20],[550,34],[580,48],[610,62],[640,48],[670,34],[700,20]])nhbFloorBone('right',off,h,7);
+   nhbAt(70,()=>{const r=nhbBoxR();nhbBlaster(-80,r.y+18,r.x-50,r.y+18,r.x+r.w,r.y+18,{pause:16,terminal:6})});
+   nhbAt(170,()=>{const r=nhbBoxR();nhbBlaster(720,r.y+18,r.x+r.w+50,r.y+18,r.x,r.y+18,{pause:16,terminal:6})});
+   for(const [off,h,blue] of [[980,70,1],[1040,22,0],[1100,70,1],[1160,22,0]])nhbFloorBone('right',off,h,6.5,!!blue);
+ },
+ // Everything: blue bone rush + blasters, a red blaster storm, then one giant blaster.
+ final(){
+   for(const [off,h] of [[20,24],[90,40],[160,24],[230,52],[300,28],[370,40]])nhbFloorBone('right',off,h,6.6);
+   for(const [off,h] of [[60,30],[140,46]])nhbFloorBone('left',off,h,6.6);
+   for(let i=0;i<4;i++)nhbAt(20+i*30,()=>nhbRandomBlaster(0));
+   nhbAt(170,()=>{bullets=bullets.filter(b=>b.kind==='nhbCtl'||b.kind==='nhbGB');nhbSetSoul('red');play('bell')});
+   for(let i=0;i<14;i++)nhbAt(185+i*11,()=>nhbRandomBlaster(i%5===4?1:0));
+   nhbAt(360,()=>{
+     const r=nhbBoxR();
+     for(let i=0;i<6;i++){
+       const a=i*60,cx=r.x+r.w/2,cy=r.y+r.h/2;
+       nhbBlaster(cx+nhbLdx(500,a),cy+nhbLdy(400,a),clamp(cx+nhbLdx(190,a),50,590),clamp(cy+nhbLdy(150,a),40,440),cx,cy,{pause:22});
+     }
+   });
+   nhbAt(440,()=>{nhbSetSoul('blue');nhbSlam()});
+   nhbAt(452,()=>nhbStab('bottom',22,{warn:14,stay:8}));
+   nhbAt(490,()=>{
+     const r=nhbBoxR();
+     nhbBlaster(r.x+r.w/2,-200,r.x+r.w/2,r.y-90,r.x+r.w/2,r.y+r.h,{xs:3,pause:34,terminal:18,damage:8});
+   });
+   nhbAt(505,()=>{nhbFloorBone('left',10,60,5,true);nhbFloorBone('right',10,60,5,true)});
+ }
+};
+
+// ---------- bullets ----------
+const NHB_KINDS=new Set(['nhbCtl','nhbGB','nhbBone','nhbStab']);
+function nhbApproach(v,ideal){
+ v+=Math.floor((ideal-v)/3);
+ if(v<ideal)v++;if(v>ideal)v--;
+ if(Math.abs(v-ideal)<3)v=ideal;
+ return v;
+}
+function updateNhbBullet(b,now,dt){
+ if(!NHB_KINDS.has(b.kind))return false;
+ wfSteps(b,dt,b=>{
+   if(b.kind==='nhbCtl'){
+     nhb.t++;
+     for(const e of nhb.events)if(!e.done&&e.step<=nhb.t){e.done=true;e.fn()}
+     return;
+   }
+   if(b.kind==='nhbGB'){
+     if(b.alarm>0&&--b.alarm===0)b.con++;
+     if(b.con===1){
+       b.rx=nhbApproach(b.rx,b.ix);b.ry=nhbApproach(b.ry,b.iy);
+       b.rot+=Math.floor((b.idealrot-b.rot)/3);
+       if(b.rot<b.idealrot)b.rot++;if(b.rot>b.idealrot)b.rot--;
+       if(Math.abs(b.rot-b.idealrot)<3)b.rot=b.idealrot;
+       if(b.rx===b.ix&&b.ry===b.iy&&b.rot===b.idealrot){b.con=4;b.alarm=b.pause}
+     }
+     if(b.con===5){b.con=6;b.alarm=4}
+     if(b.con===6)b.frame=Math.min(4,b.frame+1);
+     if(b.con===7){
+       b.frame=b.frame===4?5:4;
+       const dir=b.idealrot+90;
+       if(b.btimer===0)play('gbFire',1.2);
+       b.btimer++;
+       if(b.btimer<5){b.speed++;b.bt+=Math.floor(35*b.xs/4)}else b.speed+=4;
+       if(b.btimer>5+b.terminal){b.bt*=.8;b.fade-=.1;if(b.bt<=2){b.expired=true;return}}
+       if(b.rx<-60||b.rx>700||b.ry<-80||b.ry>560)b.speed=0;
+       b.rx+=nhbLdx(b.speed,dir);b.ry+=nhbLdy(b.speed,dir);
+       b.bbsiner++;b.bb=Math.sin(b.bbsiner/1.5)*b.bt/4;
+       b.col=b.btimer>1;
+     }
+     return;
+   }
+   if(b.kind==='nhbBone'){
+     if(b.delay>0){b.delay--;return}
+     b.cx+=b.svx;b.cy+=b.svy;
+     if(--b.life<=0)b.expired=true;
+     return;
+   }
+   if(b.kind==='nhbStab'){
+     b.t++;
+     if(b.t===1)play('bell',1.4);
+     if(b.t>b.warn&&b.t<=b.warn+4){b.ext=Math.min(1,(b.t-b.warn)/3);if(!b.played){b.played=true;play('undyneSpearRise')}}
+     if(b.t>b.warn+4+b.stay){b.ext-=.25;if(b.ext<=0)b.expired=true}
+   }
+ });
+ return true;
+}
+// The band a stab covers, in room pixels.
+function nhbStabRect(b,full=false){
+ const r=nhbBoxR(),d=b.depth*(full?1:clamp(b.ext,0,1));
+ if(b.side==='bottom'||b.side==='top'){
+   const x0=r.x+r.w*b.from,x1=r.x+r.w*b.to;
+   return b.side==='bottom'?{x:x0,y:r.y+r.h-d,w:x1-x0,h:d}:{x:x0,y:r.y,w:x1-x0,h:d};
+ }
+ const y0=r.y+r.h*b.from,y1=r.y+r.h*b.to;
+ return b.side==='left'?{x:r.x,y:y0,w:d,h:y1-y0}:{x:r.x+r.w-d,y:y0,w:d,h:y1-y0};
+}
+function nhbSegDist(px,py,x0,y0,x1,y1){
+ const vx=x1-x0,vy=y1-y0,l2=vx*vx+vy*vy||1;
+ const t=clamp(((px-x0)*vx+(py-y0)*vy)/l2,0,1);
+ return Math.hypot(x0+vx*t-px,y0+vy*t-py);
+}
+function nhbCollide(b,now){
+ if(!NHB_KINDS.has(b.kind))return false;
+ const U=UT_SCALE,h=nhbHeart();
+ if(b.kind==='nhbGB'){
+   if(b.con!==7||!b.col||b.fade<.8)return true;
+   const a=b.rot-90;
+   const x0=b.rx+nhbLdx(70,a)*b.xs/2,y0=b.ry+nhbLdy(70,a)*b.xs/2;
+   const x1=b.rx+nhbLdx(1000,a),y1=b.ry+nhbLdy(1000,a);
+   if(nhbSegDist(h.x,h.y,x0,y0,x1,y1)<=b.bt/2+4)hurtPlayer(now,b.damage,'main');
+   return true;
+ }
+ if(b.kind==='nhbBone'){
+   if(b.blue&&!soulMoving)return true;
+   const w=7,l=b.len;
+   const rx=b.horiz?b.cx-l/2:b.cx-w/2,ry=b.horiz?b.cy-w/2:b.cy-l/2,rw=b.horiz?l:w,rh=b.horiz?w:l;
+   if(rectHit(soul.x-7,soul.y-7,14,14,rx*U,ry*U,rw*U,rh*U))hurtPlayer(now,b.damage,'main');
+   return true;
+ }
+ if(b.kind==='nhbStab'){
+   if(b.ext<.5)return true;
+   const r=nhbStabRect(b);
+   if(rectHit(soul.x-7,soul.y-7,14,14,r.x*U,r.y*U,r.w*U,r.h*U))hurtPlayer(now,b.damage,'main');
+   return true;
+ }
+ return true;
+}
+// One bone in the Papyrus style: 13x10 caps with a 7px shaft, drawn vertically
+// around (cx,cy) and rotated for horizontal bones.
+function nhbDrawBone(cx,cy,len,horiz,blue,alpha=1){
+ const U=UT_SCALE,fi=blue?0:1,top=images.boneTop?.[fi],bot=images.boneBottom?.[fi];
+ ctx.save();ctx.globalAlpha*=alpha;ctx.imageSmoothingEnabled=false;
+ ctx.translate(Math.round(cx*U),Math.round(cy*U));
+ if(horiz)ctx.rotate(Math.PI/2);
+ const L=Math.max(12,len);
+ ctx.fillStyle=blue?'#00a2ff':'#ffffff';
+ ctx.fillRect(Math.round(-3.5*U),Math.round((-L/2+4)*U),Math.round(7*U),Math.round((L-8)*U));
+ if(top)ctx.drawImage(top,Math.round(-6.5*U),Math.round(-L/2*U),Math.round(13*U),Math.round(10*U));
+ if(bot)ctx.drawImage(bot,Math.round(-6.5*U),Math.round((L/2-10)*U),Math.round(13*U),Math.round(10*U));
+ ctx.restore();
+}
+function drawNhbBullet(b,now){
+ if(!NHB_KINDS.has(b.kind))return false;
+ const U=UT_SCALE;
+ if(b.kind==='nhbCtl')return true;
+ if(b.kind==='nhbBone'){nhbDrawBone(b.cx,b.cy,b.len,b.horiz,b.blue);return true}
+ if(b.kind==='nhbStab'){
+   if(b.t<=b.warn){
+     // Warning: a flashing outline where the bones are about to come out.
+     if(Math.floor(b.t/2)%2===0){
+       const r=nhbStabRect(b,true);
+       ctx.save();ctx.strokeStyle='#ff2020';ctx.lineWidth=Math.max(2,Math.round(2*U));
+       ctx.strokeRect(Math.round(r.x*U)+U,Math.round(r.y*U)+U,Math.round(r.w*U)-2*U,Math.round(r.h*U)-2*U);ctx.restore();
+     }
+     return true;
+   }
+   const r=nhbStabRect(b);if(r.w<=0||r.h<=0)return true;
+   const vert=b.side==='bottom'||b.side==='top';
+   const span=vert?r.w:r.h,n=Math.max(1,Math.floor(span/11));
+   for(let i=0;i<n;i++){
+     const along=(vert?r.x:r.y)+5.5+i*(span-11)/Math.max(1,n-1);
+     const len=b.depth+12;
+     if(b.side==='bottom')nhbDrawBone(along,r.y+len/2,len,false,false);
+     else if(b.side==='top')nhbDrawBone(along,r.y+r.h-len/2,len,false,false);
+     else if(b.side==='left')nhbDrawBone(r.x+r.w-len/2,along,len,true,false);
+     else nhbDrawBone(r.x+len/2,along,len,true,false);
+   }
+   return true;
+ }
+ if(b.kind==='nhbGB'){
+   const im=(images.gasterBlaster||[])[b.frame];
+   ctx.save();ctx.imageSmoothingEnabled=false;
+   ctx.translate(b.rx*U,b.ry*U);ctx.rotate(-b.rot*Math.PI/180);
+   if(im)ctx.drawImage(im,-21*b.xs*U,-28*b.ys*U,(im.width||43)*b.xs*U,(im.height||57)*b.ys*U);
+   ctx.restore();
+   if(b.con===7&&b.bt>0){
+     const a=b.rot-90,rr=(Math.random()*2-Math.random()*2),rr2=(Math.random()*2-Math.random()*2);
+     const o=(len)=>[(b.rx+nhbLdx(len,a)*b.xs/2+rr)*U,(b.ry+nhbLdy(len,a)*b.xs/2+rr2)*U];
+     const [mx,my]=o(70);
+     const fx=(b.rx+nhbLdx(1000,a)+rr)*U,fy=(b.ry+nhbLdy(1000,a)+rr2)*U;
+     ctx.save();ctx.globalAlpha=clamp(b.fade,0,1);ctx.strokeStyle='#fff';ctx.lineCap='butt';
+     const line=(x1,y1,w)=>{if(w<=0)return;ctx.lineWidth=w*U;ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(x1,y1);ctx.stroke()};
+     line(fx,fy,b.bt+b.bb);
+     const [ax,ay]=o(50),[bx,by]=o(60);
+     line(ax,ay,b.bt/2+b.bb);line(bx,by,b.bt/1.25+b.bb);
+     ctx.restore();
+   }
+   return true;
+ }
+ return true;
+}
+
 // ===================== METTATON NEO: THE REAL SHOW =====================
 // UNDERTALE's obj_mettaton_neo dies to a single hit because Alphys "should have
 // worked more on the defenses". This version asks: what if she did?
@@ -21360,7 +21838,7 @@ function drawAttack(now){
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
-   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand';
+   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB';
    if(!allowOutside){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
@@ -21533,7 +22011,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
-   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawUndyingBullet(b,now)){continue}
+   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawUndyingBullet(b,now)||drawNhbBullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -22470,7 +22948,7 @@ function drawEnemySelect(now=performance.now()){
  const controls=[
   [enemySupportRect(),'SUPPORT',supportLabel(),1,true],
   [enemyVanillaRect(),'VANILLA',vanillaMode?'ON':'OFF',2,true],
-  [enemyPapyrusRouteRect(),base.id==='papyrus'?'PAPYRUS ROUTE':'SPECIAL RULE',base.id==='papyrus'?(papyrusGenocideMode()?'GENOCIDE':'NORMAL'):'N/A',3,base.id==='papyrus'],
+  [enemyPapyrusRouteRect(),base.id==='papyrus'?'PAPYRUS ROUTE':'SPECIAL RULE',base.id==='papyrus'?papyrusRouteLabel():'N/A',3,base.id==='papyrus'],
   [enemyCustomizeRect(),vanillaMode?'CUSTOMIZE [LOCKED]':'CUSTOM HUB',vanillaMode?'VANILLA ON':'OPEN',4,!vanillaMode],
   [enemyStartRect(),'START BATTLE','ENTER',5,true],
   [enemyBackRect(),'BACK','ESC',6,true]
@@ -24051,7 +24529,7 @@ function customEditorRows(){
  ];
 
  if(enemyBase.id==='papyrus'){
-   rows.push({kind:'papyrusRoute',label:'PAPYRUS ROUTE',value:papyrusGenocideMode()?'GENOCIDE':'NORMAL'});
+   rows.push({kind:'papyrusRoute',label:'PAPYRUS ROUTE',value:papyrusRouteLabel()});
  }
 
  rows.push(
@@ -24738,6 +25216,7 @@ async function debugAction(name){
    if(name==='papyrus-capture'){debugEnsureBoss('papyrus','classic');papyrusCapture();debugLog('papyrus capture scene');return}
    if(name==='doggo-opening'){debugSetBoss('doggo','noelle');debugLog('doggo noelle opening');return}
    if(name==='doggo-weird'){debugEnsureBoss('doggo','noelle');startSpecialBattleSpeech(doggoNoelleIceShockLines(99,true),()=>returnMenu());debugLog('doggo weird lethal dialogue');return}
+   if(name==='papyrus-nhb'){sandboxConfig.papyrusRoute='nhb';saveSandboxConfig();debugSetBoss('papyrus','classic');debugLog('papyrus: not holding back');return}
    if(name==='mettneo-alphys-ice'||name==='mettneo-alphys-grave'){
      // Fresh Noelle vs Mettaton NEO fight, then cast at 1 HP.
      debugSetBoss('mettatonneo','noelle');
@@ -25962,6 +26441,7 @@ async function boot(){
  for(const k of ['uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxEyebeam','uxFollowSpear'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['mexUpper', 'mexFace1', 'mexFaceDef', 'mexFaceGen', 'mexFaceHurt', 'mexBomb', 'mexBlastC', 'mexBlastH', 'mexBlastV', 'mexFodder', 'mexSparkle', 'mexDance', 'mexDanceTell', 'mexTrig', 'mexRec', 'mexRew', 'mexHeart', 'mexHeartC', 'mexExcl', 'mexBreak', 'mexShot', 'mexSoul', 'mexStageLight', 'mexArm'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['mexUpperHeart', 'mexLeg1', 'mexLeg2', 'mexLeg3', 'mexLeg4', 'mexLeg5', 'mexLeg2Flip', 'mexLeg2FlipV', 'mexLeg2Unflip', 'mexLeg2UnflipV', 'mexBox', 'mexLight', 'mexKiss', 'mexLegBulL', 'mexLegBulR', 'mexHandL', 'mexHandR', 'mexTrigOff', 'mexDisco', 'mexDiscoInv', 'mexStar'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
+ IMG.gasterBlaster.forEach((u,i)=>add(`gasterBlaster ${i+1}`,async()=>{images.gasterBlaster=images.gasterBlaster||[];images.gasterBlaster[i]=await needImage(u)}));
  IMG.neoFace.forEach((u,i)=>add(`neoFace ${i+1}`,async()=>{images.neoFace=images.neoFace||[];images.neoFace[i]=await needImage(u)}));
  for(const k of ['neoBurst','neoLegs','neoArmR','neoArmL','neoBody'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.alphysR.forEach((u,i)=>add(`alphysR ${i+1}`,async()=>{images.alphysR=images.alphysR||[];images.alphysR[i]=await needImage(u)}));
