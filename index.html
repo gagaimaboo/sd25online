@@ -19217,7 +19217,9 @@ function drawMettatonNeoMain(now,hit,offset=0){
 }
 function drawNeoHud(){
  if(!isNeo()||!neo.twistDone||neo.dying||enemyDead)return;
- const U=UT_SCALE,x=20*U,y=46*U,w=160*U,h=10*U;
+ // Speech bubbles open on the left, so the meter lives top-right and steps aside while anyone talks.
+ if(state==='battleSpeech'||state==='mexScene'||mex.caller)return;
+ const U=UT_SCALE,x=460*U,y=46*U,w=160*U,h=10*U;
  ctx.save();ctx.textBaseline='top';ctx.textAlign='left';
  ctx.font=`${Math.round(9*U)}px "DTM Mono", "Determination Mono", monospace`;
  ctx.fillStyle='#ff66cc';ctx.fillText(neo.shield>0?'NEO SHIELD':'SHIELD DOWN!',x,y-12*U);
