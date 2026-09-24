@@ -194,6 +194,8 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="doggo-opening">doggo noelle opening</button>
     <button data-debug="doggo-weird">doggo weird lethal talk</button>
     <button data-debug="undyne-noelle-freeze">undyne noelle freeze</button>
+    <button data-debug="mettex-alphys-ice">mett ex alphys (iceshock)</button>
+    <button data-debug="mettex-alphys-grave">mett ex alphys (snowgrave)</button>
     <button data-debug="maddummy-napstablook">mad dummy canon ending + napstablook</button>
     <button data-debug="attack-now">force enemy attack</button>
     <button data-debug="flashback">play flashback</button>
@@ -10509,6 +10511,11 @@ function snowgraveSpawnRescueNapstablook(now=performance.now()){
 function commitSnowGrave(targets=null,extraPayload=null){
  const chosen=(Array.isArray(targets)&&targets.length?targets:fightTargets().map(t=>t.id)).filter(Boolean);
  if(!chosen.length){returnMenu();return}
+ if(chosen.includes('main')&&mexAlphysShouldIntercept('main',Infinity)){
+   tp=Math.max(0,tp-SNOWGRAVE_COST);
+   mexAlphysIntercept('grave');
+   return;
+ }
  tp=Math.max(0,tp-SNOWGRAVE_COST);
  play('snowgrave');
  const now=performance.now();
@@ -10661,7 +10668,7 @@ function startSnowGrave(){
    startSpecialBattleSpeech(snowgraveMettatonLines(),()=>commitSnowGrave());
    return;
  }
- if(!enemyDead&&currentBoss==='mettatonex'&&practiceMode==='noelle'){
+ if(mexAlphysShouldIntercept('main',Infinity)){
    tp=Math.max(0,tp-SNOWGRAVE_COST);
    mexAlphysIntercept('grave');
    return;
@@ -11168,6 +11175,9 @@ function iceShockDamageFor(target='main'){
 }
 
 function startIceShock(target='main',now=performance.now()){
+ // Noelle's lethal IceShock on Mettaton EX: Alphys steps in instead, whichever
+ // path cast it (SPELL menu, party queue, online host).
+ if(mexAlphysShouldIntercept(target,iceShockDamageFor(target))){mexAlphysIntercept('ice');return}
  hitTarget=target;
  magicTargetId=target;
  if(currentBoss==='papyrus'&&target==='main'&&!papyrusGenocideMode()&&!papyrusBlue)papyrusBluePending=true;
@@ -11728,18 +11738,6 @@ function chooseConfirm(){
        tp-=ICE_COST;
        startIceShock('main');
      });
-     return;
-   }
-
-   if(
-     practiceMode==='noelle' &&
-     currentBoss==='mettatonex' &&
-     magicTargetId==='main' &&
-     !enemyDead &&
-     enemyHp<=iceShockDamageFor(magicTargetId)
-   ){
-     tp-=ICE_COST;
-     mexAlphysIntercept('ice');
      return;
    }
 
@@ -19048,6 +19046,10 @@ function mexAlphysNeoLines(){
    L("IT'S AN\nINTERMISSION.",5)
  ];
 }
+function mexAlphysShouldIntercept(target,dmg){
+ return practiceMode==='noelle'&&currentBoss==='mettatonex'&&target==='main'&&!enemyDead&&
+   !mex.alphys&&!mex.killed&&Number(enemyHp)<=dmg;
+}
 function mexAlphysIntercept(kind){
  mex.active=false;mex.body.dance=0;bullets=[];mex.objs=[];mex.gen=null;mex.snap=null;
  mex.body.endface=1;mex.faceEmotion=0;
@@ -24760,6 +24762,16 @@ async function debugAction(name){
    if(name==='papyrus-capture'){debugEnsureBoss('papyrus','classic');papyrusCapture();debugLog('papyrus capture scene');return}
    if(name==='doggo-opening'){debugSetBoss('doggo','noelle');debugLog('doggo noelle opening');return}
    if(name==='doggo-weird'){debugEnsureBoss('doggo','noelle');startSpecialBattleSpeech(doggoNoelleIceShockLines(99,true),()=>returnMenu());debugLog('doggo weird lethal dialogue');return}
+   if(name==='mettex-alphys-ice'||name==='mettex-alphys-grave'){
+     // Fresh Noelle vs Mettaton EX fight, skip his intro, then cast at 1 HP.
+     debugSetBoss('mettatonex','noelle');
+     setTimeout(()=>{
+       mex.introDone=true;mex.intro=null;mex.phase='battle';state='menu';
+       enemyHp=1;enemyDead=false;tp=TP_MAX;
+       if(name==='mettex-alphys-ice'){tp-=ICE_COST;startIceShock('main')}else startSnowGrave();
+     },900);
+     debugLog('mettaton ex alphys cutscene');return;
+   }
    if(name==='undyne-noelle-freeze'){debugEnsureBoss('undyne','noelle');enemyHp=1;tp=100;startSpecialBattleSpeech(undyneNoelleLethalIceShockLines(),()=>{tp=Math.max(0,tp-ICE_COST);startIceShock('main')});debugLog('undyne noelle lethal freeze cinematic');return}
    if(name==='maddummy-napstablook'){
      // V12 fidelity test: begin at Mad Dummy's real final authored attack, then
