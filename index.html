@@ -100,6 +100,7 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-doggo">doggo</button>
     <button data-debug="boss-lesserdog">lesser dog</button>
     <button data-debug="boss-greaterdog">greater dog</button>
+    <button data-debug="boss-dogi">dogamy &amp; dogaressa</button>
     <button data-debug="boss-papyrus">papyrus</button>
     <button data-debug="boss-snowdrake">snowdrake</button>
     <button data-debug="boss-icecap">icecap</button>
@@ -113,6 +114,8 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-temmie">temmie</button>
     <button data-debug="boss-tsunderplane">tsunderplane</button>
     <button data-debug="boss-vulkin">vulkin</button>
+    <button data-debug="boss-woshua">woshua</button>
+    <button data-debug="boss-pyrope">pyrope</button>
     <button data-debug="boss-undyne">undyne</button>
     <button data-debug="boss-mettaton">mettaton quiz</button>
     <button data-debug="boss-custom">custom</button>
@@ -292,7 +295,8 @@ const IMG={
  whimsalotHead:[0,1,2,3].map(i=>RAW+`sprites/images/spr_whimsalot_head_${i}.png`),
  whimsalotBody:[0,1].map(i=>RAW+`sprites/images/spr_whimsalot_body_${i}.png`),
  whimsalotWing:[0,1,2,3,4,5,6].map(i=>RAW+`sprites/images/spr_whimsalot_wing_r_${i}.png`),
- whimsalotHurt:'https://undertale.wiki/images/Whimsalot_battle_hurt.png',
+ // obj_whimsalot's own sprite is the 116x95 hurt pose.
+ whimsalotHurt:RAW+'sprites/images/spr_whimsalothurt_0.png',
  // Snowdrake's base frame 1 is intentionally blank in UNDERTALE. The battle
  // animation is assembled from separate head/body/legs objects instead of
  // cycling spr_snowdrake itself.
@@ -338,6 +342,39 @@ const IMG={
  sleepDog:[0,1].map(i=>RAW+`sprites/images/spr_sleepdog_${i}.png`),
  wakeDog:[0,1].map(i=>RAW+`sprites/images/spr_wakedog_${i}.png`),
  barkBullet:RAW+'sprites/images/spr_barkbullet_0.png',
+ // Dogamy & Dogaressa (spr_mandoge_0/_womandoge_0 are the hurt poses in export order).
+ mandogBody:[0,1,2,3,4,5,6,7,8,9,10].map(i=>RAW+`sprites/images/spr_mandognormal_${i}.png`),
+ womandogBody:[0,1,2,3,4,5,6,7,8,9,10].map(i=>RAW+`sprites/images/spr_womandognormal_${i}.png`),
+ mandogHurt:RAW+'sprites/images/spr_mandoge_0.png',
+ womandogHurt:RAW+'sprites/images/spr_womandoge_0.png',
+ whiteAx:[0,1].map(i=>RAW+`sprites/images/spr_whiteax2_${i}.png`),
+ smHeart:RAW+'sprites/images/spr_smheartbullet_0.png',
+ smHeartB:RAW+'sprites/images/spr_smheartbulletb_0.png',
+ // Woshua (obj_woshbody parts; spr_waterbul export order is green, blue, white).
+ woshuaSprite:[0,1].map(i=>RAW+`sprites/images/spr_woshua_${i}.png`),
+ woshHanger:RAW+'sprites/images/spr_woshhanger_0.png',
+ woshDuck:[0,1].map(i=>RAW+`sprites/images/spr_woshduck_${i}.png`),
+ woshWater:RAW+'sprites/images/spr_woshwater_0.png',
+ woshBody:RAW+'sprites/images/spr_woshbody_0.png',
+ woshTail:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_woshtail_${i}.png`),
+ woshHead:RAW+'sprites/images/spr_woshhead_0.png',
+ woshFace:RAW+'sprites/images/spr_woshface_0.png',
+ waterBul:[0,1,2].map(i=>RAW+`sprites/images/spr_waterbul_${i}.png`),
+ soapBul:RAW+'sprites/images/spr_soapbul_0.png',
+ glitterBul:[0,1].map(i=>RAW+`sprites/images/spr_glitterbul_${i}.png`),
+ // Pyrope (obj_pyropebody parts) and its rope/bomb bullets.
+ pyropeBody:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_pyropebody_${i}.png`),
+ pyropeHead:[0,1].map(i=>RAW+`sprites/images/spr_pyropehead_${i}.png`),
+ pyropeFootL:RAW+'sprites/images/spr_pyropefootl_0.png',
+ pyropeFootR:RAW+'sprites/images/spr_pyropefootr_0.png',
+ pyropeHurt:RAW+'sprites/images/spr_pyropehurt_0.png',
+ ropeBul:RAW+'sprites/images/spr_ropebul_0.png',
+ orangeFire:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_orangefire_${i}.png`),
+ bombD:[0,1].map(i=>RAW+`sprites/images/spr_bombd_${i}.png`),
+ bombExplosion:RAW+'sprites/images/spr_bombexplosion_0.png',
+ // Jerry (support only).
+ jerry:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_jerry_${i}.png`),
+ jerryHurt:RAW+'sprites/images/spr_jerryhurt_0.png',
  migosp:[0,1].map(i=>RAW+`sprites/images/spr_migosp_${i}.png`),
  migospHurt:RAW+'sprites/images/spr_migosphurt_0.png',
  // Aaron's base frame 1 is also blank. His visible battle object is a
@@ -934,7 +971,8 @@ const SUPPORT_OPTIONS=[
  {id:'migosp',label:'MIGOSP'},
  {id:'whimsun',label:'WHIMSUN'},
  {id:'whimsalot',label:'WHIMSALOT'},
- {id:'shyren',label:'SHYREN'}
+ {id:'shyren',label:'SHYREN'},
+ {id:'jerry',label:'JERRY'}
 ];
 
 let supportEnemyId='whimsun'; // UI/current-context facade
@@ -1022,6 +1060,10 @@ const VANILLA_REWARDS={
  temmie:{exp:40,killGold:50,spareGold:50},
  lesserdog:{exp:18,killGold:15,spareGold:15},
  greaterdog:{exp:80,killGold:60,spareGold:60},
+ dogi:{exp:60,killGold:50,spareGold:50},
+ woshua:{exp:52,killGold:25,spareGold:25},
+ pyrope:{exp:80,killGold:40,spareGold:40},
+ jerry:{exp:1,killGold:55,spareGold:55},
  tsunderplane:{exp:95,killGold:45,spareGold:60},
  vulkin:{exp:70,killGold:50,spareGold:40},
  undyne:{exp:500,killGold:0,spareGold:0},
@@ -2361,6 +2403,10 @@ const ENEMY_LAYOUTS={
  // Dog canvases are tall/wide so Lesser Dog's neck and a closer Greater Dog fit.
  lesserdog:{x:269,y:0,w:102,h:250},
  greaterdog:{x:110,y:0,w:420,h:250},
+ dogi:{x:208,y:38,w:224,h:200},
+ woshua:{x:265,y:88,w:110,h:112},
+ pyrope:{x:245,y:0,w:150,h:250},
+ jerry:{x:245,y:150,w:150,h:72},
  // Exact battle composite is 190x160. Keep that broad aircraft silhouette.
  tsunderplane:{x:225,y:82,w:190,h:160},
  vulkin:{x:271,y:120,w:97,h:120},
@@ -2391,6 +2437,9 @@ const PAIR_MAIN_LAYOUTS={
  temmie:{x:203,y:100,w:94,h:94},
  lesserdog:{x:200,y:0,w:102,h:250},
  greaterdog:{x:40,y:0,w:420,h:250},
+ dogi:{x:150,y:38,w:200,h:178},
+ woshua:{x:200,y:100,w:100,h:102},
+ pyrope:{x:180,y:0,w:135,h:225},
  tsunderplane:{x:145,y:96,w:176,h:148},
  vulkin:{x:202,y:128,w:92,h:114},
  undyne:{x:168,y:24,w:151,h:209},
@@ -2416,7 +2465,8 @@ const PAIR_SUPPORT_LAYOUTS={
  whimsun:{x:355,y:132,w:90,h:98},
  whimsalot:{x:343,y:112,w:114,h:126},
  aaron:{x:352,y:30,w:97,h:170},
- shyren:{x:349,y:45,w:100,h:195}
+ shyren:{x:349,y:45,w:100,h:195},
+ jerry:{x:330,y:160,w:150,h:72}
 };
 
 // UNDERTALE GRID-CELL FORMATION FIX
@@ -3210,6 +3260,7 @@ const BOSS_OPTIONS=[
  {id:'doggo',label:'DOGGO',area:'SNOWDIN',hp:70,atk:6,def:1,encounter:'* Doggo blocks the way!',noelleEncounter:'* Noelle encountered Doggo.'},
  {id:'lesserdog',label:'LESSER DOG',area:'SNOWDIN',hp:60,atk:6,def:0,encounter:'* Lesser Dog appears.',noelleEncounter:'* Noelle encountered Lesser Dog.'},
  {id:'greaterdog',label:'GREATER DOG',area:'SNOWDIN',hp:105,atk:6,def:4,encounter:'* Greater Dog bounds into view!',noelleEncounter:'* Noelle encountered Greater Dog.'},
+ {id:'dogi',label:'DOGAMY & DOGARESSA',area:'SNOWDIN',hp:216,atk:6,def:4,encounter:'* Dogi assault you!',noelleEncounter:'* Noelle encountered Dogamy and Dogaressa.'},
  {id:'papyrus',label:'PAPYRUS',area:'SNOWDIN BOSS',hp:680,atk:8,def:2,encounter:'* Papyrus blocks the way!',noelleEncounter:'* Noelle faces Papyrus.'},
  {id:'snowdrake',label:'SNOWDRAKE',area:'SNOWDIN',hp:74,atk:12,def:2,encounter:'* Snowdrake flutters forth!',noelleEncounter:'* Noelle encountered Snowdrake.'},
  {id:'icecap',label:'ICE CAP',area:'SNOWDIN',hp:48,atk:11,def:4,encounter:'* Ice Cap struts into view.',noelleEncounter:'* Noelle encountered Ice Cap.'},
@@ -3221,8 +3272,10 @@ const BOSS_OPTIONS=[
  {id:'shyren',label:'SHYREN',area:'WATERFALL',hp:66,atk:7,def:2,encounter:'* Shyren hides in the corner, but somehow encounters you anyway.',noelleEncounter:'* Noelle encountered Shyren.'},
  {id:'moldbygg',label:'MOLDBYGG',area:'WATERFALL',hp:70,atk:7,def:4,encounter:'* Moldsmal blocked the way!',noelleEncounter:'* Noelle encountered Moldsmal...?'},
  {id:'temmie',label:'TEMMIE',area:'WATERFALL',hp:5,atk:7,def:-20,encounter:'* Special enemy Temmie appears here to defeat you!!',noelleEncounter:'* Noelle encountered Temmie.'},
+ {id:'woshua',label:'WOSHUA',area:'WATERFALL',hp:70,atk:7,def:1,encounter:'* Woshua shuffles up.',noelleEncounter:'* Noelle encountered Woshua.'},
  {id:'undyne',label:'UNDYNE',area:'WATERFALL BOSS',hp:1500,atk:7,def:0,encounter:'* Undyne attacks!',noelleEncounter:'* Noelle faces Undyne.'},
  {id:'tsunderplane',label:'TSUNDERPLANE',area:'HOTLAND',hp:80,atk:25,def:26,encounter:'* Tsunderplane swoops into your way... accidentally, apparently.',noelleEncounter:'* Noelle encountered Tsunderplane.'},
+ {id:'pyrope',label:'PYROPE',area:'HOTLAND',hp:110,atk:8,def:1,encounter:'* Pyrope bounces into view!',noelleEncounter:'* Noelle encountered Pyrope.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
  {id:'mettaton',label:'METTATON',area:'HOTLAND QUIZ SHOW',hp:9999,atk:30,def:255,encounter:'* Mettaton attacks!',noelleEncounter:'* Mettaton attacks!'},
  {id:'custom',label:'CUSTOM',area:'CREATOR',hp:120,atk:8,def:2,encounter:'* A custom monster appeared!',noelleEncounter:'* Noelle encountered a custom monster.'}
@@ -3430,6 +3483,7 @@ function baseSupportDataById(id){
  if(id==='whimsun')return {id:'whimsun',label:'WHIMSUN',area:'RUINS',hp:10,atk:4,def:0};
  if(id==='whimsalot')return {id:'whimsalot',label:'WHIMSALOT',area:'CORE',hp:95,atk:34,def:12};
  if(id==='migosp')return MIGOSP_SUPPORT_DATA;
+ if(id==='jerry')return JERRY_SUPPORT_DATA;
  return baseBossDataById(id);
 }
 
@@ -3795,7 +3849,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -3978,7 +4032,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -3987,6 +4041,7 @@ function criticalImageFor(id,now=performance.now()){
  if(supportEnemyIs('whimsun'))return images.whimsunHurt||images.whimsun?.[0]||null;
  if(supportEnemyIs('whimsalot'))return images.whimsalotHurt||null;
  if(supportEnemyIs('migosp'))return images.migospHurt||addedEnemyIdleImage('migosp',now,false)||null;
+ if(supportEnemyIs('jerry'))return images.jerryHurt||null;
  if(supportEnemyIs('froggit'))return images.froggit?.[1]||images.froggitComposite||images.froggit?.[0]||null;
  if(supportEnemyIs('toriel'))return images.torielHurt||images.toriel||null;
  if(supportEnemyIs('vegetoid'))return images.vegetoidHurt||images.vegetoid?.[0]||null;
@@ -4109,6 +4164,9 @@ const NOELLE_N_ACTIONS={
  snowdrake:{gain:45,text:"* Noelle laughs politely at Snowdrake's joke.\n* Snowdrake decides polite laughter still counts."},
  icecap:{gain:55,text:"* Noelle notices Ice Cap's hat immediately.\n* Ice Cap has been waiting its entire life for this moment."},
  loox:{gain:50,text:"* Noelle avoids staring and quietly apologizes for the eye contact.\n* Loox relaxes a little."},
+ dogi:{gain:45,text:"* Noelle rolls in the snow with the Dogs.\n* They decide she smells like family."},
+ woshua:{gain:50,text:"* Noelle lets Woshua scrub her sleeve.\n* It is thrilled to have something to clean."},
+ pyrope:{gain:40,text:"* Noelle warms her hands near Pyrope.\n* Pyrope is flattered by the attention."},
  lesserdog:{gain:60,text:"* Noelle pets Lesser Dog.\n* Its neck grows a little. Noelle pretends not to notice."},
  greaterdog:{gain:40,text:"* Noelle calls Greater Dog over.\n* It is delighted and extremely slobbery."},
  moldbygg:{gain:40,text:"* Noelle politely does NOT hug Moldbygg.\n* Moldbygg appreciates the personal space."},
@@ -4139,6 +4197,9 @@ const SUSIE_S_ACTIONS={
  snowdrake:{gain:55,text:"* Susie laughs way too loudly at Snowdrake's joke.\n* Snowdrake immediately decides it was a masterpiece."},
  icecap:{gain:60,text:"* Susie says Ice Cap's hat looks badass.\n* Ice Cap may never emotionally recover from this compliment."},
  loox:{gain:35,text:"* Susie tells Loox to quit staring.\n* Then she admits the eye thing is kind of cool."},
+ dogi:{gain:45,text:"* Susie pets both Dogs at once.\n* Their minds have been expanded."},
+ woshua:{gain:40,text:"* Susie tells Woshua a filthy joke.\n* Its powers are neutralized."},
+ pyrope:{gain:50,text:"* Susie cranks the heat way up.\n* Pyrope loves her immediately."},
  lesserdog:{gain:65,text:"* Susie pets Lesser Dog way too hard.\n* Its neck launches upward in joy."},
  greaterdog:{gain:45,text:"* Susie throws a snowball for Greater Dog.\n* It brings back the entire snowbank."},
  moldbygg:{gain:35,text:"* Susie hugs Moldbygg anyway.\n* She is now covered in slime and extremely proud of it."},
@@ -4202,6 +4263,10 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='moldsmal')return ['Check','Imitate','Flirt'];
  if(id==='moldbygg')return moldbyggActOptions();
  if(id==='lesserdog')return lesserDogActOptions();
+ if(id==='dogi')return dogiActOptions();
+ if(id==='woshua')return woshuaActOptions();
+ if(id==='pyrope')return pyropeActOptions();
+ if(id==='jerry')return ['Check','Ditch'];
  if(id==='greaterdog')return greatDogActOptions();
  if(id==='temmie')return temmieActOptions();
  if(id==='migosp')return ['Check','Talk'];
@@ -4379,6 +4444,9 @@ function performAct(targetId,choice){
        st.conducted=true;
        setText(shyrenConductActText(hum),()=>beginEnemyTurn());
      }
+   }else if(supportEnemyIs('jerry')){
+     if(choice===0)setText(`* JERRY - ATK ${s.atk} DEF ${s.def}\n* Everyone knows Jerry.\n* Makes attacks 2 seconds longer.`,()=>beginEnemyTurn());
+     else{st.ditchedUntil=jerryTurnCounter+2;unlock("* You and the other monsters\n  ditch Jerry when it looks away!")}
    }else if(supportEnemyIs('migosp')){
      const alone=enemyDead&&supportPartyCountAlive()===1;
      if(alone)mercy=100;
@@ -4555,6 +4623,12 @@ function performAct(targetId,choice){
    else if(choice===1){vulkinDiscouraged=true;vulkinEncouraged=false;vulkinForceLavaTurn=false;setText('* You tell Vulkin that its attacks are NOT helpful.\n* Vulkin stands in the corner.',()=>beginEnemyTurn())}
    else if(choice===2){vulkinDiscouraged=false;vulkinEncouraged=true;vulkinForceLavaTurn=true;mercy=100;setText(`* You tell Vulkin it's doing a great job.\n* Its cheeks glow with a bright heat.`,()=>beginEnemyTurn())}
    else{vulkinDiscouraged=false;vulkinEncouraged=false;vulkinForceLavaTurn=false;mercy=100;setText('* You give Vulkin a hug.\n* It warms your heart... and your whole body!',()=>beginEnemyTurn())}
+ }else if(currentBoss==='dogi'){
+   handleDogiAct(choice);
+ }else if(currentBoss==='woshua'){
+   handleWoshuaAct(choice);
+ }else if(currentBoss==='pyrope'){
+   handlePyropeAct(choice);
  }else if(currentBoss==='lesserdog'){
    handleLesserDogAct(choice);
  }else if(currentBoss==='greaterdog'){
@@ -4925,6 +4999,23 @@ function undyneCanvasAlphaBounds(c){
 // head and incorrect lower body. UNDERTALE's normal obj_undyneb_body uses
 // spr_undyneb_face and forces spr_undyneb_legs image_index = 0 while idle.
 // Using the exact full normal-armored frame avoids any recomposition drift.
+// The exported spr_undyneb_face_0 leaves Undyne's visible eye as a black socket
+// with a glint, which reads as Undyne the Undying. Her normal battle art has a
+// white eye with a black pupil (see the canonical frame and spr_undyneface_*).
+// Rebuild that eye on a copy of the 32x28 face: sclera at cols 8-10 rows 10-13
+// (plus col 11 on row 10), pupil at col 10 rows 11-12.
+let undyneNormalEyeCache=null,undyneNormalEyeSource=null;
+function undyneNormalEyeFace(face){
+ const src=undyneSourcePiece(face);
+ if(!src)return face;
+ if(undyneNormalEyeCache&&undyneNormalEyeSource===src)return undyneNormalEyeCache;
+ const c=document.createElement('canvas');c.width=src.width||32;c.height=src.height||28;
+ const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);
+ g.fillStyle='#fff';g.fillRect(8,10,3,4);g.fillRect(11,10,1,1);
+ g.fillStyle='#000';g.fillRect(10,11,1,2);
+ undyneNormalEyeCache=c;undyneNormalEyeSource=src;
+ return c;
+}
 function buildUndyneIdleFrames(){
  const u=images.undyneFirstBattle||{};
  if(!undyneFirstBattleReady())return [];
@@ -4942,7 +5033,7 @@ function buildUndyneIdleFrames(){
    const siner=(i+1)*1.2;
    const s=Math.sin(siner/6),s2=Math.sin(siner/3);
    const hairIndex=Math.floor(i*.25)%4; // source hair.image_speed = 0.25
-   const face=u.faces[0];               // normal first-battle idle face
+   const face=undyneNormalEyeFace(u.faces[0]); // normal first-battle idle face
    // The exported spr_undyneb_legs frames are swapped relative to the source
    // indices: _1 is the planted, feet-on-ground idle stance and _0 is the
    // airborne jump pose. Idle must use the grounded legs.
@@ -5112,7 +5203,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -5784,6 +5875,7 @@ function attackSpeechForCurrentBoss(){
  if(currentBoss==='sans5000')return battleSpeechTurn===0?'heya.\nwatch this.':'';
  if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
  if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
+ if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')return snowdin2Speech();
 
  if(currentBoss==='doggo'){
    if(doggoPets>=5)return "OK. That's enough.";
@@ -6135,7 +6227,8 @@ function weaponDamageApplyDelay(){
  return ({blade:12,glove:5,shoes:12,notebook:18,pan:17,gun:20}[fightWeaponProfile?.kind]||12)*FIGHT_STEP_MS;
 }
 function battleInvulnerabilityMs(){
- const base=1000+(fightWeaponId()==='tornnotebook'?500:0)+Math.max(0,Number(activeArmorData().invMs)||0);
+ // UNDERTALE: global.invc = global.inv (20 steps at 30fps) after every hit.
+ const base=(vanillaMode?20*(1000/30):1000)+(fightWeaponId()==='tornnotebook'?500:0)+Math.max(0,Number(activeArmorData().invMs)||0);
  return Math.round(base*Math.max(1,Number(activeArmorData()?.invTimeMul)||1));
 }
 function battleItemHealing(it){
@@ -7091,6 +7184,7 @@ function beginEnemyTurn(){
  state='boxClose';transitionStart=performance.now();box={...DIALOG};bullets=[];
 }
 function startAttack(now){
+ jerryTurnCounter++;
  state='attack';box={...ARENA};soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2;
  attackStart=now;nextSpawn=now+180;bullets=[];froggitSpawnCount=0;torielSpawnCount=0;specialSpawnCount=0;invUntil=0;
 
@@ -7208,6 +7302,8 @@ function startAttack(now){
    srcStartAttack(now);
  }else if(currentBoss==='whimsalot'){
    attackWave=whimsalotPrayPending?0:1;
+ }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
+   snowdin2StartAttack(now);
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
    dogStartAttack(now);
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
@@ -7698,6 +7794,8 @@ function returnMenu(){
    if(vulkinDiscouraged)setText('* Vulkin stands in the corner.');
    else if(mercy>=100)setText('* Vulkin parades around you proudly.');
    else{const lines=['* Vulkin parades around the room.','* Vulkin is making coffee in its crater.','* Vulkin is wiggling its weird rump.','* Vulkin makes a smoke hoop and jumps through it.','* Smells like a lava lamp.'];setText(lines[Math.floor(Math.random()*lines.length)])}
+ }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
+   setText(snowdin2Flavor());
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
    setText(dogFlavorText());
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
@@ -8937,7 +9035,7 @@ function normalizeEnemyAssetTransparency(){
   'dummy','dummyDeath',
   'froggit','froggitHead','froggitLegs','finalFroggitIdle','finalFroggitHurt','finalFroggitBody','finalFroggitHead','finalFroggitHeadHurt',
   'whimsun','whimsunHurt','whimsalotHead','whimsalotBody','whimsalotWing','whimsalotHurt',
-  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt',
+  'snowdrake','snowdrakeHead','snowdrakeBody','snowdrakeLegs','icecap','icecapHurt','loox','looxHurt','moldsmal','migosp','migospHurt','aaron','aaronBody','moldbyggTop','moldbyggPart','temmieBody','temmieFace','temmieHurt','lesserDogBody','lesserDogHead','lesserDogHurt','greatDogBody','greatDogHurt','mandogBody','womandogBody','mandogHurt','womandogHurt','woshuaSprite','woshBody','woshHead','woshFace','woshHanger','woshDuck','pyropeBody','pyropeHead','pyropeHurt','jerry','jerryHurt',
   'shyren','shyrenBody','shyrenTurn','shyrenSing','shyrenAgent',
   'undyneArmorBase','undyneHurt','undyneFatal','undyneMelt','undyneLastMelt',
   'tsunderplaneRaw','tsunderplaneHat','tsunderplaneCloud','tsunderplaneIdle',
@@ -10962,7 +11060,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -10984,6 +11082,7 @@ function reset(){
  if(currentBoss==='moldsmal'||currentBoss==='whimsun')mercy=100;
  resetWaterfallEnemies();
  resetDogEnemies();
+ resetSnowdin2Enemies();
  vegetoidDinner=false;vegetoidGreenPending=false;
  snowdrakeJokeReady=false;icecapIgnoreCount=0;icecapHatStolen=false;icecapAttackTurn=0;looxPicked=false;looxExpReward=7;aaronFlexCount=0;
  whimsalotPrayCount=0;whimsalotPrayPending=false;whimsalotBlessingCaught=false;
@@ -11724,6 +11823,7 @@ function spawnSupportBullet(now){
    return;
  }
 
+ if(supportEnemyIs('jerry')){nextSupportSpawn=now+99999;return}
  if(supportEnemyIs('doggo')){
    if(supportSpawnCount>0){nextSupportSpawn=now+99999;return}
    bullets.push({
@@ -12493,6 +12593,7 @@ function spawnSimpleNewBossBullet(now){
 
  if(spawnWaterfallBullets(now))return;
  if(spawnDogAttack(now))return;
+ if(spawnSnowdin2(now))return;
  // Disguised Moldbygg uses Moldsmal's obj_1sidegen bullet types.
  if(currentBoss==='moldsmal'||currentBoss==='moldbygg'){
    if(attackWave===0){
@@ -12801,7 +12902,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13024,16 +13125,22 @@ function hurtPlayer(now,amount=4,owner='main'){
    scaled-=Math.round(p.def/5);
  }
 
- if(vanillaMode)scaled-=Math.round(effectivePlayerStats().def/5);
+ // UNDERTALE scr_damagestandard: +1 damage per HP bracket (21+,30+,...,90+),
+ // then round(dmg - (DF + armor DF)/5) with a floor of 1. No other floor.
+ if(vanillaMode){
+   let bonus=0;
+   for(const th of [21,30,40,50,60,70,80,90])if(hp>=th)bonus++;
+   scaled=Math.round(amount+bonus-effectivePlayerStats().def/5);
+ }
  if(typeof bossRushActive!=='undefined'&&bossRushActive)scaled*=bossRushDifficultyData().damageMul;
  // V153: armor can reduce damage heavily, but real damaging attacks keep a
  // meaningful floor based on their authored base damage: 5..10 HP. Preserve
  // authored zero-damage/scripted hits as zero. DEFEND can reduce the hit, but
  // it cannot push a real damaging attack below the 5 HP minimum.
  const damagingHit=Number(amount)>0;
- const damageFloor=damagingHit?clamp(Math.round(Number(amount)||0),5,10):0;
+ const damageFloor=damagingHit?(vanillaMode?1:clamp(Math.round(Number(amount)||0),5,10)):0;
  let dmg=damagingHit?Math.max(damageFloor,Math.round(scaled)):0;
- if(defending&&dmg>0)dmg=Math.max(5,Math.ceil(dmg/2));
+ if(defending&&dmg>0)dmg=Math.max(vanillaMode?1:5,Math.ceil(dmg/2));
  if(dmg>0&&modBattleEnabled('glassSoul'))dmg=Math.max(dmg,hp);
 
  // Papyrus canonically cannot kill the protagonist. A fatal hit leaves
@@ -13297,8 +13404,9 @@ function updateSoulMovement(dt,now){
    return;
  }
 
- if(dx&&dy){dx*=.7071;dy*=.7071}
- const spd=190*battleSpeedMul;
+ // obj_heart: x/y += global.sp (4 native px per 30fps step) on each axis.
+ // UNDERTALE does not normalise diagonals.
+ const spd=4*30*UT_SCALE*battleSpeedMul;
  soul.x=clamp(soul.x+dx*spd*dt,ARENA.x+14,ARENA.x+ARENA.w-14);
  soul.y=clamp(soul.y+dy*spd*dt,ARENA.y+14,ARENA.y+ARENA.h-14);
 }
@@ -13730,7 +13838,7 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)){
+     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)){
        // Moldbygg/Temmie bullets step on the 30fps source grid.
      }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
@@ -14334,7 +14442,7 @@ function update(dt,now){
      // the enemy turn itself (or explicit expiry), matching the attack object.
      if(b.kind==='icecapTeeth'||b.kind==='finalFrog')return true;
      // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
-     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep')return true;
+     if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep'||b.kind==='dogiAx'||b.kind==='dogiPups'||b.kind==='pyroRope'||b.kind==='pyroFire'||b.kind==='pyroBlast')return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
        // Keep the scripted tutorial hazards alive long enough to move, render,
        // collide, and (for the betrayal ring) close around the SOUL.
@@ -14379,7 +14487,7 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)){
+     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)){
        // handled above
      }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
@@ -14576,9 +14684,12 @@ function update(dt,now){
    else if(currentBoss==='loox')attackDuration=3667;
    else if(currentBoss==='moldbygg'||currentBoss==='temmie')attackDuration=waterfallAttackDuration();
    else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
+   else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')attackDuration=snowdin2Duration();
    else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
    else if(currentBoss==='icecap')attackDuration=(liveMonsterPopulation()<=1?100:150)*(1000/30); // obj_icecap turntimer
    else if(['snowdrake','icecap','moldsmal','migosp','whimsun','whimsalot','aaron'].includes(currentBoss))attackDuration=4500;
+   // Support Jerry: obj_jerry alarm[10] adds 60 steps to every enemy turn.
+   if(jerryExtendsTurn())attackDuration+=60*(1000/30);
    const shyrenSupportFinale=supportParty.some(sp=>sp&&!sp.dead&&sp.id==='shyren'&&sp.actState?.finalePending);
    if(shyrenSupportFinale)attackDuration=Math.max(attackDuration,10333);
 
@@ -16227,12 +16338,505 @@ function drawDogBullet(b,now){
  return false;
 }
 
+// ================= DOGAMY & DOGARESSA, WOSHUA, PYROPE, JERRY (support) =================
+// From obj_mandog/obj_womandog (+ bodies, blt_whiteax, obj_loopdog/obj_loopbulletgrowgen),
+// obj_woshua/obj_woshbody (obj_woshspiralgen/blt_growbullet, blt_soapbul/blt_shinebullet),
+// obj_pyrope/obj_pyropebody (obj_ropebulgen/obj_ropebul/obj_orangefire, obj_bombgen/obj_bombbul/obj_blastbul)
+// and obj_jerry (no attack; lengthens every enemy turn by 60 steps).
+let dogiSmell=0,dogiPetA=false,dogiPetB=false,dogiHeard=-1,dogiCommand=0;
+let woshClean=0,woshJoke=0,woshCommand=0,woshHeard=-1,woshDub=0,woshAnim=null;
+let pyropeHeat=0,pyropeCommand=0,pyropeHeard=-1,pyropeAtkDrop=0;
+let dogiCanvas=null,dogiHurtCanvas=null,woshCanvas=null,pyropeCanvas=null,pyropeHurtCanvas=null;
+function resetSnowdin2Enemies(){
+ dogiSmell=0;dogiPetA=false;dogiPetB=false;dogiHeard=-1;dogiCommand=0;
+ woshClean=0;woshJoke=0;woshCommand=0;woshHeard=-1;woshDub=0;woshAnim=null;
+ pyropeHeat=0;pyropeCommand=0;pyropeHeard=-1;pyropeAtkDrop=0;
+}
+const wfStep=now=>Math.floor(now/(1000/30));
+
+// ---------- composites ----------
+function makeDogiComposite(now=performance.now(),hurt=false){
+ if(hurt){
+   if(!images.mandogHurt)return null;
+   if(!dogiHurtCanvas){
+     dogiHurtCanvas=document.createElement('canvas');dogiHurtCanvas.width=224;dogiHurtCanvas.height=200;
+     const g=dogiHurtCanvas.getContext('2d');g.imageSmoothingEnabled=false;
+     if(images.womandogHurt)g.drawImage(images.womandogHurt,0,0,224,200);
+     g.drawImage(images.mandogHurt,0,0,224,200);
+   }
+   return dogiHurtCanvas;
+ }
+ const A=images.mandogBody||[],B=images.womandogBody||[];
+ if(!A.length||!B.length)return images.mandogHurt||null;
+ if(!dogiCanvas){dogiCanvas=document.createElement('canvas');dogiCanvas.width=224;dogiCanvas.height=200}
+ const c=dogiCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ // Both bodies share image_index (speed .125) and swap depth each time it wraps to 0.
+ const t=wfStep(now)*.125,fi=Math.floor(t)%11,loop=Math.floor(t/11);
+ const a=A[fi%A.length]||A[0],b=B[fi%B.length]||B[0];
+ if(loop%2===0){g.drawImage(b,0,0,182,184);g.drawImage(a,0,0,182,192)}
+ else{g.drawImage(a,0,0,182,192);g.drawImage(b,0,0,182,184)}
+ return c;
+}
+function woshStep(now){
+ const s=wfStep(now);
+ if(!woshAnim)woshAnim={step:s,hy:34,fy:0,fu:1,ducky:18,waterxx:0,wu:1,a1:5,a2:5};
+ const w=woshAnim;
+ while(w.step<s){
+   w.step++;
+   if(--w.a1<=0){w.a1=5;w.fy+=w.fu;w.hy+=-w.fu/2;if(w.fy>3)w.fu=-2;if(w.fy<-6)w.fu=2}
+   if(--w.a2<=0){w.a2=5;w.waterxx+=w.wu;if(w.waterxx>15)w.wu=-1;if(w.waterxx<1)w.wu=1;w.ducky-=w.wu}
+   if(s-w.step>300)w.step=s;
+ }
+ return w;
+}
+function makeWoshuaComposite(now=performance.now(),hurt=false){
+ // The exported obj_woshbody parts do not line up with their source offsets, so
+ // use the game's own complete spr_woshua frames: 1 = idle, 0 = hurt.
+ if(hurt)return images.woshuaSprite?.[0]||null;
+ if(images.woshuaSprite?.[1])return images.woshuaSprite[1];
+ if(!woshCanvas){woshCanvas=document.createElement('canvas');woshCanvas.width=110;woshCanvas.height=112}
+ const c=woshCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ const w=woshStep(now),anim=wfStep(now)*.2;
+ const d=(im,x,y,sw,sh)=>{if(im)g.drawImage(im,Math.round(x),Math.round(y),sw,sh)};
+ d(images.woshHanger,0,0,52,30);
+ d(images.woshDuck?.[0],46,w.ducky,26,70);
+ if(images.woshWater){
+   g.drawImage(images.woshWater,0,0,16,28,Math.round(40-Math.sin(anim/2)*4),34,32,56);
+   g.drawImage(images.woshWater,0,0,16,28,Math.round(40+Math.sin(anim/2)*4),34,32,56);
+ }
+ d(images.woshBody,0,0,68,74);
+ const tail=images.woshTail||[];d(tail[Math.floor(anim)%Math.max(1,tail.length)],88,50,16,22);
+ d(images.woshHead,0,w.hy,44,44);
+ d(images.woshFace,0,w.hy+w.fy,24,18);
+ return c;
+}
+function makePyropeComposite(now=performance.now(),hurt=false){
+ if(hurt){
+   if(!images.pyropeHurt)return null;
+   if(!pyropeHurtCanvas){pyropeHurtCanvas=document.createElement('canvas');pyropeHurtCanvas.width=150;pyropeHurtCanvas.height=250;const g=pyropeHurtCanvas.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(images.pyropeHurt,16,8,116,242)}
+   return pyropeHurtCanvas;
+ }
+ const body=images.pyropeBody||[];
+ if(body.length<6||!images.pyropeHead?.length)return images.pyropeHurt||null;
+ if(!pyropeCanvas){pyropeCanvas=document.createElement('canvas');pyropeCanvas.width=150;pyropeCanvas.height=250}
+ const c=pyropeCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ const siner=wfStep(now);
+ // obj_pyropebody at (x+8, y+108) of obj_pyrope; canvas origin = obj_pyrope.
+ const px=8+16,py=108;
+ const rot=(im,x,y,ox,oy,sx,sy,deg)=>{if(!im)return;g.save();g.translate(x,y);g.rotate(-deg*Math.PI/180);g.scale(sx,sy);g.drawImage(im,-ox,-oy);g.restore()};
+ let nowy=py+120;
+ const hop=Math.abs(Math.sin(siner/14)*20),kick=Math.abs(Math.sin(siner/14)*40);
+ rot(images.pyropeFootL,px+38,nowy-hop,21,6,2,2,kick);
+ rot(images.pyropeFootR,px+60,nowy-hop,4,6,2,2,-kick);
+ nowy-=20+hop;
+ for(let i=5;i>-1;i--){
+   g.drawImage(body[i],Math.round(px),Math.round(nowy),28,16);
+   nowy-=12;nowy-=Math.abs(Math.sin((siner-i)/14)*6);
+ }
+ const head=images.pyropeHead[Math.floor(siner/10)%images.pyropeHead.length];
+ rot(head,px+50,nowy-30,28,25,2,2,Math.sin(siner/6)*4);
+ return c;
+}
+function jerryImage(now=performance.now(),hurt=false){
+ if(hurt)return images.jerryHurt||images.jerry?.[0]||null;
+ const f=images.jerry||[];
+ return f[Math.floor(wfStep(now)*.1)%Math.max(1,f.length)]||f[0]||null;
+}
+
+// ---------- ACTs ----------
+function dogiActOptions(){return ['Check','Pet','Re-sniff','Roll Around']}
+function woshuaActOptions(){return ['Check','Clean','Touch','Joke']}
+function pyropeActOptions(){return ['Check','Cool Down','Heat Up','Invite']}
+function handleDogiAct(choice){
+ const w=[0,3,1,4][choice]??0;dogiHeard=w;
+ if(w===0){setText('* DOGAMY - ATK 14 DEF 5\n* DOGARESSA - ATK 14 DEF 5\n* Husband and wife. They know\n  only what they smell.',()=>beginEnemyTurn());return}
+ if(w===4){if(dogiSmell===0)dogiSmell=1;setText('* You roll around in the\n  dirt and snow.\n* You smell like a weird puppy.',()=>beginEnemyTurn());return}
+ if(w===1){
+   let t='* The Dogs sniff you again...\n* But you smell just as\n  weird as before!';
+   if(dogiSmell===1){t='* The Dogs sniff you again...\n* After rolling in the dirt,\n  you smell all right!';dogiSmell=2}
+   else if(dogiSmell>=2)t='* The Dogs already know you\n  smell fine.';
+   setText(t,()=>beginEnemyTurn());return;
+ }
+ if(dogiSmell<2){setText('* The Dogs are too suspicious\n  of your smell.',()=>beginEnemyTurn());return}
+ let t;
+ if(!dogiPetA){dogiPetA=true;t='* You pet Dogamy.'}
+ else if(!dogiPetB){dogiPetB=true;t='* You pet the Dogaressa.'}
+ else t='* You pet both Dogs at once.\n* Their minds have been expanded.';
+ if(dogiPetA&&dogiPetB){mercy=100;t+='\n* Every dog loves to play fetch!!!'}
+ setText(t,()=>beginEnemyTurn());
+}
+function handleWoshuaAct(choice){
+ const w=[0,3,1,4][choice]??0;woshHeard=w;
+ if(w===0){setText('* WOSHUA - ATK 18 DEF 5\n* This humble germophobe seeks\n  to cleanse the whole world.',()=>beginEnemyTurn());return}
+ if(w===3){
+   const t=woshClean===2?'* Woshua continues cleaning.':'* You ask Woshua to clean you.\n* It hops around excitedly.';
+   if(woshClean===0)woshClean=1;else if(woshClean===2)woshClean=3;
+   setText(t,()=>beginEnemyTurn());return;
+ }
+ if(w===1){setText(woshClean===2?'* You give Woshua a friendly\n  pat.':'* You reach out.\n* Woshua recoils from your\n  touch.',()=>beginEnemyTurn());return}
+ const jokes=['* You tell a joke about two\n  kids who played in a\n  muddy flower garden.','* You tell a joke about a kid\n  who ate a pie with\n  their bare hands.','* You tell a joke about a kid\n  who slept in the soil.'];
+ woshJoke++;
+ setText(jokes[Math.floor(Math.random()*3)]+"\n* Woshua's powers neutralized!",()=>beginEnemyTurn());
+}
+function handlePyropeAct(choice){
+ const w=[0,3,1,4][choice]??0;pyropeHeard=w;
+ if(w===0){setText('* PYROPE - ATK 29 DEF 14\n* This mischievous monster\n  is never warm enough.',()=>beginEnemyTurn());return}
+ if(w===3){pyropeHeat=0;mercy=0;pyropeAtkDrop+=2;setText("* You blow on Pyrope.\n* Its flames die down.\n* Pyrope's ATTACK dropped!",()=>beginEnemyTurn());return}
+ if(w===1){
+   pyropeHeat++;
+   let t='* You crank up the thermostat.\n* Pyrope begins to get\n  excited.';
+   if(pyropeHeat===2)t="* You crank up the thermostat.\n* It's super hot!\n* Pyrope looks satisfied.";
+   if(pyropeHeat>2)t="* You crank up the thermostat.\n* It's SOOOO hot!";
+   if(pyropeHeat>1)mercy=100;
+   setText(t,()=>beginEnemyTurn());return;
+ }
+ setText('* You invite Pyrope to hang\n  out.',()=>beginEnemyTurn());
+}
+
+// ---------- speech / flavor ----------
+function snowdin2Speech(){
+ if(currentBoss==='dogi'){
+   const m=dogiCommand,h=dogiHeard;dogiHeard=-1;
+   let a=m<25?"Take my\nwife...\n's fleas.":m<50?"Don't\ntouch my\nhot dog.":m<75?"No. 2\nNuzzle\nChamps\n'98!!":"Let's\nkick\nhuman\ntail!!";
+   let b=m<25?"(Don't,\nactually\n...)":m<50?'(He\nmeans\nme.)':m<75?'(Of\ncourse\nwe were\nsecond.)':'(Do\nhumans\nhave\ntails?)';
+   if(h===1){a=dogiSmell>0?'What!\nSmells\nlike a\n...':"Hm?\nWhat's\nthat\nsmell?";b=dogiSmell>0?'(Are you\nactually\na little\npuppy!?)':'(Smell\nmystery)'}
+   if(h===3){a=dogiSmell<2?'Paws off\nyou\nsmelly\nhuman.':'Wow!!!\nPet by\nanother\npup!!!';b=dogiSmell<2?'(Beware\nof\ndog.)':'(A dog\nthat pets\ndogs...\nAmazing!)'}
+   return `${a.replace(/\n/g,' ')}\n${b.replace(/\n/g,' ')}`;
+ }
+ if(currentBoss==='woshua'){
+   const m=woshCommand,h=woshHeard;woshHeard=-1;
+   if(h===3)return 'Green\nmeans\nclean';
+   if(h===1)return woshClean===2?'Fresh!':'Yuck!';
+   if(h===4)return "NO. THAT\nJOKE'S\nTOO...\nDIRTY";
+   if(m>=75){if(woshDub){return 'Oops, I\nmeant...\nscrub a\nsub-SUBS'}woshDub=1;return 'Scrub a\ndub-dubs'}
+   if(m>=50)return 'Out!!!\nDarned\nspot';
+   if(m>=25)return '*whistle\nas it\ncleans*';
+   const part=m>=20?'hand':m>=15?'SOUL':m>=10?'leg':m>=5?'teeth\nand eyes':'face';
+   return 'Wosh u\n'+part;
+ }
+ if(currentBoss==='pyrope'){
+   const m=pyropeCommand,h=pyropeHeard;pyropeHeard=-1;
+   if(h===1)return 'Hot!!\nHOT!!\nHotter!\nHOTTER!!';
+   if(h===3)return "BRRRR!\nWhat's\nthe\ndeal!?";
+   if(h===4)return "Sorry!!\nI'm all\ntied\nup!!";
+   return m<25?'Burn,\nbaby,\nBURN!':m<50?'Hot\nenough\nfor\nya!?':m<75?'Feel\nthe\nheat.':'Is it\ncold in\nhere?';
+ }
+ return '';
+}
+function snowdin2Flavor(){
+ if(currentBoss==='dogi'){
+   const m=dogiCommand;
+   if(dogiPetA&&dogiPetB)return "* The Dogs' minds have been\n  expanded.";
+   if(dogiSmell===2)return '* The Dogs think that you\n  may be a lost puppy.';
+   if(dogiSmell===1)return '* The Dogs may want to\n  re-smell you.';
+   if(m>=75)return '* The Dogs are saying sickly\n  sweet things to each other.';
+   if(m>=50)return '* The Dogs are practicing for\n  the next couples contest.';
+   if(m>=25)return '* The Dogs are re-evaluating\n  your smell.';
+   return '* The Dogs keep shifting their\n  axes to protect each other.';
+ }
+ if(currentBoss==='woshua'){
+   const m=woshCommand;
+   if(enemyHp<30)return '* Woshua is revolted at its own\n  wounds.';
+   if(m>=90)return '* Smells like detergent.';
+   if(m>=75)return '* Woshua is looking for some\n  good clean fun.';
+   if(m>=50)return '* Woshua is rinsing off a\n  pizza.';
+   if(m>=25)return '* Woshua is friends with\n  a little bird.';
+   return '* Woshua wonders if tears are\n  sanitary.';
+ }
+ if(currentBoss==='pyrope'){
+   if(pyropeHeat>1)return '* The room is sweltering!';
+   if(pyropeHeat===1)return '* Pyrope wants more heat.';
+   const m=pyropeCommand;
+   if(m>=90)return '* Smells like rope burn.';
+   if(m>=75)return '* Pyrope is pretending to be\n  a candle.';
+   if(m>=50)return '* Pyrope is chuckling through\n  its teeth.';
+   if(m>=25)return '* Pyrope is pretending to\n  pull the fire alarm.';
+   return '* Pyrope is protected by its\n  winsome smile.';
+ }
+ return '';
+}
+
+// ---------- turns ----------
+function snowdin2StartAttack(now){
+ if(currentBoss==='dogi'){
+   dogiCommand=Math.round(Math.random()*100);
+   attackWave=dogiCommand<=50?0:1;
+   ARENA=attackWave===0?utRect(202,290,230,95):utRect(132,250,360,135); // border 8 / 9
+ }else if(currentBoss==='woshua'){
+   woshCommand=Math.round(Math.random()*100);
+   attackWave=(woshCommand<50||woshClean===1||woshClean===3)?0:1;
+   ARENA=utRect(227,200,180,185); // border 7
+ }else if(currentBoss==='pyrope'){
+   pyropeCommand=Math.round(Math.random()*100);
+   attackWave=pyropeCommand<50?0:1;
+   ARENA=attackWave===0?utRect(162,250,310,135):utRect(220,185,200,200); // border 17 / 19
+ }
+ box={...ARENA};soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2;
+}
+function snowdin2Duration(){
+ if(currentBoss==='dogi')return (attackWave===0?172:200)*(1000/30);
+ if(currentBoss==='woshua')return (attackWave===0?150:160)*(1000/30);
+ if(currentBoss==='pyrope')return 180*(1000/30);
+ return 4000;
+}
+function snowdin2Atk(){return Math.max(1,(bossData()?.atk||6)-(currentBoss==='pyrope'?pyropeAtkDrop:0))}
+function spawnSnowdin2(now){
+ const id=currentBoss;if(id!=='dogi'&&id!=='woshua'&&id!=='pyrope')return false;
+ const U=UT_SCALE,L=ARENA.x,T=ARENA.y,R=ARENA.x+ARENA.w,B=ARENA.y+ARENA.h,dmg=snowdin2Atk();
+ const S=f=>f*(1000/30);
+ if(id==='dogi'){
+   if(attackWave===0){
+     if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+     specialSpawnCount=1;nextSpawn=now+99999;
+     // blt_whiteax x2: left (image 0) at x=99, right (image 1) at x=350, y=309, both room px.
+     for(const t of [0,1])bullets.push({kind:'dogiAx',owner:'main',axetype:t,x:utRect(t?350:99,309,1,1).x,y:utRect(0,309,1,1).y,hs:0,vs:0,grav:0,alpha:0,alarm:10,move:0,step:0,damage:dmg,born:now});
+     return true;
+   }
+   // obj_loopdog: first bark after 4+10 steps, then every 75.
+   if(specialSpawnCount===0){specialSpawnCount=1;bullets.push({kind:'dogiPups',owner:'main',barkUntil:0,step:0,damage:0,born:now});nextSpawn=now+S(14);return true}
+   const x=L+54*U-20*U,y=B-38*U-36*U+10*U,add=Math.floor(Math.random()*8)/10;
+   let blue=Math.floor(Math.random()*2)+1;
+   for(let i=0;i<8;i++){
+     const dir=i*45;
+     let isBlue=false;
+     if(blue===3)blue=2;
+     if(blue===1){isBlue=true;blue=3}
+     if(blue===2)blue=1;
+     bullets.push({kind:'dogiLoop',owner:'main',x:x+Math.cos((dir-90)*Math.PI/180)*2*U,y:y-Math.sin((dir-90)*Math.PI/180)*2*U,dir,speed:1.2+add,radius:2,ideal:55,xadd:2.2+add,nxadd:0,blue:isBlue,step:0,damage:dmg,born:now});
+   }
+   const pups=bullets.find(b=>b.kind==='dogiPups');if(pups)pups.barkUntil=now+S(15);
+   nextSpawn=now+S(75);
+   return true;
+ }
+ if(id==='woshua'){
+   if(attackWave===1){
+     if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+     specialSpawnCount=1;nextSpawn=now+99999;
+     let dir=Math.random()*180;
+     if(dir<10)dir+=20;if(Math.abs(dir-90)<10)dir+=30;if(Math.abs(dir-180)<10)dir-=20;
+     const sp=4-Math.min(1,woshJoke*.5);
+     bullets.push({kind:'woshSoap',owner:'main',x:L+(R-L)/2,y:T-60*U+(B-T)/2,dir,speed:sp,shineAt:4,step:0,damage:dmg,born:now});
+     return true;
+   }
+   // obj_woshspiralgen (solo): white growbullets every 3 steps from a turning emitter.
+   if(specialSpawnCount===0){
+     const back=Math.random()<.5;
+     woshSpiral={x:L+(R-L)/2,y:T-5*U+(B-T)/2,dir:60+Math.random()*40,turn:back?-6:6,back,green:Math.floor(-1+Math.random()*6),cleaner:woshClean===1||woshClean===3,siner:Math.random()*30,lastStep:wfStep(now)};
+     if(woshClean===1)woshClean=0;else if(woshClean===3)woshClean=2;
+   }
+   specialSpawnCount++;
+   const g=woshSpiral;
+   const st=wfStep(now);
+   while(g.lastStep<st){g.lastStep++;g.dir+=g.turn;g.turn+=.05;if(g.back)g.turn-=.1;g.siner++;g.x+=Math.sin(g.siner/6)*U}
+   const green=g.green===0&&g.cleaner;
+   bullets.push({kind:'woshDrop',owner:'main',x:g.x,y:g.y,dir:g.dir,speed:.5/1.1,fric:green?-.25/1.25/3:-.25/1.25,life:45,alpha:1,green,step:0,damage:dmg,born:now});
+   g.green--;if(g.green<0)g.green=9;
+   nextSpawn=now+S(3+woshJoke);
+   return true;
+ }
+ if(id==='pyrope'){
+   if(attackWave===0){
+     // obj_ropebulgen: first rope after 10 steps, then every 24.
+     if(specialSpawnCount===0){specialSpawnCount=1;nextSpawn=now+S(10);return true}
+     const arb=T-50*U,arb2=T-110*U;
+     const y=arb2+U+Math.random()*(arb-arb2-2*U);
+     const vs=(1+Math.random()*2)*(Math.random()<.5?1:-1);
+     const top={kind:'pyroRope',owner:'main',x:R+10*U,y,vs,arb,arb2,type:0,step:0,damage:dmg,born:now};
+     bullets.push(top);
+     bullets.push({kind:'pyroRope',owner:'main',x:R+10*U,y:y+170*U,vs,type:1,partner:top,step:0,damage:dmg,born:now});
+     for(let i=0;i<3;i++)bullets.push({kind:'pyroFire',owner:'main',parent:top,rx:0,ry:(120+i*14)*U,siner:Math.random()*40,x:R+10*U,y:y+(120+i*14)*U,step:0,damage:dmg,born:now});
+     nextSpawn=now+S(24);
+     return true;
+   }
+   // obj_bombgen: a bomb every 40 steps from x = center +/- 50.
+   if(specialSpawnCount===0){specialSpawnCount=1;nextSpawn=now+S(3);return true}
+   const type=Math.floor(Math.random()*4);
+   const b={kind:'pyroBomb',owner:'main',type,x:L+(R-L)/2+(50-Math.random()*100)*U,y:T-20*U,hs:0,vs:0,gdir:0,bounce:0,on:0,flash:0,expl:0,explodeAt:-1,step:0,damage:dmg,born:now};
+   if(type===0||type===2){b.hs=(2+Math.random()*3)*(Math.random()<.5?-1:1);if(type===0){b.gdir=270;b.y=T-20*U}else{b.gdir=90;b.y=B+20*U}}
+   else{b.y=T+(B-T)/2+(50-Math.random()*100)*U;b.vs=(2+Math.random()*4)*(Math.random()<.5?-1:1);if(type===1){b.gdir=0;b.x=L-20*U}else{b.gdir=180;b.x=R+20*U}}
+   bullets.push(b);
+   nextSpawn=now+S(40);
+   return true;
+ }
+ return false;
+}
+let woshSpiral=null;
+let dogiAxMasks=null;
+function dogiAxMask(i){
+ if(!dogiAxMasks)dogiAxMasks=[];
+ if(dogiAxMasks[i]!==undefined)return dogiAxMasks[i];
+ const im=images.whiteAx?.[i];if(!im){return null}
+ try{
+   const c=document.createElement('canvas');c.width=190;c.height=80;const g=c.getContext('2d',{willReadFrequently:true});
+   g.drawImage(im,0,0,190,80);const d=g.getImageData(0,0,190,80).data;
+   const m=new Uint8Array(190*80);for(let k=0;k<m.length;k++)m[k]=d[k*4+3]>128&&d[k*4]>128?1:0;
+   dogiAxMasks[i]=m;
+ }catch(_){dogiAxMasks[i]=null}
+ return dogiAxMasks[i];
+}
+function updateSnowdin2Bullet(b,now,dt){
+ const k=b.kind;
+ if(!['dogiAx','dogiPups','dogiLoop','woshDrop','woshSoap','woshShine','pyroRope','pyroFire','pyroBomb','pyroBlast'].includes(k))return false;
+ const U=UT_SCALE,L=ARENA.x,T=ARENA.y,R=ARENA.x+ARENA.w,B=ARENA.y+ARENA.h;
+ wfSteps(b,dt,q=>{
+   q.step++;
+   if(k==='dogiAx'){
+     q.alpha=Math.min(1,q.alpha+.05);
+     if(--q.alarm<=0){
+       if(q.move===1){q.hs=q.axetype===0?1.8:-1.8;q.vs=-3.8;q.grav=.2;q.alarm=9999}
+       else{q.hs=0;q.alarm=10+Math.floor(Math.random()*14);q.move=1}
+     }
+     q.vs+=q.grav;q.x+=q.hs*U;q.y+=q.vs*U;
+   }else if(k==='dogiLoop'){
+     let rc=0;
+     if(q.radius<q.ideal){q.radius=Math.min(q.ideal,q.radius+2);rc=1}
+     if(rc){const a=(q.dir-90)*Math.PI/180;q.x+=Math.cos(a)*2*U;q.y-=Math.sin(a)*2*U}
+     const circ=Math.PI*2*q.radius,ac=360/circ/q.speed;q.dir+=ac;
+     if(q.nxadd<q.xadd)q.nxadd+=.125;
+     const a=q.dir*Math.PI/180;q.x+=Math.cos(a)*q.speed*U+q.nxadd*U;q.y-=Math.sin(a)*q.speed*U;
+     if(q.x>=R)q.expired=true;
+   }else if(k==='woshDrop'){
+     q.speed-=q.fric;if(q.green)q.life+=.5;
+     q.life--;if(q.life<10)q.alpha-=.1;
+     if(q.life<=0||q.alpha<=0){q.expired=true;return}
+     const a=q.dir*Math.PI/180;q.x+=Math.cos(a)*q.speed*U;q.y-=Math.sin(a)*q.speed*U;
+   }else if(k==='woshSoap'){
+     q.speed+=.04;
+     if(q.step>=q.shineAt){q.shineAt=q.step+7;bullets.push({kind:'woshShine',owner:'main',x:q.x+12*U,y:q.y+16*U,scale:1.5,step:0,damage:Math.max(1,q.damage-2),born:now})}
+     const a=q.dir*Math.PI/180;q.x+=Math.cos(a)*q.speed*U;q.y-=Math.sin(a)*q.speed*U;
+     if(q.x<L-80*U||q.x>R+80*U||q.y<T-80*U||q.y>B+80*U)q.expired=true;
+   }else if(k==='woshShine'){
+     q.scale-=.03;if(q.scale<.1)q.expired=true;
+   }else if(k==='pyroRope'){
+     q.x-=4*U;
+     if(q.type===0&&q.step>1){
+       const ny=q.y+q.vs*U;
+       if(ny>q.arb||ny<q.arb2){q.vs=-q.vs}else q.y=ny;
+     }else if(q.type===1&&q.partner){q.y=q.partner.y+170*U}
+     if(q.x<L-20*U-10*U)q.expired=true;
+   }else if(k==='pyroFire'){
+     if(!q.parent||q.parent.expired){q.expired=true;return}
+     q.siner++;q.x=q.parent.x+q.rx+Math.sin(q.siner/3)*2*U;q.y=q.parent.y+q.ry+Math.cos(q.siner/3)*2*U;
+   }else if(k==='pyroBomb'){
+     const g=.18;
+     if(!q.on){
+       if(q.gdir===270)q.vs+=g;else if(q.gdir===90)q.vs-=g;else if(q.gdir===0)q.hs+=g;else q.hs-=g;
+     }
+     const sp=Math.hypot(q.hs,q.vs);if(sp>0){const f=Math.max(0,sp-.03)/sp;q.hs*=f;q.vs*=f}
+     const px=q.x,py=q.y;q.x+=q.hs*U;q.y+=q.vs*U;
+     const hitFar=(q.type===0&&q.y>B-10*U)||(q.type===1&&q.x>R-10*U)||(q.type===2&&q.y<T+10*U)||(q.type===3&&q.x<L+10*U);
+     if(hitFar){
+       if(q.bounce){q.on=1;q.hs=q.type%2===0?q.hs:0;q.vs=q.type%2===1?q.vs:0;if(q.type%2===0)q.vs=0;else q.hs=0}
+       else{q.bounce=1;if(q.type===0){q.y=py;q.vs=-1.5}else if(q.type===2){q.y=py;q.vs=1.5}else if(q.type===1){q.x=px;q.hs=-1.5}else{q.x=px;q.hs=1.5}}
+     }
+     if((q.type===0||q.type===2)&&(q.x>R-15*U||q.x<L+15*U)){q.x=px;q.hs=-q.hs}
+     if((q.type===1||q.type===3)&&(q.y>B-15*U||q.y<T+15*U)){q.y=py;q.vs=-q.vs}
+     if(q.bounce){q.flash++;if(q.flash>14){q.flash=14;if(!q.expl){q.expl=1;q.explodeAt=q.step+15}}}
+     if(q.explodeAt>0&&q.step>=q.explodeAt){q.expired=true;play('impact');bullets.push({kind:'pyroBlast',owner:'main',x:q.x,y:q.y,x0:q.x,y0:q.y,size:5,alpha:1,step:0,damage:q.damage,born:now})}
+   }else if(k==='pyroBlast'){
+     q.size+=.1;if(q.size>6.2)q.alpha-=.2;
+     q.x=q.x0+(3-Math.random()*6)*U;q.y=q.y0+(3-Math.random()*6)*U;
+     if(q.alpha<.06)q.expired=true;
+   }
+ });
+ return true;
+}
+function snowdin2Collide(b,now){
+ const k=b.kind;
+ if(!['dogiAx','dogiPups','dogiLoop','woshDrop','woshSoap','woshShine','pyroRope','pyroFire','pyroBomb','pyroBlast'].includes(k))return false;
+ const U=UT_SCALE,hit=(x,y,w,h)=>rectHit(soul.x-7,soul.y-7,14,14,x,y,w,h);
+ const dmg=()=>hurtPlayer(now,b.damage||6,b.owner||'main');
+ if(k==='dogiAx'){
+   if(b.alpha<.5)return true;
+   const m=dogiAxMask(b.axetype);
+   if(!m){if(hit(b.x,b.y,190*U,80*U))dmg();return true}
+   for(const [ox,oy] of [[0,0],[-6,-6],[6,-6],[-6,6],[6,6]]){
+     const mx=Math.floor((soul.x+ox-b.x)/U),my=Math.floor((soul.y+oy-b.y)/U);
+     if(mx>=0&&my>=0&&mx<190&&my<80&&m[my*190+mx]){dmg();break}
+   }
+   return true;
+ }
+ if(k==='dogiLoop'){if(hit(b.x-6*U,b.y-6*U,12*U,12*U)&&(!b.blue||soulMoving))dmg();return true}
+ if(k==='woshDrop'){
+   const s=15*U*Math.max(.2,b.speed/(b.green?2:3));
+   if(hit(b.x-s/2,b.y-s/2,s,s)){
+     if(b.green){b.expired=true;woshClean=2;mercy=100;hp=Math.min(maxHp,hp+1);play('heal')}
+     else dmg();
+   }
+   return true;
+ }
+ if(k==='woshSoap'){if(hit(b.x+4*U,b.y+4*U,22*U,32*U))dmg();return true}
+ if(k==='woshShine'){const s=14*U*b.scale;if(hit(b.x-s/2,b.y-s/2,s,s))dmg();return true}
+ if(k==='pyroRope'){if(hit(b.x+2*U,b.y,6*U,120*U))dmg();return true}
+ // Orange fire: only hurts a SOUL that is standing still.
+ if(k==='pyroFire'){if(hit(b.x+3*U,b.y+3*U,14*U,14*U)&&!soulMoving)dmg();return true}
+ if(k==='pyroBomb'){if(hit(b.x-10*U,b.y-10*U,20*U,24*U))dmg();return true}
+ if(k==='pyroBlast'){
+   // spr_bombexplosion is 40x47 (origin 20,23) scaled by size (5 -> 6.2): a starburst ~16px*size in radius.
+   const r=16*b.size*U;
+   if(b.alpha>.3&&Math.hypot(soul.x-b.x,soul.y-b.y)<r)dmg();
+   return true;
+ }
+ return true;
+}
+function drawSnowdin2Bullet(b,now){
+ const k=b.kind;
+ if(!['dogiAx','dogiPups','dogiLoop','woshDrop','woshSoap','woshShine','pyroRope','pyroFire','pyroBomb','pyroBlast'].includes(k))return false;
+ const U=UT_SCALE,L=ARENA.x,R=ARENA.x+ARENA.w,B=ARENA.y+ARENA.h;
+ const d=(im,x,y,w,h)=>{if(im){ctx.imageSmoothingEnabled=false;ctx.drawImage(im,Math.round(x),Math.round(y),Math.round(w),Math.round(h))}};
+ if(k==='dogiAx'){ctx.globalAlpha=b.alpha;d(images.whiteAx?.[b.axetype],b.x,b.y,190*U,80*U);return true}
+ if(k==='dogiPups'){
+   const barking=now<b.barkUntil,im=barking?images.tinyPomBark:(images.tinyPomWag||[])[Math.floor(now/(1000/6))%2];
+   const y=B-38*U-36*U;
+   if(im){ctx.save();ctx.translate(L+54*U,y);ctx.scale(-1,1);ctx.drawImage(im,0,0,54*U,38*U);ctx.restore();d(im,R-54*U,y,54*U,38*U)}
+   return true;
+ }
+ if(k==='dogiLoop'){d(b.blue?images.smHeartB:images.smHeart,b.x-8*U,b.y-8*U,16*U,16*U);return true}
+ if(k==='woshDrop'){
+   ctx.globalAlpha=Math.max(0,b.alpha);
+   const s=15*U*Math.max(.05,b.speed/(b.green?2:3)),im=b.green?images.waterBul?.[0]:images.waterBul?.[2];
+   if(im){ctx.save();ctx.translate(b.x,b.y);ctx.rotate(-(b.dir+90)*Math.PI/180);ctx.imageSmoothingEnabled=false;ctx.drawImage(im,-s/2,-s/2,s,s);ctx.restore()}
+   return true;
+ }
+ if(k==='woshSoap'){d(images.soapBul,b.x,b.y,30*U,40*U);return true}
+ if(k==='woshShine'){const s=20*U*b.scale;d((images.glitterBul||[])[Math.floor(now/(1000/6))%2],b.x-s/2,b.y-s/2,s,s);return true}
+ if(k==='pyroRope'){d(images.ropeBul,b.x,b.y,10*U,120*U);return true}
+ if(k==='pyroFire'){d((images.orangeFire||[])[Math.floor((now-b.born)/(1000/15))%8],b.x,b.y,20*U,20*U);return true}
+ if(k==='pyroBomb'){
+   const im=(images.bombD||[])[b.bounce&&Math.floor(now/(1000/(30/(3-b.flash/10))))%2?0:1];
+   ctx.save();ctx.translate(b.x,b.y);ctx.rotate(-[0,90,180,270][b.type]*Math.PI/180);if(im){ctx.imageSmoothingEnabled=false;ctx.drawImage(im,-15*U,-25*U,30*U,40*U)}ctx.restore();
+   return true;
+ }
+ if(k==='pyroBlast'){ctx.globalAlpha=Math.max(0,b.alpha);d(images.bombExplosion,b.x-20*b.size*U,b.y-23*b.size*U,40*b.size*U,47*b.size*U);return true}
+ return false;
+}
+
+// ---------- Jerry (support only) ----------
+// obj_jerry has no bullets. While present it adds 60 steps to every enemy turn
+// (alarm[10]: global.turntimer += 60). DITCH makes everyone leave it behind for
+// two turns ("Return of Jerry." afterwards).
+const JERRY_SUPPORT_DATA={id:'jerry',label:'JERRY',area:'SNOWDIN SUPPORT',hp:80,atk:1,def:8,encounter:'* Jerry came.',noelleEncounter:'* Jerry came.'};
+let jerryTurnCounter=0,jerryBlankCanvas=null;
+function jerryIsDitched(sp){return !!sp&&(sp.actState?.ditchedUntil||0)>jerryTurnCounter}
+function jerryExtendsTurn(){return supportParty.some(sp=>sp&&!sp.dead&&sp.id==='jerry'&&!jerryIsDitched(sp))}
+function currentJerryImage(now=performance.now(),hurt=false){
+ const sp=currentSupportInstance();
+ if(jerryIsDitched(sp)){
+   if(!jerryBlankCanvas){jerryBlankCanvas=document.createElement('canvas');jerryBlankCanvas.width=188;jerryBlankCanvas.height=90}
+   return jerryBlankCanvas;
+ }
+ return jerryImage(now,hurt);
+}
+
 function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='whimsun')return whimsunDrawImage(now,hurt);
  if(id==='whimsalot')return hurt?(images.whimsalotHurt||images.whimsalot):(images.whimsalot||images.whimsalotHurt);
  if(id==='vulkin')return makeVulkinComposite(now,hurt);
  if(id==='moldbygg')return makeMoldbyggComposite(now,hurt);
  if(id==='lesserdog')return makeLesserDogComposite(now,hurt);
+ if(id==='dogi')return makeDogiComposite(now,hurt);
+ if(id==='woshua')return makeWoshuaComposite(now,hurt);
+ if(id==='pyrope')return makePyropeComposite(now,hurt);
  if(id==='greaterdog')return makeGreatDogComposite(now,hurt);
  if(id==='temmie')return makeTemmieComposite(now,hurt);
  const hurtImage=images[id+'Hurt']||null;
@@ -16342,6 +16946,7 @@ function currentSupportImage(now=performance.now(),hurt=false){
  if(supportEnemyIs('whimsun'))return whimsunDrawImage(now,hurt);
  if(supportEnemyIs('whimsalot'))return images.whimsalotHurt||null;
  if(supportEnemyIs('migosp'))return addedEnemyIdleImage('migosp',now,hurt);
+ if(supportEnemyIs('jerry'))return currentJerryImage(now,hurt);
  if(supportEnemyIs('froggit')){
    return hurt
      ?(images.froggit?.[1]||images.froggitComposite)
@@ -16390,7 +16995,8 @@ function drawWhimsalotPart(img,x,y,sx,sy,deg,ox,oy,fit){
  if(!img)return;
  ctx.save();
  ctx.translate(x,y);
- ctx.rotate(deg*Math.PI/180);
+ // GameMaker image_angle is counter-clockwise; canvas rotation is clockwise.
+ ctx.rotate(-deg*Math.PI/180);
  ctx.scale(sx*fit,sy*fit);
  ctx.drawImage(img,-ox,-oy);
  ctx.restore();
@@ -16756,7 +17362,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -18083,7 +18689,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
-   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)){continue}
+   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -18931,6 +19537,7 @@ reloadCreatorRuntimeImages();
 
 function bossImage(b,now=performance.now()){
  if(b.id==='custom')return creatorEnemyImage(false,now);
+ if(b.id==='jerry')return jerryImage(now,false);
  if(b.id==='flowey')return images.floweyPlayer||images.floweyPissed||images.floweyEvil||images.dummy||null;
  if(b.id==='froggit')return froggitCompositeForTime(now)||images.froggitComposite||images.froggit?.[0];
  if(b.id==='finalfroggit')return images.finalFroggitIdle||images.finalFroggitHurt||null;
@@ -18945,7 +19552,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -19006,7 +19613,7 @@ function drawEnemySelect(now=performance.now()){
  font(15,'#777','left');ctx.fillText((b.area||'UNKNOWN').toUpperCase(),info.x+28,info.y+106);
  const stats=[['HP',b.hp],['AT',b.atk],['DF',b.def]];
  stats.forEach((v,i)=>{const x=info.x+28+i*133;ctx.fillStyle='#050505';ctx.fillRect(x,info.y+139,116,62);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(x,info.y+139,116,62);font(12,'#666','center');ctx.fillText(v[0],x+58,info.y+148);font(24,'#fff','center');ctx.fillText(String(v[1]),x+58,info.y+169)});
- const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
+ const descMap={toriel:'HEARTACHE // FIRE MAGIC',froggit:'RUINS // FROG PATTERNS',finalfroggit:'CORE // MEGA FLIES + EDGE FROG',vegetoid:'RUINS // EAT YOUR GREENS',napstablook:'GHOST FIGHT // TEARS',maddummy:'DUMMY! // FRIENDLY FIRE',doggo:"SNOWDIN // DON'T MOVE",papyrus:'BONETROUSLE // BLUE SOUL',snowdrake:'SNOWDIN // SNOW + BAD JOKES',icecap:'SNOWDIN // PLEASE NOTICE THE HAT',flowey:'SPECIAL // FRIENDLINESS PELLETS',loox:'RUINS // HOOP CHAINS + BOUNCING EYES',moldsmal:'RUINS // WOBBLY BLOBS',dogi:'SNOWDIN // SMELL LIKE A PUPPY',woshua:'WATERFALL // GREEN MEANS CLEAN',pyrope:'HOTLAND // TURN UP THE HEAT',lesserdog:'SNOWDIN // PET THE DOG',greaterdog:'SNOWDIN // PET CAPACITY',moldbygg:'WATERFALL // NOT A MOLDSMAL',temmie:'WATERFALL // hOI!!! TEM ATTAK',migosp:'RUINS // SWARM LINES',whimsun:'RUINS // BUTTERFLY BULLETS',whimsalot:'CORE // PRAYER RING + TRIPLE BUTTERFLIES',aaron:'WATERFALL // SWEAT + FLEXING',tsunderplane:'HOTLAND // BOMBS + GREEN APPROACH',vulkin:'HOTLAND // CLOUD LIGHTNING + LAVA FIRE',undyne:'WATERFALL // GREEN GUARD + RED PATTERNS',dummy:'TRAINING // DUMMY PATTERNS'};
  font(13,'#888','left');ctx.fillText(descMap[b.id]||'CUSTOM ENCOUNTER',info.x+28,info.y+212);
  const rp=rewardPreview(b.id),sandboxPay=!vanillaMode;
  const killExpText=b.id==='loox'&&!hardModeEnabled?`${rp.killExp} EXP (3-24 VIA ACT)`: `${rp.killExp} EXP`;
@@ -21330,7 +21937,7 @@ function runDebugCommand(raw){
    if(c==='help'){
      debugLog([
        'boss <id> [classic|noelle]  | hp <n> | enemyhp <n> | tp <n> | mercy <n>',
-       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
+       'battle ids: dummy froggit toriel vegetoid napstablook maddummy doggo papyrus snowdrake icecap loox moldsmal whimsun aaron shyren moldbygg temmie lesserdog greaterdog dogi woshua pyrope undyne tsunderplane vulkin mettaton custom flowey migosp sans5000',
        'soul <red|blue> | scene <name> | face <emotion> | attack | end | kill | spare',
        'scene maddummy-napstablook (alias: madnap) // Mad Dummy ending interruption',
        'hard <on|off|toggle> | papwave <-1..15> | gameover <normal|toriel|aaron|papyrus|napstablook>',
@@ -22489,6 +23096,8 @@ async function boot(){
  for(const k of ['temmieBody','temmieFace','temmieHurt','temHand','temFront','temBack','temFoot','circleBulletB','bulletMd'])add(`Temmie/Moldbygg ${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['lesserDogBody','lesserDogHead','greatDogBody','tinyPomWag','tinyPomWalk','dogSpear','sleepDog','wakeDog'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['lesserDogHurt','greatDogHurt','tinyPomJump','tinyPomBark','blueSpear','whiteSpear','barkBullet'])add(`dog ${k}`,async()=>images[k]=await needImage(IMG[k]));
+ for(const k of ['mandogBody','womandogBody','whiteAx','woshuaSprite','woshDuck','woshTail','waterBul','glitterBul','pyropeBody','pyropeHead','orangeFire','bombD','jerry'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
+ for(const k of ['mandogHurt','womandogHurt','smHeart','smHeartB','woshHanger','woshWater','woshBody','woshHead','woshFace','soapBul','pyropeFootL','pyropeFootR','pyropeHurt','ropeBul','bombExplosion','jerryHurt'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.wormBul.forEach((u,i)=>add(`Moldbygg stalk ${i+1}`,async()=>{images.wormBul=images.wormBul||[];images.wormBul[i]=await needImage(u)}));
  IMG.migosp.forEach((u,i)=>add(`Migosp frame ${i+1}`,async()=>{images.migosp=images.migosp||[];images.migosp[i]=await needImage(u)}));
  add('Migosp hurt sprite',async()=>images.migospHurt=await needImage(IMG.migospHurt));
@@ -22737,7 +23346,7 @@ async function boot(){
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
  images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
- for(const id of ['moldbygg','temmie','lesserdog','greaterdog']){
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
