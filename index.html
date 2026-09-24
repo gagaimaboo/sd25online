@@ -8631,7 +8631,7 @@ const PARTY_FIGHT_ALIGN_PX=11;
 function soloPartyConfigured(){return !vanillaMode&&sandboxPartyRoles().length>1}
 function soloPartyEnabled(){return soloPartyConfigured()&&screen==='battle'&&!(typeof mpBattleActive!=='undefined'&&mpBattleActive)}
 function soloPartyLeaderRole(){return sandboxPartyRoles()[0]||sandboxRole()}
-function soloPartySetRole(role,slot=soloPartyTurnIndex){practiceMode=normalizePlayerRole(role);noelleEnabled=practiceMode==='noelle';if(!vanillaMode&&Array.isArray(partyRuntimeItems)&&partyRuntimeItems.length)activatePartyRuntimeSlot(slot)}
+function soloPartySetRole(role,slot=soloPartyTurnIndex){practiceMode=normalizePlayerRole(role);if(vanillaMode)noelleEnabled=practiceMode==='noelle';if(!vanillaMode&&Array.isArray(partyRuntimeItems)&&partyRuntimeItems.length)activatePartyRuntimeSlot(slot)}
 function soloPartyClearActionRuntime(){
  soloPartyActionQueue=[];soloPartyExecutingActions=false;soloPartyExecutionIndex=-1;
  soloPartyMultiFightActive=false;soloPartyMultiFightResolving=false;soloPartyMultiFightLanes=[];soloPartyMultiFightResolveIndex=-1;
@@ -8919,8 +8919,8 @@ function soloPartyTurnLabel(){
 }
 
 function startPracticeMode(){
+ // noelleEnabled is the vanilla NOELLE MODE setting; a sandbox party leader must not flip it.
  practiceMode=vanillaMode?(noelleEnabled?'noelle':'classic'):soloPartyLeaderRole();
- noelleEnabled=practiceMode==='noelle';
  currentBoss=BOSS_OPTIONS[bossSelected]?.id||'dummy';
  screen='battle';soloPartyResetRuntime();reset();
 }
@@ -24856,7 +24856,7 @@ function mpStartBattle() {
   mpBattleActive = true; mpRoundSerial = 0; mpFeed = [];mpItemPendingIndex=0;
   mpPartyWipeActive=false;mpPartyWipeStart=0;mpPartyWipeSouls=[];mpPartyWipeCrackPlayed=false;mpPartyWipeBreakPlayed=false;
   const hostRoomP=mpRoomPlayer(mpLocalId);
-  practiceMode=mpRole(hostRoomP?.role||'classic');noelleEnabled=practiceMode==='noelle';
+  practiceMode=mpRole(hostRoomP?.role||'classic');
   if (screen !== 'battle') startPracticeMode(); else reset();
   // reset() establishes the current LV/sandbox HP. Build the party afterward so
   // a previous fight's maxHp cannot leak into the new multiplayer party.
@@ -24897,7 +24897,7 @@ function mpBeginRound() {
 function mpSetActivePlayer(id) {
   const p = mpPlayer(id); if (!p || !p.alive) return false;
   mpActivePlayerId = id; mpTurnDeadline = mpNow() + MP_TURN_MS;
-  practiceMode = p.role; noelleEnabled = p.role === 'noelle'; selected = 0; sub = 0;
+  practiceMode = p.role; selected = 0; sub = 0;
   if (!['menu','text','act','item','itemTarget','mercy','magic','magicTarget','fightTarget','fightMeter','actTarget','roleSpecial','roleSpecialTarget','fireshock','boneffication','floweySnatch','roleAshWait','noelleSpell','sleepMistSpare'].includes(state)) state = 'menu';
   mpBroadcast({ type: 'turn', id, deadlineIn: MP_TURN_MS, role: p.role, round: mpRoundSerial });
   return true;
@@ -24980,7 +24980,7 @@ function mpRestartPartyFight(){
   mpPartyWipeActive=false;mpPartyWipeStart=0;mpPartyWipeSouls=[];mpPartyWipeCrackPlayed=false;mpPartyWipeBreakPlayed=false;
   if(music.gameover){try{music.gameover.pause();music.gameover.currentTime=0}catch(_){}}
   const hostRoom=mpRoomPlayer(mpLocalId);
-  practiceMode=mpRole(hostRoom?.role||'classic');noelleEnabled=practiceMode==='noelle';
+  practiceMode=mpRole(hostRoom?.role||'classic');
   screen='battle';mpBaseReset();
   mpBuildPlayersFromRoom();
   for(const p of mpPlayers.values()){
@@ -26096,7 +26096,7 @@ function mpHandleData(from, data) {
 }
 function mpInjectMenuKey(playerId, keyName) {
   const p = mpPlayer(playerId); if (!p || playerId !== mpActivePlayerId || state === 'attack') return;
-  practiceMode = p.role; noelleEnabled = p.role === 'noelle';
+  practiceMode = p.role;
   const low = String(keyName).toLowerCase();
   const evt = { key:keyName, repeat:false, preventDefault(){}, stopPropagation(){}, stopImmediatePropagation(){} };
   keyDown(evt);
@@ -26309,7 +26309,7 @@ window.addEventListener('keydown', e => {
   if (mpIsHost) {
     if (mpActivePlayerId !== mpLocalId) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     // Host's own menu input may pass into the original game handler.
-    const p=mpLocalPlayer(); if(p){practiceMode=p.role;noelleEnabled=p.role==='noelle'}
+    const p=mpLocalPlayer(); if(p){practiceMode=p.role}
     return;
   }
   if (mpActivePlayerId === mpLocalId) mpSendTo(mpHostId, { type:'input', key:e.key, down:true });
