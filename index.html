@@ -10053,9 +10053,36 @@ function startSleepMist(){
  // resolution; yellow/spareable status is completely separate.
  startNoelleSpellFx('sleepmist',1350,.42,{targets,playedPacify:false,spared:0,sparedMain:false});
 }
+// Crops a sprite to its opaque pixels and maps that box into the rect the
+// sprite is stretched over, so effects can hug the visible silhouette.
+function snowgraveTightFit(im,r){
+ const out={rect:{x:r.x,y:r.y,w:r.w,h:r.h},image:im};
+ try{
+   const iw=im?.naturalWidth||im?.width||0,ih=im?.naturalHeight||im?.height||0;
+   if(!iw||!ih)return out;
+   const c=document.createElement('canvas');c.width=iw;c.height=ih;
+   const g=c.getContext('2d');g.drawImage(im,0,0);
+   const d=g.getImageData(0,0,iw,ih).data;
+   let x0=iw,y0=ih,x1=-1,y1=-1;
+   for(let y=0;y<ih;y++)for(let x=0;x<iw;x++)if(d[(y*iw+x)*4+3]>8){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+   if(x1<0)return out;
+   const bw=x1-x0+1,bh=y1-y0+1;
+   if(bw>=iw&&bh>=ih)return out;
+   const crop=document.createElement('canvas');crop.width=bw;crop.height=bh;
+   crop.getContext('2d').drawImage(c,x0,y0,bw,bh,0,0,bw,bh);
+   const sx=r.w/iw,sy=r.h/ih;
+   out.rect={x:r.x+x0*sx,y:r.y+y0*sy,w:bw*sx,h:bh*sy};
+   out.image=crop;
+ }catch(e){}
+ return out;
+}
 function freezeTargetAsSnowGraveStatue(target,now=performance.now()){
- const r=targetRectFor(target,now);
- const hurt=criticalImageFor(target,now)||frozenSourceFor(target,now).normal;
+ const full=targetRectFor(target,now);
+ const hurt0=criticalImageFor(target,now)||frozenSourceFor(target,now).normal;
+ // Composite enemies (Greater Dog, Lesser Dog, Moldbygg...) sit in large,
+ // mostly empty canvases. Size the crystal from the visible sprite only.
+ const tight=snowgraveTightFit(hurt0,full);
+ const r=tight.rect,hurt=tight.image;
  const inner=makeIceSilhouette(hurt,'#000000')||hurt;
  const statue={
    rect:{x:r.x,y:r.y,w:r.w,h:r.h},
@@ -13409,9 +13436,9 @@ function updateSoulMovement(dt,now){
    return;
  }
 
- // obj_heart: x/y += global.sp (4 native px per 30fps step) on each axis.
- // UNDERTALE does not normalise diagonals.
- const spd=4*30*UT_SCALE*battleSpeedMul;
+ // Tuned SOUL speed (~84 room px/s, the original Battlegrounds feel; the
+ // source's 4px/step read too fast here). Diagonals are not normalised.
+ const spd=84*UT_SCALE*battleSpeedMul;
  soul.x=clamp(soul.x+dx*spd*dt,ARENA.x+14,ARENA.x+ARENA.w-14);
  soul.y=clamp(soul.y+dy*spd*dt,ARENA.y+14,ARENA.y+ARENA.h-14);
 }
@@ -15355,12 +15382,20 @@ function wfSteps(b,dt,fn){
 // draw_sprite (no scale) while disguised. Once revealed, spr_moldsmalx_up rises
 // 4px/step for 28 steps above four 2x spr_moldsmalx_part stem segments.
 const MOLDBYGG_W=118,MOLDBYGG_H=198,MOLDBYGG_OX=8,MOLDBYGG_BASE=112;
-let moldbyggCanvas=null,moldbyggHurtCanvas=null;
+let moldbyggCanvas=null,moldbyggHurtCanvas=null,moldbyggHurtRisenCanvas=null;
 function moldbyggPartOffsets(){return [{dy:170,c:1},{dy:140,c:0},{dy:110,c:1},{dy:80,c:0}]}
 function makeMoldbyggComposite(now=performance.now(),hurt=false){
  if(hurt){
-   // obj_moldsmalx hurt event: shows spr_moldsmal frame 1 at xstart/ystart and
-   // destroys the stem parts, even after the reveal.
+   // Moldbygg flinches in its risen stem pose (held still, no sway) rather
+   // than obj_moldsmalx's disguise frame. Falls back to spr_moldsmal frame 1.
+   if(images.moldbyggTop?.length&&images.moldbyggPart){
+     if(!moldbyggHurtRisenCanvas){moldbyggHurtRisenCanvas=document.createElement('canvas');moldbyggHurtRisenCanvas.width=MOLDBYGG_W;moldbyggHurtRisenCanvas.height=MOLDBYGG_H}
+     const c=moldbyggHurtRisenCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+     const top=images.moldbyggTop[0];
+     g.drawImage(top,MOLDBYGG_OX,MOLDBYGG_BASE-112,90,82);
+     for(const p of moldbyggPartOffsets())g.drawImage(images.moldbyggPart,MOLDBYGG_OX,MOLDBYGG_BASE+p.dy-112,88,28);
+     return c;
+   }
    const im=images.moldsmal?.[1]||images.moldsmal?.[0];
    if(!im)return null;
    if(!moldbyggHurtCanvas){
@@ -16438,7 +16473,7 @@ function makePyropeComposite(now=performance.now(),hurt=false){
  rot(images.pyropeFootR,px+60,nowy-hop,4,6,2,2,-kick);
  nowy-=20+hop;
  for(let i=5;i>-1;i--){
-   g.drawImage(body[i],Math.round(px),Math.round(nowy),28,16);
+   g.drawImage(body[i],Math.round(px+34),Math.round(nowy),28,16); // centred under head/feet (x+48)
    nowy-=12;nowy-=Math.abs(Math.sin((siner-i)/14)*6);
  }
  const head=images.pyropeHead[Math.floor(siner/10)%images.pyropeHead.length];
@@ -17143,6 +17178,9 @@ function snowgraveCrystalRectFor(r){
  let ch=Math.max(r.h*1.52,ut(96));
  let cw=ch*aspect;
  if(cw<r.w*1.38){cw=r.w*1.38;ch=cw/aspect}
+ // Keep big monsters' crystals on screen: cap to ~1.2x the sprite, 240 room px.
+ const cap=Math.max(ut(96),Math.min(ut(240),Math.max(r.h*1.2,(r.w*1.2)/aspect)));
+ if(ch>cap){ch=cap;cw=ch*aspect}
  const cx=r.x+r.w/2,cy=r.y+r.h/2;
  return{x:cx-cw/2,y:cy-ch/2,w:cw,h:ch};
 }
