@@ -2488,7 +2488,10 @@ const MENU_MUSIC_SCREENS=new Set(['title','enemies','kills','spares','settings',
 let menuMusicAutoplayTried=false;
 function menuMusicScreen(){return MENU_MUSIC_SCREENS.has(screen)}
 function battleMusicTracks(){
- return [music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.mettatonEx,music.mettatonPre,music.mettSad,music.mettatonNeo,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback];
+ // Every loaded track except the menu and game-over themes, so a newly added
+ // boss theme (e.g. Spider Dance) can never be left playing after a fight.
+ const extra=Object.entries(music).filter(([k,a])=>k!=='menu'&&k!=='gameover'&&a&&typeof a.pause==='function').map(([,a])=>a);
+ return [...new Set([...extra,music.battle,music.core,music.flowey,music.toriel,music.napstablook,music.maddummy,music.papyrusIntro,music.papyrus,music.undyne,music.undyneex,music.mettatonEx,music.mettatonPre,music.mettSad,music.mettatonNeo,music.undyneEnding1,music.undyneEnding2,music.mettatonQuiz,music.sans,music.flashback,music.muffet])];
 }
 function stopBattleMusicTracks(){for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}}
 function stopMenuMusic(reset=true){
