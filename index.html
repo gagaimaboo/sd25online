@@ -116,6 +116,9 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-vulkin">vulkin</button>
     <button data-debug="boss-woshua">woshua</button>
     <button data-debug="boss-pyrope">pyrope</button>
+    <button data-debug="boss-madjick">madjick</button>
+    <button data-debug="boss-knightknight">knight knight</button>
+    <button data-debug="boss-astigmatism">astigmatism</button>
     <button data-debug="boss-undyne">undyne</button>
     <button data-debug="boss-undyneex">undyne the undying</button>
     <button data-debug="boss-mettatonex">mettaton ex</button>
@@ -374,6 +377,44 @@ const IMG={
  pyropeFootL:RAW+'sprites/images/spr_pyropefootl_0.png',
  pyropeFootR:RAW+'sprites/images/spr_pyropefootr_0.png',
  pyropeHurt:RAW+'sprites/images/spr_pyropehurt_0.png',
+ // Madjick (obj_wizardbody parts, orbs, cross zaps), Knight Knight (obj_finalknight_body
+ // parts, morningstar, sky orb / sun / moon / meteors) and Astigmatism (obj_astigmatism_body).
+ wizardHurt:RAW+'sprites/images/spr_wizardhurt_0.png',
+ wizardBoot:RAW+'sprites/images/spr_wizard_boot_0.png',
+ wizardLapel:RAW+'sprites/images/spr_wizard_lapel_0.png',
+ wizardDress:RAW+'sprites/images/spr_wizard_dress_0.png',
+ wizardHead:RAW+'sprites/images/spr_wizard_head_0.png',
+ wizardHat:RAW+'sprites/images/spr_wizard_hat_0.png',
+ wizardOrb:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_wizard_orb_${i}.png`),
+ wizardOrb2:RAW+'sprites/images/spr_wizard_orb2_0.png',
+ wizardOrb3:RAW+'sprites/images/spr_wizard_orb3_0.png',
+ crossZap:RAW+'sprites/images/spr_crosszap_0.png',
+ confuseHeart:[0,1].map(i=>RAW+`sprites/images/spr_confuseheart_${i}.png`),
+ knightHurt:RAW+'sprites/images/spr_knighthurt_0.png',
+ knightBody:RAW+'sprites/images/spr_finalknight_body_0.png',
+ knightEyes:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_finalknight_dragoneyes_${i}.png`),
+ knightEyesTired:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_finalknight_dragoneyes_tired_${i}.png`),
+ knightEyesAsleep:RAW+'sprites/images/spr_finalknight_dragoneyes_asleep_0.png',
+ knightHelmet:[0,1,2,3].map(i=>RAW+`sprites/images/spr_finalknight_helmet_${i}.png`),
+ knightMouth:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_finalknight_dragonmouth_${i}.png`),
+ knightMouthTired:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_finalknight_dragonmouth_tired_${i}.png`),
+ knightMouthAsleep:[0,1,2,3,4,5,6,7,8,9].map(i=>RAW+`sprites/images/spr_finalknight_dragonmouth_asleep_${i}.png`),
+ knightFur:[0,1,2,3].map(i=>RAW+`sprites/images/spr_finalknight_dragonfur_${i}.png`),
+ knightArm:RAW+'sprites/images/spr_finalknight_leftarm_0.png',
+ knightHammer:[0,1].map(i=>RAW+`sprites/images/spr_knighthammer_${i}.png`),
+ skyOrb:RAW+'sprites/images/spr_skyorb_0.png',
+ sunMoon:[0,1].map(i=>RAW+`sprites/images/spr_sunmoon_${i}.png`),
+ skyMoon:RAW+'sprites/images/spr_skymoon_0.png',
+ sunBullet:RAW+'sprites/images/spr_sunbullet_0.png',
+ moonMeteor:[0,1,2,3,4].map(i=>RAW+`sprites/images/spr_moonmeteor_${i}.png`),
+ meteorShine:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_meteorshine_${i}.png`),
+ astigHurt:RAW+'sprites/images/spr_astigmatismhurt_0.png',
+ astigAnim2:[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>RAW+`sprites/images/spr_astigmatism_anim2_${i}.png`),
+ astigHand:RAW+'sprites/images/spr_astigmatism_handl_0.png',
+ astigLeg:RAW+'sprites/images/spr_astigmatism_legl_0.png',
+ circleBulLarge:RAW+'sprites/images/spr_circlebulletlarge_ex_0.png',
+ circleBulMed:RAW+'sprites/images/spr_circlebulletmed_ex_0.png',
+ circleBulSm:RAW+'sprites/images/spr_circlebulletsm_ex_0.png',
  ropeBul:RAW+'sprites/images/spr_ropebul_0.png',
  orangeFire:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_orangefire_${i}.png`),
  bombD:[0,1].map(i=>RAW+`sprites/images/spr_bombd_${i}.png`),
@@ -1086,6 +1127,7 @@ const SUPPORT_OPTIONS=[
  {id:'migosp',label:'MIGOSP'},
  {id:'whimsun',label:'WHIMSUN'},
  {id:'whimsalot',label:'WHIMSALOT'},
+ {id:'madjick',label:'MADJICK'},
  {id:'shyren',label:'SHYREN'},
  {id:'jerry',label:'JERRY'}
 ];
@@ -1193,6 +1235,9 @@ const VANILLA_REWARDS={
  dogi:{exp:60,killGold:50,spareGold:50},
  woshua:{exp:52,killGold:25,spareGold:25},
  pyrope:{exp:80,killGold:40,spareGold:40},
+ madjick:{exp:150,killGold:90,spareGold:90},
+ knightknight:{exp:150,killGold:150,spareGold:150},
+ astigmatism:{exp:115,killGold:80,spareGold:80},
  undyneex:{exp:1500,killGold:0,spareGold:0},
  mettatonex:{exp:800,killGold:0,spareGold:0},
  mettatonneo:{exp:10000,killGold:0,spareGold:0},
@@ -2468,7 +2513,7 @@ function startBattleMusic(){
  // (mus_battle1.ogg), NOT mus_prebattle1. Dedicated boss themes override it below.
  let track=music.battle;
  if(currentBoss==='flowey'){track=music.flowey||music.battle;if(track){track.playbackRate=1;track.preservesPitch=false;track.mozPreservesPitch=false;track.webkitPreservesPitch=false}}
- else if(currentBoss==='finalfroggit'||currentBoss==='whimsalot')track=music.core||music.battle;
+ else if(currentBoss==='finalfroggit'||currentBoss==='whimsalot'||isCore3())track=music.core||music.battle;
  else if(currentBoss==='toriel')track=music.toriel||music.battle;
  else if(currentBoss==='napstablook')track=music.napstablook||music.battle;
  else if(currentBoss==='maddummy')track=music.maddummy||music.battle;
@@ -2551,6 +2596,9 @@ const ENEMY_LAYOUTS={
  dogi:{x:208,y:38,w:224,h:200},
  woshua:{x:265,y:88,w:110,h:112},
  pyrope:{x:245,y:0,w:150,h:250},
+ madjick:{x:249,y:62,w:143,h:160},
+ knightknight:{x:209,y:26,w:222,h:201},
+ astigmatism:{x:265,y:106,w:110,h:122},
  // obj_undynex_body at (210,20); canvas spans room x 180..440, y -20..260.
  undyneex:{x:180,y:-20,w:260,h:280},
  // obj_mettb_body at (240, box top - 136); canvas spans room x 180..460, y -10..260.
@@ -2591,6 +2639,9 @@ const PAIR_MAIN_LAYOUTS={
  dogi:{x:150,y:38,w:200,h:178},
  woshua:{x:200,y:100,w:100,h:102},
  pyrope:{x:180,y:0,w:135,h:225},
+ madjick:{x:160,y:70,w:136,h:152},
+ knightknight:{x:110,y:40,w:200,h:181},
+ astigmatism:{x:190,y:110,w:105,h:116},
  undyneex:{x:110,y:-20,w:260,h:280},
  mettatonex:{x:110,y:-10,w:280,h:270},
  mettatonneo:{x:40,y:0,w:440,h:260},
@@ -2620,7 +2671,8 @@ const PAIR_SUPPORT_LAYOUTS={
  whimsalot:{x:343,y:112,w:114,h:126},
  aaron:{x:352,y:30,w:97,h:170},
  shyren:{x:349,y:45,w:100,h:195},
- jerry:{x:330,y:160,w:150,h:72}
+ jerry:{x:330,y:160,w:150,h:72},
+ madjick:{x:336,y:70,w:136,h:152}
 };
 
 // UNDERTALE GRID-CELL FORMATION FIX
@@ -3422,7 +3474,6 @@ const BOSS_OPTIONS=[
  {id:'loox',label:'LOOX',area:'RUINS',hp:50,atk:6,def:4,encounter:'* Loox drew near!',noelleEncounter:'* Noelle encountered Loox.'},
  {id:'moldsmal',label:'MOLDSMAL',area:'RUINS',hp:50,atk:6,def:0,encounter:'* Moldsmal blocked the way!',noelleEncounter:'* Noelle encountered Moldsmal.'},
  {id:'whimsun',label:'WHIMSUN',area:'RUINS',hp:10,atk:4,def:0,encounter:'* Whimsun approached meekly!',noelleEncounter:'* Noelle encountered Whimsun.'},
- {id:'whimsalot',label:'WHIMSALOT',area:'CORE',hp:95,atk:34,def:12,encounter:'* Whimsalot rushed in!',noelleEncounter:'* Noelle encountered Whimsalot.'},
  {id:'aaron',label:'AARON',area:'WATERFALL',hp:98,atk:24,def:2,encounter:'* Aaron flexes in!',noelleEncounter:'* Noelle encountered Aaron.'},
  {id:'shyren',label:'SHYREN',area:'WATERFALL',hp:66,atk:7,def:2,encounter:'* Shyren hides in the corner, but somehow encounters you anyway.',noelleEncounter:'* Noelle encountered Shyren.'},
  {id:'moldbygg',label:'MOLDBYGG',area:'WATERFALL',hp:70,atk:7,def:4,encounter:'* Moldsmal blocked the way!',noelleEncounter:'* Noelle encountered Moldsmal...?'},
@@ -3431,6 +3482,9 @@ const BOSS_OPTIONS=[
  {id:'undyne',label:'UNDYNE',area:'WATERFALL BOSS',hp:1500,atk:7,def:0,encounter:'* Undyne attacks!',noelleEncounter:'* Noelle faces Undyne.'},
  {id:'undyneex',label:'UNDYNE THE UNDYING',area:'WATERFALL // GENOCIDE',hp:23000,atk:12,def:5,encounter:'* The heroine appears.',noelleEncounter:'* The heroine appears.\n* Noelle grips her ring.'},
  {id:'tsunderplane',label:'TSUNDERPLANE',area:'HOTLAND',hp:80,atk:25,def:26,encounter:'* Tsunderplane swoops into your way... accidentally, apparently.',noelleEncounter:'* Noelle encountered Tsunderplane.'},
+ {id:'madjick',label:'MADJICK',area:'CORE',hp:190,atk:29,def:24,encounter:'* Madjick blocks the way!',noelleEncounter:'* Noelle encountered Madjick.'},
+ {id:'knightknight',label:'KNIGHT KNIGHT',area:'CORE',hp:230,atk:36,def:36,encounter:'* Knight Knight blocks the way!',noelleEncounter:'* Noelle encountered Knight Knight.'},
+ {id:'astigmatism',label:'ASTIGMATISM',area:'CORE',hp:120,atk:32,def:26,encounter:'* Astigmatism blocks the way!',noelleEncounter:'* Noelle encountered Astigmatism.'},
  {id:'pyrope',label:'PYROPE',area:'HOTLAND',hp:110,atk:8,def:1,encounter:'* Pyrope bounces into view!',noelleEncounter:'* Noelle encountered Pyrope.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
  {id:'mettatonneo',label:'METTATON NEO',area:'CORE // THE REAL SHOW',hp:30000,atk:10,def:9,encounter:'* Mettaton NEO blocks the way!',noelleEncounter:'* Mettaton NEO blocks the way!'},
@@ -3694,7 +3748,7 @@ function effectivePlayerStats(){
    return {
      hp:row.hp,
      atk:vanillaInternalAtk+armorAtk,
-     def:vanillaInternalDef+armorDef,
+     def:vanillaInternalDef+armorDef+core3DefMod(),
      displayAtk:row.at+armorAtk,
      displayDef:row.df+armorDef
    };
@@ -3715,13 +3769,15 @@ function effectivePlayerStats(){
  const displayAtk=Math.max(0,row.at+atkOffset+armorAtk);
  const displayDef=Math.max(0,row.df+defOffset+armorDef+weaponDef);
  const atk=Math.max(0,vanillaInternalAtk+atkOffset+armorAtk);
- const def=Math.max(0,vanillaInternalDef+defOffset+armorDef+weaponDef);
+ const def=Math.max(0,vanillaInternalDef+defOffset+armorDef+weaponDef+core3DefMod());
  return {hp,atk,def,magic:armorMagic+weaponMagic,displayAtk,displayDef};
 }
 
 function targetDefense(id){
  const eid=targetEnemyId(id);
  let def=isSupportTarget(id)?(targetSupportData(id)?.def||0):(bossData()?.def||0);
+ // Knight Knight asleep: global.monsterdef = -30.
+ if(eid==='knightknight'&&id==='main'&&kk.asleep)def=-30;
 
  if(vanillaMode&&eid==='doggo'&&id==='main'&&doggoPets>=5)def=0;
 
@@ -4014,7 +4070,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -4197,7 +4253,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4207,6 +4263,7 @@ function criticalImageFor(id,now=performance.now()){
  if(supportEnemyIs('whimsalot'))return images.whimsalotHurt||null;
  if(supportEnemyIs('migosp'))return images.migospHurt||addedEnemyIdleImage('migosp',now,false)||null;
  if(supportEnemyIs('jerry'))return images.jerryHurt||null;
+ if(supportEnemyIs('madjick'))return images.wizardHurt||null;
  if(supportEnemyIs('froggit'))return images.froggit?.[1]||images.froggitComposite||images.froggit?.[0]||null;
  if(supportEnemyIs('toriel'))return images.torielHurt||images.toriel||null;
  if(supportEnemyIs('vegetoid'))return images.vegetoidHurt||images.vegetoid?.[0]||null;
@@ -4335,6 +4392,9 @@ const NOELLE_N_ACTIONS={
  mettatonex:{gain:0,text:"* Noelle waves at the camera.\n* The ratings tick up a little."},
  undyneex:{gain:0,text:"* Noelle begs Undyne to stop.\n* Undyne doesn't even hear her."},
  pyrope:{gain:40,text:"* Noelle warms her hands near Pyrope.\n* Pyrope is flattered by the attention."},
+ madjick:{gain:40,text:"* Noelle asks Madjick how its magic works.\n* Madjick answers in pure gibberish."},
+ knightknight:{gain:35,text:"* Noelle hums a Christmas carol.\n* Knight Knight's eyelids droop."},
+ astigmatism:{gain:30,text:"* Noelle stands up to Astigmatism.\n* It blinks, surprised."},
  lesserdog:{gain:60,text:"* Noelle pets Lesser Dog.\n* Its neck grows a little. Noelle pretends not to notice."},
  greaterdog:{gain:40,text:"* Noelle calls Greater Dog over.\n* It is delighted and extremely slobbery."},
  moldbygg:{gain:40,text:"* Noelle politely does NOT hug Moldbygg.\n* Moldbygg appreciates the personal space."},
@@ -4371,6 +4431,9 @@ const SUSIE_S_ACTIONS={
  mettatonex:{gain:0,text:"* Susie flexes for the audience.\n* Mettaton calls it a stunning cameo."},
  undyneex:{gain:0,text:"* Susie tells Undyne to back off.\n* Undyne laughs and raises her spear."},
  pyrope:{gain:50,text:"* Susie cranks the heat way up.\n* Pyrope loves her immediately."},
+ madjick:{gain:35,text:"* Susie tries to punch an orb.\n* Madjick is weirdly impressed."},
+ knightknight:{gain:40,text:"* Susie challenges Knight Knight to\n  an arm-wrestling match. They tie."},
+ astigmatism:{gain:50,text:"* Susie stares Astigmatism down.\n* Astigmatism looks away first."},
  lesserdog:{gain:65,text:"* Susie pets Lesser Dog way too hard.\n* Its neck launches upward in joy."},
  greaterdog:{gain:45,text:"* Susie throws a snowball for Greater Dog.\n* It brings back the entire snowbank."},
  moldbygg:{gain:35,text:"* Susie hugs Moldbygg anyway.\n* She is now covered in slime and extremely proud of it."},
@@ -4437,6 +4500,7 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='dogi')return dogiActOptions();
  if(id==='woshua')return woshuaActOptions();
  if(id==='pyrope')return pyropeActOptions();
+ if(isCore3(id))return core3ActOptions(id);
  if(id==='undyneex')return ['Check'];
  if(id==='mettatonex')return mettatonExActOptions();
  if(id==='mettatonneo')return mettatonNeoActOptions();
@@ -4618,6 +4682,14 @@ function performAct(targetId,choice){
        st.conducted=true;
        setText(shyrenConductActText(hum),()=>beginEnemyTurn());
      }
+   }else if(supportEnemyIs('madjick')){
+     if(choice===0)setText(`* MADJICK - ATK ${s.atk} DEF ${s.def}\n* This magical mercenary only\n  says magic words.`,()=>beginEnemyTurn());
+     else if(choice===2||choice===3){
+       if(choice===2)st.stare1=(st.stare1||0)+1;else st.stare2=(st.stare2||0)+1;
+       if(st.stare1>0&&st.stare2>0)unlock("* You glare at Madjick's orbs.\n* Both orbs are incapacitated.\n* Madjick can now be SPARED.");
+       else setText(`* The "${choice===2?'Chaser':'Corner'} Orb" was weakened\n  by your glare.`,()=>beginEnemyTurn());
+     }else if(choice===1)setText('* Madjick interrupts you by\n  chattering to itself.',()=>beginEnemyTurn());
+     else setText('* You think of pollen and\n  sunshine.',()=>beginEnemyTurn());
    }else if(supportEnemyIs('jerry')){
      if(choice===0)setText(`* JERRY - ATK ${s.atk} DEF ${s.def}\n* Everyone knows Jerry.\n* Makes attacks 2 seconds longer.`,()=>beginEnemyTurn());
      else{st.ditchedUntil=jerryTurnCounter+2;unlock("* You and the other monsters\n  ditch Jerry when it looks away!")}
@@ -4812,6 +4884,8 @@ function performAct(targetId,choice){
    setText(undyingCheckText(),()=>beginEnemyTurn());
  }else if(currentBoss==='pyrope'){
    handlePyropeAct(choice);
+ }else if(isCore3()){
+   handleCore3Act(choice);
  }else if(currentBoss==='lesserdog'){
    handleLesserDogAct(choice);
  }else if(currentBoss==='greaterdog'){
@@ -5386,7 +5460,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -6060,6 +6134,7 @@ function attackSpeechForCurrentBoss(){
  if(currentBoss==='moldbygg'||currentBoss==='temmie')return waterfallAttackSpeech();
  if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
  if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')return snowdin2Speech();
+ if(isCore3())return core3Speech();
  if(currentBoss==='undyneex'||currentBoss==='mettatonex'||currentBoss==='mettatonneo')return '';
 
  if(currentBoss==='doggo'){
@@ -7500,6 +7575,8 @@ function startAttack(now){
    uxStartAttack(now);
  }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
    snowdin2StartAttack(now);
+ }else if(isCore3()){
+   core3StartAttack(now);
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
    dogStartAttack(now);
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
@@ -8006,6 +8083,8 @@ function returnMenu(){
    setText(undyingFlavor());
  }else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope'){
    setText(snowdin2Flavor());
+ }else if(isCore3()){
+   setText(core3Flavor());
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
    setText(dogFlavorText());
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
@@ -11390,7 +11469,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -11413,6 +11492,7 @@ function reset(){
  resetWaterfallEnemies();
  resetDogEnemies();
  resetSnowdin2Enemies();
+ resetCore3Enemies();
  resetUndying();
  resetMettatonEx();
  resetMettatonNeo();
@@ -12040,6 +12120,7 @@ function spawnSupportBullet(now){
    return;
  }
 
+ if(supportEnemyIs('madjick')){spawnSupportMadjick(now,owner);return}
  if(supportEnemyIs('whimsalot')){
    const inst=currentSupportInstance(),st=inst?.actState||(inst?inst.actState=Object.create(null):{});
    if(st.prayAttack){
@@ -12930,6 +13011,7 @@ function spawnSimpleNewBossBullet(now){
  if(spawnWaterfallBullets(now))return;
  if(spawnDogAttack(now))return;
  if(spawnSnowdin2(now))return;
+ if(core3Spawn(now))return;
  // Disguised Moldbygg uses Moldsmal's obj_1sidegen bullet types.
  if(currentBoss==='moldsmal'||currentBoss==='moldbygg'){
    if(attackWave===0){
@@ -13239,7 +13321,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13671,6 +13753,8 @@ function updateSoulMovement(dt,now){
  if(key.ArrowDown||key.s)dy++;
 
  if(modBattleEnabled('mirrorMove'))dx=-dx;
+ // Madjick's gibberish (spr_confuseheart): every direction is reversed.
+ if(madjickConfused()){dx=-dx;dy=-dy}
  soulMoving=!!(dx||dy);
 
  if(currentBoss==='doggo'&&soulMoving)doggoMovedDuringAttack=true;
@@ -14207,7 +14291,7 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateUndyingBullet(b,now,dt)||updateNhbBullet(b,now,dt)){
+     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateCore3Bullet(b,now,dt)||updateUndyingBullet(b,now,dt)||updateNhbBullet(b,now,dt)){
        // Moldbygg/Temmie bullets step on the 30fps source grid.
      }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
@@ -14812,6 +14896,7 @@ function update(dt,now){
      if(b.kind==='icecapTeeth'||b.kind==='finalFrog')return true;
      // Papyrus NOT HOLDING BACK bullets expire themselves (the controller lives all turn).
      if(NHB_KINDS.has(b.kind))return !b.expired;
+     if(CORE3_KINDS.has(b.kind))return !b.expired;
      // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
      if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep'||b.kind==='dogiAx'||b.kind==='dogiPups'||b.kind==='pyroRope'||b.kind==='pyroFire'||b.kind==='pyroBlast'||UX_KINDS.has(b.kind))return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
@@ -14858,7 +14943,7 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||undyingCollide(b,now)||nhbCollide(b,now)){
+     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||core3Collide(b,now)||undyingCollide(b,now)||nhbCollide(b,now)){
        // handled above
      }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
@@ -15056,6 +15141,7 @@ function update(dt,now){
    else if(currentBoss==='moldbygg'||currentBoss==='temmie')attackDuration=waterfallAttackDuration();
    else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
    else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')attackDuration=snowdin2Duration();
+   else if(isCore3())attackDuration=core3Duration();
    else if(currentBoss==='undyneex')attackDuration=uxDuration();
    else if(currentBoss==='mettatonex'||currentBoss==='mettatonneo')attackDuration=99999999;
    else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
@@ -17415,6 +17501,559 @@ function spawnUndying(now){
  }
  nextSpawn=now+99999;return true;
 }
+
+// ================= MADJICK, KNIGHT KNIGHT, ASTIGMATISM (CORE) =================
+// obj_wizard/obj_wizardbody (obj_wizardorb_wall, obj_wizardorb_chaser, obj_crosszap),
+// obj_finalknight/obj_finalknight_body (obj_hammergen/obj_knighthammer,
+// obj_skyorb -> obj_sunmoon/obj_sunbullet or obj_skymoon/obj_meteorbullet) and
+// obj_astigmatism/obj_astigmatism_body (obj_astigmatismgen/obj_astigmatism_bullet
+// + obj_sonbullet kids, obj_stromboligen/obj_stromboli).
+// Bullets run on the 30fps step grid in room pixels (x UT_SCALE), like the source.
+const CORE3_IDS=['madjick','knightknight','astigmatism'];
+function isCore3(id=currentBoss){return CORE3_IDS.includes(id)}
+function core3DefMod(){return (typeof mj!=='undefined'&&mj&&currentBoss==='madjick')?mj.defMod:0}
+let mj=null,kk=null,ast=null;
+function resetCore3Enemies(){
+ mj={stare1:0,stare2:0,stare1a:0,stare2a:0,confuse:0,clear:0,command:0,heard:-1,mercymod:20,defMod:0,exist:0};
+ kk={sleepy:0,asleep:0,talk:0,command:0,heard:-1};
+ ast={pickon:Math.random()<.5?0:1,turnt:0,impress:0,mercymod:10,command:0,heard:-1};
+}
+resetCore3Enemies();
+function core3Pop(){return 1+supportPartyCountAlive()}
+// Madjick's gibberish reverses your controls until you clear your mind.
+function madjickConfused(){return currentBoss==='madjick'&&!enemyDead&&mj.confuse>0}
+
+// ---------- composites (canvas origin = the monster's x,y) ----------
+let mjCanvas=null,kkCanvas=null,astCanvas=null;
+function c3Draw(g,im,x,y,ox,oy,sx,sy,deg=0){
+ if(!im)return;
+ g.save();g.translate(x,y);g.rotate(-deg*Math.PI/180);g.scale(sx,sy);g.drawImage(im,-ox,-oy);g.restore();
+}
+function makeMadjickComposite(now=performance.now(),hurt=false,st=mj){
+ if(hurt)return images.wizardHurt||null;
+ if(!images.wizardHead)return images.wizardHurt||null;
+ if(!mjCanvas){mjCanvas=document.createElement('canvas');mjCanvas.width=143;mjCanvas.height=160}
+ const c=mjCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ // obj_wizardbody sits at (x+2, y+46) with offx 70.
+ const s=wfStep(now),X=72,Y=46,sam=Math.sin(s/5),sim=Math.cos(s/5),som=Math.sin(s/2.5);
+ c3Draw(g,images.wizardBoot,X-23-sam*5,Y+80-sam*6,14,1,2,2,-40-sam*10);
+ c3Draw(g,images.wizardBoot,X+19+sam*5,Y+80-sam*6,14,1,-2,2,40+sam*10);
+ c3Draw(g,images.wizardLapel,X-2,Y+52+sam,0,12,2,2,-sam*10);
+ c3Draw(g,images.wizardLapel,X-2,Y+52+sam,0,12,-2,2,sam*10);
+ c3Draw(g,images.wizardDress,X-34,Y+52+sam,0,0,2,1.8-sam*.2);
+ c3Draw(g,images.wizardHead,X-6+sam,Y+2+sam*8,10,5,2,2);
+ c3Draw(g,images.wizardHat,X+2+sim,Y+4+sam*10,20,25,2,2);
+ // Stared-at orbs slow down (siner/exist) and stop bobbing.
+ const orbs=images.wizardOrb||[];
+ const orb=(stared,x,y,bob)=>{const f=stared?0:Math.floor(s/3);c3Draw(g,orbs[f%Math.max(1,orbs.length)],x,y+(stared?0:bob),0,0,-2,-2)};
+ orb(st&&st.stare1>0,X-44,Y+16,som*2);
+ orb(st&&st.stare2>0,X+70,Y+6,som*5);
+ return c;
+}
+function makeKnightKnightComposite(now=performance.now(),hurt=false){
+ if(hurt)return images.knightHurt||null;
+ if(!images.knightBody)return images.knightHurt||null;
+ if(!kkCanvas){kkCanvas=document.createElement('canvas');kkCanvas.width=222;kkCanvas.height=201}
+ const c=kkCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ // obj_finalknight_body at (x+60, y) with offx -60: parts are relative to the monster.
+ const s=wfStep(now),asleep=kk.asleep?2:(kk.sleepy>0?1:0);
+ const e=s%181,ae2=e>30&&e<60?e-30:0;
+ const h=s%101,ah2=h>50&&h<75?h-50:0;
+ const m=s%301,am2=(m>150&&m<180?m-150:0)+(m>240&&m<270?m-240+30:(m>=270?30:0));
+ const l=s%311;let al2=0,al3=0;
+ if(l>=60&&l<120)al2=-(l-60)*.5;else if(l>=120&&l<150)al2=-30;else if(l>=150&&l<155)al2=Math.min(0,-30+(l-150)*6);
+ if(l>=300&&l<=310){al2=l%2?-3:0;al3=l%4<2?-1:1}
+ const fr=(a,i)=>{a=a||[];return a[Math.floor(i)%Math.max(1,a.length)]||a[0]};
+ const eyes=asleep===2?images.knightEyesAsleep:asleep===1?images.knightEyesTired:images.knightEyes;
+ c3Draw(g,Array.isArray(eyes)?fr(eyes,ae2/3):eyes,94+Math.sin(s/10)*6,70,0,0,2,2);
+ c3Draw(g,images.knightBody,0,0,0,0,2,2);
+ c3Draw(g,fr(images.knightHelmet,asleep===2?0:ah2/4),70,2,0,0,2,2);
+ const mouth=asleep===2?images.knightMouthAsleep:asleep===1?images.knightMouthTired:images.knightMouth;
+ c3Draw(g,fr(mouth,am2/6),98,84,0,0,2,2);
+ c3Draw(g,fr(images.knightFur,s/5),64,96,0,0,2,2);
+ c3Draw(g,images.knightArm,al3,al2,0,0,2,2);
+ return c;
+}
+function makeAstigmatismComposite(now=performance.now(),hurt=false){
+ if(hurt)return images.astigHurt||null;
+ const A=images.astigAnim2||[];
+ if(!A.length)return images.astigHurt||null;
+ if(!astCanvas){astCanvas=document.createElement('canvas');astCanvas.width=110;astCanvas.height=122}
+ const c=astCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ // obj_astigmatism_body at (x+6, y+10): blinks (anim2 0..18), stares (..33), sways, then closes.
+ const t=wfStep(now)%520;let anim2=0,sf=0,siner=0;
+ if(t>140&&t<159)anim2=t-140;else if(t>=159&&t<220)anim2=18;
+ else if(t>=220&&t<235)anim2=18+(t-220);else if(t>=235&&t<=480)anim2=33;
+ else if(t>480)anim2=Math.max(0,33-(t-480));
+ if(t>250&&t<=480){sf=Math.min(1,(t-250)*.05);siner=t-250}else if(t>480){sf=Math.max(0,1-(t-480)*.07);siner=230}
+ const X=6,Y=10,f=Math.floor(anim2/3);
+ const hand=images.astigHand,leg=images.astigLeg,sn=Math.sin(siner/6),cs=Math.cos(siner/6);
+ c3Draw(g,hand,X+8+sn*2*sf,Y+64+cs*2*sf,0,0,2,1.8+cs*.2*sf);
+ c3Draw(g,leg,X+30+cs*2*sf,Y+84+sn*2*sf,0,0,2,1.8+sn*.2*sf);
+ c3Draw(g,hand,X+92-sn*2*sf,Y+64-cs*2*sf,0,0,-2,1.9-cs*.2*sf);
+ c3Draw(g,leg,X+70-cs*2*sf,Y+84-sn*2*sf,0,0,-2,1.8-sn*.2*sf);
+ c3Draw(g,A[f%A.length],X,Y,0,0,2,2);
+ return c;
+}
+
+// ---------- ACTs ----------
+function madjickActOptions(){return ['Check','Talk','Stare: Chaser','Stare: Corner','Clear Mind']}
+function knightKnightActOptions(){return ['Check','Lullaby','Talk']}
+function astigmatismActOptions(){return ['Check','Pick On',"Don't Pick On",'Challenge']}
+function core3ActOptions(id){
+ if(id==='madjick')return madjickActOptions();
+ if(id==='knightknight')return knightKnightActOptions();
+ return astigmatismActOptions();
+}
+function madjickSpareCheck(){
+ // scr_mercystandard with Madjick's mercymod: both orbs stared down, or the
+ // chaser orb calmed by standing still (mercymod 400).
+ if((mj.stare1>0&&mj.stare2>0)||mj.mercymod>=400)mercy=100;
+}
+function handleCore3Act(choice){
+ const id=currentBoss;
+ if(id==='madjick'){
+   if(choice===0){mj.heard=0;setText('* MADJICK - ATK 29 DEF 24\n* This magical mercenary only\n  says magic words.',()=>beginEnemyTurn());return}
+   if(choice===1){
+     mj.heard=3;let t;
+     if(mj.clear>0)t='* Madjick interrupts you by\n  chattering to itself.\n* It seems satisfied.';
+     else if(mj.confuse>0)t="* You can't get a word\n  in edgewise.\n* Its words dizzy you...";
+     else{t='* Madjick interrupts you by\n  chattering to itself.\n* Its gibberish dizzies you...\n* Your DEFENSE drops by 1.';mj.defMod-=1}
+     if(!mj.clear)mj.confuse=Math.max(1,mj.confuse+1);
+     mj.mercymod=Math.max(mj.mercymod,190);
+     setText(t,()=>beginEnemyTurn());return;
+   }
+   if(choice===2||choice===3){
+     const chaser=choice===2;mj.heard=chaser?6:7;
+     let t;
+     if(chaser){mj.stare1++;mj.stare1a=1;t=mj.stare1>1?'* The destitute "Chaser Orb" was\n  weakened further by your glare.':'* The unrelenting "Chaser Orb"\n  was weakened by your glare.'}
+     else{mj.stare2++;mj.stare2a=1;t=mj.stare2>1?'* The homely "Corner Orb" was\n  weakened further by your glare.':'* The intimidating "Corner Orb"\n  was weakened by your glare.'}
+     if(mj.mercymod<200)mj.mercymod+=100;
+     madjickSpareCheck();
+     setText(t,()=>beginEnemyTurn());return;
+   }
+   mj.heard=4;mj.clear=1;
+   if(mj.confuse===0){mj.defMod+=5;setText('* You ignore Madjick and think\n  of pollen and sunshine.\n* Your DEFENSE increased by 1.',()=>beginEnemyTurn())}
+   else{mj.defMod+=10;mj.confuse=0;setText('* You think of pollen and\n  sunshine.\n* Your confusion abates.\n* Your DEFENSE increased by 2.',()=>beginEnemyTurn())}
+   return;
+ }
+ if(id==='knightknight'){
+   if(choice===0){kk.heard=0;setText('* KNIGHT KNIGHT - ATK 36 DEF 36\n* This megaton mercenary wields\n  the Good Morningstar.',()=>beginEnemyTurn());return}
+   if(choice===1){
+     kk.heard=1;let t;
+     if(kk.sleepy===0)t='* You sing an old lullaby.\n* Knight Knight starts to look\n  sleepy...';
+     else if(kk.asleep)t='* You keep singing.\n* Nothing happened.';
+     else if(kk.sleepy>1){t='* You keep singing.\n* Knight Knight falls asleep.';kk.asleep=1;mercy=100}
+     else t='* You keep singing.\n* Knight Knight closes its\n  eyes a bit...';
+     kk.sleepy++;
+     setText(t,()=>beginEnemyTurn());return;
+   }
+   kk.heard=3;kk.talk++;
+   let t=kk.talk===3?'* You ask Knight Knight about\n  her day.':"* You ask Knight Knight about\n  her day.\n* There's no response.";
+   if(kk.asleep){t='* You talk to Knight Knight.\n* She hums something in\n  her sleep...';kk.talk=0}
+   setText(t,()=>beginEnemyTurn());return;
+ }
+ if(choice===0){ast.heard=0;setText('* ASTIGMATISM - ATK 32 DEF 26\n* This relentless bully ALWAYS\n  gets its way.',()=>beginEnemyTurn());return}
+ if(choice===1){ast.heard=3;ast.mercymod=ast.pickon===0?-120:120}
+ else if(choice===2){ast.heard=1;ast.mercymod=ast.pickon===1?-120:120}
+ else{
+   ast.heard=4;ast.mercymod=0;
+   const many=core3Pop()>1;
+   for(const sp of supportParty)if(sp&&!sp.dead){sp.mercy=100}
+   setText(many?'* You stand up to Astigmatism.\n* The other monsters are\n  impressed.':'* You stand up to Astigmatism.',()=>beginEnemyTurn());return;
+ }
+ mercy=ast.mercymod>80?100:0;
+ setText(choice===1?'* You pick on Astigmatism.':"* You don't pick on Astigmatism.",()=>beginEnemyTurn());
+}
+
+// ---------- speech / flavor ----------
+function core3Speech(){
+ if(currentBoss==='madjick'){
+   const m=mj.command;
+   if(mj.mercymod>=280&&mj.mercymod<300)return 'Ah! A fellow\nwizard!';
+   return m<20?'Abra\ncadabra.':m<40?'Alakazam\n!!':m<60?'Tinkle\ntinkle\nhoy.':m<80?'Hocus\npocus.':'Please\nand\nthank\nyou.';
+ }
+ if(currentBoss==='knightknight'){
+   const m=kk.command;
+   if(kk.asleep)return 'Zzzz...';
+   if(kk.talk===3){kk.talk=0;return '......\n......\n......\nIt\'s OK.'}
+   return m<20?'Good\nknight.':m<40?'Fare\nwell.':m<60?'Adieu.':m<80?'Close\nyour\neyes...':'Goodbye.';
+ }
+ if(currentBoss==='astigmatism'){
+   const m=ast.command,h=ast.heard;ast.heard=-1;
+   let t=m<25?'...':m<50?'Take\nyour\nlast\nlook.':m<75?"You've\nseen\nenough.":'...\n...';
+   if(h===1){if(ast.mercymod<0)t='What are\nyou so\nafraid\nof?';if(ast.mercymod>80)t='Finally,\nsomeone\ngets it.'}
+   if(h===3){if(ast.mercymod<0)t='How\ndare\nyou.';if(ast.mercymod>80)t="That's\nright!"}
+   if(h===4)t=ast.mercymod<1?'You\ndare\ndefy me?':"You've\npushed\nyour\nluck.";
+   if(ast.turnt===0){t=ast.pickon===0?"...\nDon't\npick on\nme.":'...\nPick on\nme.';ast.turnt=1}
+   return t;
+ }
+ return '';
+}
+function core3Flavor(){
+ if(currentBoss==='madjick'){
+   const m=mj.command;
+   if(mj.mercymod>280)return '* Madjick believes you are\n  a fellow wizard.';
+   if(mj.stare1>0&&mj.stare2>0)return "* Madjick's orbs are\n  incapacitated.";
+   if(mj.confuse>0)return '* You still feel confused.';
+   if(m>=90)return '* Smells like magic.';
+   if(m>=75)return '* Madjick peers at you with\n  strange eyes.';
+   if(m>=50)return '* Madjick whispers arcane\n  swear words.';
+   if(m>=25)return '* Madjick flaunts its orbs\n  in a menacing manner.';
+   return '* Madjick does a mysterious jig.';
+ }
+ if(currentBoss==='knightknight'){
+   if(kk.asleep)return '* Knight Knight is snoring.';
+   const m=kk.command;
+   if(m>=90)return '* Smells like stardust.';
+   if(m>=75)return "* Knight Knight's armor emits\n  a dark sheen.";
+   if(m>=50)return '* Knight Knight watches quietly.';
+   if(m>=25)return '* Knight Knight breathes deeply.';
+   return '* Knight Knight smashes her\n  morningstar.';
+ }
+ if(currentBoss==='astigmatism'){
+   if(enemyHp<enemyMaxHp/3)return '* Astigmatism is watering.';
+   if(ast.mercymod>100)return "* Astigmatism doesn't care\n  about fighting anymore.";
+   if(ast.mercymod<-100)return '* Astigmatism has gone\n  bloodshot.';
+   const m=ast.command;
+   if(m>=90)return '* Smells like glasses.';
+   if(m>=70)return '* Astigmatism clicks its teeth.';
+   if(m>=30)return '* Astigmatism gives you a\n  hypnotizing glare.';
+   return '* Astigmatism gazes through\n  your soul.';
+ }
+ return '';
+}
+
+// ---------- turns ----------
+let core3Plan=null;
+function core3StartAttack(now){
+ const id=currentBoss,pop=core3Pop();
+ const roll=Math.round(Math.random()*100);
+ if(id==='madjick')mj.command=roll;else if(id==='knightknight')kk.command=roll;else ast.command=roll;
+ if(id==='madjick'){
+   let m=mj.command;
+   if(mj.stare1a)m=Math.random()*50+50;
+   if(mj.stare2a)m=Math.random()*49;
+   mj.stare1a=0;mj.stare2a=0;
+   core3Plan={id,type:m<50?'wall':'chaser',pop};
+   ARENA=utRect(162,220,310,165); // border 18
+ }else if(id==='knightknight'){
+   core3Plan={id,type:kk.asleep?'sleep':(kk.command>75&&pop===1?'hammer':'sky'),pop};
+   ARENA=utRect(162,220,310,165); // border 18
+ }else{
+   core3Plan={id,type:ast.command>=50?'eye':'stromboli',pop};
+   ARENA=utRect(237,250,160,135); // border 3
+ }
+ attackWave=['wall','chaser','hammer','sky','sleep','eye','stromboli'].indexOf(core3Plan.type);
+ box={...ARENA};soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2;
+}
+function core3Duration(){
+ if(!core3Plan)return 5000;
+ if(core3Plan.type==='sleep')return 400;
+ return (core3Plan.id==='madjick'?160:150)*(1000/30);
+}
+function core3Spawn(now){
+ if(!isCore3())return false;
+ if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+ specialSpawnCount=1;nextSpawn=now+99999;
+ if(!core3Plan||core3Plan.type==='sleep')return true;
+ bullets.push({kind:'c3Gen',owner:'main',x:0,y:0,vx:0,vy:0,damage:0,plan:core3Plan.type,pop:core3Plan.pop,t:0,alarm:1,odd:0,rate:0,born:now});
+ return true;
+}
+// Support Madjick: one chaser orb per turn that drops cross zaps.
+function spawnSupportMadjick(now,owner){
+ if(supportSpawnCount>0){nextSupportSpawn=now+99999;return}
+ supportSpawnCount=1;nextSupportSpawn=now+99999;
+ c3Chaser(owner,Math.random()*360,{zap:1,king:0,dmg:8});
+}
+
+// ---------- bullet constructors (room pixels) ----------
+function c3Box(){const U=UT_SCALE;return {L:ARENA.x/U,T:ARENA.y/U,R:(ARENA.x+ARENA.w)/U,B:(ARENA.y+ARENA.h)/U}}
+function c3Heart(){return {x:soul.x/UT_SCALE-8,y:soul.y/UT_SCALE-8}} // obj_heart x,y = top-left of the 16px heart
+function c3Dir(x0,y0,x1,y1){let d=Math.atan2(-(y1-y0),x1-x0)*180/Math.PI;return d<0?d+360:d}
+function c3Push(o){const b={owner:'main',x:0,y:0,vx:0,vy:0,alpha:1,...o};bullets.push(b);return b}
+function c3Zap(owner,x,y,o={}){
+ const h=c3Heart();
+ return c3Push({kind:'c3Zap',owner,rx:x,ry:y,dir:c3Dir(x,y,h.x+10,h.y+10),spd:5,fric:.1,exist:75,damage:8,...o});
+}
+function c3Chaser(owner,dirr,o={}){
+ const h=c3Heart();
+ return c3Push({kind:'c3Chaser',owner,rx:h.x,ry:h.y,hs:0,vs:0,dirr,first:30,zap:1,king:0,time:0,heal:0,alarm0:20,alarm1:1,visible:false,dmg:8,damage:0,...o});
+}
+
+// ---------- step ----------
+const CORE3_KINDS=new Set(['c3Gen','c3Zap','c3Wall','c3Chaser','c3Hammer','c3SkyOrb','c3Sun','c3Moon','c3SunBul','c3Meteor','c3Shine','c3Eye','c3Kid','c3Strom']);
+function c3Len(len,dir){return [len*Math.cos(dir*Math.PI/180),-len*Math.sin(dir*Math.PI/180)]}
+function updateCore3Bullet(b,now,dt){
+ if(!CORE3_KINDS.has(b.kind))return false;
+ wfSteps(b,dt,b=>c3Step(b,now));
+ return true;
+}
+function c3Step(b,now){
+ const box=c3Box(),h=c3Heart();
+ if(b.kind==='c3Gen'){
+   b.t++;
+   if(b.plan==='wall'&&b.t===1){
+     const o=c3Push({kind:'c3Wall',rx:box.L+5,ry:box.T+5,alarm:10,dmg:8,alt:0,damage:0});
+     if(mj.stare2>0){o.dmg-=mj.stare2*2;o.alt=1}
+   }
+   if(b.plan==='chaser'&&b.t===1){
+     const o=c3Chaser('main',Math.random()*360,{king:1,zap:1});
+     if(mj.stare1>0&&b.pop===1){
+       o.dirr=Math.random()*100;o.zap=0;o.dmg-=mj.stare1*2;
+       const d2=o.dirr+40+Math.random()*80;
+       c3Chaser('main',d2,{zap:0,dmg:8-mj.stare1*2});
+       c3Chaser('main',d2+40+Math.random()*70,{zap:0,dmg:8-mj.stare1*2});
+     }
+   }
+   if(b.plan==='hammer'&&--b.alarm===0){
+     // obj_hammergen: five hammers per volley on a 22px grid, one aimed at the heart.
+     const hnum=Math.ceil((box.R-box.L)/22)-1,col=()=>Math.floor(Math.random()*hnum)*22;
+     const xs=[];
+     const add=(x,side)=>{while(xs.includes(x))x+=22;xs.push(x);c3Push({kind:'c3Hammer',rx:x,ry:0,side,vs:0,go:0,a1:1,a2:0,a3:0,a4:0,visible:false,frame:side,damage:10})};
+     if(b.odd===1){add(h.x-12,0);b.odd=0}else{add(box.L+col(),0);b.odd=1}
+     add(box.L+col(),1);add(box.L+col(),1);add(box.L+col(),0);add(box.L+col(),1);
+     b.alarm=33;
+   }
+   if(b.plan==='sky'&&b.t===1)c3Push({kind:'c3SkyOrb',rx:box.L+(box.R-box.L)/2-20,ry:box.T-40,t:0,damage:0});
+   if(b.plan==='eye'){
+     b.rate=b.rate||17*(b.pop===3?2.8:b.pop===2?1.8:1);
+     if(--b.alarm<=0){b.alarm=b.rate;c3AstBullet(box,b.pop)}
+   }
+   if(b.plan==='stromboli'){
+     b.rate=b.rate||17*(b.pop===3?2.8:b.pop===2?1.8:1)+(b.pop===1?1:0);
+     if(--b.alarm<=0){
+       b.alarm=b.rate;
+       const spd=b.pop>1?1.5:2,vside=Math.random()<.5?0:1,hside=Math.random()<.5?0:1;
+       const o=c3Push({kind:'c3Strom',rx:0,ry:0,hs:0,vs:0,active:1,off:0,alpha:0,a3:0,damage:8});
+       if(vside===0){o.ry=box.T-60;o.vs=spd}else{o.ry=box.B+40;o.vs=-spd}
+       if(hside===0){o.rx=box.L-40;o.hs=spd;o.rx-=Math.random()*(box.R-box.L-20)-100}
+       else{o.rx=box.R+40;o.hs=-spd;o.rx+=Math.random()*(box.R-box.L-20)-100}
+     }
+   }
+   return;
+ }
+ if(b.kind==='c3Zap'){
+   b.exist--;if(b.exist<10)b.alpha-=.1;if(b.exist<0){b.expired=true;return}
+   b.spd=Math.max(0,b.spd-b.fric);
+   const [dx,dy]=c3Len(b.spd,b.dir);b.rx+=dx;b.ry+=dy;
+   return;
+ }
+ if(b.kind==='c3Wall'){
+   // The Corner Orb jumps to whichever corner your arrow keys point at.
+   if(key.ArrowLeft||key.a)b.rx=box.L+5;
+   if(key.ArrowRight||key.d)b.rx=box.R-30;
+   if(key.ArrowUp||key.w)b.ry=box.T+5;
+   if(key.ArrowDown||key.s)b.ry=box.B-30;
+   if(--b.alarm<=0){
+     const pop=core3Pop();b.alarm=pop>1?15:8;
+     const z=c3Zap(b.owner,b.rx+10,b.ry+10,{damage:b.dmg,exist:200,fric:.015});
+     z.spd=Math.hypot(h.x-b.rx,h.y-b.ry)>190?5.5:3.5;
+     z.dir+=15-Math.random()*30;
+     if(pop>1){z.dir+=10-Math.random()*20;z.spd=2.8}
+     if(b.alt){z.fric=.01;z.spd=3}
+   }
+   return;
+ }
+ if(b.kind==='c3Chaser'){
+   if(b.alarm1>0&&--b.alarm1===0){const [dx]=c3Len(140,b.dirr),[,dy]=c3Len(70,b.dirr);b.rx+=dx;b.ry+=dy;b.visible=true}
+   if(--b.alarm0<=0){
+     b.alarm0=20;
+     if(b.zap===1&&b.rx>box.L&&b.rx<box.R&&b.ry>box.T&&b.ry<box.B)c3Zap(b.owner,b.rx+12,b.ry+12,{damage:b.dmg,spd:1});
+   }
+   const pop=core3Pop();b.first--;
+   let turn=.2;
+   if(b.first<0){turn=b.zap===1?(pop>1?.5:.6):.3}
+   const nd=c3Dir(b.rx,b.ry,h.x,h.y),[ax,ay]=c3Len(turn,nd);
+   b.hs+=ax;b.vs+=ay;
+   const cap=b.zap===1?(pop>1?6:7):6,sp=Math.hypot(b.hs,b.vs);
+   if(sp>cap){b.hs*=cap/sp;b.vs*=cap/sp}
+   b.rx+=b.hs;b.ry+=b.vs;
+   if(b.rx>box.R+6)b.rx=box.L-15;if(b.rx<box.L-20)b.rx=box.R+2;
+   if(b.ry>box.B+6)b.ry=box.T-15;if(b.ry<box.T-20)b.ry=box.B+2;
+   // The "king" orb (stared at, alone): hold still for 15 seconds and it turns
+   // gentle; move again and it heals you, ends the turn and Madjick can be spared.
+   if(b.king===1&&b.zap===0&&b.owner==='main'){
+     if(!soulMoving){
+       attackStart+=1000/30;b.time++;
+       if(b.time>450&&!b.heal){b.heal=1;mj.mercymod=400;madjickSpareCheck();play('select')}
+     }else if(b.heal){
+       play('heal');hp=Math.min(maxHp,hp+1);
+       attackStart=-1e9;b.expired=true;
+     }
+   }
+   return;
+ }
+ if(b.kind==='c3Hammer'){
+   // obj_knighthammer alarms: appear, creep, pause, SLAM, shake, retract.
+   if(b.a1>0&&--b.a1===0){b.visible=true;if(b.side===0){b.ry=235-196;b.vs=2}else{b.ry=375;b.vs=-2}b.a2=12}
+   if(b.a2>0&&--b.a2===0){b.vs/=30;b.a3=15}
+   if(b.a3>0&&--b.a3===0){b.vs*=240;b.go=1}
+   if(b.a4>0&&--b.a4===0){b.go=3;b.vs=b.side===0?-10:10}
+   b.ry+=b.vs;
+   if(b.go===1){
+     const hit=b.side===0?b.ry+196>400:b.ry<250;
+     if(hit){if(!b.shook){play('impact');battleShake(2)}b.shook=1;b.nowx=b.rx;b.nowy=b.ry;b.go=2;b.vs=0;b.a4=5}
+   }
+   if(b.go===2){b.jx=Math.random()*4-2;b.jy=Math.random()*4-2}else{b.jx=0;b.jy=0}
+   if(b.go===3){if(b.side===0&&b.ry+196<250)b.expired=true;if(b.side===1&&b.ry>400)b.expired=true}
+   return;
+ }
+ if(b.kind==='c3SkyOrb'){
+   b.ry+=4;b.t++;
+   if(b.t>=15){
+     play('break2');battleFlash();
+     c3Push({kind:Math.random()<.5?'c3Moon':'c3Sun',rx:b.rx,ry:b.ry,t:0,a2:1,a3:20,damage:0});
+     b.expired=true;
+   }
+   return;
+ }
+ if(b.kind==='c3Sun'){
+   b.t++;
+   if(--b.a2<=0){b.a2=core3Pop()>1?3:1;c3SunBullet(b.rx+14,b.ry+14,Math.random()*360)}
+   if(--b.a3<=0){if(core3Pop()===1){c3SunBullet(b.rx+14,b.ry+14,c3Dir(b.rx+14,b.ry+14,h.x,h.y))}b.a3=30}
+   return;
+ }
+ if(b.kind==='c3Moon'){
+   b.t++;
+   if(--b.a2<=0){
+     b.a2=core3Pop()>1?6:3;
+     if(Math.random()<.5)c3Meteor(box.L-Math.random()*(box.L-50)-50,250-Math.random()*200);
+     else c3Meteor(box.L+Math.random()*((box.R-box.L)-150)-60,box.T-200-Math.random()*50);
+   }
+   if(--b.a3<=0){if(core3Pop()===1){const m=c3Meteor(200-Math.random()*200,200-Math.random()*200);m.dir=c3Dir(m.rx,m.ry,h.x,h.y)}b.a3=30}
+   return;
+ }
+ if(b.kind==='c3SunBul'){
+   b.dir-=2;b.spd+=.1;b.size+=.025;
+   const [dx,dy]=c3Len(b.spd,b.dir);b.rx+=dx;b.ry+=dy;
+   if(--b.life<=0)b.expired=true;
+   return;
+ }
+ if(b.kind==='c3Meteor'){
+   const [dx,dy]=c3Len(b.spd,b.dir);b.rx+=dx;b.ry+=dy;b.frame=(b.frame+1)%5;
+   if(b.alpha<1)b.alpha+=.2;
+   if(b.rx>650||b.ry>490)b.expired=true;
+   return;
+ }
+ if(b.kind==='c3Shine'){b.frame++;if(b.frame>=6)b.expired=true;return}
+ if(b.kind==='c3Eye'){
+   b.siner++;b.ry+=Math.cos(b.siner/3)*.6;b.asiner+=b.av;
+   b.rx+=b.hs;b.ry+=b.vs;
+   b.k1x=-2+b.rx+Math.sin(b.asiner/16)*b.f1;b.k1y=b.ry+Math.cos(b.asiner/16)*b.f1;
+   b.k2x=b.rx+Math.sin(b.asiner/16)*b.f2;b.k2y=b.ry+Math.cos(b.asiner/16)*b.f2;
+   if(b.rx<0){b.expired=true;return}
+   if(b.alpha<1&&!b.off)b.alpha+=.1;
+   if(b.rx<box.L-30)b.off=1;
+   if(b.off){b.alpha-=.05;if(b.alpha<.1)b.expired=true}
+   return;
+ }
+ if(b.kind==='c3Strom'){
+   b.hs+=Math.sign(b.hs)*.05;b.vs+=Math.sign(b.vs)*.05; // friction -0.05
+   b.rx+=b.hs;b.ry+=b.vs;
+   const wl=box.L-2,wr=box.R-22,wd=box.B-22,wu=box.T-2;
+   if(b.active===1){
+     const bounce=(hs,vs)=>{b.active=2;b.a3=60;b.hs=hs;b.vs=vs};
+     if(b.hs>0&&b.rx>wr)bounce(-2,0);
+     else if(b.hs<0&&b.rx<wl)bounce(2,0);
+     else if(b.vs>0&&b.ry>wd)bounce(0,-2);
+     else if(b.vs<0&&b.ry<wu)bounce(0,2);
+   }
+   if(b.a3>0&&--b.a3===0)b.off=1;
+   if(b.alpha<1&&!b.off)b.alpha+=.1;
+   if(b.off){b.alpha-=.05;if(b.alpha<.1)b.expired=true}
+ }
+}
+function c3SunBullet(x,y,dir){
+ return c3Push({kind:'c3SunBul',rx:x,ry:y,dir,spd:core3Pop()>1?.7:.9,size:.25,life:90,damage:8});
+}
+function c3Meteor(x,y){
+ c3Push({kind:'c3Shine',rx:x+5,ry:y+5,frame:0,damage:0});
+ return c3Push({kind:'c3Meteor',rx:x,ry:y,spd:Math.hypot(5,5),dir:315-(15-Math.random()*30),alpha:.1,frame:0,damage:8});
+}
+function c3AstBullet(box,pop){
+ const y=box.T+Math.random()*((box.B-box.T)+10)-20;
+ let vs=-1+Math.random()*2;
+ if(y>box.B-50&&vs>0){vs*=-1;if(Math.abs(vs)<.3)vs*=2}
+ if(y<box.T+50&&vs<0){vs*=-1;if(Math.abs(vs)<.3)vs*=2}
+ let hs=-3-Math.random(),f1=22,f2=40,av=(.7+Math.random()*.5)*(Math.random()<.5?1:-1);
+ if(pop>1){f1=18;f2=36}
+ if(pop>2){hs=-2.5-Math.random();f1=16;f2=32;av=(.6+Math.random()*.5)*(Math.random()<.5?1:-1)}
+ const asiner=Math.random()*300;
+ return c3Push({kind:'c3Eye',rx:box.R+90,ry:y,hs,vs,siner:0,asiner,av,f1,f2,alpha:0,off:0,
+   k1x:box.R+90+Math.sin(asiner/16)*14,k1y:y+Math.cos(asiner/16)*14,k2x:box.R+90+Math.sin(asiner/16)*28,k2y:y+Math.cos(asiner/16)*28,damage:8});
+}
+
+// ---------- collision ----------
+function c3HitCircle(cx,cy,r){
+ const U=UT_SCALE,hx=soul.x/U,hy=soul.y/U;
+ return Math.hypot(hx-cx,hy-cy)<=r+3;
+}
+function c3HitRect(x,y,w,h){const U=UT_SCALE;return rectHit(soul.x-7,soul.y-7,14,14,x*U,y*U,w*U,h*U)}
+function core3Collide(b,now){
+ if(!CORE3_KINDS.has(b.kind))return false;
+ let hit=false;
+ if(b.kind==='c3Zap'){
+   if(b.alpha<.5)return true;
+   // spr_crosszap origin (10,5), mask a 2px line from (9,4) to (10,15), rotated by direction-90.
+   const a=(b.dir-90)*Math.PI/180,ux=Math.sin(a),uy=Math.cos(a);
+   const x0=b.rx-.5*Math.cos(a)+(-1)*ux,y0=b.ry+.5*Math.sin(a)+(-1)*uy;
+   const x1=b.rx-.5*Math.cos(a)+10*ux,y1=b.ry+.5*Math.sin(a)+10*uy;
+   const U=UT_SCALE,hx=soul.x/U,hy=soul.y/U,vx=x1-x0,vy=y1-y0,l2=vx*vx+vy*vy||1,t=clamp(((hx-x0)*vx+(hy-y0)*vy)/l2,0,1);
+   hit=Math.hypot(x0+vx*t-hx,y0+vy*t-hy)<=4;
+ }else if(b.kind==='c3Hammer'){
+   if(!b.visible)return true;
+   // Only the part inside the board can touch the heart (draw_self_border).
+   const bx=c3Box(),x=b.rx+16,y=Math.max(bx.T,b.ry+4),y2=Math.min(bx.B,b.ry+192);
+   if(y2>y)hit=c3HitRect(x,y,10,y2-y);
+ }else if(b.kind==='c3SunBul'){
+   hit=c3HitCircle(b.rx+5.5*b.size,b.ry+5.5*b.size,Math.max(1,b.size));
+ }else if(b.kind==='c3Meteor'){
+   if(b.alpha<.5)return true;
+   hit=c3HitCircle(b.rx+13.5,b.ry+13.5,2.5);
+ }else if(b.kind==='c3Eye'){
+   if(b.alpha<.5)return true;
+   hit=c3HitCircle(b.rx+18,b.ry+18,6)||c3HitCircle(b.k1x+16,b.k1y+16,4)||c3HitCircle(b.k2x+16,b.k2y+16,2);
+ }else if(b.kind==='c3Strom'){
+   if(b.alpha<.5)return true;
+   hit=c3HitCircle(b.rx+16,b.ry+16,4);
+ }
+ if(hit)hurtPlayer(now,b.damage||8,b.owner||'main');
+ return true;
+}
+
+// ---------- draw ----------
+const CORE3_NOBORDER=new Set(['c3SunBul','c3Meteor','c3Shine','c3Eye','c3Kid','c3Strom','c3Sun','c3Moon','c3Zap']);
+function drawCore3Bullet(b,now){
+ if(!CORE3_KINDS.has(b.kind))return false;
+ const U=UT_SCALE;
+ const put=(im,x,y,w,h,alpha=1,ang=0,ox=0,oy=0)=>{
+   if(!im)return;ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=clamp(alpha,0,1);
+   ctx.translate(x*U,y*U);if(ang)ctx.rotate(-ang*Math.PI/180);ctx.drawImage(im,-ox*U,-oy*U,w*U,h*U);ctx.restore();
+ };
+ const fr=(a,i)=>{a=a||[];return a[Math.floor(i)%Math.max(1,a.length)]||a[0]};
+ if(b.kind==='c3Gen')return true;
+ if(b.kind==='c3Zap'){put(images.crossZap,b.rx,b.ry,20,20,b.alpha,b.dir-90,10,5);return true}
+ if(b.kind==='c3Wall'){put(images.wizardOrb2,b.rx,b.ry,28,26);return true}
+ if(b.kind==='c3Chaser'){if(b.visible)put(b.heal?images.wizardOrb3:images.wizardOrb2,b.rx,b.ry,28,26);return true}
+ if(b.kind==='c3Hammer'){if(b.visible)put(fr(images.knightHammer,b.frame),b.rx+(b.jx||0),b.ry+(b.jy||0),42,196);return true}
+ if(b.kind==='c3SkyOrb'){put(images.skyOrb,b.rx,b.ry,36,36);return true}
+ if(b.kind==='c3Sun'){put(fr(images.sunMoon,b.t*.1),b.rx,b.ry,50,50,1,0,6,6);return true}
+ if(b.kind==='c3Moon'){put(images.skyMoon,b.rx,b.ry,36,36);return true}
+ if(b.kind==='c3SunBul'){put(images.sunBullet,b.rx,b.ry,12*b.size,12*b.size);return true}
+ if(b.kind==='c3Meteor'){put(fr(images.moonMeteor,b.frame),b.rx,b.ry,20,20,b.alpha);return true}
+ if(b.kind==='c3Shine'){put(fr(images.meteorShine,b.frame),b.rx,b.ry,28,28);return true}
+ if(b.kind==='c3Eye'){
+   put(images.circleBulSm,b.k2x,b.k2y,32,32,b.alpha);
+   put(images.circleBulMed,b.k1x,b.k1y,32,32,b.alpha);
+   put(images.circleBulLarge,b.rx,b.ry,36,36,b.alpha);
+   return true;
+ }
+ if(b.kind==='c3Strom'){put(images.circleBulMed,b.rx,b.ry,32,32,b.alpha);return true}
+ return true;
+}
+function battleShake(n=2){try{if(typeof screenShake==='function')screenShake(n)}catch(_){}}
+function battleFlash(){try{if(typeof startScreenFlash==='function')startScreenFlash()}catch(_){}}
 
 // ---------- bullets ----------
 const UX_KINDS=new Set(['uxRise','uxRing','uxFollow2']);
@@ -20178,6 +20817,9 @@ function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='dogi')return makeDogiComposite(now,hurt);
  if(id==='woshua')return makeWoshuaComposite(now,hurt);
  if(id==='pyrope')return makePyropeComposite(now,hurt);
+ if(id==='madjick')return makeMadjickComposite(now,hurt);
+ if(id==='knightknight')return makeKnightKnightComposite(now,hurt);
+ if(id==='astigmatism')return makeAstigmatismComposite(now,hurt);
  if(id==='undyneex')return makeUndyingComposite(now,hurt);
  if(id==='mettatonex')return makeMettatonExComposite(now,hurt);
  if(id==='mettatonneo')return makeMettatonNeoComposite(now,hurt);
@@ -20291,6 +20933,7 @@ function currentSupportImage(now=performance.now(),hurt=false){
  if(supportEnemyIs('whimsalot'))return images.whimsalotHurt||null;
  if(supportEnemyIs('migosp'))return addedEnemyIdleImage('migosp',now,hurt);
  if(supportEnemyIs('jerry'))return currentJerryImage(now,hurt);
+ if(supportEnemyIs('madjick'))return makeMadjickComposite(now,hurt,currentSupportInstance()?.actState||{});
  if(supportEnemyIs('froggit')){
    return hurt
      ?(images.froggit?.[1]||images.froggitComposite)
@@ -20709,7 +21352,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -21870,7 +22513,7 @@ function drawAttack(now){
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
-   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB';
+   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB'||CORE3_NOBORDER.has(b.kind);
    if(!allowOutside){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
@@ -22043,7 +22686,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
-   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawUndyingBullet(b,now)||drawNhbBullet(b,now)){continue}
+   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawCore3Bullet(b,now)||drawUndyingBullet(b,now)||drawNhbBullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -22180,6 +22823,8 @@ function drawAttack(now){
        ctx.beginPath();ctx.moveTo(Math.round(p1x),Math.round(p1y));ctx.lineTo(Math.round(p2x),Math.round(p2y));ctx.stroke();
        ctx.strokeStyle='#4040ff';ctx.beginPath();ctx.moveTo(Math.round(p1x),Math.round(p1y));ctx.lineTo(Math.round(p3x),Math.round(p3y));ctx.stroke();
        ctx.restore();
+     }else if(madjickConfused()&&images.confuseHeart?.length){
+       ctx.drawImage(images.confuseHeart[Math.floor(now/200)%2]||images.confuseHeart[0],Math.round(soul.x-16),Math.round(soul.y-16),32,32);
      }else     if(currentBoss==='papyrus'&&papyrusBlue&&images.heartBlue){
        ctx.save();ctx.globalAlpha=1;ctx.filter='none';ctx.globalCompositeOperation='source-over';
        ctx.drawImage(images.heartBlue,Math.round(soul.x-16),Math.round(soul.y-16),32,32);ctx.restore();
@@ -22909,7 +23554,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -26477,6 +27122,8 @@ async function boot(){
  for(const k of ['uxHair','uxLegs','uxLArm','uxRArm','uxTorso','uxPants','uxFace1','uxFaceDamage','uxEyebeam','uxFollowSpear'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['mexUpper', 'mexFace1', 'mexFaceDef', 'mexFaceGen', 'mexFaceHurt', 'mexBomb', 'mexBlastC', 'mexBlastH', 'mexBlastV', 'mexFodder', 'mexSparkle', 'mexDance', 'mexDanceTell', 'mexTrig', 'mexRec', 'mexRew', 'mexHeart', 'mexHeartC', 'mexExcl', 'mexBreak', 'mexShot', 'mexSoul', 'mexStageLight', 'mexArm'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['mexUpperHeart', 'mexLeg1', 'mexLeg2', 'mexLeg3', 'mexLeg4', 'mexLeg5', 'mexLeg2Flip', 'mexLeg2FlipV', 'mexLeg2Unflip', 'mexLeg2UnflipV', 'mexBox', 'mexLight', 'mexKiss', 'mexLegBulL', 'mexLegBulR', 'mexHandL', 'mexHandR', 'mexTrigOff', 'mexDisco', 'mexDiscoInv', 'mexStar'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
+ for(const k of ['wizardOrb','confuseHeart','knightEyes','knightEyesTired','knightHelmet','knightMouth','knightMouthTired','knightMouthAsleep','knightFur','knightHammer','sunMoon','moonMeteor','meteorShine','astigAnim2'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
+ for(const k of ['wizardHurt','wizardBoot','wizardLapel','wizardDress','wizardHead','wizardHat','wizardOrb2','wizardOrb3','crossZap','knightHurt','knightBody','knightEyesAsleep','knightArm','skyOrb','skyMoon','sunBullet','astigHurt','astigHand','astigLeg','circleBulLarge','circleBulMed','circleBulSm'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.gasterBlaster.forEach((u,i)=>add(`gasterBlaster ${i+1}`,async()=>{images.gasterBlaster=images.gasterBlaster||[];images.gasterBlaster[i]=await needImage(u)}));
  IMG.neoFace.forEach((u,i)=>add(`neoFace ${i+1}`,async()=>{images.neoFace=images.neoFace||[];images.neoFace[i]=await needImage(u)}));
  for(const k of ['neoBurst','neoLegs','neoArmR','neoArmL','neoBody'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
@@ -26735,7 +27382,7 @@ async function boot(){
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
  images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
- for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','undyneex','mettatonex','mettatonneo']){
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
