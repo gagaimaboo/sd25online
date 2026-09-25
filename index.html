@@ -2776,14 +2776,59 @@ function formationCenterX(actorIndex,actorCount=configuredActorCount()){return f
 // Fit horizontally INSIDE one assigned cell. Vertical height may extend into the
 // upper row for tall Undertale sprites, but no actor is allowed to trespass into
 // its neighbor's column anymore.
+// Where the monster's VISIBLE pixels sit inside its ENEMY_LAYOUTS canvas, as
+// fractions [left,top,right,bottom] (measured from each monster's solo render).
+// Many canvases are padded for animation (Greater Dog's is 420 wide for his lunge),
+// so fitting the whole canvas into a grid cell shrank them to a fraction of their size.
+const ENEMY_CONTENT_BOX={
+ dummy:[0.113,0.058,0.806,0.979],
+ froggit:[0.019,0.115,0.928,0.981],
+ finalfroggit:[0.099,0.014,0.885,0.968],
+ toriel:[0,0.009,0.987,0.991],
+ vegetoid:[0,0,1,0.939],
+ napstablook:[0,0,1,0.887],
+ maddummy:[0.185,0.129,0.837,0.957],
+ doggo:[0.046,0.064,0.954,0.855],
+ lesserdog:[0,0.279,1,0.991],
+ greaterdog:[0.305,0.127,0.695,0.864],
+ dogi:[0.018,0.051,0.972,0.989],
+ papyrus:[0.012,0.008,0.991,0.989],
+ snowdrake:[0.127,0.061,0.847,0.99],
+ icecap:[0.017,0.017,0.983,1],
+ moldsmal:[0.039,0.074,0.939,0.926],
+ aaron:[0,0.091,1,1],
+ shyren:[0,0.011,0.952,1],
+ moldbygg:[0.101,0.596,0.88,0.96],
+ temmie:[0,0.009,0.94,0.932],
+ woshua:[0.02,0.028,0.928,0.98],
+ undyne:[0.02,0.078,0.936,0.978],
+ tsunderplane:[0.012,0.014,0.988,0.986],
+ madjick:[0.027,0.131,0.947,0.942],
+ knightknight:[0.01,0,0.964,0.996],
+ astigmatism:[0.092,0.098,0.928,1],
+ muffet:[0,0.055,0.971,0.99],
+ pyrope:[0.112,0,0.873,0.965],
+ vulkin:[0.009,0.015,0.89,0.952],
+ mettatonneo:[0,0.048,0.982,0.923]
+};
 function rectForFormationCell(id,layout,actorIndex,actorCount){
  const slot=formationSlot(actorIndex,actorCount);
  const pad=6;
+ const f=ENEMY_CONTENT_BOX[id]||[0,0,1,1];
  const maxW=Math.max(18,slot.w-pad*2);
- let w=layout.w,h=layout.h;
- if(w>maxW){const s=maxW/w;w*=s;h*=s}
- const x=clamp(slot.cx-w/2,slot.left+pad,slot.right-pad-w);
- const y=encounterGridTopY(id,h,slot.row,layout.y);
+ // Only shrink when the actual sprite is wider than its cell; otherwise keep the real size.
+ const cw=layout.w*(f[2]-f[0]),ch=layout.h*(f[3]-f[1]);
+ // Two-row formations (6 actors) also have to fit the cell's height, or a tall
+ // monster in the bottom row covers whoever stands above it.
+ const maxH=actorCount>=6?Math.max(18,slot.h-6):Infinity;
+ const s=Math.min(1,cw>maxW?maxW/cw:1,ch>maxH?maxH/ch:1);
+ const w=layout.w*s,h=layout.h*s;
+ // Centre the visible sprite (not the padded canvas) in the cell.
+ const cl=f[0]*w,cr=f[2]*w;
+ const x=clamp(slot.cx-(cl+cr)/2,slot.left+pad-cl,slot.right-pad-cr);
+ let y;
+ if(ENCOUNTER_FLOATERS.has(id))y=encounterGridTopY(id,h,slot.row,layout.y);
+ else y=slot.bottom-4-f[3]*h; // feet on the cell floor
  return utRect(x,y,w,h);
 }
 
