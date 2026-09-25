@@ -2134,6 +2134,14 @@ function sandboxPartySlots(){
 }
 function sandboxPartyRoles(){return sandboxPartySlots().filter(v=>v!=='off').map(normalizePlayerRole).slice(0,SANDBOX_PARTY_MAX)}
 function sandboxRole(){return sandboxPartySlots()[0]||'classic'}
+// NOELLE MODE as the player sees it: the vanilla toggle, or the saved CUSTOM party leader.
+function noelleModeActive(){return vanillaMode?noelleEnabled:sandboxRole()==='noelle'}
+function toggleNoelleMode(){
+ const on=!noelleModeActive();noelleEnabled=on;
+ // CUSTOM mode remembers its party leader, so the settings toggle has to change it too,
+ // otherwise one CUSTOM run as Noelle leaves her stuck as the leader.
+ if(!vanillaMode){if(on)setSandboxRole('noelle');else if(sandboxRole()==='noelle')setSandboxRole('classic')}
+}
 function setSandboxRole(v){
  const slots=sandboxPartySlots();slots[0]=normalizePlayerRole(v);sandboxConfig.party=slots;sandboxConfig.role=slots[0];saveSandboxConfig();
 }
@@ -4111,7 +4119,8 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
  if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
- return id==='main'?enemyImage:(supportImage||images.dummy||null);
+ // Supports without their own entry (Jerry, Madjick, ...) use their hurt sprite.
+ return id==='main'?enemyImage:(currentSupportImage(now,true)||currentSupportImage(now,false)||images.dummy||null);
 }
 
 // UNDERTALE monster vaporize, rebuilt from the decompiled GameMaker objects:
@@ -4451,7 +4460,8 @@ const NOELLE_N_ACTIONS={
  vulkin:{gain:55,text:"* Noelle tells Vulkin that its warmth is actually kind of nice.\n* Vulkin glows proudly."},
  mettaton:{gain:0,text:"* Noelle gives the camera an extremely nervous little wave.\n* Mettaton calls it adorable television, but keeps the show going."},
  flowey:{gain:0,text:"* Noelle tries to reason with Flowey.\n* Flowey only smiles wider."},
- custom:{gain:35,text:"* Noelle tries a gentle N-Action.\n* The custom enemy seems a little less hostile."}
+ custom:{gain:35,text:"* Noelle tries a gentle N-Action.\n* The custom enemy seems a little less hostile."},
+ jerry:{gain:100,text:"* Noelle is genuinely nice to Jerry.\n* Jerry is so confused it forgets\n  to be annoying."}
 };
 const SUSIE_S_ACTIONS={
  dummy:{gain:25,text:"* Susie cracks her knuckles, then deliberately punches the air beside the Dummy.\n* \"See? Wasn't you.\""},
@@ -4491,7 +4501,8 @@ const SUSIE_S_ACTIONS={
  vulkin:{gain:55,text:"* Susie pats Vulkin, burns her hand, and laughs about it.\n* Vulkin takes this as friendship."},
  mettaton:{gain:0,text:"* Susie points at the camera and tells Mettaton to get her good side.\n* Mettaton approves of the attitude, not the mercy."},
  flowey:{gain:0,text:"* Susie tells Flowey to cut the creepy flower act.\n* Flowey is not impressed."},
- custom:{gain:35,text:"* Susie improvises an S-Action.\n* The custom enemy seems to respect the confidence."}
+ custom:{gain:35,text:"* Susie improvises an S-Action.\n* The custom enemy seems to respect the confidence."},
+ jerry:{gain:100,text:"* Susie tells Jerry to get lost.\n* Jerry actually listens."}
 };
 function roleActionSpec(role,id){
  const table=role==='noelle'?NOELLE_N_ACTIONS:role==='susie'?SUSIE_S_ACTIONS:null;
@@ -6356,6 +6367,44 @@ function advanceBattleAttackSpeech(){
  return true;
 }
 
+function battleSpeechLayout(text,wide,bw){
+ const maxW=bw-(wide?112:88);
+ const top=wide?42:38,bottom=wide?52:46;
+ const base=wide?236:205;
+ const wrap=size=>{
+   ctx.font=`${size}px "UndertaleFont", monospace`;
+   const lines=[];
+   const chunks=String(text??'').split('\n');
+   for(let ci=0;ci<chunks.length;ci++){
+     let cur={tokens:[],w:0,tail:0};
+     for(const tok of chunks[ci].split(/(\s+)/)){
+       if(!tok)continue;
+       const mw=ctx.measureText(tok).width;
+       if(cur.tokens.length&&cur.w+mw>maxW){
+         // A wrap eats the whitespace token it breaks on.
+         if(/^\s+$/.test(tok)){cur.tail+=tok.length;continue}
+         lines.push(cur);cur={tokens:[],w:0,tail:0};
+       }
+       cur.tokens.push(tok);cur.w+=mw;
+     }
+     if(ci<chunks.length-1)cur.tail+=1; // the '\n'
+     lines.push(cur);
+   }
+   return lines;
+ };
+ let size=wide?27:26,lines,lineH;
+ for(;;){
+   lineH=Math.round(size*32/26);
+   lines=wrap(size);
+   const need=top+lines.length*lineH+bottom-lineH*.2;
+   // Shrink down to 20px first; below that, grow the bubble instead (up to ~2x),
+   // and only go smaller still for truly huge lines.
+   if(need<=base||(size<=20&&need<=base*1.9)||size<=14)break;
+   size-=2;
+ }
+ const bh=Math.max(base,Math.ceil(top+lines.length*lineH+bottom-lineH*.2));
+ return {size,lineH,lines,bh};
+}
 function drawBattleSpeech(now=performance.now()){
  if(!battleSpeech)return;
  // Turn-blocking battle dialogue stays on screen until the player confirms it.
@@ -6371,7 +6420,10 @@ function drawBattleSpeech(now=performance.now()){
  const wide=!!battleSpeech.wide;
  const bubble=wide?images.torielBubbleWide:images.torielBubbleSmall;
  const bw=wide?460:310;
- const bh=wide?236:205;
+ // Fit the WHOLE line (not just the typed part) so wrapping never jumps mid-type:
+ // shrink the font first, then grow the bubble, so text never spills out of it.
+ const fit=battleSpeechLayout(battleSpeech.text||raw,wide,bw);
+ const bh=fit.bh;
 
  // Undertale's battle bubbles point back toward the speaking monster. Fireshock
  // reactions can come from a support target, so anchor to that target's real draw rect
@@ -6414,28 +6466,24 @@ function drawBattleSpeech(now=performance.now()){
    ctx.fillRect(Math.round(bx),Math.round(by),Math.round(bw),Math.round(bh));
  }
 
- let tx=bx+(wide?74:58);
+ const tx=bx+(wide?74:58);
  const ty=by+(wide?42:38);
- let maxW=bw-(wide?112:88);
- const lineH=32;
 
  ctx.fillStyle='#000';
  ctx.textAlign='left';
  ctx.textBaseline='top';
- ctx.font=`${wide?27:26}px "UndertaleFont", monospace`;
+ ctx.font=`${fit.size}px "UndertaleFont", monospace`;
 
- let x=tx,y=ty;
- // Preserve deliberate line breaks, then word-wrap each segment.
- const chunks=raw.split('\n');
- for(let ci=0;ci<chunks.length;ci++){
-   const words=chunks[ci].split(/(\s+)/);
-   for(const token of words){
-     const mw=ctx.measureText(token).width;
-     if(x>tx&&x+mw>tx+maxW){x=tx;y+=lineH}
-     ctx.fillText(token,x,y);
-     x+=mw;
+ let left=raw.length;
+ for(let li=0;li<fit.lines.length&&left>0;li++){
+   let x=tx;
+   for(const tok of fit.lines[li].tokens){
+     if(left<=0)break;
+     const t=tok.length>left?tok.slice(0,left):tok;
+     ctx.fillText(t,x,ty+li*fit.lineH);
+     x+=ctx.measureText(tok).width;left-=tok.length;
    }
-   if(ci<chunks.length-1){x=tx;y+=lineH}
+   left-=fit.lines[li].tail;
  }
 
  ctx.restore();
@@ -8948,7 +8996,7 @@ const PARTY_FIGHT_ALIGN_PX=11;
 function soloPartyConfigured(){return !vanillaMode&&sandboxPartyRoles().length>1}
 function soloPartyEnabled(){return soloPartyConfigured()&&screen==='battle'&&!(typeof mpBattleActive!=='undefined'&&mpBattleActive)}
 function soloPartyLeaderRole(){return sandboxPartyRoles()[0]||sandboxRole()}
-function soloPartySetRole(role,slot=soloPartyTurnIndex){practiceMode=normalizePlayerRole(role);if(vanillaMode)noelleEnabled=practiceMode==='noelle';if(!vanillaMode&&Array.isArray(partyRuntimeItems)&&partyRuntimeItems.length)activatePartyRuntimeSlot(slot)}
+function soloPartySetRole(role,slot=soloPartyTurnIndex){practiceMode=normalizePlayerRole(role);if(!vanillaMode&&Array.isArray(partyRuntimeItems)&&partyRuntimeItems.length)activatePartyRuntimeSlot(slot)}
 function soloPartyClearActionRuntime(){
  soloPartyActionQueue=[];soloPartyExecutingActions=false;soloPartyExecutionIndex=-1;
  soloPartyMultiFightActive=false;soloPartyMultiFightResolving=false;soloPartyMultiFightLanes=[];soloPartyMultiFightResolveIndex=-1;
@@ -15450,9 +15498,11 @@ function wrapNativeBattleText(text,maxWidth,size=24){
  const out=[];
  for(const raw of String(text??'').split('\n')){
    if(raw===''){out.push('');continue}
-   const words=raw.split(' ');let line='';
+   // Keep UNDERTALE's "  " continuation indent instead of eating it.
+   const indent=raw.match(/^ */)[0];
+   const words=raw.slice(indent.length).split(' ');let line='';
    for(const word of words){
-     const test=line?line+' '+word:word;
+     const test=line?line+' '+word:indent+word;
      if(line&&nativeTextWidth(test,size)>maxWidth){out.push(line);line=word}else line=test;
    }
    out.push(line);
@@ -15504,14 +15554,18 @@ function activePartyDialoguePortrait(){
  return bank?.[battleTextExpression]||bank?.neutral||null;
 }
 function battleMessageLayout(full,portrait=false){
+ // Line caps come from the box's real inner bottom (y 250+135 minus the border),
+ // so the last line never pokes out under the HP bar / buttons.
+ const inner=380-3;
  const candidates=[
-   {size:24,line:32,max:4,y:270},
-   {size:22,line:27,max:5,y:266},
-   {size:20,line:24,max:5,y:267},
-   {size:18,line:21,max:6,y:264},
-   {size:16,line:18,max:7,y:262},
-   {size:14,line:16,max:8,y:261}
- ];
+   {size:24,line:32,y:270},
+   {size:22,line:27,y:266},
+   {size:20,line:24,y:267},
+   {size:18,line:21,y:264},
+   {size:16,line:18,y:262},
+   {size:14,line:16,y:261},
+   {size:12,line:14,y:260}
+ ].map(c=>({...c,max:Math.floor((inner-c.y-c.size*.85)/c.line)+1}));
  for(const c of candidates){
    const lines=wrapNativeBattleText(full,portrait?428:527,c.size);
    if(lines.length<=c.max)return {...c,lines};
@@ -18556,9 +18610,35 @@ function mufTelegramTalk(){
 function muffetCollide(b,now){
  if(!MUF_KINDS.has(b.kind))return false;
  if(b.kind==='mfCtl'||b.kind==='mfPour'||!b.live&&b.kind!=='mfVert')return true;
- const U=UT_SCALE,r=b.kind==='mfCroissant'?5:6;
- if(rectHit(soul.x-7,soul.y-7,14,14,(b.rx-r)*U,(b.ry-r)*U,2*r*U,2*r*U))hurtPlayer(now,b.damage||6,'main');
+ if(mufPreciseHit(b))hurtPlayer(now,b.damage||6,'main');
  return true;
+}
+// UNDERTALE checks these with precise (per-pixel) masks: spr_heartpurple_center
+// against spr_spiderbullet1 / spr_donutbullet / spr_croissantr (rotated).
+const MUF_MASK={
+ heart:['..##........##..','.#####....#####.','#######..#######','#######..#######','################','################','################','################','################','################','..############..','..############..','....########....','....########....','......####......','......####......'],
+ spider:['####................####','####................####','....##............##....','....##............##....','....##............##....','....##............##....','##....############....##','##....############....##','########################','########################','......############......','......############......','......############......','......############......','########################','########################','##....############....##','##....############....##','....##............##....','....##............##....','....##............##....','....##............##....','####................####','####................####'],
+ croissant:['##############..........','##############..........','......##########........','......##########........','........##########......','........##########......','........................','........................','......##############....','......##############....','......##############....','......##############....','......##############....','......##############....','......##############....','......##############....','........................','........................','........##########......','........##########......','......##########........','......##########........','##############..........','##############..........'],
+ donut:['......############......','......############......','....################....','....################....','..####################..','..####################..','########################','########################','########################','########################','########################','########################','########################','########################','########################','########################','########################','########################','..####################..','..####################..','....################....','....################....','......############......','......############......']
+};
+const MUF_HEART_PX=(()=>{const o=[];MUF_MASK.heart.forEach((row,j)=>{for(let i=0;i<16;i++)if(row[i]==='#')o.push([i-8+.5,j-8+.5])});return o})();
+function mufPreciseHit(b){
+ const ph=mf.ph;if(!ph)return false;
+ const dx0=ph.x-b.rx,dy0=ph.y-b.ry;
+ if(Math.abs(dx0)>22||Math.abs(dy0)>22)return false;
+ const mask=b.kind==='mfDonut'?MUF_MASK.donut:b.kind==='mfCroissant'?MUF_MASK.croissant:MUF_MASK.spider;
+ // spr_croissantl is spr_croissantr mirrored.
+ const flip=b.kind==='mfCroissant'&&b.side!==0;
+ const a=(b.kind==='mfCroissant'?(b.ang||0):0)*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+ for(const [hx,hy] of MUF_HEART_PX){
+   const wx=dx0+hx,wy=dy0+hy;
+   // world = R(-ang)*local (GM angles are counter-clockwise), so local = R(ang)*world.
+   let lx=wx*c-wy*sn,ly=wx*sn+wy*c;
+   if(flip)lx=-lx;
+   const i=Math.floor(lx+12),j=Math.floor(ly+12);
+   if(i>=0&&i<24&&j>=0&&j<24&&mask[j][i]==='#')return true;
+ }
+ return false;
 }
 
 // ---------- draw ----------
@@ -23093,7 +23173,8 @@ function drawAttack(now){
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
-   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB'||CORE3_NOBORDER.has(b.kind)||b.kind==='mfPour'||b.kind==='mfCtl';
+ // Muffet's spiders/pastries are drawn in full so you can see them coming.
+   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB'||CORE3_NOBORDER.has(b.kind)||MUF_KINDS.has(b.kind);
    if(!allowOutside){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
@@ -23379,12 +23460,15 @@ function drawAttack(now){
    window.UTMP_DRAW_SOULS(now);
  }else{
    drawMaliceShock(now);
-   if(now>=invUntil||Math.floor(now/70)%2===0){
+   // obj_purpleheart never blinks out: while hurt it just cycles its two frames (image_speed .5).
+   if(now>=invUntil||Math.floor(now/70)%2===0||(soulMode==='purple'&&images.purpleHeart?.length)){
      // Papyrus' blue magic overrides EVERY custom role SOUL. Noelle MALICE and
      // Toriel/Papyrus white monster SOULs return after the blue phase ends.
      if(soulMode==='purple'&&images.purpleHeart?.length){
-       const pim=images.purpleHeart[now<invUntil?Math.floor(now/60)%2:0]||images.purpleHeart[0];
-       ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(pim,Math.round(soul.x-16),Math.round(soul.y-16),32,32);ctx.restore();
+       const pim=images.purpleHeart[now<invUntil?Math.floor(now/(2000/30))%2:0]||images.purpleHeart[0];
+       // spr_heartpurple_center is 16x16 with its origin in the middle.
+       const ps=16*UT_SCALE;
+       ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(pim,Math.round(soul.x-ps/2),Math.round(soul.y-ps/2),Math.round(ps),Math.round(ps));ctx.restore();
      }else if(soulMode==='yellow'&&images.mexSoul?.[0]){
        // spr_heartyellow_flip: the shooter SOUL points up at Mettaton.
        ctx.drawImage(images.mexSoul[0],Math.round(soul.x-16),Math.round(soul.y-16),32,32);
@@ -26152,7 +26236,7 @@ function drawSettings(now=performance.now()){
  ctx.save();ctx.globalAlpha=.85*entry;ctx.fillStyle='#030303';ctx.fillRect(statusX,statusY,150,500);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.strokeRect(statusX,statusY,150,500);
  font(12,'#666','center');ctx.fillText('ACTIVE',statusX+75,statusY+18);
  let py=statusY+54;
- drawTinyStatusPill(noelleEnabled?'NOELLE':'CLASSIC',statusX+18,py,noelleEnabled,'#ffff00');py+=45;
+ drawTinyStatusPill(noelleModeActive()?'NOELLE':'CLASSIC',statusX+18,py,noelleModeActive(),'#ffff00');py+=45;
  drawTinyStatusPill(torielMercyMissEnabled?'MERCY MISS':'NO MISS',statusX+18,py,torielMercyMissEnabled,'#ffff00');py+=45;
  drawTinyStatusPill(mercyActImpactEnabled?'MERCY FX':'FX OFF',statusX+18,py,mercyActImpactEnabled,'#ffff00');py+=45;
  drawTinyStatusPill(hardModeEnabled?'HARD ON':'HARD OFF',statusX+18,py,hardModeEnabled,'#ff4b4b');
@@ -26160,7 +26244,7 @@ function drawSettings(now=performance.now()){
  ctx.restore();
 
  const rows=[
-  {r:settingsRowRect(0),title:'NOELLE MODE',desc:'MAGIC / 4 NOELLE SPELLS / DEFEND // MALICE aim + charge',on:noelleEnabled,kind:'toggle'},
+  {r:settingsRowRect(0),title:'NOELLE MODE',desc:'MAGIC / 4 NOELLE SPELLS / DEFEND // MALICE aim + charge',on:noelleModeActive(),kind:'toggle'},
   {r:settingsTorielMercyRect(),title:'TORIEL MERCY MISSES',desc:'OFF disables intentional mercy steering; contact still hurts',on:torielMercyMissEnabled,kind:'toggle'},
   {r:settingsMercyImpactRect(),title:'ACT MERCY IMPACT',desc:'ACT MERCY gains use enemy recoil + yellow MERCY writer/bar',on:mercyActImpactEnabled,kind:'toggle'},
   {r:settingsHardModeRect(),title:'HARD MODE',desc:'KAIZO // red determination patterns for supported encounters',on:hardModeEnabled,kind:'hard'},
@@ -27199,7 +27283,7 @@ function keyDown(e){
    if(!e.repeat&&(k==='ArrowDown'||low==='s')){settingsSelected=(settingsSelected+1)%6;play('move');return}
 
    if(!e.repeat&&(k==='ArrowLeft'||k==='ArrowRight'||low==='a'||low==='d')){
-     if(settingsSelected===0){noelleEnabled=!noelleEnabled;play('move')}
+     if(settingsSelected===0){toggleNoelleMode();play('move')}
      else if(settingsSelected===1){torielMercyMissEnabled=!torielMercyMissEnabled;saveTorielMercyMissSetting();play('move')}
      else if(settingsSelected===2){mercyActImpactEnabled=!mercyActImpactEnabled;saveMercyActImpactSetting();play('move')}
      else if(settingsSelected===3){hardModeEnabled=!hardModeEnabled;saveHardModeSetting();play('move')}
@@ -27208,7 +27292,7 @@ function keyDown(e){
 
    if(!e.repeat&&(low==='z'||k==='Enter')){
      play('select');
-     if(settingsSelected===0)noelleEnabled=!noelleEnabled;
+     if(settingsSelected===0)toggleNoelleMode();
      else if(settingsSelected===1){torielMercyMissEnabled=!torielMercyMissEnabled;saveTorielMercyMissSetting()}
      else if(settingsSelected===2){mercyActImpactEnabled=!mercyActImpactEnabled;saveMercyActImpactSetting()}
      else if(settingsSelected===3){hardModeEnabled=!hardModeEnabled;saveHardModeSetting()}
@@ -27580,7 +27664,7 @@ canvas.addEventListener('pointerdown',e=>{
    return;
  }
  if(screen==='settings'){
-   const q=settingsRowRect(0);if(x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h){settingsSelected=0;noelleEnabled=!noelleEnabled;play('select');return}
+   const q=settingsRowRect(0);if(x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h){settingsSelected=0;toggleNoelleMode();play('select');return}
    const m=settingsTorielMercyRect();if(x>=m.x&&x<=m.x+m.w&&y>=m.y&&y<=m.y+m.h){settingsSelected=1;torielMercyMissEnabled=!torielMercyMissEnabled;saveTorielMercyMissSetting();play('select');return}
    const f=settingsMercyImpactRect();if(x>=f.x&&x<=f.x+f.w&&y>=f.y&&y<=f.y+f.h){settingsSelected=2;mercyActImpactEnabled=!mercyActImpactEnabled;saveMercyActImpactSetting();play('select');return}
    const h=settingsHardModeRect();if(x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h){settingsSelected=3;hardModeEnabled=!hardModeEnabled;saveHardModeSetting();play('select');return}
