@@ -279,8 +279,10 @@ const UNDYNE_HURT_DATA=UNDYNE_NORMAL_ARMORED_DATA; // no fake nonlethal hurt spr
 const DR_RAW_FALLBACK='https://raw.githubusercontent.com/TeamBlossomDevs/DeltaruneDecomp/chapter2/';
 const IMG={
  fntMainAtlas:RAW+'fonts/fnt_main.png',
- marsHudAtlas:'https://raw.githubusercontent.com/onezhazha233/Undertale-Engine-modded-by-Zhazha/main/fonts/font_mars_needs_cunnilingus/font_mars_needs_cunnilingus.png',
- hpHudSprite:'https://raw.githubusercontent.com/TML233/UndertaleEngine/master/sprites/spr_battle_ui_hp/5134e172-4c1d-4206-a850-ac8b62f9896d.png',
+ // Embedded (3 KB): the remote copy could fail, dropping the HUD to the narrower dialogue font.
+ marsHudAtlas:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAALY0lEQVR4nO3d63LkNg4GUKcq7//Ks5utrKNpiyIAkXI7OOdnuinKLeUr6DLEn79+/foAevrzu3cA+D4CABoTANCYAIDGBAA0JgCgMQEAjVUD4PTlgT/+6/ML/7xfcPzuH39/7+PwvdGLCJnvfhkX3Mcv+7Zi3Oi73zn36yav5ruw5Zj89sWTcygyX2Zc9TjM5vsYHIejFcd9MHeJCgAaEwDQWCkAgmXm3e1efn6U2YfZd0d/24o5Vv5WK0SO49kxiXz3aHYsL37nP67me5njctzqcnpQyp9+PvpdknOE585QAUBjAgAaWxoA0dJkZck+Ur1ciMy38i7sv0ngqcP0u5nLwMCxGm2rdPyql77vdul3pAKAxgQANLY0AKKl8YqnCLM7zivKrsyd6k52PQU62V74t33ismzXyzgRu35zFQA0JgCgsVIA7LqrmSn/MnecR1aWcdn3/zNzZ8ZV765nrH5SMitvI+XvE5dlmRd6qiX7zsurMyoAaEwAQGPVAAi/83323dFLGZm5AqbjZvub2c/giyazsvj2PmfGRf6+J/Zzth/J82WFzG9xOq56jmfPo7tUANCYAIDGBAA0JgCgMQEAjQkAaEwAQGMCABoTAPyr3egN0IIAgMYEADQmAGhj9M95Oy/yKgCgMQEAjR0DoNru6dHOtKvHze4GVzvhPj3uY2Pn3ZXzRcadzXdjP6vjtp2fmd8l8//fxRzDpxwqAGhMAEBjO1uDfRqUnqXWXdWOtlWROV6+/2VcZDHJu+MizkrB4Msxl55YyLK63RW/Z2Zc5Lx+pxePVADQmACAxh4JgHcqeXaY/X3Zy4jZuNfNXG23WjoH7j4f/9vttfqfuPx46OlBdtylwNO07LjfqACgMQEAje3sDvwjXqpecXc5I9NeKjJu189cLT2fPgeeuMQZjVvxxGpm96WRCgAaEwDQ2DQAqqXgje3+M8HJCz2RcSvvPr/LZU3mOFRfkNp813rLuOrx2XV3vXpeR7a3Y5wKABoTANDYMQBud+F9KS9ud/0dVbKhvQqOm+1z8m/KzhceV50vMPe2+Z4YFzg+b7GfR9XjsHjc/6gAoDEBAI0JAGhMAEBjAgAaEwDQmACAxgQANCYAoDEBAI0JAGhMAEBjAgAaEwDQ2CPdgQOdSh/Zxotl4377cHG34Won2dlvFPSjOh1Hxs3me+LcGa0Lu/FcHVIBQGMCABr7DIB3Wfzypxj9XovaU42+f2vBympn5eClWHp/7sj8Lk94ejHU6sKvr1QA0JgAgMY+A2BUUuzqC/DTrVj/vfDE48vn2X1a6Yn2Wt857ifKXhqpAKAxAQCNTQNgxV3fTHujwqVIej+zqqX84EWg6X7Ofq93KWOrl4cr7nxn73ZX5sh4+unIqvNdBQCNCQBoLNUduFp2Bd5RXypTHmVL8o8Hnn6M7q5Xt/EOJfLRirv5Ge/8xOC7n1CoAKAxAQCNpboDj14/To5b2cF1NEd424F9m243s43IdyPvGM2+MHjCUp37LTr6rvhdZuOS58NPGTekAoDGBAA0JgCgMQEAjQkAaEwAQGMCABoTANCYAIDGBAA0JgCgsWNfgM//uGrNceC9qQCgMQEAjZ32BQiuO3/ZsTQzbmTWAbbaSfipbre7Otiuni8w7tY/1450w531GAh21M3u56PdkqvzRcZVL89VANCYAIDGUouCZmQW46zOV+0hECk9X75/+fmKhR0zbbZWz/fkoqeRS7XZMQksVDu75Lzc/uz3DT4l297SbcXisSoAaEwAQGOnAbCr7M+OG9zBT5W/1VZkr5sJfOcxD/UvWPY3R8r72SVJ5hLh7Jhn7pI/cf6veNnuYr7wsVMBQGMCABp7iwDY2Vk1UxbP7sRnnzo8cXf9u1tLBWVfUvnyW2WeGMwuIc62X7Xi3M3czV99vN8iAIDvIQCgsWkArOjkmnmZIqPwbwEuVe+qfmcZ/vB81XfZlyq+xHR5WXG06JzZYvV8KgBoTABAY9PuwC8VR7WT68qOwNMOqU/MfRSYL7uN8LiAFft8dx9uu/h9ysc3uc309qPjNh77KRUANCYAoDEBAI0JAGhMAEBjAgAaEwDQmACAxgQANCYAoDEBAI0JAHjIihZpqwkAaEwAQGPHALjdKfUosLrOd3a7HQ5NfPds3I/yVNfeQFkbXiM/2Jl32A5sUYfnbWZ/02j/g6tjfdmoCgAaEwDQWGpR0KOztfKr65u/bPd2V+EVLcWKll5G/bbhB3oM3BXpj3B2/EbHJrC+/2gbqf2+2oeByOXN5fHK9gjY1ZtCBQCNCQBobBoAmbXyq6V1tXx5Yk32TGmYuQT6e3uzz2d3c291h438frPjnz0GD1/KhM+ZzDkYKftnlySRy57M5ZKnAECaAIDGPgPgO9tbre4O/PTLG4e5br9AlHyqMmtZNtq3Uin78p0vn7/zsTkT2ffZ/maO14r/rzwFAJYRANDYZwBUy7fqCz07LzNW3mlO7mdprurLVJntPiFyJ/pMpvzOvDQ0E7mLPnsZKfMi0J1Lrtl+egoApAkAaGzaHfhocBd09PVHO6zOvOznrn2r2nVnfFZ6396fFdv4GOxn4HyrHKelHZ4z5/+G3zvbKfsLFQA0JgCgMQEAjQkAaEwAQGMCABoTANCYAIDGBAA0JgCgMQEAjQkAaEwAQGMCABo77Q58sVhiqcPqx/U/r7zdRXY276KOsHf/zojwHDeOQWT1nbPVdW6Py65m88Tcr5u8mu/ClmPy2xeLnZKtCAQMCQBobFsARNd/zywkuWIB0siim7MFHQPlXXa+y88zbaZethsuZWffDS6aWZrj6cVLZ6r9AiLfPZody8zipCP6AgBDAgAaO10UtLrw4t017QN3dT8Gn4+28eXzbJlWUV0fP6NaNu/s4/BObb/eSeCpw/S7mcvAzLmhAoDGBAA0djsAdpW11TvfM9VSqeqJy4HRfEezO9XVOWZ3qjvZeW5Vf1svAgFDAgAaKwXAjVK21Gn17rzZ0izzkkdG5inH0Y3v/jb9dAf//8WFd/NXd7M9yoyr3l3PWP2kZHbeRs5rLwIBQwIAGqsGQLVsOitDS11kM/NGXmzKzJ2cL7O9zOXUtu7Ko2p58HmmA3G1m+3tfc6Mu3G+LN3P2X5UX9g7UgFAYwIAGhMA0JgAgMYEADQmAKAxAQCNCQBoTABAYwIAGhMA0JgAgMYEADQmAKCx0+7AIze65v62mddxwbXqS51iM/scaOH0aLfZ1eNmKxJVu9s+Pe5jYzfdd5uv2qYsSgUAjQkAaCwVALvWfV+xXn51UcSqTDlWbce1u/yL7k+m10CmG3J1XMTZcY8sSjqTGbe6N0BwP1LnuAoAGhMA0Ng0AJ4olY52lk1P2HXJ8S5mf1/2MmI27nUzV9utnjuBpz/H/3b7UvNdLiP+ogKAxgQANDYNgGrbpu/0RAfgp7sMr1Ddz9WldXXcrp858CLX+YcPXOYGOzGXqQCgMQEAjaWeAmQ88cRgdRleLQVvbPefCYodiVfefX6Xy5rMcai+ILX5fLn0Lr/zX1QA0JgAgMaOAbC9a+5o3Mscs+1lO8ze7cJbnSM136iSDe1VcNxsn5N/U3a+8LjqfIG5t82XGZc5P28ckxAVADQmAKAxAQCNCQBoTABAYwIAGhMA0JgAgMYEADQmAKAxAQCNCQBoTABAYwIAGvsMgBudTIEfSgUAjQkAaOwzAIKLK/6I9e+BGBUANCYAoLHjU4CtLYiA96MCgMYEADQ2fQoA/HupAKAxAQCNnQaAl3+gBxUANCYAoLHT7sC7O5IC70EFAI0JAGhMAEBjAgAaEwDQmACAxgQANCYAoDEBAI0JAGhMAEBjAgAaEwDQmACAxgQANCYAoDEBAI0JAGhMAEBjAgAaEwDQmACAxv4DjP+AYrH9cPAAAAAASUVORK5CYII=',
+ // spr_hpname (23x10), embedded so the HP label never falls back to text.
+ hpHudSprite:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAAKCAYAAABfYsXlAAAAOUlEQVR4nGP4jwYc/jswgDAucWxy2ABIHU5DKDUcBKhiOC5x+hqOC1AlWKhlONUiFFkOGY8ajtVwAJwf12vKwE/qAAAAAElFTkSuQmCC',
  sans:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAAeCAYAAADHJYVoAAAA6klEQVR4nM2Uaw7CQAiE93bey3uZ+LensmqKAjvDY00am1DbsnywA+sYjzGocc/XwvgAWrnCJAi8csEE58EXwTQBg2sPBTn//8Ir/qWGlnaSNVSCO3Nukndlyaytua8q+m1pXt3BtKaieda8MDGEP++X69bS2tsn3sCd83bf3sZ6oN/1WlOchr8cYj7Ij6iYB+v4gzvsRyAPqhzKMbNsVnHoZ9ZMtD6F6wA0Nb5iFk81/6Vy21AwMb4PbPTQLtND1IVP4AlOTmnZJtap8NUEkEPgcvrQSV2HR+DDD/8dq/CwMgCnCdrqNqTZAX8mAWGJL5ifAAAAAElFTkSuQmCC',
  dummy:RAW+'sprites/images/spr_dummybattle_0.png',
  dummyDeath:RAW+'sprites/images/spr_dummybattle_1.png',
@@ -12034,8 +12036,15 @@ function chooseConfirm(){
      return;
    }
    if(sub===0){
-     const mercyTarget=firstAliveSpareTarget();
+     let mercyTarget=firstAliveSpareTarget();
      if(!mercyTarget){if(allEnemiesDefeated())win();else returnMenu();return}
+     // UNDERTALE spares whichever monster is yellow. If the main monster isn't ready but a
+     // support already is (e.g. N-/S-Action on a support next to Mettaton or Undyne),
+     // spare that support instead of refusing forever.
+     if(mercyTarget==='main'&&!targetIsSpareable('main')&&!(currentBoss==='papyrus'&&(papyrusGenocideMode()||papyrusMercyReady))){
+       const yellow=activeSupportIndices().map(supportTargetId).find(id=>targetIsSpareable(id));
+       if(yellow)mercyTarget=yellow;
+     }
      const mercyEnemyId=targetEnemyId(mercyTarget);
      const mercyIsMain=mercyTarget==='main';
 
@@ -22410,9 +22419,8 @@ function drawStats(now=performance.now()){
  // Dialogue remains fnt_main.
  ctx.fillStyle='#000';ctx.fillRect(ut(22),ut(390),ut(598),ut(34));
  const player=roleDisplayName(practiceMode).toUpperCase();
- drawHudMarsLine(player,31,400,18,'#fff');
- drawHudMarsLine('LV',132,400,18,'#fff');
- drawHudMarsLine(String(battleLevel()),172,400,18,'#fff');
+ // UNDERTALE writes this as ONE string at (30,400): name + "   LV " + LV, so LV follows the name's length.
+ drawHudMarsLine(`${player}   LV ${battleLevel()}`,30,400,18,'#fff');
  if(images.hpHudSprite){
    ctx.save();ctx.imageSmoothingEnabled=false;
    // Original battle_ui Draw event: draw_sprite(spr_battle_ui_hp,0,x+214,y+4).
@@ -22423,11 +22431,12 @@ function drawStats(now=performance.now()){
    // Temporary fallback while the tiny sprite is still loading.
    drawHudMarsLine('HP',244,400,18,'#fff');
  }
- const barX=275,barY=400,barW=Math.max(1,Math.round(maxHp*1.2)),barH=20;
+ // Bar: x 275, y 400, maxHP*1.2 wide, 21 tall (measured against the original); numbers start 15px after it.
+ const barX=275,barY=400,barW=Math.max(1,Math.round(maxHp*1.2)),barH=21;
  const bx=Math.round(ut(barX)),by=Math.round(ut(barY)),bw=Math.max(1,Math.round(ut(barW))),bh=Math.max(1,Math.round(ut(barH)));
  ctx.fillStyle='#ff0000';ctx.fillRect(bx,by,bw,bh);
  ctx.fillStyle='#ffff00';ctx.fillRect(bx,by,Math.max(0,Math.round(bw*clamp(hp/Math.max(1,maxHp),0,1))),bh);
- drawHudMarsLine(`${String(hp).padStart(2,'0')} / ${String(maxHp).padStart(2,'0')}`,barX+barW+16,400,18,'#fff');
+ drawHudMarsLine(`${String(hp).padStart(2,'0')} / ${String(maxHp).padStart(2,'0')}`,barX+barW+15,400,18,'#fff');
  if(practiceMode==='noelle'||practiceMode==='susie'||practiceMode==='kris'){
    drawHudMarsLine('TP',500,400,18,'#fff');drawHudMarsLine(`${tp}%`,534,400,18,'#ffff00');
  }else if(!vanillaMode){
