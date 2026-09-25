@@ -119,6 +119,7 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
     <button data-debug="boss-madjick">madjick</button>
     <button data-debug="boss-knightknight">knight knight</button>
     <button data-debug="boss-astigmatism">astigmatism</button>
+    <button data-debug="boss-muffet">muffet</button>
     <button data-debug="boss-undyne">undyne</button>
     <button data-debug="boss-undyneex">undyne the undying</button>
     <button data-debug="boss-mettatonex">mettaton ex</button>
@@ -379,6 +380,35 @@ const IMG={
  pyropeHurt:RAW+'sprites/images/spr_pyropehurt_0.png',
  // Madjick (obj_wizardbody parts, orbs, cross zaps), Knight Knight (obj_finalknight_body
  // parts, morningstar, sky orb / sun / moon / meteors) and Astigmatism (obj_astigmatism_body).
+
+ // Muffet (obj_spiderb_body parts), purple SOUL, pastries, pet and sign spider.
+ muffetHurt:RAW+'sprites/images/spr_muffethurt_0.png',
+ spiderHead:RAW+'sprites/images/spr_spiderb_head_0.png',
+ spiderUpperArm:RAW+'sprites/images/spr_spiderb_upperarm_0.png',
+ spiderShoulder:RAW+'sprites/images/spr_spiderb_shoulder_0.png',
+ spiderHair:RAW+'sprites/images/spr_spiderb_hair_0.png',
+ spiderLegs:RAW+'sprites/images/spr_spiderb_legs_0.png',
+ spiderLowArm:[0,1].map(i=>RAW+`sprites/images/spr_spiderb_lowarm_${i}.png`),
+ spiderTeapot:RAW+'sprites/images/spr_spiderb_teapot_0.png',
+ spiderMidArm:RAW+'sprites/images/spr_spiderb_midarm_0.png',
+ spiderMidArm2:RAW+'sprites/images/spr_spiderb_midarm2_0.png',
+ spiderPants:RAW+'sprites/images/spr_spiderb_pants_0.png',
+ spiderShirt:RAW+'sprites/images/spr_spiderb_shirt_0.png',
+ spiderEyeBig:[0,1,2,3].map(i=>RAW+`sprites/images/spr_spiderb_eyebig_${i}.png`),
+ spiderEyeMed:[0,1,2,3].map(i=>RAW+`sprites/images/spr_spiderb_eyemed_${i}.png`),
+ spiderEyeCen:[0,1,2,3].map(i=>RAW+`sprites/images/spr_spiderb_eyecen_${i}.png`),
+ spiderBullet:RAW+'sprites/images/spr_spiderbullet1_0.png',
+ donutBullet:RAW+'sprites/images/spr_donutbullet_0.png',
+ croissantR:RAW+'sprites/images/spr_croissantr_0.png',
+ croissantL:RAW+'sprites/images/spr_croissantl_0.png',
+ cupcakeBullet:RAW+'sprites/images/spr_cupcakebullet_0.png',
+ cupcakeMonster:[0,1].map(i=>RAW+`sprites/images/spr_cupcakemonster_${i}.png`),
+ hideousCupcake:[0,1,2,3].map(i=>RAW+`sprites/images/spr_hideouscupcake_${i}.png`),
+ purpleHeart:[0,1].map(i=>RAW+`sprites/images/spr_heartpurple_center_${i}.png`),
+ tinySpider:[0,1].map(i=>RAW+`sprites/images/spr_tinyspider_${i}.png`),
+ tinySign:[0,1,2,3,4].map(i=>RAW+`sprites/images/spr_tinyspider_sign_${i}.png`),
+ spiderTelegram:RAW+'sprites/images/spr_spidertelegram_0.png',
+ spiderPour:RAW+'sprites/images/spr_spiderpour_0.png',
  wizardHurt:RAW+'sprites/images/spr_wizardhurt_0.png',
  wizardBoot:RAW+'sprites/images/spr_wizard_boot_0.png',
  wizardLapel:RAW+'sprites/images/spr_wizard_lapel_0.png',
@@ -897,6 +927,8 @@ const MUSIC={
  mettSad:RAW+'sound/audio/mus_mettsad.ogg',
  // Power of NEO (scr_battlegroup case 23: music/mettaton_neo.ogg).
  mettatonNeo:RAW+'sound/audio/mus_mettaton_neo.ogg',
+ // Spider Dance.
+ muffet:RAW+'sound/audio/mus_spider.ogg',
  // Source death persistence switches away from Spear of Justice into the two
  // An Ending excerpts. These are exact resource hooks; there is no generated substitute.
  undyneEnding1:RAW+'sound/audio/endingexcerpt1.ogg',
@@ -1238,6 +1270,7 @@ const VANILLA_REWARDS={
  madjick:{exp:150,killGold:90,spareGold:90},
  knightknight:{exp:150,killGold:150,spareGold:150},
  astigmatism:{exp:115,killGold:80,spareGold:80},
+ muffet:{exp:300,killGold:150,spareGold:100},
  undyneex:{exp:1500,killGold:0,spareGold:0},
  mettatonex:{exp:800,killGold:0,spareGold:0},
  mettatonneo:{exp:10000,killGold:0,spareGold:0},
@@ -2523,6 +2556,7 @@ function startBattleMusic(){
  }else if(currentBoss==='undyneex')track=uxDying?null:(music.undyneex||null);
  else if(currentBoss==='mettatonex')track=(mex.phase==='battle'&&!mex.killed)?(music.mettatonEx||null):null;
  else if(currentBoss==='mettatonneo')track=neo.dying?null:(music.mettatonNeo||null);
+ else if(currentBoss==='muffet')track=music.muffet||music.battle;
  else if(currentBoss==='undyne')track=undyneDying?(undyneDeathTrackPhase>=2?(music.undyneEnding2||null):(music.undyneEnding1||null)):(music.undyne||null);
  else if(currentBoss==='mettaton')track=music.mettatonQuiz||music.battle;
 
@@ -2599,6 +2633,7 @@ const ENEMY_LAYOUTS={
  madjick:{x:245,y:48,w:150,h:176},
  knightknight:{x:209,y:26,w:222,h:201},
  astigmatism:{x:265,y:106,w:110,h:122},
+ muffet:{x:212,y:8,w:216,h:216},
  // obj_undynex_body at (210,20); canvas spans room x 180..440, y -20..260.
  undyneex:{x:180,y:-20,w:260,h:280},
  // obj_mettb_body at (240, box top - 136); canvas spans room x 180..460, y -10..260.
@@ -2642,6 +2677,7 @@ const PAIR_MAIN_LAYOUTS={
  madjick:{x:158,y:56,w:143,h:168},
  knightknight:{x:110,y:40,w:200,h:181},
  astigmatism:{x:190,y:110,w:105,h:116},
+ muffet:{x:118,y:20,w:200,h:200},
  undyneex:{x:110,y:-20,w:260,h:280},
  mettatonex:{x:110,y:-10,w:280,h:270},
  mettatonneo:{x:40,y:0,w:440,h:260},
@@ -3485,6 +3521,7 @@ const BOSS_OPTIONS=[
  {id:'madjick',label:'MADJICK',area:'CORE',hp:190,atk:29,def:24,encounter:'* Madjick blocks the way!',noelleEncounter:'* Noelle encountered Madjick.'},
  {id:'knightknight',label:'KNIGHT KNIGHT',area:'CORE',hp:230,atk:36,def:36,encounter:'* Knight Knight blocks the way!',noelleEncounter:'* Noelle encountered Knight Knight.'},
  {id:'astigmatism',label:'ASTIGMATISM',area:'CORE',hp:120,atk:32,def:26,encounter:'* Astigmatism blocks the way!',noelleEncounter:'* Noelle encountered Astigmatism.'},
+ {id:'muffet',label:'MUFFET',area:'HOTLAND // SPIDER BAKE SALE',hp:1250,atk:38,def:18,encounter:'* Muffet traps you!',noelleEncounter:'* Muffet traps Noelle!'},
  {id:'pyrope',label:'PYROPE',area:'HOTLAND',hp:110,atk:8,def:1,encounter:'* Pyrope bounces into view!',noelleEncounter:'* Noelle encountered Pyrope.'},
  {id:'vulkin',label:'VULKIN',area:'HOTLAND',hp:20,atk:25,def:0,encounter:'* Vulkin strolls in.',noelleEncounter:'* Noelle encountered Vulkin.'},
  {id:'mettatonneo',label:'METTATON NEO',area:'CORE // THE REAL SHOW',hp:30000,atk:10,def:9,encounter:'* Mettaton NEO blocks the way!',noelleEncounter:'* Mettaton NEO blocks the way!'},
@@ -4070,7 +4107,7 @@ function deathImageForTarget(id,now=performance.now()){
  if(enemyId==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||images.shyrenComposite||null;
  if(enemyId==='tsunderplane')return tsunderplaneVisual()||images.tsunderplaneRaw||null;
  if(enemyId==='custom')return creatorEnemyImage(true,now)||creatorEnemyImage(false,now)||null;
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(enemyId))return addedEnemyIdleImage(enemyId,now,true);
  return id==='main'?enemyImage:(supportImage||images.dummy||null);
 }
 
@@ -4253,7 +4290,7 @@ function criticalImageFor(id,now=performance.now()){
    if(currentBoss==='shyren')return images.shyrenCompositeHurt||makeShyrenComposite(true)||enemyImage;
    if(currentBoss==='tsunderplane')return images.tsunderplaneRaw||tsunderplaneVisual()||enemyImage;
    if(currentBoss==='custom')return creatorEnemyImage(true,now)||enemyImage;
-   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
+   if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(currentBoss))return addedEnemyIdleImage(currentBoss,now,true)||enemyImage;
    if(currentBoss==='whimsun')return images.whimsunHurt||whimsunDrawImage(now,false)||enemyImage;
    if(currentBoss==='whimsalot')return images.whimsalotHurt||enemyImage;
    return enemyImage;
@@ -4394,6 +4431,7 @@ const NOELLE_N_ACTIONS={
  pyrope:{gain:40,text:"* Noelle warms her hands near Pyrope.\n* Pyrope is flattered by the attention."},
  madjick:{gain:40,text:"* Noelle asks Madjick how its magic works.\n* Madjick answers in pure gibberish."},
  knightknight:{gain:35,text:"* Noelle hums a Christmas carol.\n* Knight Knight's eyelids droop."},
+ muffet:{gain:0,text:"* Noelle offers Muffet a candy cane.\n* Muffet adds it to her menu."},
  astigmatism:{gain:30,text:"* Noelle stands up to Astigmatism.\n* It blinks, surprised."},
  lesserdog:{gain:60,text:"* Noelle pets Lesser Dog.\n* Its neck grows a little. Noelle pretends not to notice."},
  greaterdog:{gain:40,text:"* Noelle calls Greater Dog over.\n* It is delighted and extremely slobbery."},
@@ -4433,6 +4471,7 @@ const SUSIE_S_ACTIONS={
  pyrope:{gain:50,text:"* Susie cranks the heat way up.\n* Pyrope loves her immediately."},
  madjick:{gain:35,text:"* Susie tries to punch an orb.\n* Madjick is weirdly impressed."},
  knightknight:{gain:40,text:"* Susie challenges Knight Knight to\n  an arm-wrestling match. They tie."},
+ muffet:{gain:0,text:"* Susie tries to tear the web.\n* It just sticks to her hands."},
  astigmatism:{gain:50,text:"* Susie stares Astigmatism down.\n* Astigmatism looks away first."},
  lesserdog:{gain:65,text:"* Susie pets Lesser Dog way too hard.\n* Its neck launches upward in joy."},
  greaterdog:{gain:45,text:"* Susie throws a snowball for Greater Dog.\n* It brings back the entire snowbank."},
@@ -4501,6 +4540,7 @@ function bossActOptionsBase(targetId=actTargetId){
  if(id==='woshua')return woshuaActOptions();
  if(id==='pyrope')return pyropeActOptions();
  if(isCore3(id))return core3ActOptions(id);
+ if(id==='muffet')return muffetActOptions();
  if(id==='undyneex')return ['Check'];
  if(id==='mettatonex')return mettatonExActOptions();
  if(id==='mettatonneo')return mettatonNeoActOptions();
@@ -4886,6 +4926,8 @@ function performAct(targetId,choice){
    handlePyropeAct(choice);
  }else if(isCore3()){
    handleCore3Act(choice);
+ }else if(isMuffet()){
+   handleMuffetAct(choice);
  }else if(currentBoss==='lesserdog'){
    handleLesserDogAct(choice);
  }else if(currentBoss==='greaterdog'){
@@ -5460,7 +5502,7 @@ function setEnemyVisuals(){
  }else if(b.id==='icecap'){
    enemyImage=images.icecap?.[0]||null;
    enemyFrozenImage=images.icecapFrozen||enemyImage;enemyIceShadowImage=images.icecapIceShadow||enemyImage;
- }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(b.id)){
+ }else if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(b.id)){
    enemyImage=addedEnemyIdleImage(b.id,performance.now(),false)||images.dummy;
    enemyFrozenImage=images[b.id+'Frozen']||enemyImage;enemyIceShadowImage=images[b.id+'IceShadow']||enemyImage;
  }else if(b.id==='shyren'){
@@ -6135,6 +6177,7 @@ function attackSpeechForCurrentBoss(){
  if(currentBoss==='lesserdog'||currentBoss==='greaterdog')return dogAttackSpeech();
  if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')return snowdin2Speech();
  if(isCore3())return core3Speech();
+ if(isMuffet())return '';
  if(currentBoss==='undyneex'||currentBoss==='mettatonex'||currentBoss==='mettatonneo')return '';
 
  if(currentBoss==='doggo'){
@@ -7643,6 +7686,7 @@ function startAttack(now){
  if(currentBoss==='mettatonex'&&!enemyDead&&mexBeginTalk(now))return;
  if(currentBoss==='mettatonneo'&&!enemyDead&&neoBeginTalk(now))return;
  if(currentBoss==='papyrus'&&papyrusNhbMode()&&!enemyDead&&nhb.plan&&nhbBeginTalk(now))return;
+ if(isMuffet()&&!enemyDead&&muffetBeginTalk(now))return;
  if(beginBattleAttackSpeech(now)){
    state='battleSpeech';
    bullets=[];
@@ -7983,6 +8027,7 @@ function advanceMadNapScene(now=performance.now()){
 }
 
 function endAttack(now){
+ if(isMuffet()&&state==='attack'&&!enemyDead&&muffetEndAttack(now))return;
  if(currentBoss==='papyrus'&&papyrusNhbMode()&&state==='attack'&&!enemyDead&&nhb.plan==='final'&&!nhb.finalDone){nhbFinalAftermath(now);return}
  if(currentBoss==='undyneex'&&state==='attack'&&!enemyDead)uxEndAttack(now);
  if(currentBoss==='undyne'&&state==='attack'&&!enemyDead){
@@ -8085,6 +8130,8 @@ function returnMenu(){
    setText(snowdin2Flavor());
  }else if(isCore3()){
    setText(core3Flavor());
+ }else if(isMuffet()){
+   setText(muffetFlavor());
  }else if(currentBoss==='lesserdog'||currentBoss==='greaterdog'){
    setText(dogFlavorText());
  }else if(currentBoss==='moldbygg'||currentBoss==='temmie'){
@@ -8632,7 +8679,7 @@ function targetIsTired(targetId){
  return !!(sp&&!sp.dead&&sp.tired);
 }
 // Major bosses never get TIRED (no 50% HP tired state, no SleepMist/pacify route).
-const NEVER_TIRED=new Set(['undyneex','mettatonneo','mettatonex','undyne','toriel','maddummy','sans5000','flowey']);
+const NEVER_TIRED=new Set(['muffet','undyneex','mettatonneo','mettatonex','undyne','toriel','maddummy','sans5000','flowey']);
 function enemyNeverTired(id){
  if(id==='papyrus')return papyrusNhbMode();
  return NEVER_TIRED.has(id);
@@ -11469,7 +11516,7 @@ function reset(){
          ?{...PAPYRUS_ARENA}
          :(currentBoss==='tsunderplane'
            ?{...TSUNDERPLANE_ARENA}
-           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
+           :(['vegetoid','napstablook','snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','vulkin','finalfroggit','undyne','mettaton','custom','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(currentBoss)?{...RUINS_WIDE_ARENA}:{...DEFAULT_ARENA}))))));
 
  const p=effectivePlayerStats();
  maxHp=p.hp;hp=maxHp;
@@ -11493,6 +11540,7 @@ function reset(){
  resetDogEnemies();
  resetSnowdin2Enemies();
  resetCore3Enemies();
+ resetMuffet();
  resetUndying();
  resetMettatonEx();
  resetMettatonNeo();
@@ -13012,6 +13060,7 @@ function spawnSimpleNewBossBullet(now){
  if(spawnDogAttack(now))return;
  if(spawnSnowdin2(now))return;
  if(core3Spawn(now))return;
+ if(muffetSpawn(now))return;
  // Disguised Moldbygg uses Moldsmal's obj_1sidegen bullet types.
  if(currentBoss==='moldsmal'||currentBoss==='moldbygg'){
    if(attackWave===0){
@@ -13321,7 +13370,7 @@ function spawnBullet(now){
    bullets.push({kind:'icecapHat',owner:'main',x,y:ARENA.y+ARENA.h+2*UT_SCALE,vx:0,vy:-1.5*30*UT_SCALE,born:now,phase:'rise',phaseAt:now+667,damage:11});
    specialSpawnCount++;nextSpawn=now+1100;return;
  }
- if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
+ if(['snowdrake','loox','moldsmal','migosp','whimsun','whimsalot','aaron','shyren','tsunderplane','vulkin','undyne','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){spawnSimpleNewBossBullet(now);return}
  if(currentBoss==='toriel'){spawnTorielAttack(now);return}
  if(currentBoss==='doggo'){
    if(specialSpawnCount>0){nextSpawn=now+99999;return}
@@ -13756,6 +13805,7 @@ function updateSoulMovement(dt,now){
  // Madjick's gibberish (spr_confuseheart): every direction is reversed.
  if(madjickConfused()){dx=-dx;dy=-dy}
  soulMoving=!!(dx||dy);
+ if(soulMode==='purple'&&isMuffet()&&mf.ph){mufSoulUpdate(dt,now);return}
 
  if(currentBoss==='doggo'&&soulMoving)doggoMovedDuringAttack=true;
  const battleSpeedMul=1+Math.min(4,Math.max(-1,Number(battleSoulSpeedStacks)||0))*.25;
@@ -14291,7 +14341,7 @@ function update(dt,now){
        const age=now-(Number(b.born)||now);
        if(!finitePos||!finiteVel||age>22000){b.expired=true;continue}
      }
-     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateCore3Bullet(b,now,dt)||updateUndyingBullet(b,now,dt)||updateNhbBullet(b,now,dt)){
+     if(updateSourceAttackBullet(b,now,dt)||updateWaterfallBullet(b,now,dt)||updateDogBullet(b,now,dt)||updateSnowdin2Bullet(b,now,dt)||updateCore3Bullet(b,now,dt)||updateMuffetBullet(b,now,dt)||updateUndyingBullet(b,now,dt)||updateNhbBullet(b,now,dt)){
        // Moldbygg/Temmie bullets step on the 30fps source grid.
      }else if(b.kind==='customBullet'){
        const age=(now-(b.born||now))/1000;
@@ -14897,6 +14947,7 @@ function update(dt,now){
      // Papyrus NOT HOLDING BACK bullets expire themselves (the controller lives all turn).
      if(NHB_KINDS.has(b.kind))return !b.expired;
      if(CORE3_KINDS.has(b.kind))return !b.expired;
+     if(MUF_KINDS.has(b.kind))return !b.expired;
      // These start outside the board (Temmie's arm, stalk worms, 8smallgen splinters) and expire themselves.
      if(b.kind==='temHand'||b.kind==='temWalker'||b.kind==='mbStalk'||b.kind==='mbSplinter'||b.kind==='dogPom'||b.kind==='dogSleep'||b.kind==='dogiAx'||b.kind==='dogiPups'||b.kind==='pyroRope'||b.kind==='pyroFire'||b.kind==='pyroBlast'||UX_KINDS.has(b.kind))return true;
      if(currentBoss==='flowey'&&floweyTutorialActive&&!floweyFightable()){
@@ -14943,7 +14994,7 @@ function update(dt,now){
      // its ordinary soul collision can fire. Undyne's own arrows still use their
      // source direction-code blocker below.
      if(tryUndyneSupportShieldBlock(b,now))continue;
-     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||core3Collide(b,now)||undyingCollide(b,now)||nhbCollide(b,now)){
+     if(sourceAttackCollide(b,now)||waterfallBulletCollide(b,now)||dogBulletCollide(b,now)||snowdin2Collide(b,now)||core3Collide(b,now)||muffetCollide(b,now)||undyingCollide(b,now)||nhbCollide(b,now)){
        // handled above
      }else if(b.kind==='customBullet'){
        const sz=(12*UT_SCALE)*(Math.max(25,b.sizePct||100)/100);
@@ -15142,6 +15193,7 @@ function update(dt,now){
    else if(currentBoss==='lesserdog'||currentBoss==='greaterdog')attackDuration=dogAttackDuration();
    else if(currentBoss==='dogi'||currentBoss==='woshua'||currentBoss==='pyrope')attackDuration=snowdin2Duration();
    else if(isCore3())attackDuration=core3Duration();
+   else if(isMuffet())attackDuration=muffetDurationMs();
    else if(currentBoss==='undyneex')attackDuration=uxDuration();
    else if(currentBoss==='mettatonex'||currentBoss==='mettatonneo')attackDuration=99999999;
    else if(SRC_ATTACK_BOSSES.has(currentBoss))attackDuration=srcAttackDuration();
@@ -18063,6 +18115,522 @@ function battleShake(n=2){try{if(typeof screenShake==='function')screenShake(n)}
 let c3FlashUntil=0;
 function battleFlash(){c3FlashUntil=performance.now()+2*(1000/30)}
 
+// ===================== MUFFET =====================
+// obj_spiderb / obj_spiderb_body (teapots, spider pour), obj_purpleheart (3 web
+// strings, hop with UP/DOWN, slide with LEFT/RIGHT), obj_spiderbulletgen scripts
+// (scr_sp lists for turns 0..15: spiders, donuts, croissants, double spiders),
+// the pet on turns 4/9/15 (obj_fakeborderdraw pattern 1, obj_grosscupcake2,
+// obj_hideouscupcake, rising board + scrolling strings, obj_vertspider) and the
+// telegram ending (obj_telegramspider). Everything runs on the 30fps step grid
+// in room pixels (x UT_SCALE).
+let mf=null;
+function resetMuffet(){
+ mf={turnamt:0,con:0,purple:false,struggle:0,bribes:0,price:10,atkdown:0,spent:0,
+   plan:null,introPending:false,finalPending:false,spared:false,flavorOverride:'',
+   ph:null,keys:{},acc:0,body:{mode:0,sinert:0,purple:0,pourAlarm:0,pour:0},
+   telegram:null,sign:null,command:0};
+}
+resetMuffet();
+function isMuffet(){return currentBoss==='muffet'}
+const MUF_BOX=[197,250,240,135]; // border 21
+function mufRoom(){const r=enemyDraw,k=r.w/216;return {k,X0:r.x,Y0:r.y}} // canvas origin = monster (0,-8)
+
+// ---------- body (obj_spiderb_body draw event) ----------
+let mufCanvas=null;
+let mufBlank=null;
+function makeMuffetComposite(now=performance.now(),hurt=false){
+ // obj_spiderb_body: once the board rises past y 240 for the pet, Muffet is lifted off-screen.
+ if(state==='attack'&&mf.plan&&mf.plan.kind==='pet'&&ARENA.y/UT_SCALE<240){
+   if(!mufBlank){mufBlank=document.createElement('canvas');mufBlank.width=216;mufBlank.height=216}
+   return mufBlank;
+ }
+ if(hurt)return images.muffetHurt||null;
+ if(!images.spiderHead)return images.muffetHurt||null;
+ if(!mufCanvas){mufCanvas=document.createElement('canvas');mufCanvas.width=216;mufCanvas.height=216}
+ const c=mufCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
+ // Monster (x,y) = canvas (0,8); the body instance sits at (x+62, y-2).
+ const s=wfStep(now),x=62,y=6,S=Math.sin(s/5),C=Math.cos(s/5);
+ const heady=y+S*4,hair=S*25,bd=mf.body;
+ const d=(im,px,py,ox,oy,sx,sy,deg=0,tx=0,ty=0)=>c3Draw(g,im,px,py,ox,oy,sx,sy,deg,tx,ty);
+ d(images.spiderUpperArm,x+14,y+112+C,0,19,-2,2,-S*6,0,1);
+ d(images.spiderShoulder,x+42,y+86+C,0,0,-2,2);
+ d(images.spiderUpperArm,x+78,y+112+C,0,19,2,2,S*6,0,1);
+ d(images.spiderShoulder,x+50,y+86+C,0,0,2,2);
+ d(images.spiderHair,x+80,heady+18.6,0,5,2,2,hair);
+ d(images.spiderHair,x+12,heady+18.6,0,5,-2,2,-hair);
+ d(images.spiderHead,x,heady,0,0,2,2,0,0,1);
+ d(images.spiderLegs,x+30,y+162,0,0,2,2);
+ const arm=S<0?1:0,la=(images.spiderLowArm||[])[arm],lt=la&&la.width<14?9:4;
+ d(la,x+26,y+130+S,17,0,2,2,S*8-8,lt,0);
+ d(la,x+64,y+130+S,17,0,-2,2,-(S*8)+8,lt,0);
+ const pouring=bd.mode===1,st=pouring?bd.sinert:s,SS=Math.sin(st/5),CC=Math.cos(st/5),tilt=pouring?36:24;
+ d(images.spiderTeapot,x-22,y+104+CC*2,19,7,2,2,-SS*tilt,0,2);
+ d(images.spiderMidArm,x+12,y+116+CC*2,0,0,2,2);
+ d(images.spiderMidArm2,x+12,y+130+CC*2,15,14,2,2,SS*3);
+ d(images.spiderTeapot,x+114,y+104+CC*2,19,7,-2,2,pouring?SS*36:-SS*24,0,2);
+ d(images.spiderMidArm,x+80,y+116+CC*2,0,0,-2,2);
+ d(images.spiderMidArm2,x+80,y+130+CC*2,15,14,-2,2,SS*3);
+ d(images.spiderPants,x+20,y+114+S,0,0,2,2);
+ d(images.spiderShirt,x+28,y+92+S*2,0,0,2,2);
+ // Five eyes blink in sequence (anim 0..110).
+ const a=s%111,eye=i=>{let e=0;const up=Math.min(Math.max(0,a-i*5),6)*.5,down=Math.min(Math.max(0,a-12-i*5),3);e=clamp(up-down,0,3);
+   if(a>70)e+=Math.min(a-70,6)*.5;if(a>88)e-=Math.min(a-88,6)*.5;return Math.floor(clamp(e,0,3))};
+ const fr=(k,i)=>(images[k]||[])[i]||(images[k]||[])[0];
+ d(fr('spiderEyeBig',eye(0)),x+24,heady+42,0,0,2,2);
+ d(fr('spiderEyeMed',eye(1)),x+30,heady+32,0,0,2,2);
+ d(fr('spiderEyeCen',eye(2)),x+42,heady+26,0,0,2,2);
+ d(fr('spiderEyeMed',eye(3)),x+62,heady+32,0,0,-2,2);
+ d(fr('spiderEyeBig',eye(4)),x+68,heady+42,0,0,-2,2);
+ return c;
+}
+
+// ---------- ACTs ----------
+function muffetActOptions(){return ['Check','Struggle','Pay']}
+function handleMuffetAct(choice){
+ if(choice===0){setText('* MUFFET - ATK 38.8 DEF 18.8\n* If she invites you to her\n  parlor, excuse yourself.',()=>beginEnemyTurn());return}
+ if(choice===1){
+   let t='* You struggle to escape the web.\n* Nothing happened.';
+   if(mf.struggle===0)t='* You struggle to escape the web.\n* Muffet covers her mouth\n  and giggles at you.';
+   if(mf.struggle===1)t='* You struggle to escape the web.\n* Muffet laughs and claps\n  her hands.';
+   if(mf.struggle===2){t='* You struggle to escape the web.\n* Muffet is so amused by your\n  antics that she gives you a\n  discount!';mf.price=Math.max(1,Math.ceil(mf.price/2))}
+   if(mf.spared)t='* You struggle to escape the web.\n* Nothing happened.';
+   mf.struggle++;setText(t,()=>beginEnemyTurn());return;
+ }
+ if(mf.spared){setText('* Muffet refuses your money.',()=>beginEnemyTurn());return}
+ const gold=vanillaMode?progression.gold:Infinity;
+ let t;
+ if(gold>=mf.price){
+   t=`* You pay ${mf.price}G.\n* Muffet reduces her ATTACK\n  for this turn!`;
+   if(vanillaMode){progression.gold-=mf.price;saveProgression()}
+   mf.spent+=mf.price;mf.bribes++;
+   mf.price+=[0,30,40,70,50][mf.bribes]??300;
+   mf.atkdown=2;
+ }else if(gold===0&&mf.bribes===0){
+   t="* You empty your pockets...\n* But you don't have any\n  money at all!\n* Muffet takes pity on you.";
+   mf.price=10;mf.bribes=1;mf.atkdown=2;
+ }else if(gold===0){t="* You're out of money.\n* Muffet shakes her head."}
+ else{t="* You empty your pockets, but you\n  don't have enough money.\n* Muffet lowers the price.";mf.price=Math.max(1,Math.ceil((mf.price-5)/10))}
+ setText(t,()=>beginEnemyTurn());
+}
+function muffetFlavor(){
+ if(mf.flavorOverride){const f=mf.flavorOverride;mf.flavorOverride='';return f}
+ if(mf.spared)return '* Muffet is sparing you.';
+ const m=mf.command;
+ if(m>=90)return '* Smells like freshly baked\n  cobwebs.';
+ if(m>=75)return '* Muffet tidies up the web\n  around you.';
+ if(m>=50)return '* Muffet does a synchronized\n  dance with the other spiders.';
+ if(m>=25)return '* All the spiders clap along to\n  the music.';
+ return '* Muffet pours you a cup of\n  spiders.';
+}
+function muffetLines(){
+ const n=mf.turnamt;
+ if(mf.con===0)return ["Don't look so\nblue, my deary~"];
+ const L={
+   0:['Why so pale?\nYou should be proud~'],
+   1:["Proud that you're\ngoing to make a\ndelicious cake~\nAhuhuhu~"],
+   2:["Let you go?\nDon't be silly~"],
+   3:['Your SOUL is going\nto make every spider\nvery happy~~~'],
+   4:['Oh, how rude of me!\nI almost forgot\nto introduce you\nto my pet~',"It's breakfast time,\nisn't it?\nHave fun, you two~"],
+   5:['The person who warned\nus about you...'],
+   6:['Offered us a LOT of\nmoney for your SOUL.'],
+   7:['They had such a sweet\nsmile~ and... ahuhu~'],
+   8:["It's strange, but\nI swore I saw them\nin the shadows...\nChanging shape...?"],
+   9:["Oh, it's lunch time,\nisn't it?\nAnd I forgot to\nfeed my pet~"],
+   10:['With that money,\nthe spider clans\ncan finally be\nreunited~'],
+   11:["You haven't heard?\nSpiders have been\ntrapped in the RUINS\nfor generations!"],
+   12:["Even if they go\nunder the door,\nSnowdin's fatal cold\nis impassable alone."],
+   13:["But with the money\nfrom your SOUL, we'll\nbe able to rent\nthem a heated limo~"],
+   14:['And with all of\nthe leftovers...?\nWe could have a\nnice vacation~','Or even build a\nspider baseball\nfield~'],
+   15:["But enough of that...\nIt's time for\ndinner, isn't it?\nAhuhuhu~"]
+ };
+ return L[n]||['What is it,\ndeary?'];
+}
+// Called from startAttack: Muffet always talks first, then attacks.
+function muffetBeginTalk(now){
+ mf.command=Math.round(Math.random()*100);
+ ARENA=utRect(...MUF_BOX);box={...ARENA};
+ if(mf.spared){
+   // After the telegram she just sits there (turnamt 20: no attack).
+   setText('* Muffet is sparing you.',()=>returnMenu());state='text';return true;
+ }
+ const plan=mf.con===0?'pour':(mf.turnamt===4||mf.turnamt===9||mf.turnamt===15)?'pet':'shoot';
+ mf.plan={kind:plan,type:mf.turnamt,t:0};
+ if(plan==='pour'){soulMode='red';soul.x=ARENA.x+ARENA.w/2;soul.y=ARENA.y+ARENA.h/2}
+ else mufMakeHeart();
+ startSpecialBattleSpeech(muffetLines().map(text=>({text,wide:true})),()=>activateEnemyAttack(performance.now()));
+ return true;
+}
+function muffetDurationMs(){
+ const p=mf.plan;if(!p)return 4000;
+ if(p.kind==='pour')return 60000;
+ if(p.kind==='pet')return (p.type===4?620:p.type===9?660:700)*(1000/30);
+ return (MUF_TURN_TIMER[p.type]||180)*(1000/30);
+}
+// global.turntimer 180 with each script's own adjustment.
+const MUF_TURN_TIMER={0:150,1:180,2:180,3:190,5:170,6:170,7:220,8:190,10:180,11:180,12:270,13:210,14:230};
+
+// ---------- the purple SOUL (obj_purpleheart) ----------
+function mufMakeHeart(){
+ const r=MUF_BOX;
+ mf.ph={xmid:r[0]+r[2]/2,xlen:100,yamt:3,yspace:40,yno:2,yzero:r[1]+30,x:0,y:0,moving:0,space:0,yoff:0,ttype:0,yadd:0,yadd2:3,yz2:0};
+ const ph=mf.ph;ph.x=ph.xmid;ph.y=ph.yzero+(ph.yno-1)*ph.yspace;
+ soulMode='purple';mufPlaceSoul();
+}
+function mufPlaceSoul(){const ph=mf.ph;soul.x=ph.x*UT_SCALE;soul.y=ph.y*UT_SCALE}
+function mufStringY(i){const ph=mf.ph;return ph.yzero+(i-1)*ph.yspace}
+function mufSoulUpdate(dt,now){
+ const ph=mf.ph;if(!ph)return;
+ const up=!!(key.ArrowUp||key.w),down=!!(key.ArrowDown||key.s);
+ const upP=up&&!mf.keys.up,downP=down&&!mf.keys.down;
+ mf.keys.up=up;mf.keys.down=down;
+ if(upP&&ph.moving===0&&ph.yno>1)ph.moving=1;
+ if(downP&&ph.moving===0&&ph.yno<ph.yamt)ph.moving=2;
+ mf.acc+=Math.min(dt,.25);
+ while(mf.acc>=1/30){mf.acc-=1/30;mufHeartStep(now)}
+ soulMoving=!!(key.ArrowLeft||key.ArrowRight||key.a||key.d||ph.moving);
+ mufPlaceSoul();
+}
+function mufHeartStep(now){
+ const ph=mf.ph;
+ if(key.ArrowLeft||key.a){if(ph.x>ph.xmid-ph.xlen)ph.x-=4}
+ if(key.ArrowRight||key.d){if(ph.x<ph.xmid+ph.xlen)ph.x+=4}
+ if(ph.moving===1){ph.space+=ph.yspace/3;ph.y=ph.yzero+(ph.yno-1)*ph.yspace-ph.space+ph.yoff;if(ph.space>=ph.yspace){ph.yno--;ph.space=0;ph.moving=0}}
+ if(ph.moving===2){ph.space+=ph.yspace/3;ph.y=ph.yzero+(ph.yno-1)*ph.yspace+ph.space+ph.yoff;if(ph.space>=ph.yspace){ph.yno++;ph.space=0;ph.moving=0}}
+ if(ph.ttype===1){
+   // The strings scroll down; fall off the bottom one and the pet bites.
+   ph.yoff+=ph.yadd;ph.y+=ph.yadd;
+   if(ph.yoff>ph.yspace){
+     ph.yno++;
+     if(ph.yno>ph.yamt){ph.yno=ph.yamt;hurtPlayer(now,6,'main',{noBracket:true})}
+     ph.yoff=0;
+     if(ph.moving===0)ph.y=ph.yzero+(ph.yno-1)*ph.yspace+ph.space+ph.yoff;
+   }
+ }
+ if(ph.ttype===3){
+   // The board rises to make room for the pet: more strings appear below.
+   if(ph.yzero>100)ph.yzero-=4;
+   ph.y-=4;ph.yz2+=4;
+   if(ph.yz2>ph.yspace){ph.yz2-=ph.yspace;ph.yamt++}
+   if(ph.yzero<=100){ph.yzero=100;ph.ttype=1;ph.yadd=ph.yadd2}
+ }
+ if(ph.moving===0&&ph.ttype!==1)ph.y=ph.yzero+(ph.yno-1)*ph.yspace+ph.yoff;
+}
+
+// ---------- spawning ----------
+function muffetSpawn(now){
+ if(!isMuffet())return false;
+ if(specialSpawnCount>0){nextSpawn=now+99999;return true}
+ specialSpawnCount=1;nextSpawn=now+99999;
+ const p=mf.plan;if(!p)return true;
+ const ctl={kind:'mfCtl',owner:'main',x:0,y:0,vx:0,vy:0,damage:0,t:0,list:[],bno:0,alarm2:p.kind==='pet'?30:10,alarm0:-1,rate:10};
+ if(p.kind!=='pour'){const s=mufScript(p.type);ctl.list=s.list;ctl.rate=s.rate}
+ else{mf.body.mode=1;mf.body.sinert=71;mf.body.pour=0;mf.body.purple=0}
+ bullets.unshift(ctl);
+ return true;
+}
+// obj_spiderbulletgen user event 3: scr_sp(btype, speed, choice, side, time).
+function mufScript(type){
+ const L=[],sp=(a,b,c,d,e)=>L.push([a,b,c,d,e]);let rate=10;
+ const S={
+  0(){[[0,8,1,1,0],[0,8,1,1,20],[0,8,3,1,0],[0,8,3,1,20],[0,8,2,0,0],[0,8,2,0,20],[0,8,3,0,0],[0,8,1,0,0]].forEach(a=>sp(...a));rate=10},
+  1(){[[0,8,2,1,0],[0,8,3,1,16],[0,8,1,1,0],[0,8,2,1,16],[0,8,2,0,0],[0,8,1,0,16],[0,8,2,0,0],[0,8,3,0,16],[0,8,2,1,0],[0,8,3,1,16],[0,8,1,1,0],[0,8,2,1,16]].forEach(a=>sp(...a));rate=8},
+  2(){[[3,9,3,1,0],[0,9,1,1,16],[3,9,1,1,0],[0,9,3,1,16],[0,9,2,0,16],[3,9,2,0,16],[0,9,2,1,16],[3,9,2,1,16]].forEach(a=>sp(...a));rate=12},
+  3(){[[0,9,1,1,8],[0,9,3,1,8],[0,9,2,1,16],[3,9,1,0,13],[3,9,3,0,13],[3,9,2,0,20],[1,8,1,0,20],[1,8,3,0,20],[1,8,1,0,20]].forEach(a=>sp(...a));rate=14},
+  4(){[[3,8,2,1,18],[0,8,2,1,18],[3,9,2,1,15],[0,9,2,1,15],[3,9.5,2,1,14],[0,9.5,2,1,14],[3,10,2,1,13],[0,10,2,1,13],[3,10.5,2,1,12],[0,10.5,2,1,12],[3,11,2,1,11],[0,11,2,1,11],[3,12,2,1,10],[0,12,2,1,10],[3,13,2,1,9],[0,13,2,1,9],[3,13,2,1,9],[0,13,2,1,9]].forEach(a=>sp(...a));rate=14},
+  5(){[[3,10,2,1,0],[1,5,1,1,1],[1,5,2,1,20],[3,10,0,0,0],[1,5,1,0,1],[1,5,2,0,20],[3,10,3,1,0],[1,5,1,1,1],[1,5,2,1,20],[3,10,2,0,0]].forEach(a=>sp(...a));rate=15},
+  6(){for(const c of [1,2,3,2,1,2]){sp(0,11,c,1,0);sp(0,11,0,0,0)}rate=10},
+  7(){[[1,6,1,1,1],[1,6,3,1,1],[1,6,1,0,1],[1,6,3,0,20],[0,12,1,1,0],[0,12,1,0,8],[0,12,3,1,0],[0,12,3,0,8],[0,12,2,1,0],[0,12,2,0,20],[2,13,2,0,0]].forEach(a=>sp(...a));rate=14},
+  8(){[[2,13,1,0,1],[2,13,3,0,30],[2,13,2,0,0],[2,13,1,1,1],[2,13,3,1,30],[2,13,2,1,30]].forEach(a=>sp(...a));rate=20},
+  9(){[[0,9,3,1,10],[3,9,1,1,15],[0,9.5,1,1,10],[3,9.5,3,1,14],[0,10,3,1,9],[3,10,1,1,13],[0,11,1,1,9],[3,11,3,1,12],[0,12,3,1,8],[3,12,1,1,11],[0,13,1,1,8],[3,13,3,1,18],[0,13,2,1,8],[3,13,2,1,9],[0,13,2,1,8],[3,13,2,1,9]].forEach(a=>sp(...a));rate=14},
+  10(){for(const c of [3,1,2,3,1]){sp(0,12,c,1,0);sp(0,12,0,0,0)}sp(0,12,2,1,0);sp(0,12,0,0,18);sp(3,12,2,1,1);sp(3,12,2,0,0);rate=9},
+  11(){[[1,8,1,0,1],[1,8,2,0,0],[1,8,1,1,1],[1,8,2,1,0],[1,8,3,0,1],[1,8,2,0,0],[1,8,3,1,1],[1,8,2,1,30],[1,8,1,0,1],[1,8,3,0,0],[1,8,3,1,1],[1,8,1,1,0]].forEach(a=>sp(...a));rate=20},
+  12(){for(const s of [0,1,0])for(const c of [1,3,2])sp(2,13,c,s,0);rate=18},
+  13(){for(let i=0;i<5;i++){sp(3,5,2,1,0);sp(0,8,2,0,10)}rate=14},
+  14(){[[1,6,1,0,1],[1,6,2,0,1],[1,6,3,1,1],[1,6,2,1,38],[3,9,2,1,1],[3,9,2,0,8],[3,9,2,1,40],[2,13,1,0,4],[2,13,3,1,4],[2,13,3,0,4],[2,13,1,1,25],[0,8,2,1,1],[0,8,2,0,15]].forEach(a=>sp(...a));rate=14},
+  15(){for(const [s,cs] of [[10,[1,2,3,2]],[10.5,[1,2,3,2]],[11,[1,2,3,2]],[11.5,[1,2]],[12,[3,2,1,2,3]]])for(const c of cs)sp(3,s,c,1,0);rate=9}
+ };
+ (S[type]||S[0])();
+ return {list:L,rate};
+}
+function mufDmg(){return Math.max(1,6-mf.atkdown-(mf.turnamt>=16?1:0))}
+function mufSpider(choice,side,spd,kind='mfSpider'){
+ const ph=mf.ph;if(!ph)return null;
+ const b={kind,owner:'main',x:0,y:0,vx:0,vy:0,choice,side,spd,damage:mufDmg(),rx:0,ry:0,hs:0,vs:0,ys:1,ang:0,wait:1};
+ bullets.push(b);return b;
+}
+function mufFire(entry){
+ const [bt,spd,ch,sd]=entry;
+ const pick=()=>1+Math.floor(Math.random()*3),side=()=>sd===2?(Math.random()<.5?0:1):sd;
+ if(bt<3){mufSpider(ch===0?pick():ch,side(),spd,['mfSpider','mfDonut','mfCroissant'][bt]);return}
+ const pairs={1:[1,2],2:[1,3],3:[2,3]}[ch]||[1,2],s=side();
+ mufSpider(pairs[0],s,spd);mufSpider(pairs[1],s,spd);
+}
+
+// ---------- step ----------
+const MUF_KINDS=new Set(['mfCtl','mfSpider','mfDonut','mfCroissant','mfVert','mfPour']);
+function updateMuffetBullet(b,now,dt){
+ if(!MUF_KINDS.has(b.kind))return false;
+ wfSteps(b,dt,b=>mufStep(b,now));
+ return true;
+}
+function mufStep(b,now){
+ const ph=mf.ph,p=mf.plan;
+ if(b.kind==='mfCtl'){
+   b.t++;
+   if(p&&p.kind==='pour'){mufPourStep(b,now);return}
+   // scripted list (alarm[2])
+   if(b.alarm2>0&&--b.alarm2===0&&b.bno<b.list.length){
+     const e=b.list[b.bno];mufFire(e);
+     b.alarm2=e[4]||b.rate;b.bno++;
+     if(b.bno>=b.list.length)b.alarm2=-1;
+   }
+   if(p&&p.kind==='pet')mufPetStep(b,now);
+   return;
+ }
+ if(b.kind==='mfPour'){
+   const d=b.gdir*Math.PI/180;b.hs+=Math.cos(d)*.2;b.vs-=Math.sin(d)*.2;
+   b.rx+=b.hs;b.ry+=b.vs;
+   if(b.sc<1)b.sc+=.05;
+   if(b.ry>(ARENA.y+ARENA.h)/UT_SCALE-15){b.expired=true;mf.body.purple+=4}
+   return;
+ }
+ if(!ph){b.expired=true;return}
+ if(b.kind==='mfSpider'||b.kind==='mfCroissant'||b.kind==='mfDonut'){
+   if(b.wait>0&&--b.wait===0){
+     b.ry=ph.yzero+(b.choice-1)*ph.yspace+(ph.ttype===1?ph.yoff:0);
+     const far=b.kind==='mfDonut'?ph.xlen*2:ph.xlen*2+40;
+     b.rx=b.side===0?ph.xmid-far:ph.xmid+far;b.hs=b.side===0?b.spd:-b.spd;
+     if(b.kind==='mfDonut'){if(b.choice===1)b.vs=Math.abs(b.hs)/2;if(b.choice===3)b.vs=-Math.abs(b.hs)/2}
+     b.live=true;
+   }
+   if(!b.live)return;
+   if(b.kind==='mfCroissant'){
+     // Croissants boomerang: they slow down, turn around and fly back.
+     if(b.side===0){b.hs-=.25;b.ang+=8}else{b.hs+=.25;b.ang-=8}
+     b.rx+=b.hs;
+     if(b.hs>0&&b.rx>ph.xmid+ph.xlen*5)b.expired=true;
+     if(b.hs<0&&b.rx<ph.xmid-ph.xlen*5)b.expired=true;
+     return;
+   }
+   b.rx+=b.hs;b.ry+=b.vs;
+   if(b.hs>0&&b.rx>ph.xmid+ph.xlen*2)b.expired=true;
+   if(b.hs<0&&b.rx<ph.xmid-ph.xlen*2)b.expired=true;
+   if(b.kind==='mfDonut'){
+     // Donuts bounce between the top and bottom strings, squashing on impact.
+     if(b.ys<1)b.ys+=.1;
+     if(b.vs>0&&b.ry>ph.yzero+(ph.yamt-1)*ph.yspace+10){b.ry-=b.vs;b.vs=-b.vs;b.ys=.6}
+     if(b.vs<0&&b.ry<ph.yzero-10){b.ry-=b.vs;b.vs=-b.vs;b.ys=.6}
+   }
+   return;
+ }
+ if(b.kind==='mfVert'){
+   b.fakeyoff+=ph.yadd;
+   if(b.fakeyoff>ph.yspace){b.fakeyoff=0;b.fakeyamt++}
+   b.ry=b.fakey+b.fakeyoff+b.fakeyamt*ph.yspace;
+   if(b.ry>400){b.expired=true;return}
+   b.rx+=b.hs;
+   const L=ARENA.x/UT_SCALE,R=(ARENA.x+ARENA.w)/UT_SCALE;
+   if(b.hs>0&&b.rx>R-6){b.rx-=b.hs;b.hs=-b.hs}
+   if(b.hs<0&&b.rx<L+6){b.rx-=b.hs;b.hs=-b.hs}
+   return;
+ }
+ if(b.kind==='mfPour'){
+   const d=b.gdir*Math.PI/180;b.hs+=Math.cos(d)*.2;b.vs-=Math.sin(d)*.2;
+   b.rx+=b.hs;b.ry+=b.vs;
+   if(b.sc<1)b.sc+=.05;
+   if(b.ry>(ARENA.y+ARENA.h)/UT_SCALE-15){b.expired=true;mf.body.purple+=4}
+ }
+}
+// First turn: Muffet tips her teapots and pours spiders until the board is purple.
+function mufPourStep(b,now){
+ const bd=mf.body,U=UT_SCALE,H=ARENA.h/U;
+ if(bd.mode===1){
+   if(bd.sinert>55)bd.sinert--;
+   else if(--bd.pourAlarm<=0){
+     bd.pourAlarm=4;
+     const bx=enemyDraw.x/U+62,by=enemyDraw.y/U+6+130;
+     const o=(x,hs,gdir)=>bullets.push({kind:'mfPour',owner:'main',x:0,y:0,vx:0,vy:0,rx:x,ry:by+Math.cos(bd.sinert/5)*2,hs,vs:3,gdir,sc:.2,damage:0});
+     o(bx-50,-1,320);o(bx+140,1,220);
+   }
+   if(bd.purple>125)bd.mode=0;
+ }
+ if(bd.purple>H&&!mf.purple){
+   // spr_heartpurple: the SOUL is caught in the web.
+   mf.purple=true;mufMakeHeart();b.purpleAt=b.t;play('bell');
+ }
+ if(mf.purple&&b.t-b.purpleAt>=60&&!mf.introPending){mf.introPending=true;attackStart=-1e9}
+}
+// obj_fakeborderdraw pattern 1: the pet arrives, the board rises and the strings scroll.
+function mufPetStep(b,now){
+ const ph=mf.ph,U=UT_SCALE;if(!ph)return;
+ const t=b.t;
+ if(t===250){b.cupcake={x:447,y:263,t:0};ARENA=utRect(197,250,340,135);box={...ARENA}}
+ if(b.cupcake){b.cupcake.t++;if(b.cupcake.t>200||t>=310)b.cupcake=null}
+ if(t===310){
+   ARENA=utRect(...MUF_BOX);
+   ph.ttype=3;ph.yadd2=p0Yadd(mf.plan.type);
+   b.hideous={x:ph.xmid-ph.xlen,y:460,s1:0,s2:0,alpha:0};
+   b.alarm0=60;b.vtype={4:13,9:14,15:16}[mf.plan.type];
+ }
+ if(ph.ttype===1&&ph.yadd<5)ph.yadd+=.01;
+ if(t>=310){
+   // Border 22: the top follows the rising strings.
+   const top=Math.min(250,ph.yzero-10);
+   ARENA=utRect(197,top,240,385-top);box={...ARENA};
+ }
+ const h=b.hideous;
+ if(h){
+   h.s1++;h.s2++;if(h.alpha<1)h.alpha+=.05;
+   if(h.y>320)h.y-=4;
+   h.x+=Math.sin(h.s2/6);h.y+=Math.sin(h.s1/8)*3;
+ }
+ if(b.alarm0>0&&--b.alarm0===0){
+   b.alarm0=b.vtype===13?22:b.vtype===14?18:16;
+   for(let i=0;i<3;i++){
+     const xf=Math.floor(Math.random()*(ph.xlen/10))*22,y=ph.yzero-ph.yspace*2+ph.yoff;
+     const fast=b.vtype!==13;
+     bullets.push({kind:'mfVert',owner:'main',x:0,y:0,vx:0,vy:0,rx:ph.xmid-ph.xlen+xf,ry:y,fakey:y,fakeyoff:0,fakeyamt:0,
+       hs:(Math.random()<.5?-1:1)*(fast?1.5:1),damage:mufDmg()-(b.vtype===16?1:0)});
+   }
+ }
+}
+function p0Yadd(type){return type===4?3:type===9?4:5}
+
+// Turn end: the purple intro and the telegram ending both happen here.
+function muffetEndAttack(now){
+ const p=mf.plan;if(!p)return false;
+ bullets=[];
+ if(p.kind==='pour'){
+   mf.con=4;mf.body.mode=0;mf.body.purple=0;
+   startSpecialBattleSpeech([{text:'... I think purple\nis a better look\non you! Ahuhuhu~',wide:true}],()=>{
+     mf.flavorOverride="* You're trapped in a strange\n  purple web!";
+     state='boxOpen';transitionStart=performance.now();box={...ARENA};bullets=[];
+   });
+   return true;
+ }
+ mf.turnamt++;mf.atkdown=0;
+ if(p.kind==='pet'&&p.type===15){
+   // You survived dessert. A telegram from the RUINS spiders arrives.
+   ARENA=utRect(...MUF_BOX);box={...ARENA};soulMode='red';
+   const lines=[
+     "You're still alive?\nAhuhuhu~",
+     "Oh, my pet~\nLooks like it's\ntime for dessert~"
+   ];
+   startSpecialBattleSpeech(lines.map(text=>({text,wide:true})),()=>{
+     mf.telegram={x:720,hs:-6,con:0,t:0};state='mexScene';
+     setTimeout(()=>mufTelegramTalk(),1400);
+   });
+   return true;
+ }
+ return false;
+}
+function mufTelegramTalk(){
+ const donated=mf.spent>0;
+ const lines=[
+   'Huh?\nA telegram from\nthe spiders in\nthe RUINS?',
+   "What?\nThey're saying\nthat they saw\nyou, and...",
+   donated?'... you helped donate\nto their cause!':'... even if you\nare stingy, you\nnever hurt a\nsingle spider!',
+   'Oh my, this has\nall been a big\nmisunderstanding~',
+   'I thought you\nwere someone that\nhated spiders~',
+   'The person who\nasked for that SOUL...',
+   'They must have\nmeant a DIFFERENT\nhuman in a\nstriped shirt~',
+   'Sorry for all the\ntrouble~\nAhuhuhu~',
+   "I'll make it up\nto you~",
+   'You can come back\nhere any time...\nAnd, for no charge\nat all...',
+   "I'll wrap you\nup and let you\nplay with my pet\nagain!",
+   'Ahuhuhuhuhuhu~\nJust kidding~',
+   "I'll SPARE you\nnow~"
+ ];
+ startSpecialBattleSpeech(lines.map(text=>({text,wide:true})),()=>{
+   if(mf.telegram)mf.telegram.con=2;
+   mf.spared=true;mercy=100;mf.turnamt=20;
+   mf.flavorOverride='* Muffet is sparing you.';
+   state='boxOpen';transitionStart=performance.now();box={...ARENA};bullets=[];
+ });
+}
+
+// ---------- collision ----------
+function muffetCollide(b,now){
+ if(!MUF_KINDS.has(b.kind))return false;
+ if(b.kind==='mfCtl'||b.kind==='mfPour'||!b.live&&b.kind!=='mfVert')return true;
+ const U=UT_SCALE,r=b.kind==='mfCroissant'?5:6;
+ if(rectHit(soul.x-7,soul.y-7,14,14,(b.rx-r)*U,(b.ry-r)*U,2*r*U,2*r*U))hurtPlayer(now,b.damage||6,'main');
+ return true;
+}
+
+// ---------- draw ----------
+function drawMuffetBullet(b,now){
+ if(!MUF_KINDS.has(b.kind))return false;
+ const U=UT_SCALE;
+ const put=(im,x,y,w,h,ang=0,alpha=1,sy=1)=>{if(!im)return;ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=alpha;ctx.translate(x*U,y*U);if(ang)ctx.rotate(-ang*Math.PI/180);ctx.scale(1,sy);ctx.drawImage(im,-w/2*U,-h/2*U,w*U,h*U);ctx.restore()};
+ if(b.kind==='mfCtl'){
+   const ph=mf.ph;
+   if(b.cupcake){const c=b.cupcake,im=(images.cupcakeMonster||[])[c.t>30?1:0];if(im){ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(im,(c.x+Math.random()*2-1)*U,(c.y+Math.random()*2-1)*U,116*U,128*U);ctx.restore()}}
+   if(ph&&soulMode==='purple'){
+     ctx.save();ctx.strokeStyle='#800080';ctx.lineWidth=Math.max(1,U);
+     for(let i=0;i<ph.yamt;i++){const y=Math.round((ph.yzero+ph.yspace*i+ph.yoff)*U)+.5;ctx.beginPath();ctx.moveTo((ph.xmid-ph.xlen)*U,y);ctx.lineTo((ph.xmid+ph.xlen)*U,y);ctx.stroke()}
+     ctx.restore();
+   }
+   const h=b.hideous;
+   if(h){const im=(images.hideousCupcake||[])[Math.floor(b.t*.125)%4];if(im){ctx.save();ctx.globalAlpha=clamp(h.alpha,0,1);ctx.imageSmoothingEnabled=false;ctx.drawImage(im,h.x*U,h.y*U,200*U,100*U);ctx.restore()}}
+   // The poured spiders fill the board with purple.
+   if(mf.plan&&mf.plan.kind==='pour'&&mf.body.purple>0){
+     const H=ARENA.h,p2=Math.min(mf.body.purple*U,H);
+     ctx.save();ctx.fillStyle='#800080';ctx.globalAlpha=mf.body.purple>160?clamp(1-(mf.body.purple-160)/40,0,1):1;
+     ctx.fillRect(ARENA.x,ARENA.y+ARENA.h-p2,ARENA.w,p2);ctx.restore();
+   }
+   return true;
+ }
+ if(b.kind==='mfPour'){
+   const im=images.spiderPour;if(!im)return true;
+   ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(b.rx*U,b.ry*U);
+   ctx.rotate(-(Math.atan2(-b.vs,b.hs)*180/Math.PI+90)*Math.PI/180);ctx.scale(b.sc,b.sc);
+   ctx.drawImage(im,-7*U,0,10*U,20*U);ctx.restore();return true;
+ }
+ if(!b.live&&b.kind!=='mfVert')return true;
+ if(b.kind==='mfSpider'||b.kind==='mfVert'){put(images.spiderBullet,b.rx,b.ry,24,24);return true}
+ if(b.kind==='mfDonut'){put(images.donutBullet,b.rx,b.ry,24,24,0,1,b.ys);return true}
+ if(b.kind==='mfCroissant'){put(b.side===0?images.croissantR:images.croissantL,b.rx,b.ry,24,24,b.ang);return true}
+ return true;
+}
+// "Up Next" sign spider during your turn, and the telegram spider.
+function drawMuffetOverlay(now){
+ if(!isMuffet()||screen!=='battle')return;
+ const U=UT_SCALE,sp=images.tinySpider||[];
+ const tg=mf.telegram;
+ if(tg){
+   tg.t++;
+   if(tg.con===0&&tg.x<570){tg.hs+=.2;if(tg.hs>=0){tg.hs=0;tg.con=1}}
+   if(tg.con===2){tg.hs++;if(tg.x>700)mf.telegram=null}
+   tg.x+=tg.hs;
+   const f=Math.floor(tg.t/4)%2;
+   ctx.save();ctx.imageSmoothingEnabled=false;
+   const im=sp[f]||sp[0];if(im)ctx.drawImage(im,(tg.x-5*2)*U,(230-5*2)*U,im.width*2*U,10*U);
+   if(images.spiderTelegram){ctx.translate((tg.x-4)*U,(228)*U);ctx.rotate(-Math.sin(tg.t/10)*10*Math.PI/180);ctx.drawImage(images.spiderTelegram,-40*U,-40*U,40*U,40*U)}
+   ctx.restore();
+ }
+ if(state==='menu'&&mf.purple&&!mf.spared&&!enemyDead&&mf.turnamt<16){
+   const x=580,y=230,n=mf.turnamt;
+   ctx.save();ctx.imageSmoothingEnabled=false;
+   const im=sp[1]||sp[0];if(im)ctx.drawImage(im,(x-10)*U,(y-10)*U,im.width*2*U,10*U);
+   // spr_tinyspider_sign fully unrolled: origin (30,60), cropped at (6,5), drawn 2x.
+   const sign=(images.tinySign||[])[0];if(sign)ctx.drawImage(sign,(x-48)*U,(y-110)*U,94*U,110*U);
+   ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
+   ctx.font=`${Math.round(12*U)}px "DTM Sans", "Determination Sans", monospace`;
+   ctx.fillText('Up Next',(x-20)*U,(y-100)*U);
+   const ic=k=>images[k],at=(k,dx)=>{const im=ic(k);if(im)ctx.drawImage(im,(x+dx-12)*U,(y-70-12)*U,24*U,24*U)};
+   if([0,1,6,10].includes(n))at('spiderBullet',0);
+   if(n===8)at('croissantL',0);
+   if(n===12){at('croissantL',-15);at('croissantL',5)}
+   if(n===2||n===13){at('spiderBullet',-15);at('spiderBullet',15)}
+   if(n===11){at('donutBullet',-15);at('donutBullet',15)}
+   if([3,5,7].includes(n)){at('spiderBullet',-15);at('donutBullet',5)}
+   if([4,9,15].includes(n))at('cupcakeBullet',0);
+   if(n===14){at('spiderBullet',-25);at('donutBullet',0);at('croissantL',25)}
+   ctx.restore();
+ }
+}
+
 // ---------- bullets ----------
 const UX_KINDS=new Set(['uxRise','uxRing','uxFollow2']);
 function uxDeg(a){return a*Math.PI/180}
@@ -20828,6 +21396,7 @@ function addedEnemyIdleImage(id,now=performance.now(),hurt=false){
  if(id==='madjick')return makeMadjickComposite(now,hurt);
  if(id==='knightknight')return makeKnightKnightComposite(now,hurt);
  if(id==='astigmatism')return makeAstigmatismComposite(now,hurt);
+ if(id==='muffet')return makeMuffetComposite(now,hurt);
  if(id==='undyneex')return makeUndyingComposite(now,hurt);
  if(id==='mettatonex')return makeMettatonExComposite(now,hurt);
  if(id==='mettatonneo')return makeMettatonNeoComposite(now,hurt);
@@ -21360,7 +21929,7 @@ function drawTop(now=performance.now()){
          // normal sprite. Use it for every registered impact, including FIGHT,
          // Fireshock and Boneffication.
          drawEnemy=creatorEnemyImage(true,now)||enemyImage;
-       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){
+       }else if(['snowdrake','loox','moldsmal','whimsun','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(currentBoss)){
          drawEnemy=addedEnemyIdleImage(currentBoss,now,mainHit)||enemyImage;
        }
 
@@ -22521,7 +23090,7 @@ function drawAttack(now){
  for(const b of bullets){
    ctx.save();
    // blt_temhand is not a border bullet: Temmie's arm reaches down from her body.
-   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB'||CORE3_NOBORDER.has(b.kind);
+   const allowOutside=(isUndyneFight()&&undyneNoBorderKinds.has(b.kind))||b.kind==='temHand'||b.kind==='nhbGB'||CORE3_NOBORDER.has(b.kind)||b.kind==='mfPour'||b.kind==='mfCtl';
    if(!allowOutside){
      ctx.beginPath();
      ctx.rect(ARENA.x,ARENA.y,ARENA.w,ARENA.h);
@@ -22694,7 +23263,7 @@ function drawAttack(now){
      else{ctx.fillStyle='#fff';ctx.fillRect(Math.round(b.x-12*UT_SCALE),Math.round(b.y-2*UT_SCALE),Math.round(24*UT_SCALE),Math.round(4*UT_SCALE))}
      ctx.restore();continue;
    }
-   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawCore3Bullet(b,now)||drawUndyingBullet(b,now)||drawNhbBullet(b,now)){continue}
+   else if(drawSourceAttackBullet(b,now)||drawWaterfallBullet(b,now)||drawDogBullet(b,now)||drawSnowdin2Bullet(b,now)||drawCore3Bullet(b,now)||drawMuffetBullet(b,now)||drawUndyingBullet(b,now)||drawNhbBullet(b,now)){continue}
    else if(b.kind==='vulkinSideLava'){
      const set=images.vulkinSideLava||[];im=set[b.side<0?0:1]||set[0];
      if(im){ctx.save();ctx.translate(Math.round(b.x),Math.round(b.y));ctx.rotate(Math.atan2(b.vy||0,b.vx||1));ctx.drawImage(im,-22*UT_SCALE,-20*UT_SCALE,44*UT_SCALE,40*UT_SCALE);ctx.restore();continue}
@@ -22810,7 +23379,10 @@ function drawAttack(now){
    if(now>=invUntil||Math.floor(now/70)%2===0){
      // Papyrus' blue magic overrides EVERY custom role SOUL. Noelle MALICE and
      // Toriel/Papyrus white monster SOULs return after the blue phase ends.
-     if(soulMode==='yellow'&&images.mexSoul?.[0]){
+     if(soulMode==='purple'&&images.purpleHeart?.length){
+       const pim=images.purpleHeart[now<invUntil?Math.floor(now/60)%2:0]||images.purpleHeart[0];
+       ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(pim,Math.round(soul.x-16),Math.round(soul.y-16),32,32);ctx.restore();
+     }else if(soulMode==='yellow'&&images.mexSoul?.[0]){
        // spr_heartyellow_flip: the shooter SOUL points up at Mettaton.
        ctx.drawImage(images.mexSoul[0],Math.round(soul.x-16),Math.round(soul.y-16),32,32);
      }else if(isUndyneFight()&&soulMode==='green'){
@@ -23562,7 +24134,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='mettaton')return images.mettaton||null;
  if(b.id==='undyne')return undyneVisual(now,false);
  if(b.id==='tsunderplane')return tsunderplaneVisual();
- if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
+ if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  return images.dummy;
@@ -25744,6 +26316,7 @@ function render(now){
  drawStats(now);
  drawButtons();
  drawMettatonExOverlay(now);
+ drawMuffetOverlay(now);
  // EXIT is a PC/debug convenience, not part of UNDERTALE's native battle HUD.
  // Keep it available in sandbox/debug builds without polluting VANILLA battles.
  if(!vanillaMode||debugOpen)drawExitButton();
@@ -27132,6 +27705,8 @@ async function boot(){
  for(const k of ['mexUpperHeart', 'mexLeg1', 'mexLeg2', 'mexLeg3', 'mexLeg4', 'mexLeg5', 'mexLeg2Flip', 'mexLeg2FlipV', 'mexLeg2Unflip', 'mexLeg2UnflipV', 'mexBox', 'mexLight', 'mexKiss', 'mexLegBulL', 'mexLegBulR', 'mexHandL', 'mexHandR', 'mexTrigOff', 'mexDisco', 'mexDiscoInv', 'mexStar'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  for(const k of ['wizardOrb','confuseHeart','knightEyes','knightEyesTired','knightHelmet','knightMouth','knightMouthTired','knightMouthAsleep','knightFur','knightHammer','sunMoon','moonMeteor','meteorShine','astigAnim2'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
  for(const k of ['wizardHurt','wizardBoot','wizardLapel','wizardDress','wizardHead','wizardHat','wizardOrb2','wizardOrb3','crossZap','knightHurt','knightBody','knightEyesAsleep','knightArm','skyOrb','skyMoon','sunBullet','astigHurt','astigHand','astigLeg','circleBulLarge','circleBulMed','circleBulSm'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
+ for(const k of ['spiderLowArm','spiderEyeBig','spiderEyeMed','spiderEyeCen','cupcakeMonster','hideousCupcake','purpleHeart','tinySpider','tinySign'])IMG[k].forEach((u,i)=>add(`${k} ${i+1}`,async()=>{images[k]=images[k]||[];images[k][i]=await needImage(u)}));
+ for(const k of ['muffetHurt','spiderHead','spiderUpperArm','spiderShoulder','spiderHair','spiderLegs','spiderTeapot','spiderMidArm','spiderMidArm2','spiderPants','spiderShirt','spiderBullet','donutBullet','croissantR','croissantL','cupcakeBullet','spiderTelegram','spiderPour'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
  IMG.gasterBlaster.forEach((u,i)=>add(`gasterBlaster ${i+1}`,async()=>{images.gasterBlaster=images.gasterBlaster||[];images.gasterBlaster[i]=await needImage(u)}));
  IMG.neoFace.forEach((u,i)=>add(`neoFace ${i+1}`,async()=>{images.neoFace=images.neoFace||[];images.neoFace[i]=await needImage(u)}));
  for(const k of ['neoBurst','neoLegs','neoArmR','neoArmL','neoBody'])add(`${k}`,async()=>images[k]=await needImage(IMG[k]));
@@ -27328,6 +27903,7 @@ async function boot(){
  addBg('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
  addBg('Death by Glamour',async()=>{music.mettatonEx=await loadAudioAsset(MUSIC.mettatonEx,.50,true);if(currentBoss==='mettatonex'&&screen==='battle'&&audioUnlocked&&mex.phase==='battle'&&!mex.killed)startBattleMusic()});
  addBg('Mettaton pre-transform',async()=>music.mettatonPre=await loadAudioAsset(MUSIC.mettatonPre,.50,true));
+ addBg('Spider Dance',async()=>{music.muffet=await loadAudioAsset(MUSIC.muffet,.50,true);if(currentBoss==='muffet'&&screen==='battle'&&audioUnlocked)startBattleMusic()});
  addBg('Power of NEO',async()=>{music.mettatonNeo=await loadAudioAsset(MUSIC.mettatonNeo,.50,true);if(currentBoss==='mettatonneo'&&screen==='battle'&&audioUnlocked&&!neo.dying&&state!=='mexScene')startBattleMusic()});
  addBg('Mettaton sad',async()=>music.mettSad=await loadAudioAsset(MUSIC.mettSad,.50,true));
  addBg('Battle Against a True Hero',async()=>{music.undyneex=await loadAudioAsset(MUSIC.undyneex,.50,true);if(currentBoss==='undyneex'&&screen==='battle'&&audioUnlocked&&!uxDying)startBattleMusic()});
@@ -27390,7 +27966,7 @@ async function boot(){
    images.whimsunIceShadow=makeIceSilhouette(whimCrit,'#010061');
  }
  images.tinyPom={wag:images.tinyPomWag,walk:images.tinyPomWalk,jump:images.tinyPomJump,bark:images.tinyPomBark};
- for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','undyneex','mettatonex','mettatonneo']){
+ for(const id of ['moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo']){
    const crit=addedEnemyIdleImage(id,performance.now(),true);
    if(!crit)continue;
    images[id+'Frozen']=makeFrozenSprite(crit)||crit;
