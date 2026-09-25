@@ -2596,7 +2596,7 @@ const ENEMY_LAYOUTS={
  dogi:{x:208,y:38,w:224,h:200},
  woshua:{x:265,y:88,w:110,h:112},
  pyrope:{x:245,y:0,w:150,h:250},
- madjick:{x:249,y:62,w:143,h:160},
+ madjick:{x:245,y:48,w:150,h:176},
  knightknight:{x:209,y:26,w:222,h:201},
  astigmatism:{x:265,y:106,w:110,h:122},
  // obj_undynex_body at (210,20); canvas spans room x 180..440, y -20..260.
@@ -2639,7 +2639,7 @@ const PAIR_MAIN_LAYOUTS={
  dogi:{x:150,y:38,w:200,h:178},
  woshua:{x:200,y:100,w:100,h:102},
  pyrope:{x:180,y:0,w:135,h:225},
- madjick:{x:160,y:70,w:136,h:152},
+ madjick:{x:158,y:56,w:143,h:168},
  knightknight:{x:110,y:40,w:200,h:181},
  astigmatism:{x:190,y:110,w:105,h:116},
  undyneex:{x:110,y:-20,w:260,h:280},
@@ -2672,7 +2672,7 @@ const PAIR_SUPPORT_LAYOUTS={
  aaron:{x:352,y:30,w:97,h:170},
  shyren:{x:349,y:45,w:100,h:195},
  jerry:{x:330,y:160,w:150,h:72},
- madjick:{x:336,y:70,w:136,h:152}
+ madjick:{x:334,y:56,w:143,h:168}
 };
 
 // UNDERTALE GRID-CELL FORMATION FIX
@@ -17525,24 +17525,27 @@ function madjickConfused(){return currentBoss==='madjick'&&!enemyDead&&mj.confus
 
 // ---------- composites (canvas origin = the monster's x,y) ----------
 let mjCanvas=null,kkCanvas=null,astCanvas=null;
-function c3Draw(g,im,x,y,ox,oy,sx,sy,deg=0){
+// The exported PNG frames are cropped to their bounding box; tx,ty put the crop back.
+function c3Draw(g,im,x,y,ox,oy,sx,sy,deg=0,tx=0,ty=0){
  if(!im)return;
+ ox-=tx;oy-=ty;
  g.save();g.translate(x,y);g.rotate(-deg*Math.PI/180);g.scale(sx,sy);g.drawImage(im,-ox,-oy);g.restore();
 }
 function makeMadjickComposite(now=performance.now(),hurt=false,st=mj){
  if(hurt)return images.wizardHurt||null;
  if(!images.wizardHead)return images.wizardHurt||null;
- if(!mjCanvas){mjCanvas=document.createElement('canvas');mjCanvas.width=143;mjCanvas.height=160}
+ if(!mjCanvas){mjCanvas=document.createElement('canvas');mjCanvas.width=150;mjCanvas.height=176}
  const c=mjCanvas,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.imageSmoothingEnabled=false;
  // obj_wizardbody sits at (x+2, y+46) with offx 70.
- const s=wfStep(now),X=72,Y=46,sam=Math.sin(s/5),sim=Math.cos(s/5),som=Math.sin(s/2.5);
- c3Draw(g,images.wizardBoot,X-23-sam*5,Y+80-sam*6,14,1,2,2,-40-sam*10);
- c3Draw(g,images.wizardBoot,X+19+sam*5,Y+80-sam*6,14,1,-2,2,40+sam*10);
+ // Canvas origin = monster (x-2, y-16): room for the hat's bob above y.
+ const s=wfStep(now),X=74,Y=62,sam=Math.sin(s/5),sim=Math.cos(s/5),som=Math.sin(s/2.5);
+ c3Draw(g,images.wizardBoot,X-23-sam*5,Y+80-sam*6,14,1,2,2,-40-sam*10,1,2);
+ c3Draw(g,images.wizardBoot,X+19+sam*5,Y+80-sam*6,14,1,-2,2,40+sam*10,1,2);
  c3Draw(g,images.wizardLapel,X-2,Y+52+sam,0,12,2,2,-sam*10);
  c3Draw(g,images.wizardLapel,X-2,Y+52+sam,0,12,-2,2,sam*10);
- c3Draw(g,images.wizardDress,X-34,Y+52+sam,0,0,2,1.8-sam*.2);
- c3Draw(g,images.wizardHead,X-6+sam,Y+2+sam*8,10,5,2,2);
- c3Draw(g,images.wizardHat,X+2+sim,Y+4+sam*10,20,25,2,2);
+ c3Draw(g,images.wizardDress,X-34,Y+52+sam,0,0,2,1.8-sam*.2,0,1,0);
+ c3Draw(g,images.wizardHead,X-6+sam,Y+2+sam*8,10,5,2,2,0,1,0);
+ c3Draw(g,images.wizardHat,X+2+sim,Y+4+sam*10,20,25,2,2,0,3,1);
  // Stared-at orbs slow down (siner/exist) and stop bobbing.
  const orbs=images.wizardOrb||[];
  const orb=(stared,x,y,bob)=>{const f=stared?0:Math.floor(s/3);c3Draw(g,orbs[f%Math.max(1,orbs.length)],x,y+(stared?0:bob),0,0,-2,-2)};
@@ -17566,12 +17569,14 @@ function makeKnightKnightComposite(now=performance.now(),hurt=false){
  const fr=(a,i)=>{a=a||[];return a[Math.floor(i)%Math.max(1,a.length)]||a[0]};
  const eyes=asleep===2?images.knightEyesAsleep:asleep===1?images.knightEyesTired:images.knightEyes;
  c3Draw(g,Array.isArray(eyes)?fr(eyes,ae2/3):eyes,94+Math.sin(s/10)*6,70,0,0,2,2);
- c3Draw(g,images.knightBody,0,0,0,0,2,2);
- c3Draw(g,fr(images.knightHelmet,asleep===2?0:ah2/4),70,2,0,0,2,2);
+ c3Draw(g,images.knightBody,0,0,0,0,2,2,0,25,17);
+ c3Draw(g,fr(images.knightHelmet,asleep===2?0:ah2/4),70,2,0,0,2,2,0,2,2);
  const mouth=asleep===2?images.knightMouthAsleep:asleep===1?images.knightMouthTired:images.knightMouth;
- c3Draw(g,fr(mouth,am2/6),98,84,0,0,2,2);
+ const mim=fr(mouth,am2/6);
+ // Mouth frames are cropped separately: closed ones are 17px wide, open ones 19px.
+ c3Draw(g,mim,98,84,0,0,2,2,0,mim&&mim.width<19?1:0,3);
  c3Draw(g,fr(images.knightFur,s/5),64,96,0,0,2,2);
- c3Draw(g,images.knightArm,al3,al2,0,0,2,2);
+ c3Draw(g,images.knightArm,al3,al2,0,0,2,2,0,0,1);
  return c;
 }
 function makeAstigmatismComposite(now=performance.now(),hurt=false){
@@ -17588,9 +17593,9 @@ function makeAstigmatismComposite(now=performance.now(),hurt=false){
  if(t>250&&t<=480){sf=Math.min(1,(t-250)*.05);siner=t-250}else if(t>480){sf=Math.max(0,1-(t-480)*.07);siner=230}
  const X=6,Y=10,f=Math.floor(anim2/3);
  const hand=images.astigHand,leg=images.astigLeg,sn=Math.sin(siner/6),cs=Math.cos(siner/6);
- c3Draw(g,hand,X+8+sn*2*sf,Y+64+cs*2*sf,0,0,2,1.8+cs*.2*sf);
+ c3Draw(g,hand,X+8+sn*2*sf,Y+64+cs*2*sf,0,0,2,1.8+cs*.2*sf,0,1,0);
  c3Draw(g,leg,X+30+cs*2*sf,Y+84+sn*2*sf,0,0,2,1.8+sn*.2*sf);
- c3Draw(g,hand,X+92-sn*2*sf,Y+64-cs*2*sf,0,0,-2,1.9-cs*.2*sf);
+ c3Draw(g,hand,X+92-sn*2*sf,Y+64-cs*2*sf,0,0,-2,1.9-cs*.2*sf,0,1,0);
  c3Draw(g,leg,X+70-cs*2*sf,Y+84-sn*2*sf,0,0,-2,1.8-sn*.2*sf);
  c3Draw(g,A[f%A.length],X,Y,0,0,2,2);
  return c;
@@ -17949,7 +17954,8 @@ function c3Step(b,now){
    return;
  }
  if(b.kind==='c3Strom'){
-   b.hs+=Math.sign(b.hs)*.05;b.vs+=Math.sign(b.vs)*.05; // friction -0.05
+   // friction -0.05: GameMaker adds it to the speed along the direction of travel.
+   {const sp=Math.hypot(b.hs,b.vs);if(sp>0){const k=(sp+.05)/sp;b.hs*=k;b.vs*=k}}
    b.rx+=b.hs;b.ry+=b.vs;
    const wl=box.L-2,wr=box.R-22,wd=box.B-22,wu=box.T-2;
    if(b.active===1){
@@ -18023,7 +18029,7 @@ function core3Collide(b,now){
 }
 
 // ---------- draw ----------
-const CORE3_NOBORDER=new Set(['c3SunBul','c3Meteor','c3Shine','c3Eye','c3Kid','c3Strom','c3Sun','c3Moon','c3Zap']);
+const CORE3_NOBORDER=new Set(['c3Gen','c3SunBul','c3Meteor','c3Shine','c3Eye','c3Kid','c3Strom','c3Sun','c3Moon','c3Zap']);
 function drawCore3Bullet(b,now){
  if(!CORE3_KINDS.has(b.kind))return false;
  const U=UT_SCALE;
@@ -18032,7 +18038,7 @@ function drawCore3Bullet(b,now){
    ctx.translate(x*U,y*U);if(ang)ctx.rotate(-ang*Math.PI/180);ctx.drawImage(im,-ox*U,-oy*U,w*U,h*U);ctx.restore();
  };
  const fr=(a,i)=>{a=a||[];return a[Math.floor(i)%Math.max(1,a.length)]||a[0]};
- if(b.kind==='c3Gen')return true;
+ if(b.kind==='c3Gen'){if(performance.now()<c3FlashUntil){ctx.save();ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore()}return true}
  if(b.kind==='c3Zap'){put(images.crossZap,b.rx,b.ry,20,20,b.alpha,b.dir-90,10,5);return true}
  if(b.kind==='c3Wall'){put(images.wizardOrb2,b.rx,b.ry,28,26);return true}
  if(b.kind==='c3Chaser'){if(b.visible)put(b.heal?images.wizardOrb3:images.wizardOrb2,b.rx,b.ry,28,26);return true}
@@ -18053,7 +18059,9 @@ function drawCore3Bullet(b,now){
  return true;
 }
 function battleShake(n=2){try{if(typeof screenShake==='function')screenShake(n)}catch(_){}}
-function battleFlash(){try{if(typeof startScreenFlash==='function')startScreenFlash()}catch(_){}}
+// obj_flasher: a one-frame white flash when the sky orb bursts.
+let c3FlashUntil=0;
+function battleFlash(){c3FlashUntil=performance.now()+2*(1000/30)}
 
 // ---------- bullets ----------
 const UX_KINDS=new Set(['uxRise','uxRing','uxFollow2']);
