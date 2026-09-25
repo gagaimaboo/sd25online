@@ -10265,6 +10265,7 @@ function revealTorielFullFreezeScene(now=performance.now()){
  const src=frozenSourceFor('main',now);
  frozenStatues.main={
    rect:{x:lock.x,y:lock.y,w:lock.w,h:lock.h},
+   normal:src.normal||null,
    frozen:src.frozen||null,
    shadow:src.shadow||null
  };
@@ -14296,6 +14297,7 @@ function update(dt,now){
      // kneeling inside the permanent ice statue instead of snapping back.
      const statue={
        rect:{x:lock.x,y:lock.y,w:lock.w,h:lock.h},
+       normal:freezeVisual.normal||null,
        frozen:freezeVisual.frozen||null,
        shadow:freezeVisual.shadow||null
      };
@@ -15734,35 +15736,41 @@ function makeGraySprite(im){
  }
 }
 
-function makeFrozenSprite(im){
- // Petrify keeps the enemy silhouette itself. No added spikes/icicles/glints.
- // Preserve dark facial/seam pixels when pixel readback is allowed.
+// DELTARUNE obj_frozennpc Draw: after draw_self(), fog the sprite to
+// specialcolor = merge_color(c_navy,c_white,.8) = (204,204,230) and draw it at the four
+// diagonal +-2px offsets (1 sprite pixel at 2x) with alpha .8/.4/.4/.8, then add the
+// sprite tinted by specialcolor at alpha .4 (bm_add). This bakes that layer; the
+// normal hurt sprite is drawn underneath it by the caller.
+const DR_FREEZE_COLOR=[204,204,230];
+const frozenSpriteCache=new WeakMap();
+function makeFrozenSprite(im,off=1){
  if(!im)return null;
  im=transparentCharacterSprite(im)||im;
  const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(!w||!h)return im;
+ off=Math.max(1,Math.round(off));
+ let byOff=frozenSpriteCache.get(im);if(byOff&&byOff[off])return byOff[off];
  try{
+   const [cr,cg,cb]=DR_FREEZE_COLOR,col=`rgb(${cr},${cg},${cb})`;
+   const fog=document.createElement('canvas');fog.width=w;fog.height=h;
+   const fg=fog.getContext('2d');fg.imageSmoothingEnabled=false;fg.drawImage(im,0,0);
+   fg.globalCompositeOperation='source-in';fg.fillStyle=col;fg.fillRect(0,0,w,h);
+   const tint=document.createElement('canvas');tint.width=w;tint.height=h;
+   const tg=tint.getContext('2d');tg.imageSmoothingEnabled=false;tg.drawImage(im,0,0);
+   tg.globalCompositeOperation='multiply';tg.fillStyle=col;tg.fillRect(0,0,w,h);
+   tg.globalCompositeOperation='destination-in';tg.drawImage(im,0,0);
    const c=document.createElement('canvas');c.width=w;c.height=h;
-   const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;g.drawImage(im,0,0);
-   const d=g.getImageData(0,0,c.width,c.height),a=d.data;
-   for(let i=0;i<a.length;i+=4){
-     if(a[i+3]===0)continue;
-     const lum=(a[i]+a[i+1]+a[i+2])/3;
-     if(lum<96){a[i]=0;a[i+1]=0;a[i+2]=0;}
-     else{a[i]=201;a[i+1]=199;a[i+2]=221;}
-   }
-   g.putImageData(d,0,0);return c;
- }catch(e){
-   // V64: a display-only remote sprite can taint a canvas. Compositing is still
-   // legal even when getImageData is not, so preserve the hurt silhouette and
-   // apply a cyan source-in tint instead of falling back to an unfrozen sprite.
-   try{
-     const c=document.createElement('canvas');c.width=w;c.height=h;
-     const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(im,0,0);
-     g.globalCompositeOperation='source-in';g.fillStyle=ICE_FREEZE_MAIN;g.fillRect(0,0,w,h);
-     g.globalCompositeOperation='source-over';g.globalAlpha=.22;g.drawImage(im,0,0);g.globalAlpha=1;
-     return c;
-   }catch(_){return im}
- }
+   const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+   for(const [dx,dy,a] of [[-off,-off,.8],[off,-off,.4],[-off,off,.4],[off,off,.8]]){g.globalAlpha=a;g.drawImage(fog,dx,dy)}
+   g.globalAlpha=.4;g.globalCompositeOperation='lighter';g.drawImage(tint,0,0);
+   g.globalAlpha=1;g.globalCompositeOperation='source-over';
+   if(!byOff){byOff={};frozenSpriteCache.set(im,byOff)}
+   byOff[off]=c;return c;
+ }catch(e){return im}
+}
+// Offset in source pixels that equals DELTARUNE's 2px at the size the sprite is drawn.
+function frozenOffsetFor(im,rect){
+ const iw=im?.naturalWidth||im?.width||0;if(!iw||!rect?.w)return 1;
+ return Math.max(1,Math.round(2/((rect.w/UT_SCALE)/iw)));
 }
 function makeIceSilhouette(im,color='#010061'){
  if(!im)return null;
@@ -17261,7 +17269,10 @@ function spawnSnowdin2(now){
      let dir=Math.random()*180;
      if(dir<10)dir+=20;if(Math.abs(dir-90)<10)dir+=30;if(Math.abs(dir-180)<10)dir-=20;
      const sp=4-Math.min(1,woshJoke*.5);
-     bullets.push({kind:'woshSoap',owner:'main',x:L+(R-L)/2,y:T-60*U+(B-T)/2,dir,speed:sp,shineAt:4,step:0,damage:dmg,born:now});
+     // blt_soapbul: speed/direction -> hspeed/vspeed (GM y is down), tiny components tripled.
+     const ra=dir*Math.PI/180;let hs=Math.cos(ra)*sp,vs=-Math.sin(ra)*sp;
+     if(Math.abs(hs)<.2)hs*=3;if(Math.abs(vs)<.2)vs*=3;
+     bullets.push({kind:'woshSoap',owner:'main',x:L+(R-L)/2,y:T-60*U+(B-T)/2,hs,vs,offset:liveMonsterPopulation()>1?1:0,shineAt:4,step:0,damage:dmg,born:now});
      return true;
    }
    // obj_woshspiralgen (solo): white growbullets every 3 steps from a turning emitter.
@@ -17351,10 +17362,19 @@ function updateSnowdin2Bullet(b,now,dt){
      if(q.life<=0||q.alpha<=0){q.expired=true;return}
      const a=q.dir*Math.PI/180;q.x+=Math.cos(a)*q.speed*U;q.y-=Math.sin(a)*q.speed*U;
    }else if(k==='woshSoap'){
-     q.speed+=.04;
-     if(q.step>=q.shineAt){q.shineAt=q.step+7;bullets.push({kind:'woshShine',owner:'main',x:q.x+12*U,y:q.y+16*U,scale:1.5,step:0,damage:Math.max(1,q.damage-2),born:now})}
-     const a=q.dir*Math.PI/180;q.x+=Math.cos(a)*q.speed*U;q.y-=Math.sin(a)*q.speed*U;
-     if(q.x<L-80*U||q.x>R+80*U||q.y<T-80*U||q.y>B+80*U)q.expired=true;
+     // alarm[0]: drop a blt_shinebullet at (x+12,y+16) every 7 steps (offset: speed 5, every 10).
+     if(q.step>=q.shineAt){
+       q.shineAt=q.step+(q.offset?10:7);
+       if(q.offset){const m=Math.hypot(q.hs,q.vs)||1;q.hs=q.hs/m*5;q.vs=q.vs/m*5}
+       bullets.push({kind:'woshShine',owner:'main',x:q.x+12*U,y:q.y+16*U,scale:1.5,step:0,damage:Math.max(1,q.damage-2),born:now});
+     }
+     // friction=-0.04: speed grows by .04 per step along the current direction.
+     const m=Math.hypot(q.hs,q.vs);if(m>0){const n=m+.04;q.hs=q.hs/m*n;q.vs=q.vs/m*n}
+     q.x+=q.hs*U;q.y+=q.vs*U;
+     // Border collision events: step back and reflect off obj_l/r/u/dborder.
+     // spr_soapbul bbox is (6,6)-(23,33) from its top-left origin.
+     if(q.x+6*U<L&&q.hs<0||q.x+24*U>R&&q.hs>0){q.x-=q.hs*U;q.hs=-q.hs}
+     if(q.y+6*U<T&&q.vs<0||q.y+34*U>B&&q.vs>0){q.y-=q.vs*U;q.vs=-q.vs}
    }else if(k==='woshShine'){
      q.scale-=.03;if(q.scale<.1)q.expired=true;
    }else if(k==='pyroRope'){
@@ -17415,7 +17435,7 @@ function snowdin2Collide(b,now){
    }
    return true;
  }
- if(k==='woshSoap'){if(hit(b.x+4*U,b.y+4*U,22*U,32*U))dmg();return true}
+ if(k==='woshSoap'){if(hit(b.x+6*U,b.y+6*U,18*U,28*U))dmg();return true}
  if(k==='woshShine'){const s=14*U*b.scale;if(hit(b.x-s/2,b.y-s/2,s,s))dmg();return true}
  if(k==='pyroRope'){if(hit(b.x+2*U,b.y,6*U,120*U))dmg();return true}
  // Orange fire: only hurts a SOUL that is standing still.
@@ -21878,6 +21898,8 @@ function drawPersistentFrozenStatue(id,now=performance.now(),opts={}){
  const src=frozenSourceFor(id,now);
  let frozen=st.frozen||src.frozen;
  let shadow=st.shadow||src.shadow;
+ // obj_frozennpc does draw_self() first: the struck sprite stays under the ice layer.
+ let normal=st.normal||null;
  if(!frozen)return;
 
  const alpha=opts.alpha??1;
@@ -21886,6 +21908,7 @@ function drawPersistentFrozenStatue(id,now=performance.now(),opts={}){
  if(grayscale){
    frozen=makeGraySprite(frozen)||frozen;
    if(shadow)shadow=makeGraySprite(shadow)||shadow;
+   if(normal)normal=makeGraySprite(normal)||normal;
  }
 
  const r=st.rect;
@@ -21899,6 +21922,7 @@ function drawPersistentFrozenStatue(id,now=performance.now(),opts={}){
    const o=Math.max(2,Math.round(2.1*UT_SCALE));
    ctx.drawImage(shadow,x+o,y+o,w,h);
  }
+ if(normal)ctx.drawImage(normal,x,y,w,h);
  ctx.drawImage(frozen,x,y,w,h);
  ctx.restore();
 }
@@ -22343,31 +22367,33 @@ function frozenSourceFor(id,now=performance.now()){
  if(id==='main'){
    const specialTorielIce=(currentBoss==='toriel'&&torielSpecialFreezePose);
    if(currentBoss==='custom'){
-     return {normal,frozen:makeFrozenSprite(normal)||normal,shadow:makeIceSilhouette(normal)||normal,rect:locked||enemyDraw};
+     return {normal,frozen:makeFrozenSprite(normal,frozenOffsetFor(normal,locked||enemyDraw))||normal,shadow:null,rect:locked||enemyDraw};
    }
    // V64: freeze the ACTUAL locked critical/hurt pose. The old path correctly
    // selected `normal` from criticalImageFor(), then accidentally replaced it with
    // prebuilt idle-derived frozen art (enemyFrozenImage / froggitFrozen / etc.).
    // Keep Toriel's special kneeling freeze as the one authored exception.
-   const hurtFrozen=makeFrozenSprite(normal)||normal;
-   const hurtShadow=makeIceSilhouette(normal)||normal;
+   const hurtFrozen=makeFrozenSprite(normal,frozenOffsetFor(normal,locked||enemyDraw))||normal;
+   const hurtShadow=null;
    return {
      normal,
      frozen:specialTorielIce?(images.torielKneelFrozen||hurtFrozen):hurtFrozen,
-     shadow:specialTorielIce?(images.torielKneelIceShadow||hurtShadow):hurtShadow,
+     shadow:specialTorielIce?(images.torielKneelIceShadow||null):hurtShadow,
      rect:locked||enemyDraw
    };
  }
 
- let frozen=makeFrozenSprite(normal)||normal;
- let shadow=makeIceSilhouette(normal)||normal;
+ const srect=locked||supportDrawRect(now);
+ let frozen=makeFrozenSprite(normal,frozenOffsetFor(normal,srect))||normal;
+ let shadow=null;
  // Support slots follow the same rule as the main target: the ice shell is made
  // from the critical/hurt sprite that was actually struck, never the idle sprite.
- return {normal,frozen,shadow,rect:locked||supportDrawRect(now)};
+ return {normal,frozen,shadow,rect:srect};
 }
 function drawFrozenTarget(id,now){
  const src=frozenSourceFor(id,now);if(!src.normal)return;
- const elapsed=Math.max(0,now-freezeStart),FREEZE_MS=760,steps=23;
+ // obj_frozennpc: timer += .05 each 30fps frame -> 20 steps, bottom to top.
+ const elapsed=Math.max(0,now-freezeStart),FREEZE_MS=20000/30,steps=20;
  const undyneLock=(
    id==='main' && currentBoss==='undyne' && undyneNoelleFreezeProgressLock!==null
  )?undyneNoelleFreezeProgressLock:null;
@@ -22384,8 +22410,7 @@ function drawFrozenTarget(id,now){
  if(step>0){
    ctx.save();
    ctx.beginPath();ctx.rect(Math.floor(r.x+shakeX-6*UT_SCALE),freezeY-3*UT_SCALE,Math.ceil(r.w+12*UT_SCALE),Math.max(0,bottom-freezeY+34*UT_SCALE));ctx.clip();
-   const o=Math.max(2,Math.round(2.1*UT_SCALE));
-   ctx.drawImage(src.shadow,x+o,y+o,w,h);
+   if(src.shadow){const o=Math.max(2,Math.round(2.1*UT_SCALE));ctx.drawImage(src.shadow,x+o,y+o,w,h)}
    ctx.drawImage(src.frozen,x,y,w,h);
    ctx.restore();
    drawPetrifyGrowth(t);
