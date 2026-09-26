@@ -29761,6 +29761,234 @@ const NB=(()=>{
  });
 })();
 
+/* ---- NB content: Snowdin I (obj_snowdrake, obj_icecap/obj_icecube) ------- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB,gm=NB.gm;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive&&!(m.id==='jerry'&&!m.v.ditched)).length;
+ const drawAt=(g,im,x,y,w,h)=>{if(im)g.drawImage(im,Math.round(x),Math.round(y),w??im.naturalWidth,h??im.naturalHeight)};
+ const gg3=()=>Math.floor(rnd(3));
+ // SCR_BORDER_X(side,a,b) / SCR_BORDER_X_X(side,a,b): spawn points just outside a wall.
+ function borderX(side,a,b,sw,sh){
+  const [L,R,T,B]=S().ideal;
+  if(side===0)return {x:Math.round(rnd(R-L-b-sw))+L+b,y:T-a};
+  if(side===1)return {x:Math.round(rnd(R-L-b-sw))+L+b,y:B+(a>sh?a-sh:0)};
+  if(side===2)return {x:L-a,y:Math.round(rnd(B-T-b-sh))+T+b/2};
+  return {x:R+(a>sw?a-sw:0),y:Math.round(rnd(B-T-b-sh))+T+b/2};
+ }
+ function borderXX(side,a,b,sw,sh){
+  const [L,R,T,B]=S().ideal,wid=R-L,het=B-T,where=Math.floor(1+rnd(6))/8;
+  if(side===0)return {x:wid*where-b-sw+L+b,y:T-a};
+  if(side===1)return {x:wid*where-b-sw+L+b,y:B+(a>sh?a-sh:0)};
+  if(side===2)return {x:L-a,y:het*where-b-sh+T+b/2};
+  return {x:R+(a>sw?a-sw:0),y:het*where-b-sh+T+b/2};
+ }
+ // scr_perpendicular: head straight into the box from whichever wall we're outside.
+ function perp(b){const [L,R,T,B]=S().ideal;let d=45;if(b.x<L)d=0;if(b.x>R)d=180;if(b.y<T)d=270;if(b.y>B)d=90;return d}
+ // scr_bordercross(n): gone once it has crossed the far wall by n pixels.
+ function crossed(b,n){const [L,R,T,B]=S().ideal;return (b.vx<0&&b.x<L-n)||(b.vx>0&&b.x>R+n)||(b.vy<0&&b.y<T-n)||(b.vy>0&&b.y>B+n)}
+ const setDir=(b,dir,sp)=>{b.dir=dir;b.vx=dcos(dir)*sp;b.vy=-dsin(dir)*sp};
+
+ // -------------------------------------------------------------- Snowdrake
+ NB.defs.set('snowdrake',{
+  name:'Snowdrake',hp:74,atk:6,def:2,xp:22,gold:18,mercymod:5,wd:130,
+  encounter:'* Snowdrake flutters forth!',
+  size:()=>({w:172,h:200}),pos:(i,n,cx)=>n===1?{x:216,y:38}:{x:Math.round(cx-86),y:38},
+  setup(m){m.v.joketold=0},
+  draw(g,m){
+   const head=images.snowdrakeHead?.[Math.floor(m.t*.2)%20],body=images.snowdrakeBody,legs=images.snowdrakeLegs;
+   if(m.hurt||!m.alive||!head||!body||!legs){drawAt(g,images.snowdrake?.[0],m.x,m.y,172,200);return}
+   g.drawImage(head,Math.round(m.x+20),Math.round(m.y+10),128,146);
+   g.drawImage(body,Math.round(m.x+52),Math.round(m.y+146),64,36);
+   g.drawImage(legs,Math.round(m.x+40),Math.round(m.y+174),88,26);
+  },
+  bubblePos:m=>({x:m.x+145,y:m.y+52}),
+  acts:['Check','Laugh','Heckle','Joke'],
+  check:()=>'* SNOWDRAKE - ATK 12 DEF 7&* This teen comedian fights to&  keep a captive audience./',
+  act(m,i,name,api){
+   m.v.heard=name;
+   if(name==='Heckle'){
+    const g=Math.floor(rnd(6));m.mercymod=g===5?222:-10;
+    if(g===5)return {text:'* You tell the Snowdrake that&  no one will ever love&  them the way they are.../* They struggle to make a&  retort^1, and slink away&  utterly crushed...',then:()=>{if(api.spareable(m))api.spare(m)}};
+    return g<=2?'* You boo the Snowdrake.':'* You tell the Snowdrake that&  they aren\'t funny.';
+   }
+   if(name==='Laugh'){
+    m.mercymod=m.v.joketold?80:-4;
+    return m.v.joketold?'* You laugh at Snowdrake\'s&  pun.':'* You laugh at Snowdrake before&  it says anything funny.';
+   }
+   // Joke: with company the others love it (they get whatiheard 20), Snowdrake doesn't (19).
+   if(pop()>1){for(const o of api.alive())if(o!==m)o.v.heard='imitated';m.v.heard='outdone';return '* You make a bad ice pun./* The other monsters think&  it\'s hilarious...'}
+   return '* You make a bad ice pun.';
+  },
+  speech(m,api){
+   const g=gg3(),c=m.v.cmd=Math.round(rnd(100));
+   if(m.mercymod===-25&&pop()===1)m.mercymod=0;
+   let t=c<14?'"Ice"&to meet&you.':c<28?'Ice puns&are&"snow"&problem':c<42?'Fights&you in&"cold"&blood.':c<=66?'Better&not snow&"flake"&out!':c<=80?'My fave&ice&cereals:&"frosted"':c<=90?'"Chill"&out...':'M.. m..&macaroni&and&"freeze"';
+   if(m.mercymod===-25)t=['Do I&really&...','Hey...','Guys...&guys...'][g];
+   const h=m.v.heard;m.v.heard=null;
+   if(h==='Laugh'){t=m.v.joketold?['You have&good&taste!!&(In jokes)','See!?&Laughs!&Dad was&wrong!','Thanks,&you\'re&all&great.'][g]:'What are&YOU&laughin\'&at?!?';api.S.talkLenMin=108}
+   if(h!=='Heckle'&&h!=='Laugh'&&h!=='Joke'&&h!=='outdone'&&h!=='imitated'&&m.mercymod!==-25)m.v.joketold=1;
+   if(h==='Joke')t=['Is that&s\'posed&to be&funny?','Ha...&Ha...&Nice&try.','I\'ve&heard&that&one.'][g];
+   if(h==='Heckle'){t=['THIS&won\'t be&funny&either!','Is your&flesh&rotten&as you?','(Insults&towards&humans)'][g];m.v.joketold=0}
+   if(h==='imitated'){t=['IT\'S&JUST&LIKE&\'EM','HAHA&YOU\'RE&BETTER','YOU&NAILED&IT'][g];m.mercymod=200}
+   if(h==='outdone'){t=['That\'s&not&like&me...','I don\'t&do it&that&way...','It\'s&better&when I&do it...'][g];m.mercymod=-25}
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   const p=pop();api.turntimer(p===2?130:120);
+   let rate=16;if(p===3)rate*=2.4;if(p===2)rate*=2;
+   const c=m.v.cmd;
+   if(c<=50)m.v.gen={t:0,rate,type:1};else m.v.gen={t:0,rate:rate+8,type:0};
+   let f='* Snowdrake is assessing the&  crowd.';
+   if(c>=25)f='* Snowdrake is practicing&  its next pun.';
+   if(c>=40)f='* Snowdrake is smiling at its&  own bad joke.';
+   if(c>=60)f='* It smells like a wet&  pillow.';
+   if(c>=80)f='* Snowdrake realized its own&  name is a pun and is&  freaking out.';
+   if(m.mercymod===80)f='* Snowdrake is pleased with&  its "cool" joke.';
+   if(m.mercymod===200)f='* Snowdrake is laughing at&  your imitation of its&  cohort.';
+   if(m.mercymod===-35)f='* Snowdrake pretends not to&  care.';
+   if(m.mercymod<-10)f='* Snowdrake is puffed up..';
+   if(m.hp<20)f='* Snowdrake is flaking&  apart.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||g.t-->0)return;g.t=g.rate;
+   const side=Math.floor(rnd(4));
+   if(g.type===1){
+    // blt_4sidebullet: a line of three claws marching straight across, box-clipped.
+    const p=borderXX(side,14,0,24,24),sp=2+rnd(1.5),d=perp(p);
+    for(let k=0;k<3;k++)api.spawn({x:p.x,y:p.y,box:[7,7,10,10],img:images.clawBullet,anim:.5,dmg:m.atk,clip:true,wallKill:false,alpha:0,delay:2+26*k,d,sp,
+     step(b){if(b.delay>0){if(--b.delay===0)setDir(b,b.d,b.sp);b.hidden=b.delay>0;return}b.alpha=Math.min(1,b.alpha+.1);if(crossed(b,12))b.alive=false}});
+   }else{
+    // blt_clawbullet_white: a curving chain of 4-7 claws that speeds up (friction -0.1).
+    const p=borderX(side,14,50,24,24);p.x-=12;p.y-=12;
+    const [L,R,T,B]=S().ideal;let gr=Math.floor(rnd(2));
+    if(p.y<T)gr=p.x>L+(R-L)/2?0:1;if(p.y>B)gr=p.x>L+(R-L)/2?1:0;
+    const rot=gr?1+rnd(1):-1-rnd(1),sp=1.5+rnd(.5),d=perp({x:p.x,y:p.y}),limit=4+Math.round(rnd(3));
+    for(let k=0;k<=limit;k++)api.spawn({x:p.x,y:p.y,box:[-1,-3,4,4],img:images.nbRotClaw,ox:12,oy:14,dmg:m.atk,wallKill:false,alpha:0,delay:2+6*k,dirv:d,sp,rot,fric:-.1,
+     step(b){if(b.delay>0){if(--b.delay===0)setDir(b,b.dirv,b.sp);b.hidden=b.delay>0;return}
+      b.alpha=Math.min(1,b.alpha+.1);gm(b);const sp2=Math.hypot(b.vx,b.vy);b.dirv+=b.rot;setDir(b,b.dirv,sp2);b.angle=b.dirv+b.rot*2;if(crossed(b,12))b.alive=false}});
+   }
+  },
+  endAttack(m){m.v.gen=null},
+  spareable:(m,api)=>m.hp-api.S.at-api.S.wstrength+m.df-m.mercymod<0
+ });
+
+ // ---------------------------------------------------------------- Ice Cap
+ function icecapSpeech(m){
+  const g=gg3(),c=m.v.cmd=Math.round(rnd(100));
+  if(m.v.cube){
+   let t=c<25?'I...&I...':c<50?'What can&I say...':c<75?'What\'s&the&point...':'So...&Cold...';
+   if(m.v.heard==='imitated')t=['Haha!&That was&ACTUALLY&funny!','Ha!&Imitated&it spot-&on!','That\'s&the best&one in&a while!'][g];
+   m.v.heard=null;return t;
+  }
+  let t=c<20?'Where\'s&YOUR&hat?':c<40?'Your&head&looks so&...NAKED':c<60?'What a&great&hat!&(Mine)':c<=80?'Snow?&No! It\'s&hat&residue.':'I just&looove&my hat.&OK?';
+  const h=m.v.heard;m.v.heard=null;
+  if(h==='Ignore'){
+   if(m.v.ignore>0){t=['Fine!!!&I don\'t&care!!!','OK!&I\'ll&ignore&you too.','Better&a hatter&than a&HATER.'][g];m.v.ignore=2;m.mercymod=300}
+   else{t=g<2?'HELLO???&My hat\'s&up here.':'What?&What are&you&doing?';m.v.ignore=1}
+  }
+  if(h==='Compliment')t=['DUH!&Who&DOESN\'T&know?','Envious?&TOO BAD!','My hat\'s&too loud&for me to&hear you.'][g];
+  if(h==='Steal')t=g===0?'I KNEW&IT!!!&THIEF!!':'HELP!!!&FASHION&POLICE!!';
+  if(h==='imitated'){t=['Haha!&That was&ACTUALLY&funny!','Ha!&Imitated&it spot-&on!','That\'s&the best&one in&a while!'][g];m.mercymod=200}
+  return t;
+ }
+ NB.defs.set('icecap',{
+  name:'Ice Cap',hp:48,atk:6,def:0,xp:17,gold:17,mercymod:10,wd:100,
+  encounter:'* Ice Cap appeared.',
+  size:()=>({w:106,h:174}),pos:(i,n,cx)=>({x:Math.round(cx-53),y:70}),
+  setup(m){m.v.ignore=0},
+  draw(g,m){
+   if(m.v.cube){drawAt(g,(m.hurt||(!m.alive&&!m.spared))?images.nbIceCubeHurt:images.nbIceCube,m.x+8,m.y+88);return}
+   if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.icecapHurt,m.x,m.y);return}
+   drawAt(g,images.icecap?.[Math.floor(m.t*.1)%4],m.x,m.y+3);
+  },
+  bubblePos:m=>({x:m.x+106-8,y:m.v.cube?m.y+50:m.y}),
+  acts:m=>m.v.cube?['Check','Talk']:['Check','Compliment','Ignore','Steal'],
+  check:m=>m.v.cube?'* ICE CUBE - ATK 11 DEF 4&* A lonely ice cube./':'* ICE CAP - ATK 11 DEF 4&* This teen wonders why&  it isn\'t named \'Ice Hat.\'/',
+  act(m,i,name,api){
+   m.v.heard=name;
+   if(m.v.cube)return '* You tell Ice Cube it looks&  cool without a hat.';
+   if(name==='Compliment')return '* You inform Ice Cap that&  it has a great hat!';
+   if(name==='Ignore')return m.v.ignore>0?'* You continue not looking&  at Ice Cap\'s hat./* It seems defeated...':'* You manage to tear your&  eyes away from Ice Cap\'s&  hat./* It looks annoyed...';
+   // Steal: succeeds once Ice Cap is weak enough; it melts into an Ice Cube.
+   const mercy=m.hp-api.S.at-api.S.wstrength+m.df-m.mercymod;
+   if(mercy<0){m.v.cube=true;m.name='Ice Cube';m.mercymod=100;return '* You tried to steal Ice Cap\'s&  hat.../* And succeeded!&* (It melts in your hands...)'}
+   return '* You tried to steal Ice Cap\'s&  hat.../* ... but it\'s not weakened&  enough!';
+  },
+  speech:icecapSpeech,
+  border:()=>3,
+  attack(m,api){
+   const p=pop(),c=m.v.cmd;
+   api.turntimer(150);
+   if(c<50){
+    if(p===1)api.turntimer(100);
+    // obj_iceteeth: two sine-edged rows of ice closing from top and bottom.
+    const [L,R,T,B]=api.S.ideal;let y=T+(B-T-40)/2-120+rnd(40),dist=265;
+    if(p===2){y-=25;dist+=50}if(p===3){y-=35;dist+=70}
+    const n=Math.floor((R-L)/5);const xs=[];for(let i=0;i*5<R-L;i++)xs.push(L+i*5);
+    m.v.teeth={y,vs:4.2,dist,seed:rnd(40),xs,factor:12.5663706143592/Math.max(1,xs.length-1),speed:-.1};
+   }else{
+    let rate=33;if(p===2)rate=45;if(p===3)rate=60;m.v.gen={t:0,rate};
+   }
+   let f='* It\'s snowing dandruff.';
+   if(c>=25)f='* Ice Cap also wants a hat&  for its nose.';
+   if(c>=50)f='* Ice Cap makes sure its hat&  is still there.';
+   if(c>=75)f='* Ice Cap is thinking about a&  certain article of clothing.';
+   if(c>=90)f='* Here comes that new clothes&  smell.';
+   if(m.v.ignore===1)f='* Ice Cap is secretly checking&  if you\'re looking at&  its hat.';
+   if(m.v.ignore>1)f='* Ice Cap is desperate for&  attention.';
+   if(m.hp<m.maxhp/3)f='* Ice Cap\'s hat is loose.';
+   if(m.v.cube)f='* Ice Cube is melting a little.';
+   return f;
+  },
+  attackStep(m,api){
+   const T0=m.v.teeth;
+   if(T0){
+    // Moves like a GM object (vspeed 4.2, friction .1); the gap closes by vspeed*2.15.
+    const s=Math.max(0,Math.abs(T0.vs)-.1);T0.vs=s;T0.y+=T0.vs;T0.dist-=T0.vs*2.15;if(T0.speed<2.4)T0.speed+=.08;
+    const [L,R,T,B]=api.S.ideal,h=api.heart;
+    for(let i=0;i<T0.xs.length;i++){
+     T0.xs[i]+=T0.speed;if(T0.xs[i]>R)T0.xs[i]=L;if(T0.xs[i]<L)T0.xs[i]=L;
+     const x=T0.xs[i],ty=T0.y+Math.sin(T0.seed+i*T0.factor)*30;
+     if(x>=h.x&&x<=h.x+16&&((h.y<ty-3&&ty>T)||(h.y+16>ty+T0.dist+3&&ty+T0.dist<B))){
+      if(api.S.invc<1){api.damage(m.atk);api.S.invc=api.S.inv*2}
+     }
+    }
+   }
+   const g=m.v.gen;if(!g||g.t-->0)return;g.t=g.rate;
+   // blt_hat: rises from the floor under the SOUL, stops, then drops icicles.
+   const [L,R,T,B]=api.S.ideal,h=api.heart;
+   let x=6+h.x-25;x=Math.max(L,Math.min(R-50,x));
+   api.spawn({x,y:B+2,box:[0,0,50,50],img:images.icecapHat,dmg:m.atk,vy:-1.5,clip:true,alpha:.5,kill:false,wallKill:false,a6:20,a7:-1,a8:-1,
+    onHit:()=>false,
+    step(b){
+     if(b.a6>0&&--b.a6===0){b.vy=0;b.a7=20}
+     if(b.a7>0&&--b.a7===0){
+      b.frame=1;const one=pop()===1;
+      const pts=one?[[-2,30],[12,30],[5,30]]:[[3,14],[6,14],[9,14]];
+      for(const [dx,dy] of pts)api.spawn({x:b.x+dx,y:b.y+dy,box:[17,7,5,27],img:images.icecapIcicle?.[1],dmg:one?b.dmg-1:b.dmg,vy:-6.5,grav:.13,gdir:270,clip:true,wallKill:false,
+       step(c){gm(c);c.img=images.icecapIcicle?.[c.vy>0?0:1];if(c.y>api.S.ideal[3]+60)c.alive=false}});
+      b.a8=20;
+     }
+     if(b.a8>0&&--b.a8===0)b.vy=4;
+     if(b.y>api.S.ideal[3]+60)b.alive=false;
+    }});
+  },
+  drawOver(g,m,api){
+   const T0=m.v.teeth;if(!T0||api.S.mnfight!==2)return;
+   const [L,R,T,B]=api.S.ideal;g.fillStyle='#fff';
+   for(let i=0;i<T0.xs.length;i++){
+    const x=Math.round(T0.xs[i]),ty=T0.y+Math.sin(T0.seed+i*T0.factor)*30;
+    if(ty>T)g.fillRect(x,T,1,Math.round(ty-T));
+    if(ty+T0.dist<B)g.fillRect(x,Math.round(ty+T0.dist),1,Math.round(B-(ty+T0.dist)));
+   }
+  },
+  endAttack(m){m.v.gen=null;m.v.teeth=null}
+ });
+})();
+
 /* ---- NB glue: settings toggle, asset loading and routing into the new engine ---- */
 let newEngineEnabled=(()=>{try{return localStorage.getItem('utbg.newEngine')==='1'}catch(_){return false}})();
 function saveNewEngineSetting(){try{localStorage.setItem('utbg.newEngine',newEngineEnabled?'1':'0')}catch(_){}}
@@ -29779,7 +30007,10 @@ const NB_ASSETS={
  nbCircleMed2:RAW+'sprites/images/spr_circlebulletmed2_0.png',
  nbCircleMd1:RAW+'sprites/images/spr_circlebulletmd1_0.png',
  nbStreamBullet:[0,1].map(i=>RAW+`sprites/images/spr_streambullet_${i}.png`),
- nbBlookHat:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`)
+ nbBlookHat:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`),
+ nbRotClaw:RAW+'sprites/images/spr_rotclawbullet_0.png',
+ nbIceCube:RAW+'sprites/images/spr_icecube_0.png',
+ nbIceCubeHurt:RAW+'sprites/images/spr_icecubehurt_0.png'
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
