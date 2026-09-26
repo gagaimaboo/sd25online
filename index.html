@@ -28985,7 +28985,7 @@ const NB=(()=>{
   if(S.mnfight===1)monsterTalkStep();
   else if(S.mnfight===2){attackStep();bulletsStep();for(const b of S.bubbles)b.w.step()}
   else if(S.mnfight===3)returnStep();
-  for(const m of S.mons){monsterHurtStep(m);if(m.alive&&m.def.step)m.def.step(m,api)}
+  for(const m of S.mons){monsterHurtStep(m);if(m.alive&&m.def.step)m.def.step(m,api);else if(!m.alive&&!m.killed&&!m.spared&&m.def.stepAway)m.def.stepAway(m,api)}
   NB.heartStep();
   fxStep();
   // obj_target fades out on its own, whatever phase the turn has moved on to.
@@ -29164,7 +29164,8 @@ const NB=(()=>{
    ctx.restore();
   }
   drawFx(ctx,S);
-  for(const b of S.bubbles)drawBubble(ctx,b);
+  // Bubbles over a monster's head go underneath the side bubbles next to them.
+  for(const b of [...S.bubbles].sort((x,y)=>(x.m?.def.bubble==='above'?0:1)-(y.m?.def.bubble==='above'?0:1)))drawBubble(ctx,b);
   drawBox(ctx,S);
   if(S.writer&&!S.writer.done)S.writer.draw(ctx);
   // Target HP bars in the FIGHT menu (obj_battlecontroller Draw).
@@ -29779,7 +29780,7 @@ const NB=(()=>{
 (()=>{
  const {rnd,dcos,dsin,snd}=NB,gm=NB.gm;
  const S=()=>NB.S;
- const pop=()=>S().mons.filter(m=>m.alive&&!(m.id==='jerry'&&!m.v.ditched)).length;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum (a ditched Jerry isn't alive)
  const drawAt=(g,im,x,y,w,h)=>{if(im)g.drawImage(im,Math.round(x),Math.round(y),w??im.naturalWidth,h??im.naturalHeight)};
  const gg3=()=>Math.floor(rnd(3));
  // SCR_BORDER_X(side,a,b) / SCR_BORDER_X_X(side,a,b): spawn points just outside a wall.
@@ -30007,7 +30008,7 @@ const NB=(()=>{
 (()=>{
  const {rnd,dcos,dsin,snd}=NB,gm=NB.gm;
  const S=()=>NB.S;
- const pop=()=>S().mons.filter(m=>m.alive&&!(m.id==='jerry'&&!m.v.ditched)).length;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum (a ditched Jerry isn't alive)
  const R=Math.round;
  const drawAt=(g,im,x,y,w,h)=>{if(im)g.drawImage(im,R(x),R(y),w??im.naturalWidth,h??im.naturalHeight)};
  const fr=(a,f)=>Array.isArray(a)?a[Math.floor(f)%a.length]:a;
@@ -30557,6 +30558,71 @@ const NB=(()=>{
   }
  });
 })();
+/* ---- NB content: Jerry (obj_jerry) ------------------------------------------ */
+(()=>{
+ const {rnd}=NB,R=Math.round;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive).length;
+ const drawAt=(g,im,x,y,w,h)=>{if(im)g.drawImage(im,R(x),R(y),w??im.naturalWidth,h??im.naturalHeight)};
+ const fade=m=>{if(m.alpha<1)m.alpha=Math.min(1,m.alpha+.05)};
+ NB.defs.set('jerry',{
+  name:'Jerry',hp:80,atk:1,def:8,xp:1,gold:55,mercymod:65,wd:200,
+  encounter:'* Jerry came.',
+  size:()=>({w:208,h:104}),pos:(i,n,cx)=>n===1?{x:216,y:127}:{x:R(cx-104),y:127},
+  setup(m){m.v.ditch=0},
+  step:fade,
+  // Ditched: fades out, then comes back two turns later if anyone's still around.
+  stepAway(m,api){
+   if(!m.v.ditch)return;
+   if(api.S.mnfight>0&&m.alpha>.05)m.alpha-=.05;
+   if(api.S.mnfight===2&&m.v.celebrate){m.v.celebrate=0;api.S.nextFlavor='* The other monsters celebrate&  Jerry\'s disappearance.'}
+   if(api.S.mnfight===1&&api.S.turn-m.v.thisturn>=2&&pop()>0){m.v.ditch=0;m.alive=true;m.v.back=1}
+  },
+  draw(g,m){
+   if(m.hurt||(!m.alive&&!m.spared&&!m.v.ditch)){drawAt(g,images.jerryHurt,m.x,m.y);return}
+   drawAt(g,images.jerry?.[Math.floor(m.t*.1)%10],m.x+12,m.y+10);
+  },
+  // Takes a fifth of the damage (ceil), and the writer shows that fifth.
+  onHitCalc:(m,dmg)=>Math.ceil(dmg/5),
+  bubblePos:m=>({x:m.x-8,y:127-100}),bubbleImg:()=>images.nbBlconAbove,bubble:'above',
+  acts:['Check','Ditch'],
+  check:()=>'* JERRY - ATK 0 DEF 30&* Everyone knows Jerry.&* Makes attacks 2 seconds longer./',
+  act(m,i,name,api){
+   return {text:'* You and the other&  monsters ditch Jerry&  when it looks away!/',then:()=>{m.v.ditch=1;m.v.thisturn=api.S.turn;m.v.celebrate=1;m.alive=false}};
+  },
+  speech(m,api){
+   const c=m.v.cmd=R(rnd(100)),g=Math.floor(rnd(3));
+   api.S.talkLenExact=Math.max(api.S.talkLenExact||0,100);
+   let t=c<20?'Guys, it\'s COLD.&Does ANYONE care?':c<40?'Why are we doing&this? What a fail.':c<60?'Wow, you guys&SUCK at this.':c<=80?'SHHHH! I\'m&THINKING, guys!!':'Ka-SIGH.';
+   if(pop()===1){
+    if(c>0)t='Well... can YOU&give me a ride&home?';
+    if(c>20)t='Huh? Did they&ditch me...? SOME&friends!';
+    if(c>40)t='Awkwarrrd.';
+    if(c>60)t='So, like, what&are you even&doing?';
+    if(c>80)t='The wi-fi here&sucks.';
+   }
+   // Snowdrake's Joke: everyone else laughs along.
+   if(m.v.heard==='imitated'){t=['Hahaha!&Say something&else funny!','Haha! Wow!&Drake, you suck!','Hahaha!&Where do you get&your ideas!?!'][g];m.mercymod=200}
+   m.v.heard=null;
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   // alarm[10]: 10 steps in, the turn gets 60 more steps. Alone, Jerry doesn't attack.
+   if(pop()>1){if(api.S.turntimer<1)api.turntimer(1);m.v.a10=10}else api.endTurn();
+   const c=m.v.cmd||0;
+   let f='* Jerry eats powdery food and&  licks its hands loudly.';
+   if(c>=25)f='* Jerry sneezes without covering&  its nose.';
+   if(c>=50)f='* Jerry tells everyone it has to&  go to the bathroom.';
+   if(c>=75)f='* Jerry lets out a yawn.';
+   if(c>=90)f='* Smells like....... Jerry.';
+   if(m.hp<m.maxhp/3)f='* Jerry is wounded.';
+   if(m.v.back){m.v.back=0;f='* Return of Jerry.'}
+   return f;
+  },
+  attackStep(m,api){if(m.v.a10>0&&--m.v.a10===0&&api.S.turntimer>1)api.S.turntimer+=60}
+ });
+})();
 /* ---- NB 60 FPS: logic stays on UNDERTALE's 30 steps a second; drawing blends
    each moving thing between its last two step positions at the display's rate. */
 (()=>{
@@ -30620,7 +30686,8 @@ const NB_ASSETS={
  nbBlconSm2:RAW+'sprites/images/spr_blconsm2_0.png',
  nbLesserTail:[0,1,2,3,4].map(i=>RAW+`sprites/images/spr_lesserdogetail_${i}.png`),
  nbPomSad:RAW+'sprites/images/spr_tinypomsad_0.png',
- nbPomSadBark:RAW+'sprites/images/spr_tinypomsadbark_0.png'
+ nbPomSadBark:RAW+'sprites/images/spr_tinypomsadbark_0.png',
+ nbBlconAbove:RAW+'sprites/images/spr_blconabove_0.png'
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
