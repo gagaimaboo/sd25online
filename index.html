@@ -26986,7 +26986,7 @@ function keyDown(e){
 
  key[k]=true;key[low]=true;
  // The new engine polls key[] once per 30 fps step; only ESC (leave) is handled here.
- if(screen==='nb'){if(k==='Escape'&&!e.repeat)nbQuit();if(k.startsWith('Arrow')||k===' ')e.preventDefault();return}
+ if(screen==='nb'){if(!e.repeat)NB.latch(low);if(k==='Escape'&&!e.repeat)nbQuit();if(k.startsWith('Arrow')||k===' ')e.preventDefault();return}
  if(mexKeyDown(e,k,low))return;
 
  // During Noelle attacks, WASD both moves MALICE and updates the stored firing
@@ -28250,18 +28250,22 @@ const NB=(()=>{
  let S=null;
 
  // ---------------------------------------------------------------- input ---
+ // Lower-case names only: keyUp always clears key[lower], while an upper-case
+ // entry (Shift+D pressed, Shift released first) could stay stuck down forever.
  const KEYS={
-  confirm:['z','Z','Enter'],cancel:['x','X','Shift'],menu:['c','C','Control'],
-  up:['ArrowUp','w','W'],down:['ArrowDown','s','S'],left:['ArrowLeft','a','A'],right:['ArrowRight','d','D']
+  confirm:['z','enter'],cancel:['x','shift'],menu:['c','control'],
+  up:['arrowup','w'],down:['arrowdown','s'],left:['arrowleft','a'],right:['arrowright','d']
  };
- const held={},prev={},pressed={};
+ const held={},prev={},pressed={},latched={};
+ // keydown events latch a press so a tap shorter than one 30 fps step still counts.
+ function latch(low){for(const k in KEYS)if(KEYS[k].includes(low))latched[k]=true}
  function pollInput(){
   for(const k in KEYS){
    const h=KEYS[k].some(n=>!!key[n]);
-   pressed[k]=h&&!prev[k];prev[k]=h;held[k]=h;
+   pressed[k]=(h&&!prev[k])||!!latched[k];latched[k]=false;prev[k]=h;held[k]=h;
   }
  }
- function clearPressed(k){if(k)pressed[k]=false;else for(const n in pressed)pressed[n]=false}
+ function clearPressed(k){if(k){pressed[k]=false;latched[k]=false}else for(const n in KEYS){pressed[n]=false;latched[n]=false}}
 
  // ----------------------------------------------------------------- utils ---
  const rnd=n=>Math.random()*n;
@@ -28370,7 +28374,8 @@ const NB=(()=>{
     }
     return;
    }
-   if(pressed.cancel&&S.mnfight===0&&this.typer===TYPERS[1]){this.pos=this.str.length;clearPressed('cancel')}
+   // X skips the rest of the typing; once the text is out, cancel belongs to the menu.
+   if(pressed.cancel&&S.mnfight===0&&this.typer===TYPERS[1]&&this.pos<this.str.length){this.pos=this.str.length;clearPressed('cancel')}
    if(this.pos<this.str.length){
     if(--this.wait>0)return;
     this.pos++;this.wait=this.typer.speed;
@@ -28404,9 +28409,12 @@ const NB=(()=>{
 
  // ---------------------------------------------------------------- glyphs ---
  const tintCache=new Map();
+ // Canvases (pre-tinted sprites) have no src, so every image gets its own id.
+ const imgIds=new WeakMap();let imgIdNext=0;
+ function imgKey(im){let id=imgIds.get(im);if(id===undefined){id=++imgIdNext;imgIds.set(im,id)}return id}
  function tinted(im,color){
   if(!im||color==='#ffffff')return im;
-  const k=color+'|'+(im.src||'');let c=tintCache.get(k);
+  const k=color+'|'+imgKey(im);let c=tintCache.get(k);
   if(!c){
    c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;
    const cg=c.getContext('2d');cg.drawImage(im,0,0);cg.globalCompositeOperation='source-in';cg.fillStyle=color;cg.fillRect(0,0,c.width,c.height);
@@ -28429,7 +28437,7 @@ const NB=(()=>{
  const mulCache=new Map();
  function multiplied(im,color){
   if(!im||color==='#ffffff')return im;
-  const k=color+'|'+(im.src||'');let c=mulCache.get(k);
+  const k=color+'|'+imgKey(im);let c=mulCache.get(k);
   if(!c){
    c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;
    const cg=c.getContext('2d');cg.drawImage(im,0,0);cg.globalCompositeOperation='multiply';cg.fillStyle=color;cg.fillRect(0,0,c.width,c.height);
@@ -28440,7 +28448,7 @@ const NB=(()=>{
  function drawText(g,text,x,y,color='#ffffff',spacing=16){let cx=x;for(const c of String(text)){drawGlyph(g,'main',c,cx,y,color);cx+=spacing}}
 
  return {STEP_MS,BORDERS,BUTTONS,defs,get S(){return S},set S(v){S=v},
-  pollInput,held,pressed,clearPressed,rnd,clamp,dcos,dsin,snd,img,
+  pollInput,latch,held,pressed,clearPressed,rnd,clamp,dcos,dsin,snd,img,
   setBorder,setBorderRect,stepBorder,borderSettled,inner,heartStep,heartMoving,
   Writer,toUT,drawGlyph,drawText,tinted,multiplied,TYPERS};
 })();
@@ -28651,7 +28659,6 @@ const NB=(()=>{
   // global.damagetimer: the monster reacts once obj_slice's animation has played.
   if(S.fightWait>0){if(--S.fightWait===0)hurtMonster()}
   const f=S.fight;if(!f)return;
-  if(f.fade){f.alpha-=.08;f.xs-=.06;f.tx+=15.8;if(f.xs<.08)f.gone=true}
   if(f.phase==='wait')return;
   if(f.hit){f.blink+=.4;return}
   f.x+=f.hs;
@@ -28980,6 +28987,9 @@ const NB=(()=>{
   for(const m of S.mons){monsterHurtStep(m);if(m.alive&&m.def.step)m.def.step(m,api)}
   NB.heartStep();
   fxStep();
+  // obj_target fades out on its own, whatever phase the turn has moved on to.
+  const f=S.fight;
+  if(f&&f.fade){f.alpha-=.08;f.xs-=.06;f.tx+=15.8;if(f.xs<.08)f.gone=true}
   if(S.fight&&S.fight.gone)S.fight=null;
  }
  NB.update=function(dt,now){
@@ -29071,7 +29081,7 @@ const NB=(()=>{
    if(w.apparent>0){g.fillStyle='#00ff00';g.fillRect(w.x,w.ystart+8,Math.round(w.apparent*sf)+1,13)}
    const s=String(Math.floor(w.dmg)),place=s.length-1;
    for(let i=place;i>=0;i--){
-    const d=+s[place-i],im=images.damageDigits?.[d];
+    const d=+s[place-i],im=images.damageDigits?.[9-d]; // spr_dmgnum_o exports 9..0
     const x=(w.m.wd||100)<=120?w.x+30-i*32+place*16:w.x-30+(w.m.wd||100)/2-i*32+place*16;
     if(im)g.drawImage(NB.multiplied(im,'#ff0000'),x,w.y-28);
    }
@@ -29579,7 +29589,7 @@ const NB=(()=>{
   },
   draw(g,m){
    if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.looxHurt,m.x,m.y);return}
-   drawAt(g,images.loox?.[Math.floor(m.v.f)%5],m.x,m.y);
+   drawAt(g,images.loox?.[(Math.floor(m.v.f)+4)%5],m.x,m.y); // exported frames are shifted: png 4 is the open eye
   },
   bubblePos:m=>({x:m.x+100-8,y:132}),
   acts:['Check','Pick On','Don\'t Pick On'],
@@ -30502,7 +30512,7 @@ const NB=(()=>{
     // obj_sleepdog: naps at the bottom of the box. Move for 8 frames and it
     // wakes up and barks where the SOUL is heading (blt_barkbullet).
     const [L,Rr,T,B]=api.S.ideal;
-    api.spawn({x:(L+Rr)/2-29,y:B-30,box:[4,6,52,24],img:images.sleepDog,anim:.1,dmg:5,wallKill:false,hmove:0,a2:-1,a3:-1,a4:-1,
+    api.spawn({x:(L+Rr)/2-29,y:B-30,w:58,h:30,box:[4,6,52,24],img:images.sleepDog,anim:.1,dmg:5,wallKill:false,hmove:0,a2:-1,a3:-1,a4:-1,
      onHit(b){if(!api.damage(b.dmg))return false;api.endTurn();return true},
      step(b){
       const h=api.heart;
