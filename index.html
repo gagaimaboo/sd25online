@@ -28486,6 +28486,9 @@ const NB=(()=>{
  };
 
  // ---------------------------------------------------------------- start ---
+ // One roster entry can stand for a whole battlegroup (Dogamy + Dogaressa).
+ NB.groups={};
+ NB.slots=n=>slotCentres(n);
  NB.start=function(opt){
   const stats=effectivePlayerStats(),w=activeWeaponData();
   S={
@@ -28501,7 +28504,7 @@ const NB=(()=>{
    intro:opt.intro,encounterDone:false
   };
   NB.S=S;
-  const ids=opt.monsters.filter(id=>NB.defs.has(id));
+  const ids=opt.monsters.flatMap(id=>NB.groups[id]||[id]).filter(id=>NB.defs.has(id));
   S.mons=ids.map((id,i)=>makeMonster(id,i,ids.length));
   const first=S.mons[0];
   const intro=opt.intro||first?.def.encounter||`* ${first?.name||'Something'} draws near!`;
@@ -28510,7 +28513,7 @@ const NB=(()=>{
   NB.clearPressed();
   return S;
  };
- NB.supports=id=>NB.defs.has(id);
+ NB.supports=id=>NB.groups[id]?NB.groups[id].every(g=>NB.defs.has(g)):NB.defs.has(id);
  NB.active=()=>!!S&&!S.exited;
 
  function pagesOf(text,end){
@@ -28788,12 +28791,12 @@ const NB=(()=>{
     if(text){
      const wide=m.def.bubble==='wide';
      const bx=m.def.bubblePos?m.def.bubblePos(m).x:m.x+m.w,by=m.def.bubblePos?m.def.bubblePos(m).y:m.y;
-     S.bubbles.push({m,x:bx,y:by,wide,w:new NB.Writer([String(text).replace(/\n/g,'&')],{typer:2,x:bx+(wide?20:15),y:by+10,sound:m.def.voice||'text'})});
+     S.bubbles.push({m,x:bx,y:by,wide,img:m.def.bubbleImg?m.def.bubbleImg(m):null,w:new NB.Writer([String(text).replace(/\n/g,'&')],{typer:2,x:bx+(wide?20:15),y:by+10,sound:m.def.voice||'text'})});
     }
     const b=m.def.border?m.def.border(m,api):null;if(b!=null&&border==null)border=b;
    }
    NB.setBorder(border??3);
-   S.talkLen=Math.max(60,S.talkLenMin||0);S.talkLenMin=0;
+   S.talkLen=S.talkLenExact||Math.max(60,S.talkLenMin||0);S.talkLenMin=0;S.talkLenExact=0;
   }
   S.talkT++;
   for(const b of S.bubbles)b.w.step();
@@ -28874,7 +28877,7 @@ const NB=(()=>{
    b.t++;
    if(b.anim)b.frame+=b.anim;
    if(b.step)b.step(b,api);
-   b.vx+=b.ax;b.vy+=b.ay;b.x+=b.vx;b.y+=b.vy;
+   if(!b.manual){b.vx+=b.ax;b.vy+=b.ay;b.x+=b.vx;b.y+=b.vy}
    if(b.wallKill){
     const [bx,by,bw,bh]=b.box;
     if(b.vy<0&&b.y+by<=f.t-5+5&&b.y+by+bh<f.t)b.alive=false;
@@ -28996,7 +28999,7 @@ const NB=(()=>{
   write,alive,spareable:monsterSpareable,endTurn:()=>{S.turntimer=0},
   remove:m=>{m.alive=false;m.gone=true;S.goldTotal+=m.goldBonus||0},
   heal:n=>{S.hp=Math.min(S.maxhp,S.hp+n)},
-  bubble:(m,text,opt={})=>{const wide=!!opt.wide,bx=opt.x??m.x+m.w,by=opt.y??m.y;const b={m,x:bx,y:by,wide,w:new NB.Writer([String(text)],{typer:2,x:bx+(wide?36:15),y:by+10,sound:m.def.voice||'text'})};S.bubbles.push(b);return b},
+  bubble:(m,text,opt={})=>{const wide=!!opt.wide,bx=opt.x??m.x+m.w,by=opt.y??m.y;const b={m,x:bx,y:by,wide,img:opt.img||null,w:new NB.Writer([String(text)],{typer:2,x:bx+(wide?36:15),y:by+10,sound:m.def.voice||'text'})};S.bubbles.push(b);return b},
   leave:(text)=>{S.won=true;S.myfight=0;S.mnfight=0;S.heart.visible=false;S.bullets=[];try{stopMusic()}catch(_){}write(text,{end:'/%',onEnd:()=>exitBattle('win')})},
   kill:killMonster,spare:spareMonster,endPlayerTurn,win
  });
@@ -29102,8 +29105,8 @@ const NB=(()=>{
   }
  }
  function drawBubble(g,b){
-  const im=b.wide?images.torielBubbleWide:images.torielBubbleSmall;
-  if(im)g.drawImage(im,b.x,b.y);
+  const im=b.img||(b.wide?images.torielBubbleWide:images.torielBubbleSmall);
+  if(im)g.drawImage(im,Math.round(b.x),Math.round(b.y));
   b.w.draw(g);
  }
  function drawBullets(g,S){
@@ -29989,6 +29992,560 @@ const NB=(()=>{
  });
 })();
 
+/* ---- NB content: Snowdin dogs (obj_movedoge, obj_lesserdoge, obj_mandog + obj_womandog, obj_greatdog) ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB,gm=NB.gm;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive&&!(m.id==='jerry'&&!m.v.ditched)).length;
+ const R=Math.round;
+ const drawAt=(g,im,x,y,w,h)=>{if(im)g.drawImage(im,R(x),R(y),w??im.naturalWidth,h??im.naturalHeight)};
+ const fr=(a,f)=>Array.isArray(a)?a[Math.floor(f)%a.length]:a;
+ const gg3=()=>Math.floor(rnd(3));
+ // GameMaker alarms: count down each step, fire on reaching 0.
+ const tick=(o,k)=>o[k]>0&&--o[k]===0;
+ // obj_dogeparent: "with(obj_dogeparent)" reaches every dog in the fight.
+ const dogs=()=>S().mons.filter(m=>m.alive&&m.def.dog);
+ const talkLen=n=>{S().talkLenExact=Math.max(S().talkLenExact||0,n)};
+ const offRoom=(b,w,h)=>b.x+w<0||b.x>640||b.y+h<0||b.y>480;
+ // obj_dborder: the bottom wall, B..B+5 tall, L..R+5 wide.
+ const onFloor=(x0,x1,y1)=>{const [L,Rr,T,B]=S().ideal;return y1>=B&&x1>L&&x0<Rr+5};
+ // GameMaker motion done by the bullet itself (friction, gravity, then position).
+ function move(b){b.xp=b.x;b.yp=b.y;gm(b);b.x+=b.vx;b.y+=b.vy}
+ // Blue attacks only hurt while the SOUL is moving (obj_heart xprevious check).
+ const blueHit=api=>(b)=>api.moving()?api.damage(b.dmg):false;
+
+ // ------------------------------------------------------------------ Doggo
+ // obj_movedoge + obj_movedogehead/arms/body/tail (all at x/y scale 2).
+ function doggoHead(m,api){
+  const h=m.v.h,st=api.S;
+  if(h.a0>0)h.a0--;
+  if(h.ex===1&&h.a0>1){if(m.mercymod>998&&!h.special){h.a2=4;h.special=1}}
+  // alarm[1]: "MOVING?" bubbles; alarm[2]: "PET?" bubbles once it's been pet.
+  const pop1=(text)=>{
+   if(h.bub){st.bubbles=st.bubbles.filter(b=>b!==h.bub);h.bub=null}
+   if(!text)return;
+   const g=gg3(),sw=72,sh=60;let x,y;
+   if(g===0){x=m.x-rnd(sw/2)-40;y=m.y+rnd(sh/3)}
+   else if(g===1){x=m.x+rnd(sw/3)+100;y=m.y+rnd(sh/3)}
+   else{x=m.x+rnd(sw)-sw/2;y=m.y-18}
+   h.bub=api.bubble(m,text,{x,y,img:images.nbBlconTiny});
+  };
+  if(tick(h,'a1')){if(st.mnfight===2){h.a1=R(rnd(20))+10;pop1('MOVING?')}else pop1(null)}
+  if(tick(h,'a2')&&h.ex===1&&h.a0>1&&h.special){
+   h.a2=2;
+   if(st.mnfight===2){h.a2=R(rnd(10))+8;const g=gg3();pop1(['PET?','PAT?','POT?'][g])}else pop1(null);
+  }
+ }
+ NB.defs.set('doggo',{
+  name:'Doggo',hp:70,atk:6,def:1,xp:30,gold:20,mercymod:-15,wd:100,dog:true,
+  encounter:'* Doggo blocks the way!',
+  size:()=>({w:134,h:216}),pos:(i,n,cx)=>n===1?{x:196,y:28}:{x:R(cx-67),y:28},
+  setup(m){m.v.excited=-1;m.v.pets=0;m.v.arm=0;m.v.armA=0;m.v.h={ex:0,a0:-1,a1:-1,a2:-1,special:0,bub:null}},
+  step(m,api){
+   // obj_movedogearms: y +/- .8 a step, following sin(a/4.5).
+   m.v.armA++;m.v.arm+=Math.sin(m.v.armA/4.5)>0?.8:-.8;
+   doggoHead(m,api);
+  },
+  draw(g,m){
+   if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.doggoHurt,m.x,m.y,134,250);return}
+   drawAt(g,images.doggoTail,m.x+6,m.y+132,46,36);
+   drawAt(g,images.doggoBody,m.x+42,m.y+70,64,146);
+   drawAt(g,images.doggoArms,m.x+16,m.y+38+m.v.arm,114,92);
+   const h=m.v.h;
+   if(h.ex===1&&h.a0>1)drawAt(g,fr(images.doggoHeadB,m.t*.1),m.x+18,m.y+12,98,62);
+   else drawAt(g,fr(images.doggoHeadA,m.t*.33334),m.x+20,m.y+14,72,60);
+  },
+  bubblePos:m=>({x:m.x+145,y:m.y+52}),
+  acts:['Check','Pet'],
+  check:()=>'* DOGGO - ATK 13 DEF 7&* Easily excited by movement.&* Hobbies include^1: squirrels./',
+  act(m,i,name){
+   if(m.v.excited!==0)return '* Doggo is too suspicious of&  your movements./';
+   m.mercymod=1000;
+   const h=m.v.h;
+   if(m.v.pets<4){m.v.pets++;h.ex=1;h.a0=999}
+   else{h.ex=0;h.a0=3;m.v.excited=0}
+   return '* You pet Doggo./';
+  },
+  speech(m,api){
+   talkLen(110);
+   let t='Don\'t&move an&inch!';
+   if(m.v.excited===1)t='It moved&!! It&didn\'t&NOT move!';
+   if(api.S.turn>=1&&m.v.excited===0)t='Will it&move&this&time?';
+   if(m.mercymod>100&&m.mercymod<800){t='HUH!!!&A FUN&STICK&APPEARS!';m.mercymod=101;m.v.h.ex=1;m.v.h.a0=30000}
+   if(m.mercymod===1000){
+    t=['WHAT!!!&I\'VE&BEEN&PET!!!','WHAT!!!&I\'VE&BEEN&PET!!!','WHERE\'S&THAT&COMING&FROM!','THERE\'S&NO END&TO IT!!','WELL,&THIS IS&THOROUGH&!!!'][m.v.pets]||t;
+    m.mercymod=999;m.df=-90;
+    if(m.v.pets===4&&m.v.h.ex===0){t='OK.&That\'s&enough.';m.df=0}
+   }
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   api.turntimer(120);
+   // blt_bluesword: creeps in from the right (friction -0.1), tracks the SOUL's
+   // height and lunges when it lines up. Only hurts a moving SOUL.
+   const [L,Rr,T]=api.S.ideal;m.v.hurted=0;
+   api.spawn({x:Rr+20,y:T+40,vx:-.1,fric:-.1,g:0,manual:true,box:[7,0,7,95],img:images.blueSword,dmg:m.atk,clip:true,wallKill:false,kill:false,
+    onHit(b){
+     if(!api.moving()||!api.damage(b.dmg))return false;
+     m.v.hurted=1;
+     for(const d of dogs()){d.v.excited=1;d.mercymod=-50}
+     const h=m.v.h;h.ex=1;h.a0=90;h.a1=2;
+     return true;
+    },
+    step(b){
+     move(b);
+     const h=api.heart;
+     if(Math.abs(h.x-b.x)<12){b.g=1;b.fric=.1;b.vx=-2;b.vy=0}
+     else if(b.g===1)b.fric=-.3;
+     if(h.y-b.y>95/2)b.y+=4;else if(h.y-b.y<95/4)b.y-=4;
+     if(offRoom(b,20,95)){b.alive=false;api.endTurn()}
+    }});
+   api.border(8);
+  },
+  endAttack(m){if(!m.v.hurted)m.v.excited=0},
+  flavor(m){
+   let f='* Doggo can\'t seem to&  find anything.';
+   if(m.v.excited===1)f='* Doggo is confirming the moving&  object.';
+   if(m.mercymod>100)f='* Doggo loves fetch!!!';
+   if(m.mercymod>300)f='* Doggo has been pet.';
+   return f;
+  }
+ });
+
+ // ------------------------------------------------------------- Lesser Dog
+ NB.defs.set('lesserdog',{
+  name:'Lesser Dog',hp:60,atk:6,def:0,xp:18,gold:15,mercymod:0,wd:100,dog:true,
+  encounter:'* Lesser Dog appears.',
+  size:()=>({w:104,h:200}),pos:(i,n,cx)=>n===1?{x:216,y:38}:{x:R(cx-52),y:38},
+  setup(m){
+   m.v.tail=0;m.v.head=0;
+   Object.defineProperty(m,'goldBonus',{get:()=>(m.mercymod>99?7:0)+(m.mercymod>500?13:0)+(m.mercymod>2600?40:0)});
+  },
+  step(m){
+   m.v.tail+=Math.min(2,Math.max(0,m.mercymod/400));
+   m.v.head+=Math.min(.5,Math.max(0,m.mercymod/900));
+  },
+  draw(g,m){
+   const mm=m.mercymod;
+   // obj_lesserdogetail follows at x-1 and wags faster the more it's pet.
+   drawAt(g,fr(images.nbLesserTail,m.v.tail),m.x-1,m.y+140,8,24);
+   if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.lesserDogHurt,m.x+2,m.y+18,102,184);return}
+   drawAt(g,fr(images.lesserDogBody,m.t*.1),m.x+2,m.y+18,102,180);
+   // obj_lesserdogehead: the head rises mercymod/4 on a white neck.
+   const hx=m.x,hy=m.y-mm/4,hi=fr(images.lesserDogHead,m.v.head);
+   g.fillStyle='#fff';
+   g.fillRect(hx+44,R(hy+79),38,R(mm/4)+1);
+   g.fillRect(hx+54,R(hy+79),23,R(19+mm/4)+1);
+   drawAt(g,hi,hx+36,hy+56,44,42);
+   if(mm>500){
+    // ...and eventually comes back down from the top of the screen.
+    const ny=(mm-500)/4;
+    if(ny-40>-1)g.fillRect(hx+116,-1,37,R(ny-40)+2);
+    if(hi){g.save();g.translate(hx+196,R(ny+40));g.scale(-1,-1);g.drawImage(hi,36,56,44,42);g.restore()}
+   }
+  },
+  bubblePos:m=>({x:m.x+94,y:m.y+8}),
+  acts:['Check','Pet','Pet','Pet','Pet','Pet'],
+  check:()=>'* LESSER DOG - ATK 12 DEF 2&* Wields a stone dogger made&  of pomer-granite./',
+  act(m){
+   const mm=m.mercymod;let t='* You barely lifted your&  hand and Lesser Dog&  got excited./';
+   const L=[[40,'* You lightly touched the&  Dog^1.&* It\'s already overexcited.../'],[90,'* You pet the Dog.&* It raises its head up&  to meet your hand./'],[140,'* You pet the Dog.&* It was a good Dog./'],[190,'* You pet the Dog.&* Its excitement knows no&  bounds./'],[240,'* Critical pet!&* Dog excitement increased./'],[290,'* You have to jump up&  to pet the Dog./'],[340,'* You don\'t even pet it^1.&* It gets more excited./'],[390,'* There is no way to&  stop this madness./'],[440,'* Lesser Dog enters the&  realm of the clouds./'],[490,'* You call the Dog but it&  is too late^1.&* It cannot hear you./'],[540,'* .../'],[590,'* You can reach Lesser Dog&  again./'],[640,'* You pet Lesser Dog./'],[900,'* It\'s possible that you&  may have a problem./'],[1640,'* Lesser Dog is unpettable&  but appreciates the attempt./'],[2190,'* Perhaps mankind was not&  meant to pet this much./'],[2240,'* It continues./']];
+   for(const [th,l] of L)if(mm>th)t=l;
+   if(mm===0)t='* You barely lifted your&  hand and Lesser Dog&  got excited./';
+   if(mm>=2640)t='* Lesser Dog is beyond&  your reach./';
+   if(mm>=2690)t='* Really.../';
+   m.mercymod+=50;
+   return t;
+  },
+  speech(m,api){
+   talkLen(70);
+   let c=R(rnd(100));if(api.S.turn===0)c=10;if(api.S.turn===1)c=90;m.v.cmd=c;
+   let t=c<25?'(Pant&pant)':c<50?'(Wag&wag)':c<=75?'(Thinks&of&food)':'(Tiny&bark)';
+   if(m.mercymod===102){m.mercymod=103;t='(Pants&fast)'}
+   if(m.mercymod>10)m.df=-100;
+   for(const [th,l] of [[90,'(Pant!&Pant!)'],[190,'(Excited&noises)'],[340,'(Motor&revving)'],[390,'(Plane&takeoff)'],[440,'(Kettle&whistle)'],[490,'(...)'],[540,'(Faraway&bark)'],[590,'(...)'],[640,'(Bark)'],[690,'(Pant&pant)']])if(m.mercymod>th)t=l;
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   // Once its head is out of reach it doesn't attack at all.
+   if(m.mercymod>250&&api.S.turntimer<10)api.turntimer(0);else api.turntimer(110);
+   if(pop()===3)m.v.cmd=2;
+   const c=m.v.cmd,[L,Rr,T,B]=api.S.ideal;
+   if(c<50){
+    // blt_tinypom_leap: barks twice, then trots after the SOUL and hops at it.
+    api.spawn({x:Rr-50,y:B-38,manual:true,box:[8,2,40,34],img:images.tinyPomWag,anim:.334,dmg:m.atk,clip:true,wallKill:false,kill:false,
+     barked:0,a1:10,a2:-1,a3:-1,
+     step(b){
+      const h=api.heart;
+      if(tick(b,'a1')){
+       if(b.barked<2){b.img=images.tinyPomBark;b.a2=4;b.a1=8;snd('pomBark');b.barked++}
+       else{b.a3=10;b.img=images.tinyPomWalk}
+      }
+      if(tick(b,'a2'))b.img=images.tinyPomWag;
+      if(tick(b,'a3')){
+       b.a3=4;b.vx+=h.x<b.x?-.4:.4;
+       if(!b.grav&&h.y<b.y&&Math.abs(b.x-h.x)<50){b.grav=.22;b.gdir=270;b.vy=-5;b.img=images.tinyPomJump}
+      }
+      move(b);
+      if(b.vy>0&&onFloor(b.x+8,b.x+48,b.y+35)){
+       b.y=b.yp-b.vy;b.vy=0;b.grav=0;b.barked=1;b.fric=.2;b.img=images.tinyPomWag;b.a3=-1;b.a1=6;
+      }
+     }});
+   }else{
+    // blt_bluespear (+ blt_whitespear when Lesser Dog is alone).
+    const one=pop()<=1;
+    api.spawn({x:Rr+20,y:T+40,vx:-4,box:[6,0,7,90],img:images.blueSpear,dmg:m.atk,clip:true,wallKill:false,kill:false,a0:20+Math.floor(rnd(10)),
+     onHit:blueHit(api),
+     step(b){
+      if(tick(b,'a0')&&one){
+       const [L2,R2,T2]=api.S.ideal,rr=R(rnd(1));
+       api.spawn({x:rr?R2+20:L2-20,y:T2+7,vx:rr?-7:7,grav:.13,gdir:rr?0:180,manual:true,box:[7,0,6,90],img:images.whiteSpear,dmg:b.dmg,clip:true,wallKill:false,kill:false,
+        step(w){move(w);if(offRoom(w,20,90)){w.alive=false;api.endTurn()}}});
+      }
+      if(offRoom(b,20,90)){b.alive=false;api.endTurn()}
+     }});
+   }
+   api.border(8);
+   let f='* Lesser Dog cocks its head&  to one side.';
+   if(c>=30)f='* Lesser Dog thinks your&  weapon is a dog treat.';
+   if(c>=60)f='* Lesser Dog is really not&  paying attention.';
+   if(c>=85)f='* Smells like dog chow.';
+   const mm=m.mercymod;
+   if(mm>=40)f='* Lesser Dog is barking&  excitedly.';
+   if(mm>=200)f='* Lesser Dog is overstimulated.';
+   if(mm>=400)f='* Lesser Dog shows no signs&  of stopping.';
+   if(mm>=700)f='* Lesser Dog is lowering.';
+   if(mm>=1640)f='* Lesser Dog is learning&  to read.';
+   if(mm>=1740)f='* Lesser Dog is whining&  because it can\'t see&  you.';
+   if(mm>=2190)f='* Hello there.';
+   if(mm>=2340)f='* Lesser Dog is questioning&  your choices.';
+   if(mm>=2640)f='* Lesser Dog has gone where&  no Dog has gone before.';
+   if(m.hp<m.maxhp/3)f='* Lesser Dog tucks its tail&  between its legs.';
+   return f;
+  }
+ });
+
+ // ------------------------------------------------ Dogamy and Dogaressa
+ NB.groups.dogi=['dogamy','dogaressa'];
+ const partner=m=>S().mons.find(o=>o!==m&&o.def.dogi&&o.alive);
+ const bodyUp=m=>m&&m.alive&&!m.hurt;
+ // obj_mandogbody / obj_womandogbody: shared image_index (.125 while both stand),
+ // and they swap depth every time the animation loops.
+ function dogiBody(g,m,which){
+  const st=S(),both=bodyUp(st.mons.find(o=>o.id==='dogamy'))&&bodyUp(st.mons.find(o=>o.id==='dogaressa'));
+  const t=both?st.t*.125:0,f=Math.floor(t)%11;
+  const man=()=>drawAt(g,fr(images.mandogBody,f),m.x+2,m.y+8,182,192);
+  const wom=()=>drawAt(g,fr(images.womandogBody,f),m.x+38,m.y+16,182,184);
+  if(which==='both'){if(Math.floor(t/11)%2===0){wom();man()}else{man();wom()}}
+  else if(which==='man')man();else wom();
+ }
+ const dogiPos=(i,n,self)=>{
+  if(n===2)return {x:208,y:38};
+  const c=NB.slots(n),mid=self==='man'?((c[i]+(c[i+1]??c[i]))/2):(((c[i-1]??c[i])+c[i])/2);
+  return {x:R(mid-112),y:38};
+ };
+ function dogiAct(m,name,api,who){
+  const lone=pop()===1,me=m.id==='dogamy';
+  m.v.heard=name;
+  if(name==='Re-sniff'){
+   let t;
+   if(m.v.smell===0)t='* The Dogs sniff you again.../* But you smell just as&  weird as before!/';
+   if(m.v.smell===1)t='* The Dogs sniff you again.../* After rolling in the dirt^1,&  you smell all right!/';
+   if(m.v.smell>=2)t='* The Dogs already know you&  smell fine./';
+   if(lone)t=me?'* Dogamy won\'t even lift&  up his snout./':'* The Dogaressa won\'t even&  lift up her snout./';
+   if(m.v.smell===1)for(const d of dogs())d.v.smell=2;
+   return t;
+  }
+  if(name==='Pet'){
+   if(lone)return me?'* Dogamy just growls at&  you./':'* The Dogaressa just growls& at you./';
+   let t;
+   if(m.v.smell<2)t=me?'* The Dogs are too suspicious&  of your smell./':'* The Dogaressa is too&  suspicious of your smell./';
+   if(m.v.smell===2||m.v.smell===3){t=me?'* You pet Dogamy./':'* You pet the Dogaressa./';m.v.smell=3}
+   const p=partner(m);
+   if(m.v.smell===3&&p&&p.v.smell===3)for(const d of dogs())d.mercymod=999;
+   return t;
+  }
+  // Roll Around
+  if(m.v.smell===0)for(const d of dogs())d.v.smell=1;
+  return '* You roll around in the&  dirt and snow./* You smell like a weird&  puppy./';
+ }
+ // blt_whiteax: waits, then hops across the box in arcs, thudding on the floor.
+ function whiteAxes(m,api,dmg){
+  for(const type of [0,1]){
+   const x=type===0?99:350;
+   api.spawn({x,y:309,manual:true,box:[65,5,61,70],img:images.whiteAx?.[type],dmg,alpha:0,hidden:true,clip:true,wallKill:false,kill:false,move:0,a1:10,type,
+    onHit(b){if(api.S.invc>=1)return false;api.damage(b.dmg);api.S.invc=45;return true},
+    step(b){
+     if(b.alpha<1)b.alpha+=.05;
+     if(tick(b,'a1')){
+      if(b.move===1){b.vx=b.type===0?1.8:-1.8;b.vy=pop()===1?-3.1:-3.8;b.grav=.2;b.gdir=270}
+      if(b.move===0){b.vx=0;b.a1=10+Math.floor(rnd(14));b.move=1}
+      b.hidden=false;
+     }
+     move(b);
+     if(b.vy>0&&onFloor(b.x+65,b.x+126,b.y+75)){
+      b.vx=0;b.vy=0;b.grav=0;b.x=b.xp;b.y=b.yp;b.a1=pop()===1?4:15;
+      snd('encounterNoise');api.S.shake={h:3,v:0,speed:2,t:0};
+     }
+     if(offRoom(b,190,80)){b.alive=false;api.endTurn()}
+    }});
+  }
+ }
+ // obj_loopdog: little pomeranians at both sides; the left one barks out rings of
+ // eight hearts (obj_loopbulletgrowgen / blt_loopbulletgrow), every other one blue.
+ function loopDog(m,api){
+  const lone=pop()===1;
+  api.spawn({x:0,y:0,manual:true,box:[0,0,0,0],hidden:true,kill:false,wallKill:false,a0:-1,a1:4,a2:-1,im:lone?'sad':'wag',onHit:()=>false,
+   step(b){
+    const [L,Rr,T,B]=api.S.ideal;
+    if(tick(b,'a1')){b.x=L+54;b.y=B-38-36;b.a0=10;b.shown=true;if(lone){b.a0=60;b.a2=60;api.turntimer(170)}}
+    if(tick(b,'a2'))b.im=lone?'sad':'wag';
+    if(tick(b,'a0')){
+     if(!lone){
+      const add=Math.floor(rnd(8))/10;
+      loopRing(m,api,b.x-20,b.y+10,1.2+add,2.2+add);
+      b.im='bark';b.a2=15;b.a0=75;
+     }else{
+      b.im='sadbark';b.a2=30;
+      api.spawn({x:b.x-20,y:b.y+25,vx:5,grav:.15,gdir:270,fric:.1,manual:true,box:[-2,-1,4,3],img:images.smHeart,ox:8,oy:8,dmg:1,wallKill:false,
+       step(s){move(s);if(s.vy>0&&onFloor(s.x-2,s.x+2,s.y+2)){s.vx=0;s.vy=0;s.grav=0;s.fric=0;s.x=s.xp;s.y=s.yp}if(offRoom(s,16,16))s.alive=false}});
+     }
+    }
+   },
+   draw(g,b){
+    if(!b.shown)return;
+    const I={wag:fr(images.tinyPomWag,b.t*.2),sad:images.nbPomSad,bark:images.tinyPomBark,sadbark:images.nbPomSadBark}[b.im];
+    if(!I)return;
+    const [L,Rr]=api.S.ideal;
+    if(!lone)g.drawImage(I,R(Rr-54),R(b.y));
+    g.save();g.translate(R(b.x),R(b.y));g.scale(-1,1);g.drawImage(I,0,0);g.restore();
+   }});
+ }
+ function loopRing(m,api,x,y,speed,xadd){
+  let blue=Math.floor(rnd(2))+1;
+  for(let i=0;i<8;i++){
+   const dir=i*45;let isBlue=false;
+   if(blue===3)blue=2;
+   if(blue===1){isBlue=true;blue=3}
+   if(blue===2)blue=1;
+   api.spawn({x:x+dcos(dir-90)*2,y:y-dsin(dir-90)*2,manual:true,box:[-2,-1,4,3],img:isBlue?images.smHeartB:images.smHeart,ox:8,oy:8,dmg:m.atk,wallKill:false,
+    blue:isBlue,radius:1,ideal:55,dir,speed,xadd,nxadd:0,
+    onHit(b){if(b.blue&&!api.moving())return false;return api.damage(b.dmg-1)},
+    step(b){
+     const [L,Rr,T,B]=api.S.ideal;
+     if(b.x>=Rr){b.alive=false;return}
+     if(b.radius<b.ideal){b.radius=Math.min(b.ideal,b.radius+2);b.x+=dcos(b.dir-90)*2;b.y-=dsin(b.dir-90)*2}
+     b.dir+=360/(2*Math.PI*b.radius)/b.speed;
+     if(b.nxadd<b.xadd)b.nxadd+=.125;
+     b.x+=b.nxadd;
+     const hs=dcos(b.dir)*b.speed,vs=-dsin(b.dir)*b.speed;
+     b.x+=hs;b.y+=vs;
+     // blt_parent wall events: leaving through a wall it's moving into.
+     const x0=b.x-2,x1=b.x+2,y0=b.y-1,y1=b.y+2;
+     if((vs<0&&y0<=T+5&&y1>=T)||(hs<0&&x0<=L+5&&x1>=L)||(vs>0&&y1>=B&&y0<=B+5)){if(x1>=L&&x0<=Rr+5&&y1>=T&&y0<=B+5)b.alive=false}
+    }});
+  }
+ }
+ const dogiCommon={
+  hp:108,atk:6,def:4,xp:30,gold:25,mercymod:-999,wd:224,dog:true,dogi:true,
+  encounter:'* Dogi assault you!',
+  size:()=>({w:224,h:200}),
+  setup(m){m.v.smell=0;m.v.cmd=0;Object.defineProperty(m,'goldBonus',{get:()=>m.mercymod>10&&m.hp===m.maxhp?(m.id==='dogamy'?30:10):0})},
+  acts:['Check','Pet','Re-sniff','Roll Around'],
+  border:()=>6
+ };
+ NB.defs.set('dogamy',{...dogiCommon,
+  name:'Dogamy',
+  pos:(i,n)=>dogiPos(i,n,'man'),
+  draw(g,m){
+   if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.mandogHurt,m.x,m.y,224,200);return}
+   if(m.alive&&bodyUp(partner(m)))return; // Dogaressa draws both bodies (shared depth swap)
+   dogiBody(g,m,'man');
+  },
+  bubblePos:m=>({x:m.x-123,y:m.y+52}),bubbleImg:()=>images.nbBlconSm2,
+  check:()=>'* DOGAMY - ATK 14 DEF 5&* Husband of Dogaressa.&* Knows only what he smells./',
+  act:(m,i,name,api)=>dogiAct(m,name,api),
+  speech(m,api){
+   talkLen(120);
+   const c=m.v.cmd=R(rnd(100)),w=S().mons.find(o=>o.id==='dogaressa'&&o.alive);
+   let t=c<25?'Take my&wife...&\'s fleas.':c<50?'Don\'t&touch my&hot dog.':c<75?'No. 2&Nuzzle&Champs&\'98!!':'Let\'s&kick&human&tail!!';
+   if(w){
+    if(m.v.heard==='Re-sniff'||w.v.heard==='Re-sniff')t=m.v.smell>0?'What!&Smells&like a&...':'Hm?&What\'s&that&smell?';
+    if(m.v.heard==='Pet')t=m.v.smell<2?'Paws off&you&smelly&human.':'Wow!!!&Pet by&another&pup!!!';
+    if(w.v.heard==='Pet')t=m.v.smell<2?'Stop!&Don\'t&touch&her!':'What&about&me......&........';
+   }
+   if(pop()===1){m.df=-30;m.mercymod=-1000;t=c<50?'Whine.':'Whimper.'}
+   return t;
+  },
+  attack(m,api){
+   const lone=pop()===1;
+   api.turntimer(172);
+   if(m.v.cmd<=50&&!lone){whiteAxes(m,api,m.atk);api.border(8)}
+   else{api.turntimer(200);api.border(9);loopDog(m,api)}
+   return lone?'* Dogamy is brokenhearted.':null;
+  },
+  endAttack(m){m.v.heard=null}
+ });
+ NB.defs.set('dogaressa',{...dogiCommon,
+  name:'Dogaressa',
+  pos:(i,n)=>dogiPos(i,n,'wom'),
+  draw(g,m){
+   if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.womandogHurt,m.x,m.y,224,200);return}
+   const p=partner(m);
+   if(m.alive&&bodyUp(p)){dogiBody(g,m,'both');return}
+   dogiBody(g,m,'wom');
+  },
+  bubblePos:m=>({x:m.x+224,y:m.y+52}),
+  check:()=>'* DOGARESSA - ATK 14 DEF 5&* This puppy finds her&  hubby lovely^1. SMELLS ONLY?/',
+  act:(m,i,name,api)=>dogiAct(m,name,api),
+  speech(m,api){
+   talkLen(120);
+   m.v.cmd=R(rnd(100));
+   const d=S().mons.find(o=>o.id==='dogamy'&&o.alive);
+   let t='(...)';
+   if(d){
+    const c=d.v.cmd;
+    t=c<25?'(Don\'t,&actually&...)':c<50?'(He&means&me.)':c<75?'(Of&course&we were&second.)':'(Do&humans&have&tails?)';
+    if(m.v.heard==='Re-sniff'||d.v.heard==='Re-sniff')t=m.v.smell>0?'(Are you&actually&a little&puppy!?)':'(Smell&mystery)';
+    if(m.v.heard==='Pet')t=m.v.smell<2?'(Beware&of&dog.)':'(A dog&that pets&dogs...&Amazing!)';
+    if(d.v.heard==='Pet')t=m.v.smell<2?'(That\'s&not your&husband,&OK?)':'(Well.&Don\'t&leave me&out!)';
+   }
+   if(pop()===1){
+    m.mercymod=-1000;m.df=-8;
+    const c=m.v.cmd;t=c<33?'(Misery&awaits&you.)':c<66?'(Kneel&and&suffer!)':'(I\'ll&chop you&in&half!)';
+   }
+   return t;
+  },
+  attack(m,api){
+   const lone=pop()===1;
+   if(lone){api.turntimer(200);whiteAxes(m,api,7);api.border(8)}
+   const c=m.v.cmd;
+   let f='* The Dogs keep shifting their&  axes to protect each other.';
+   if(c>=25)f='* The Dogs are re-evaluating&  your smell.';
+   if(c>=50)f='* The Dogs are practicing for&  the next couples contest.';
+   if(c>=75)f='* The Dogs are saying sickly&  sweet things to each other.';
+   if(m.v.smell===1)f='* The Dogs may want to&  re-smell you.';
+   if(m.v.smell===2)f='* The Dogs think that you&  may be a lost puppy.';
+   if(m.mercymod>100)f='* Every dog loves to play&  fetch!!!';
+   if(m.mercymod>900)f='* The Dogs\' minds have been&  expanded.';
+   if(lone)f='* The Dogaressa is on the&  warpath.';
+   return f;
+  },
+  endAttack(m){m.v.heard=null}
+ });
+
+ // ------------------------------------------------------------ Greater Dog
+ NB.defs.set('greaterdog',{
+  name:'Greater Dog',hp:105,atk:6,def:4,xp:80,gold:60,mercymod:-25,wd:200,dog:true,
+  encounter:'* Greater Dog bounds into view!',
+  size:()=>({w:200,h:200}),pos:(i,n,cx)=>n===1?{x:208,y:38}:{x:R(cx-100),y:38},
+  setup(m){m.v.ign=0;m.v.close=0;m.v.pet=0;Object.defineProperty(m,'goldBonus',{get:()=>m.mercymod>10&&m.hp===m.maxhp?40:0})},
+  draw(g,m){
+   if(m.hurt||(!m.alive&&!m.spared)){drawAt(g,images.greatDogHurt,m.x,m.y,200,200);return}
+   // obj_greatdogbody: every Ignore brings it closer (bigger), cut off at y=250.
+   const im=fr(images.greatDogBody,m.t*.1);if(!im)return;
+   const ign=Math.min(3,m.v.ign),sc=ign+2,sw=84*sc;
+   const bx=m.x-[0,.2,.25,1/3][ign]*sw,by=ign===3?S().edge.T-85:m.y+[0,30,70][ign];
+   if(ign<=2){
+    g.save();g.beginPath();g.rect(0,0,640,250);g.clip();
+    g.drawImage(im,R(bx+7*sc),R(by+6*sc),84*sc,94*sc);g.restore();
+   }else{
+    // draw_sprite_part_ext(43, 0, 17, (250-y)/scale): just the spear and snout.
+    const h=(250-by)/sc-6;
+    if(h>0)g.drawImage(im,36,0,17,Math.min(94,h),R(bx+44*sc),R(by+6*sc),17*sc,Math.min(94,h)*sc);
+   }
+  },
+  acts:['Check','Pet','Beckon','Play','Ignore'],
+  check:()=>'* GREATER DOG - ATK 15 DEF 8&* It\'s so excited that it&  thinks fighting is just play./',
+  act(m,i,name,api){
+   if(m.v.pet>0)m.df=-20;
+   const v=m.v;
+   if(name==='Beckon'){
+    if(v.close)return '* The Greater Dog\'s ears&  perk up^1.&* Nothing else happens./';
+    v.close=1;return '* You call the Greater Dog./* It bounds towards you^1,&  flecking slobber into your&  face./';
+   }
+   if(name==='Ignore'){
+    let t;
+    if(v.ign<4){t='* Greater Dog inches closer./';v.ign++;v.close=1}
+    if(v.ign===4){
+     t='* Greater Dog decides you are&  too boring./';
+     return {text:t,then:()=>{m.mercymod=6666;if(api.spareable(m))api.spare(m)}};
+    }
+    return t;
+   }
+   if(name==='Pet'){
+    let t='* You pet the dog./';
+    if(v.pet===4)t='* Tummy rubs are forbidden./';
+    if(v.pet===3){v.pet=4;api.S.sp=4;m.mercymod=9999;t='* You pet decisively^1.&* Pet capacity reaches 100&  percent./* The dog flops over with&  its legs hanging in the air./'}
+    if(v.pet===2){api.S.sp=3;v.pet=3;t='* As you pet the dog^1,&  it sinks its entire weight&  into you.../* Your movements slow./* But^1, you still haven\'t&  pet enough...!/'}
+    if(v.pet===1)t='* Greater Dog\'s excitement is&  creating a power field that&  prevents petting./';
+    if(v.close===1&&v.pet===0){t='* Greater Dog curls up in&  your lap as it is&  pet by you./* It gets so comfortable&  it falls asleep.../* Zzzzz.../* .../* Then it wakes up^1!&* It\'s so excited!/';v.pet=1}
+    if(v.close===0)t='* Greater Dog is too far&  away to pet^1.&* You just pet the air./';
+    return t;
+   }
+   // Play
+   let t='* You play with the dog./';
+   if(v.pet>1)t='* Greater Dog is too tired&  to play./';
+   if(v.pet===1){t='* You make a snowball and&  throw it for the dog&  to fetch./* It splats on the ground./* Greater Dog picks up all&  the snow in the area&  and brings it to you./* Now dog is very tired..^1.&* It rests its head on you.../';v.pet=2}
+   if(v.pet===0)t='* Greater Dog is not excited&  enough to play with./';
+   return t;
+  },
+  onDamaged(m){m.v.ign=0},
+  speech(m,api){talkLen(15);m.v.cmd=R(rnd(100));return null},
+  border:()=>6,
+  attack(m,api){
+   const c=m.v.cmd;
+   if(c<=50){
+    api.border(3);api.turntimer(120);
+    // obj_sleepdog: naps at the bottom of the box. Move for 8 frames and it
+    // wakes up and barks where the SOUL is heading (blt_barkbullet).
+    const [L,Rr,T,B]=api.S.ideal;
+    api.spawn({x:(L+Rr)/2-29,y:B-30,box:[4,6,52,24],img:images.sleepDog,anim:.1,dmg:5,wallKill:false,hmove:0,a2:-1,a3:-1,a4:-1,
+     onHit(b){if(!api.damage(b.dmg))return false;api.endTurn();return true},
+     step(b){
+      const h=api.heart;
+      if(api.moving())b.hmove++;
+      if(b.hmove>7){b.hmove=-99999;b.img=images.wakeDog;b.anim=0;b.frame=0;b.box=[4,8,52,22];b.a2=2}
+      const bark=()=>{
+       const tx=h.x+(h.x-h.xprev)*30-8,ty=h.y+(h.y-h.yprev)*30,sx=b.x+20,sy=b.y+8,d=Math.atan2(ty-sy,tx-sx);
+       api.spawn({x:sx,y:sy,vx:Math.cos(d)*7,vy:Math.sin(d)*7,box:[6,15,29,8],img:images.barkBullet,dmg:7,clip:true,wallKill:false,
+        step(k){if(offRoom(k,60,40))k.alive=false}});
+      };
+      if(tick(b,'a2')){b.frame=1;bark();b.a3=8;b.a4=20;b.a2=40}
+      if(tick(b,'a3'))bark();
+      if(tick(b,'a4'))b.frame=0;
+     }});
+   }else{
+    api.border(8);api.turntimer(90);
+    // blt_dogspear: rises up the right wall, then sweeps left; blue half the time.
+    const [L,Rr,T,B]=api.S.ideal;
+    api.spawn({x:Rr-16,y:B+4,vy:-4,box:[6,4,7,87],img:images.dogSpear?.[1],dmg:7,clip:true,wallKill:false,kill:false,blut:R(rnd(35)),blue:0,stage:0,
+     onHit(b){if(b.blue&&!api.moving()){b.blut=2;return false}return api.damage(b.dmg)},
+     step(b){
+      b.blut++;
+      if(b.blut>21){b.blue=1;b.img=images.dogSpear?.[0]}
+      if(b.blut>42){b.blut=0;b.blue=0;b.img=images.dogSpear?.[1]}
+      if(b.stage===0&&b.y<api.S.ideal[2]){b.stage=1;b.y=api.S.ideal[2];b.vy=0;b.vx=-4}
+     }});
+   }
+   const v=m.v;
+   let f='* Greater Dog is watching you&  intently.';
+   if(c>=45)f='* Greater Dog is waiting for&  your command.';
+   if(c>=90)f='* It smells like freshly-&  squeezed puppy juice.';
+   if(v.close===1)f='* Greater Dog is seeking&  affection.';
+   if(v.ign>0)f='* Greater Dog just wants&  affection.';
+   if(v.ign>2)f='* Greater Dog is making&  puppy-dog eyes.';
+   if(v.pet===1)f='* Greater Dog is patting the&  ground with its front paws.';
+   if(v.pet===2)f='* Greater Dog wants some TLC.';
+   if(v.pet===3)f='* Pet capacity is 40-percent.';
+   if(v.pet===4)f='* Greater Dog is contented.';
+   if(m.hp<30)f='* Greater Dog is panting&  slowly.';
+   return f;
+  }
+ });
+})();
 /* ---- NB glue: settings toggle, asset loading and routing into the new engine ---- */
 let newEngineEnabled=(()=>{try{return localStorage.getItem('utbg.newEngine')==='1'}catch(_){return false}})();
 function saveNewEngineSetting(){try{localStorage.setItem('utbg.newEngine',newEngineEnabled?'1':'0')}catch(_){}}
@@ -30010,7 +30567,12 @@ const NB_ASSETS={
  nbBlookHat:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`),
  nbRotClaw:RAW+'sprites/images/spr_rotclawbullet_0.png',
  nbIceCube:RAW+'sprites/images/spr_icecube_0.png',
- nbIceCubeHurt:RAW+'sprites/images/spr_icecubehurt_0.png'
+ nbIceCubeHurt:RAW+'sprites/images/spr_icecubehurt_0.png',
+ nbBlconTiny:RAW+'sprites/images/spr_blcontiny_0.png',
+ nbBlconSm2:RAW+'sprites/images/spr_blconsm2_0.png',
+ nbLesserTail:[0,1,2,3,4].map(i=>RAW+`sprites/images/spr_lesserdogetail_${i}.png`),
+ nbPomSad:RAW+'sprites/images/spr_tinypomsad_0.png',
+ nbPomSadBark:RAW+'sprites/images/spr_tinypomsadbark_0.png'
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
