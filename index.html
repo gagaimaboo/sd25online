@@ -26340,7 +26340,7 @@ function drawSettings(now=performance.now()){
   {r:settingsMercyImpactRect(),title:'ACT MERCY IMPACT',desc:'ACT MERCY gains use enemy recoil + yellow MERCY writer/bar',on:mercyActImpactEnabled,kind:'toggle'},
   {r:settingsHardModeRect(),title:'HARD MODE',desc:'KAIZO // red determination patterns for supported encounters',on:hardModeEnabled,kind:'hard'},
   {r:settingsTutorialRect(),title:'SANS TUTORIAL',desc:'Replay the game tour and controls walkthrough',on:null,kind:'open'},
-  {r:settingsRowRect(5),title:'NEW ENGINE (BETA)',desc:'Rebuilt from UNDERTALE source // ported fights only for now',on:newEngineEnabled,kind:'toggle'}
+  {r:settingsRowRect(5),title:'NEW ENGINE (BETA)',desc:'UNDERTALE source rebuild // 60 FPS smooths drawing, logic stays 30',on:newEngineEnabled,kind:'toggle',label:newEngineEnabled?newEngineFps+' FPS':'OFF'}
  ];
  for(let i=0;i<rows.length;i++){
    const row=rows[i],active=settingsSelected===i;
@@ -26355,7 +26355,7 @@ function drawSettings(now=performance.now()){
      const tw=122,th=38,tx=row.r.x+row.r.w-154,ty=row.r.y+17;
      ctx.fillStyle=row.on?(row.kind==='hard'?'#5c0b0b':'#4a4600'):'#111';ctx.fillRect(tx,ty,tw,th);ctx.strokeStyle=row.on?(row.kind==='hard'?'#ff4040':'#ffff00'):'#555';ctx.lineWidth=3;ctx.strokeRect(tx,ty,tw,th);
      const knobX=row.on?tx+tw-29:tx+29;ctx.fillStyle=row.on?(row.kind==='hard'?'#ff4040':'#ffff00'):'#777';ctx.fillRect(knobX-14,ty+6,28,26);
-     font(13,row.on?'#fff':'#888','center');ctx.fillText(row.on?'ON':'OFF',tx+tw/2,ty+9);
+     font(13,row.on?'#fff':'#888','center');ctx.fillText(row.label||(row.on?'ON':'OFF'),tx+tw/2,ty+9);
    }else{
      font(16,active?'#ffff00':'#777','right');ctx.fillText('OPEN  ▶',row.r.x+row.r.w-30,row.r.y+23);
    }
@@ -27383,7 +27383,7 @@ function keyDown(e){
      else if(settingsSelected===1){torielMercyMissEnabled=!torielMercyMissEnabled;saveTorielMercyMissSetting();play('move')}
      else if(settingsSelected===2){mercyActImpactEnabled=!mercyActImpactEnabled;saveMercyActImpactSetting();play('move')}
      else if(settingsSelected===3){hardModeEnabled=!hardModeEnabled;saveHardModeSetting();play('move')}
-     else if(settingsSelected===5){newEngineEnabled=!newEngineEnabled;saveNewEngineSetting();play('move')}
+     else if(settingsSelected===5){cycleNewEngineSetting(k==='ArrowLeft'||low==='a'?-1:1);play('move')}
      return;
    }
 
@@ -27394,7 +27394,7 @@ function keyDown(e){
      else if(settingsSelected===2){mercyActImpactEnabled=!mercyActImpactEnabled;saveMercyActImpactSetting()}
      else if(settingsSelected===3){hardModeEnabled=!hardModeEnabled;saveHardModeSetting()}
      else if(settingsSelected===4)startTutorial(true);
-     else if(settingsSelected===5){newEngineEnabled=!newEngineEnabled;saveNewEngineSetting()}
+     else if(settingsSelected===5)cycleNewEngineSetting(1);
      else{screen='title';mainSelected=4}
      return;
    }
@@ -27767,7 +27767,7 @@ canvas.addEventListener('pointerdown',e=>{
    const f=settingsMercyImpactRect();if(x>=f.x&&x<=f.x+f.w&&y>=f.y&&y<=f.y+f.h){settingsSelected=2;mercyActImpactEnabled=!mercyActImpactEnabled;saveMercyActImpactSetting();play('select');return}
    const h=settingsHardModeRect();if(x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h){settingsSelected=3;hardModeEnabled=!hardModeEnabled;saveHardModeSetting();play('select');return}
    const t=settingsTutorialRect();if(x>=t.x&&x<=t.x+t.w&&y>=t.y&&y<=t.y+t.h){settingsSelected=4;play('select');startTutorial(true);return}
-   const ne=settingsRowRect(5);if(x>=ne.x&&x<=ne.x+ne.w&&y>=ne.y&&y<=ne.y+ne.h){settingsSelected=5;newEngineEnabled=!newEngineEnabled;saveNewEngineSetting();play('select');return}
+   const ne=settingsRowRect(5);if(x>=ne.x&&x<=ne.x+ne.w&&y>=ne.y&&y<=ne.y+ne.h){settingsSelected=5;cycleNewEngineSetting(1);play('select');return}
    const b=settingsBackRect();if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h){settingsSelected=6;play('select');screen='title';mainSelected=4;return}
    return;
  }
@@ -28967,6 +28967,7 @@ const NB=(()=>{
 
  // ------------------------------------------------------------- update ----
  function step(){
+  if(NB.snap)NB.snap(S);
   NB.pollInput();S.t++;
   for(const m of S.mons)m.t++;
   NB.stepBorder();
@@ -30556,9 +30557,46 @@ const NB=(()=>{
   }
  });
 })();
+/* ---- NB 60 FPS: logic stays on UNDERTALE's 30 steps a second; drawing blends
+   each moving thing between its last two step positions at the display's rate. */
+(()=>{
+ const SNAP=48; // anything that jumps further than this in one step (teleports, resets) isn't blended
+ NB.snap=S=>{
+  if(newEngineFps!==60)return;
+  for(const b of S.bullets){b._px=b.x;b._py=b.y;b._pa=b.angle}
+  const h=S.heart;h._px=h.x;h._py=h.y;
+  S._pedge={...S.edge};
+  if(S.fight){S.fight._px=S.fight.x;S.fight._ptx=S.fight.tx}
+  for(const w of S.dmgw)w._py=w.y;
+  for(const e of S.fx)if(e.kind==='dust'){e._px=e.x;e._py=e.y}
+ };
+ const raw=NB.draw;
+ NB.draw=function(now){
+  const S=NB.S;
+  if(newEngineFps!==60||!S||S.gameover){raw(now);return}
+  const a=Math.max(0,Math.min(1,S.acc/NB.STEP_MS)),undo=[];
+  const mix=(o,k,pk)=>{const p=o[pk];if(p===undefined||typeof o[k]!=='number')return;const v=o[k];if(Math.abs(v-p)>SNAP)return;undo.push([o,k,v]);o[k]=p+(v-p)*a};
+  for(const b of S.bullets){mix(b,'x','_px');mix(b,'y','_py');if(b.angle!==undefined&&b._pa!==undefined&&Math.abs(b.angle-b._pa)<90)mix(b,'angle','_pa')}
+  mix(S.heart,'x','_px');mix(S.heart,'y','_py');
+  if(S._pedge)for(const k of ['L','R','T','B']){const p=S._pedge[k],v=S.edge[k];if(p!==undefined&&Math.abs(v-p)<=SNAP){undo.push([S.edge,k,v]);S.edge[k]=p+(v-p)*a}}
+  if(S.fight){mix(S.fight,'x','_px');mix(S.fight,'tx','_ptx')}
+  for(const w of S.dmgw)mix(w,'y','_py');
+  for(const e of S.fx)if(e.kind==='dust'){mix(e,'x','_px');mix(e,'y','_py')}
+  try{raw(now)}finally{for(let i=undo.length-1;i>=0;i--){const [o,k,v]=undo[i];o[k]=v}}
+ };
+})();
 /* ---- NB glue: settings toggle, asset loading and routing into the new engine ---- */
 let newEngineEnabled=(()=>{try{return localStorage.getItem('utbg.newEngine')==='1'}catch(_){return false}})();
-function saveNewEngineSetting(){try{localStorage.setItem('utbg.newEngine',newEngineEnabled?'1':'0')}catch(_){}}
+let newEngineFps=(()=>{try{return localStorage.getItem('utbg.newEngineFps')==='60'?60:30}catch(_){return 30}})();
+function saveNewEngineSetting(){try{localStorage.setItem('utbg.newEngine',newEngineEnabled?'1':'0');localStorage.setItem('utbg.newEngineFps',String(newEngineFps))}catch(_){}}
+// The settings row cycles OFF -> ON 30 FPS -> ON 60 FPS (dir -1 goes the other way).
+function cycleNewEngineSetting(dir=1){
+ const order=[[false,30],[true,30],[true,60]];
+ let i=order.findIndex(([on,f])=>on===newEngineEnabled&&(!on||f===newEngineFps));if(i<0)i=0;
+ i=(i+dir+order.length)%order.length;[newEngineEnabled,newEngineFps]=order[i];
+ if(!newEngineEnabled)newEngineFps=newEngineFps||30;
+ saveNewEngineSetting();
+}
 const NB_ASSETS={
  nbBattleBg:[0,1].map(i=>RAW+`sprites/images/spr_battlebg_${i}.png`),
  // Exported frames are swapped: spr_heart_1 is the normal red SOUL, _0 the dark hurt flash.
