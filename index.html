@@ -873,6 +873,11 @@ const SFX={
  text:RAW+'sound/audio/SND_TXT1.wav',
  torielText:RAW+'sound/audio/snd_txttor.wav',
  papyrusText:RAW+'sound/audio/snd_txtpap.wav',
+ // Shyren's notes (obj_shyren caster_load music/shyren/*).
+ shyNote1:RAW+'sound/audio/mus_note1.ogg',shyNote2:RAW+'sound/audio/mus_note2.ogg',shyNote3:RAW+'sound/audio/mus_note3.ogg',
+ shyNote4:RAW+'sound/audio/mus_note4.ogg',shyNote5:RAW+'sound/audio/mus_note5.ogg',shyNote6:RAW+'sound/audio/mus_note6.ogg',
+ shyBad1:RAW+'sound/audio/mus_badnote1.ogg',shyBad2:RAW+'sound/audio/mus_badnote2.ogg',shyBad3:RAW+'sound/audio/mus_badnote3.ogg',
+ shySingF:RAW+'sound/audio/mus_singF.ogg',shySingG:RAW+'sound/audio/mus_singG.ogg',
  sansText:RAW+'sound/audio/snd_txtsans.wav',
  asgoreText:RAW+'sound/audio/snd_txtasg.wav',
  // Canonical DELTARUNE dialogue voices. Speaker-tagged battle text such as
@@ -29471,6 +29476,7 @@ const NB=(()=>{
  // Display slots follow the row-major list (Check | 2nd / 3rd | 4th ...), but the
  // cursor moves like obj_battlecontroller's bmenucoord[2]: rows within a column.
  function actText(m){
+  if(m.def.actText)return m.def.actText(m,api);
   // "   * Check         * X" : 3-space indent, second '*' at column 19.
   const a=actsOf(m).slice(0,6);let rows=[];
   for(let r=0;r<3;r++){
@@ -29906,7 +29912,7 @@ const NB=(()=>{
  function vaporRows(m){
   const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(m.w));c.height=Math.max(1,Math.ceil(m.h));
   const g=c.getContext('2d',{willReadFrequently:true});
-  try{m.def.draw(g,{...m,x:0,y:0,alpha:1,hurt:true},api);const d=g.getImageData(0,0,c.width,c.height).data;
+  try{(m.def.vaporDraw||m.def.draw)(g,{...m,x:0,y:0,alpha:1,hurt:true},api);const d=g.getImageData(0,0,c.width,c.height).data;
    const rows=[];for(let y=0;y<c.height;y++){const r=[];for(let x=0;x<c.width;x+=2)if(d[(y*c.width+x)*4+3]>0)r.push(x);rows.push(r)}
    m.vaporCanvas=c;return rows;
   }catch(_){return []}
@@ -29960,6 +29966,8 @@ const NB=(()=>{
   bubble:(m,text,opt={})=>{const wide=!!opt.wide,bx=opt.x??m.x+m.w,by=opt.y??m.y;const b={m,x:bx,y:by,wide,img:opt.img||null,w:new NB.Writer([String(text)],{typer:2,x:bx+(wide?36:15),y:by+10,sound:m.def.voice||'text'})};S.bubbles.push(b);return b},
   leave:(text)=>{S.won=true;S.myfight=0;S.mnfight=0;S.heart.visible=false;S.bullets=[];try{stopMusic()}catch(_){}write(text,{end:'/%',onEnd:()=>exitBattle('win')})},
   kill:killMonster,spare:spareMonster,endPlayerTurn,win,
+  // A monster joining mid-fight (Aaron flexing in on Temmie).
+  addMonster:(id,x,y)=>{const m=makeMonster(id,S.mons.length,1);m.x=m.x0=x;m.y=y;S.mons.push(m);return m},
   end:reason=>{S.bullets=[];S.bubbles=[];try{stopMusic()}catch(_){}exitBattle(reason)}
  });
  NB.api=api;
@@ -30106,7 +30114,7 @@ const NB=(()=>{
   const bgf=S.bgFrame??(S.mons.find(m=>m.def.bgFrame!=null)?.def.bgFrame)??1,bg=images.nbBattleBg?.[bgf];
   if(bg){if(bgf===1)ctx.drawImage(bg,20,3,601,bg.naturalHeight||236);else ctx.drawImage(bg,0,0)}
   for(const m of S.mons){
-   if(m.killed||m.gone)continue;
+   if(m.killed||m.gone){if(m.def.drawGone){ctx.save();m.def.drawGone(ctx,m,NB.api);ctx.restore()}continue}
    ctx.save();ctx.globalAlpha=m.alpha;
    m.def.draw(ctx,m,NB.api);
    ctx.restore();
@@ -32341,6 +32349,7 @@ const NB=(()=>{
   },
   step(m,api){
    const v=m.v;v.siny++;
+   if(v.alphaup&&m.alpha<1)m.alpha=Math.min(1,m.alpha+.05);
    // obj_aaron: once the flex-out text reaches its second page he rises at vspeed -4.
    if(v.flexOut){const w=api.S.writer;if(v.flexOut===2||(w&&!w.done&&w.no>=1)){v.flexOut=2;v.yo-=4}}
    goldBonus(m,30);
@@ -32369,6 +32378,7 @@ const NB=(()=>{
    if(h==='Flex'){t='Flagrant&error&; )';if(v.flex===1)t='Flexing&contest?&OK, flex&more ; )';if(v.flex===2)t='Nice!!&I won\'t&lose&tho ; )'}
    if(h==='Shoo')t=['Fiesty,&huh?&; )','Wow!&Spunky!&Love it&; )','You\'ll&change&your&mind ; )'][g];
    if(h==='Check')t='CHECK&all you&want ; )';
+   if(v.alphaup){t='Just the&two of&us, huh?&; )';v.alphaup=0}
    if(h==='joke')t='Ha, nice.&My kind&of humor&; )';
    st.talkLenExact=Math.max(st.talkLenExact||0,110);
    return t;
@@ -32563,6 +32573,587 @@ const NB=(()=>{
  });
 })();
 
+/* ---- NB content: Waterfall II (obj_shyren + obj_shyrenbody/obj_agentbody, obj_musbulgen/blt_musbul1;
+   obj_moldsmalx + _body/_part, obj_1sidegen, obj_8smallgen/blt_splinter, obj_stalkergen/blt_stalk1/2/blt_stalkloop;
+   obj_tembattle + obj_tembody, blt_temhand, obj_maintem/obj_temleg) ---- */
+(()=>{
+ const {rnd,snd,dcos,dsin}=NB,R=Math.round,P=NB.pressed;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum
+ const tick=(o,k)=>o[k]>0&&--o[k]<=0;
+ const choose=(...a)=>a[Math.floor(rnd(a.length))];
+ const gmMove=b=>{NB.gm(b);b.x+=b.vx;b.y+=b.vy};
+ const setDir=(b,dir,sp)=>{b.vx=dcos(dir)*sp;b.vy=-dsin(dir)*sp};
+ const goldBonus=(m,n,cond)=>{m.goldBonus=cond?n:0};
+ const fr=(arr,k)=>Array.isArray(arr)?arr[((Math.floor(k)%arr.length)+arr.length)%arr.length]:arr;
+ // Exported frames run backwards: frame k of an N-frame sprite is file N-1-k.
+ const rev=(arr,k)=>Array.isArray(arr)?arr[arr.length-1-(((Math.floor(k)%arr.length)+arr.length)%arr.length)]:arr;
+ const img=(g,im,x,y,sx=1,sy=1)=>{if(im)g.drawImage(im,R(x),R(y),im.naturalWidth*sx,im.naturalHeight*sy)};
+ // Some exports are cropped to the sprite's bounding box: put them back at (bbox_left, bbox_top).
+ const OFF={hide:[4,1],swim:[4,1],sing:[5,0],agent:[1,35],tembody:[0,2],moldup:[2,0],moldpart:[3,2]};
+ const imgO=(g,im,k,x,y,s=1)=>img(g,im,x+OFF[k][0]*s,y+OFF[k][1]*s,s,s);
+ // collision_rectangle against obj_heart's 16x16 box.
+ function heartIn(x1,y1,x2,y2){
+  const h=S().heart;if(!h.visible||S().mnfight!==2)return false;
+  const l=Math.min(x1,x2),r=Math.max(x1,x2),t=Math.min(y1,y2),b=Math.max(y1,y2);
+  return !(h.x>r||h.x+15<l||h.y>b||h.y+15<t);
+ }
+ const bat=()=>{try{return music[battleMusicKey()]||null}catch(_){return null}};
+ const musPause=()=>{const a=bat();if(a&&!a.paused){try{a.pause()}catch(_){}}};
+ const musResume=()=>{const a=bat();if(a&&a.paused&&NB.S&&!NB.S.won){try{playMusicElement(a)}catch(_){try{a.play()}catch(__){}}}};
+ const stopSfx=n=>{try{for(const a of (sfxPools.get(n)||[])){a.pause();a.currentTime=0}}catch(_){}};
+
+ // ----------------------------------------------------------------- Shyren --
+ function musbul(m,api,x,y){
+  const v=m.v,emo=v.emotion;
+  // blt_musbul1: a bad note while she hides, a real one once she sings.
+  if(emo===0)play('shyBad'+(1+Math.floor(rnd(3))),.7);
+  else play('shyNote'+(1+Math.floor(rnd(6))));
+  const b=api.spawn({x,y,manual:true,clip:false,wallKill:false,kill:true,dmg:7,img:images.shyrenNotes,anim:.2,box:[4,5,12,11],
+   siner:rnd(100),gdir:choose(0,45,90,45,180),a0:40+Math.floor(rnd(20)),
+   dspeed:emo===0?1:12,detune:emo===0?3:2,
+   step(b){
+    if(tick(b,'a0'))b.grav=.1;
+    b.siner++;b.x+=Math.sin(b.siner*b.dspeed/10)*b.detune;
+    gmMove(b);
+    if(b.y>500||b.y<-40||b.x<-40||b.x>680)b.alive=false;
+   }});
+  setDir(b,rnd(60)+250,emo===0?4:7);
+ }
+ function shyGenEnd(m){
+  const g=m.v.gen;if(!g)return;m.v.gen=null;
+  // obj_musbulgen Destroy: the battle music comes back and the long notes stop.
+  musResume();if(m.v.emotion===2)m.v.emotion=1;
+  stopSfx('shySingF');stopSfx('shySingG');
+ }
+ NB.defs.set('shyren',{
+  name:'Shyren',hp:66,atk:7,def:2,xp:52,gold:25,mercymod:5,wd:100,shudder:[8,1],
+  encounter:'* Shyren hides in the corner&  but somehow encounters you&  anyway.',
+  size:()=>({w:100,h:200}),pos:(i,n,cx)=>n===1?{x:218,y:36}:{x:R(cx-50),y:36},
+  setup(m){Object.assign(m.v,{siny:0,emotion:0,encourage:0,creep:0,bodyF:0})},
+  draw(g,m){
+   const v=m.v,x=m.x,y=m.y;
+   const agent=images.shyrenAgent;
+   if(m.hurt){img(g,rev(images.shyren,1),x,y);imgO(g,rev(agent,0),'agent',m.x0,y+3,2);return}
+   if(m.alive){
+    // obj_shyrenbody: hide / swim / sing by emotion, bobbing sin(siny/30)*4.
+    const set=v.emotion===0?images.shyrenBody:(v.emotion===1?images.shyrenTurn:images.shyrenSing);
+    imgO(g,Array.isArray(set)?rev(set,v.bodyF):set,v.emotion===0?'hide':v.emotion===1?'swim':'sing',x,y+Math.sin(v.siny/30)*4,2);
+   }
+   // obj_agentbody stays; image 1 once Shyren has been killed.
+   imgO(g,rev(agent,0),'agent',m.x0,y+3,2);
+  },
+  drawGone(g,m){imgO(g,rev(images.shyrenAgent,1),'agent',m.x0,m.y+3,2)},
+  vaporDraw(g,m){img(g,rev(images.shyren,1),m.x,m.y)},
+  step(m,api){
+   const v=m.v,st=api.S;v.siny++;v.bodyF+=.2;
+   goldBonus(m,30,m.mercymod>10&&m.hp===m.maxhp);
+   if(st.mnfight!==2)return;
+   if(v.encourage===6&&st.turntimer<40){v.encourage=7;shyGenEnd(m);musPause()}
+   if(v.encourage===7&&st.turntimer<18)api.border(0);
+   if(v.encourage===7&&st.turntimer<=2){
+    // The farewell song is over: Shyren swims off to her own journey.
+    v.encourage=8;m.alive=false;m.spared=true;m.alpha=.5;st.goldTotal+=m.gold+(m.goldBonus||0);
+    if(!api.alive().length){api.win();return}
+    api.endTurn();
+   }
+  },
+  bubblePos:m=>({x:m.x+95,y:m.y-25}),
+  acts:['Check','Smile','Hum','Conduct'],
+  check:m=>m.v.encourage>1?'* SHYREN - ATK 19 DEF 0&* That\'s Shyren^1.&* She\'s your band-mate./^':m.v.encourage===1?'* SHYREN - ATK 19 DEF 0&* A talented singer^1, with&  a little help./^':'* SHYREN - ATK 19 DEF 0&* Tone deaf^1. She\'s too ashamed&  to sing her deadly song./^',
+  act(m,i,name){
+   const v=m.v,e=v.encourage;
+   if(name==='Hum'){
+    let t=['* You hum a funky tune^1.&* Shyren follows your melody./^','* You hum a sad song^1.&* Shyren follows your melody./^','* You hum a jazz ballad^1.&* Shyren follows your melody./^'][Math.floor(rnd(3))];
+    if(e===1)t='* You hum some more^1.&* Monsters are drawn to the&  music./* Suddenly^1, it\'s a concert.../^';
+    if(e===2)t='* You hum some more^1.&* The seats are sold out^1.&* You feel like a rock star./^';
+    if(e===3)t='* You hum some more^1.&* But the constant attention.../* The tours..^1.&* The groupies..^1.&* It\'s all.../^';
+    if(e===4)t='* You and Shyren have come so&  far^1, but it\'s time./* You both have your own&  journeys to embark on./* You hum a farewell song./^';
+    v.encourage++;v.emotion=1;m.df=-150;m.mercymod=140;
+    return t;
+   }
+   if(name==='Smile'){
+    let t='* You smile^1.&* You ask to see Shyren\'s smile^1,&  too./* Shyren gets quieter^1.&* In the corner^1, Aaron nods&  his head approvingly./^';
+    if(v.creep===1)t='* You keep smiling^1.&* But nothing happened./^';
+    if(e>1)t='* You give a darling smile and&  a little wink./* The crowd goes wild!/^';
+    v.creep=1;return t;
+   }
+   return e>1?'* You wave your arms wildly^1.&* The crowd eats it up./^':'* You wave your arms wildly^1.&* You are now vulnerable&  to electric attacks./^';
+  },
+  speech(m,api){
+   const v=m.v,c=v.cmd=R(rnd(100));
+   let t=c>=50?'....&....&hum hum':'....&....&toot&....';
+   t=[t,'si re,&si re&si mi&si mi','Si Fa&Si Fa&So Fa So&Mi Re Re','Mi So&Mi So&Mi Si Mi&La Si So','(agg-&ressive&tooting)','(final&toot)'][v.encourage]||t;
+   api.S.talkLenExact=Math.max(api.S.talkLenExact||0,110);
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   const v=m.v,st=api.S,c=v.cmd;
+   if(v.encourage===5)v.encourage=6;
+   let tt=124,rate=50;
+   if(v.emotion===1){rate=8-v.encourage/1.5;v.emotion=2}
+   if(v.encourage>=5)tt=310;
+   api.turntimer(tt);
+   // obj_musbulgen at (x+36, y+62).
+   v.gen={x:m.x0+36,y:m.y+62,rate,a0:rate,longnote:0};
+   if(v.emotion>0){musPause();play('shySingF')}
+   let f='* Shyren hums very faintly.';
+   if(c>=25)f='* Shyren pretends to be a&  pop idol.';
+   if(c>=50)f='* Shyren taps a little beat&  with her fins.';
+   if(c>=70)f='* Shyren thinks about doing&  karaoke by her';
+   if(c>=90)f='* Smells like music.';
+   if(m.hp<30)f='* Shyren\'s voice gets raspy.';
+   const e=v.encourage;
+   if(e===1)f='* Shyren seems much more&  comfortable singing along.';
+   if(e===2)f=(()=>{try{return localStorage.getItem('utbg.nbPapyrusFlag67')==='1'}catch(_){return false}})()?'* A hooded figure watches&  the commotion from afar.':'* Sans is selling tickets&  made of toilet paper.';
+   if(e===3)f='* The crowd tosses clothing^1.&* It\'s a storm of socks.';
+   if(e===4)f='* Shyren thinks about her&  future.';
+   if(e>4)f=' ';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g)return;
+   if(tick(g,'a0')){
+    musbul(m,api,g.x,g.y);g.a0=Math.max(1,Math.ceil(g.rate));
+    g.longnote++;
+    if(g.longnote===12)play('shySingG');
+    if(g.longnote===24){play('shySingF');g.longnote=0}
+   }
+  },
+  endAttack(m){shyGenEnd(m)},
+  flavor:m=>m.hp<30?'* Shyren\'s voice gets raspy.':'* Shyren hums very faintly.'
+ });
+
+ // --------------------------------------------------------------- Moldbygg --
+ // obj_moldsmalx_body: stage 0 is a Moldsmal; stage 1 rises out of the floor (y -= 4 while
+ // height grows by 2 up to 104) on four obj_moldsmalx_part stalks.
+ function makeBody(m,stage){
+  const bb=S().ideal[2];
+  const b={stage,y:m.y,height:50,xsin:0,xsin2:0,anim:0,parts:[]};
+  if(stage===1){
+   b.stage=2;b.xsin2=Math.cos(0)*4;
+   for(const [dy,c] of [[170,1],[140,0],[110,1],[80,0]])b.parts.push({y:m.y+dy,c,vy:-4,f:0,sl:0,bb});
+  }
+  m.v.body=b;
+ }
+ function bodyStep(m){
+  const b=m.v.body;if(!b)return;
+  b.anim+=.1;
+  if(b.stage===2){b.height+=2;b.y-=4;if(b.height>104){b.stage=3;for(const p of b.parts)p.f=2}}
+  if(b.stage===3){b.xsin2=Math.cos(b.xsin/10)*4;b.xsin++}
+  for(const p of b.parts){if(p.f===2){p.vy=0;p.sl++}p.y+=p.vy}
+ }
+ const pollenOrSplinter=(m,api,type)=>{
+  const [L,Rr,T]=api.S.ideal;
+  const x0=R(rnd(Rr-L))+L,y=T;api.S.fx.push({kind:'gen',x:x0,y,frame:0});
+  if(type===3){
+   // blt_pollendrop
+   let x=x0;if(x>Rr-20)x-=20;if(x<L+6)x+=6;
+   api.spawn({x,y,box:[5,5,2,2],img:images.bulletMd,dmg:m.atk,manual:true,clip:true,vx:1.5,vy:1.2,grav:.02,sw:10,
+    step(b){gmMove(b);if(--b.sw<=0){b.vx=-b.vx;b.sw=20}}});
+  }else{
+   // blt_splinterbig -> nine blt_splinter
+   let x=x0;if(x>Rr-6)x-=6;if(x<L+10)x+=10;
+   api.spawn({x,y,box:[5,5,2,2],img:images.bulletMd,dmg:m.atk,clip:true,vy:2,burst:20+Math.floor(rnd(20)),
+    step(b){if(--b.burst<=0){b.alive=false;for(let i=0;i<9;i++)api.spawn({x:b.x+3,y:b.y+3,box:[3,3,1,1],img:images.nbBulletSm,dmg:b.dmg,clip:true,vx:dcos(i*40)*1.5,vy:-dsin(i*40)*1.5})}}});
+  }
+ };
+ // obj_8smallgen: eight blt_splinter close in on a point; when they meet they vanish and
+ // one more shoots upward. Every wave also resets every splinter's speed (blt_splinter.speed=cs).
+ function smallWave(m,api,g){
+  const [L,Rr,T,B]=api.S.ideal,st=api.S;
+  g.i++;
+  const cx=L+20+rnd(116),cy=T+20+rnd(117);g.centers[g.i]={x:cx,y:cy};
+  const hdist=Math.abs(L-cx)-Math.abs(Rr-cx),vdist=Math.abs(T-cy)-Math.abs(B-cy);
+  let hd2;
+  if(Math.abs(vdist)>Math.abs(hdist))hd2=vdist>=0?cy-T:B-cy;else hd2=hdist>=0?cx-L:Rr-cx;
+  const sum=pop();
+  hd2*=1.5;let hd1=hd2*2/3,cs=2.4+rnd(.2);
+  if(sum>1){hd2*=1.6;hd1*=1.6;cs*=1.6}
+  if(sum===1){hd1*=1.8;hd2*=1.8;cs*=2.2}
+  const pts=[[-hd2,0,0],[-hd1,-hd1,315],[0,-hd2,270],[hd1,-hd1,225],[hd2,0,180],[hd1,hd1,135],[0,hd2,90],[-hd1,hd1,45]];
+  for(const [dx,dy,dir] of pts){
+   api.spawn({x:cx+dx,y:cy+dy,splinter:1,dir,iteration:g.i,alpha:g.i>0?0:1,flush:0,dmg:8,clip:true,manual:true,img:images.nbBulletSm,box:[3,3,1,1],
+    step(b){
+     if(b.flush===1&&b.alpha<1)b.alpha+=.1;
+     if(b.flush===1&&b.alpha>=1){b.flush=2;b.alpha=1}
+     if(b.iteration>0&&b.flush===0){b.flush=1;b.alpha=0}
+     gmMove(b);
+     if(b.iend===b.iteration)b.alive=false;
+    }});
+  }
+  for(const b of st.bullets)if(b.splinter&&b.alive){
+   b.dmg=8;setDir(b,b.dir,cs);
+   if(sum>1){b.img=images.bulletMd;b.box=[5,5,2,2]}
+   if(sum===1){b.dw=12;b.dh=12;b.box=[6,6,2,2]}
+  }
+  const t=Math.max(1,Math.round(hd2/cs));
+  const slot=['a2','a3','a4'].find(k=>!(g[k]>=1));
+  if(slot){g[slot]=t;g[slot+'i']=g.i}
+  if(g.i<3||(sum===1&&g.i<4))g.a0=g.rate;
+ }
+ function smallMeet(api,g,ii){
+  const st=api.S;
+  for(const b of st.bullets)if(b.splinter)b.iend=ii;
+  const c=g.centers[ii];
+  const k=api.spawn({x:c.x,y:c.y,splinter:1,dir:90,iteration:0,flush:0,dmg:8,clip:true,manual:true,fric:-.2,img:images.bulletMd,box:[5,5,2,2],
+   step(b){gmMove(b);if(b.iend===b.iteration)b.alive=false}});
+  setDir(k,90,1.5);
+ }
+ function stalker(api,x,y,sum,head,c){
+  // blt_stalk1 (the eye) / blt_stalk2 (its body): rise into the box, stop, spit
+  // three blt_stalkloop at the SOUL (the head only), then sink away.
+  const b=api.spawn({x,y,manual:true,clip:true,wallKill:false,kill:true,dmg:6,img:rev(images.wormBul,head?1:0),box:[5,5,14,14],
+   fric:.1,sinr:0,c,a0:40,
+   step(b){
+    if(tick(b,'a0')){b.vx=0;b.vy=0;b.a2=30;if(head)b.a3=6;b.x=R(b.x);b.y=R(b.y)}
+    if(tick(b,'a2')){b.vy=sum>1?-2:2;b.fric=-.2;b.a4=60}
+    if(tick(b,'a3')){b.xx=(b.xx||0)+1;loop(api,b.x+13,b.y+13);if(b.xx<3)b.a3=8}
+    if(tick(b,'a4')){b.alive=false;return}
+    b.sinr++;b.x+=(b.c===0?Math.sin(b.sinr/10):Math.cos(b.sinr/10))/2;
+    gmMove(b);
+   }});
+  b.vy=sum===1?-4:4.2;
+  return b;
+ }
+ function loop(api,x,y){
+  // blt_stalkloop: spr_circlebulletb grows from .2 while flying at the SOUL.
+  const h=api.S.heart,dx=h.x+6-x,dy=h.y+6-y,l=Math.hypot(dx,dy)||1;
+  api.spawn({x,y,vx:dx/l*3,vy:dy/l*3,dmg:8,clip:true,sc:.2,add:.1,box:[-1,-1,2,2],
+   step(b){b.sc+=b.add;b.add/=1.1;const r=3*b.sc;b.box=[-r,-r,2*r,2*r]},
+   draw(g,b){const im=images.circleBulletB;if(!im)return;const s=17*b.sc;g.drawImage(im,b.x-8*b.sc,b.y-8*b.sc,s,s)}});
+ }
+ NB.defs.set('moldbygg',{
+  name:'Moldsmal',hp:70,atk:7,def:4,xp:46,gold:30,mercymod:-40,wd:100,
+  encounter:'* Moldsmal blocked the way!',
+  size:()=>({w:102,h:84}),pos:(i,n,cx)=>n===1?{x:216,y:156}:{x:R(cx-51),y:156},
+  setup(m){m.v.stage=0;makeBody(m,0)},
+  draw(g,m){
+   const b=m.v.body;
+   if(m.hurt||!b){img(g,rev(images.moldsmal,1),m.x,m.y);return}
+   if(b.stage===0){img(g,rev(images.moldsmal,b.anim),m.x,m.y);return}
+   // draw_sprite_part_ext(spr_moldsmalx_up, 0,0, 50,height) at 2x.
+   const im=rev(images.moldbyggTop,b.anim);
+   if(im){const h=Math.min(im.naturalHeight,b.height);g.drawImage(im,0,0,im.naturalWidth,h,R(m.x+b.xsin2+OFF.moldup[0]*2),R(b.y+OFF.moldup[1]*2),im.naturalWidth*2,h*2)}
+  },
+  drawOver(g,m){
+   // obj_moldsmalx_part: only the stalk pieces above the box top are drawn.
+   const b=m.v.body;if(!b||m.hurt)return;
+   const im=images.moldbyggPart;if(!im)return;
+   for(const p of b.parts){
+    const sl=(p.c===0?Math.sin(p.sl/10):Math.cos(p.sl/10))*8;
+    if(p.y<p.bb-20)g.drawImage(im,R(m.x+sl+OFF.moldpart[0]*2),R(p.y+OFF.moldpart[1]*2),88,28);
+   }
+  },
+  vaporDraw(g,m){img(g,rev(images.moldsmal,1),m.x,m.y)},
+  step(m){bodyStep(m);goldBonus(m,20,m.mercymod>100)},
+  // Any hit reveals it: the body is rebuilt as Moldbygg and rises again.
+  onDamaged(m){m.v.stage=1;m.name='Moldbygg';if(m.hp>=1)makeBody(m,1)},
+  bubblePos:m=>({x:m.x+94,y:m.y-20}),
+  acts:m=>m.v.stage===0?['Check','Imitate','Flirt']:['Check','Lie Down','Hug','Unhug'],
+  check:m=>m.v.stage===0?'* MOLDSMAL? - ATK 6 DEF 0&* It\'s a slime mold...?/^':'* MOLDBYGG - ATK 18 DEF 18&* One size greater than&  Moldaverage./^',
+  act(m,i,name,api){
+   const v=m.v;
+   if(v.stage===0)return name==='Imitate'?'* You approach Moldsmal.&* Suddenly...!/^':'* You wiggle your hips.&* Suddenly...!/^';
+   if(name==='Lie Down')return '* You lie down.&* Moldbygg lies down too.&* Moldbygg understands life now./^';
+   if(name==='Hug'){
+    if(api.S.sp>3)api.S.sp--;
+    for(const o of api.alive())if(o.id==='woshua'){o.v.slime=1;o.v.clean=0}
+    return '* You hug Moldbygg.&* Gross slime covers you.&* Your SPEED decreased./^';
+   }
+   m.mercymod=200;
+   return '* You don\'t hug Moldbygg.&* It appreciates your respect&  of its boundaries./^';
+  },
+  speech(m,api){
+   const v=m.v,c=v.cmd=R(rnd(100));
+   let t='Guoooh!';
+   if(c>=25&&c<50)t='Roar.';
+   if(c>=50&&c<80)t='*Slime&sounds*';
+   if(c>=75)t='*Chaste&wiggle*';
+   if(v.stage===0){
+    t='...';
+    const h=api.S.talked;
+    if(h>=0&&h<90&&(m.heardName==='Imitate'||m.heardName==='Flirt')){v.stage=1;makeBody(m,1);m.name='Moldbygg';t='Guoooh!'}
+   }
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,c=v.cmd,n=pop();
+   let f;
+   if(v.stage===0){
+    // In its group the real Moldsmal sets the turn; on its own it lasts as long.
+    api.turntimer(120);
+    let rate=90;if(n===3)rate*=2;if(n===2)rate*=1.5;
+    v.gen={kind:'side',type:c<=50?3:2,rate,a0:1};
+    f='* Moldsmal sits motionless.';
+    if(c>=30)f='* Moldsmal is very normal.';
+    if(c>=70)f='* Moldsmal is having quiet&  time.';
+    if(c>=90)f='* Smells like a bait shop.';
+    if(m.hp<15)f='* Quite impossible.';
+   }else{
+    api.turntimer(180);
+    if(c<=50){let rate=40;if(n===2)rate*=1.1;v.gen={kind:'small',rate,a0:2,i:0,centers:{}}}
+    else{let rate=35;if(n===2)rate=34;if(n===3)rate*=.6;v.gen={kind:'stalk',rate,a0:2}}
+    f='* Moldbygg needs some distance.';
+    if(c>=30)f='* Moldbygg gyrates reservedly.';
+    if(c>=70)f='* Moldbygg mills about in the&  corner.';
+    if(c>=90)f='* Smells like a bait shop.';
+    if(m.mercymod>100)f='* Moldbygg seems comfortable&  with your presence.';
+    if(m.hp<30)f='* Moldbygg has seen better days.';
+   }
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g)return;
+   if(g.kind==='side'){if(tick(g,'a0')){pollenOrSplinter(m,api,g.type);g.a0=R(g.rate)}return}
+   if(g.kind==='stalk'){
+    if(tick(g,'a0')){
+     g.a0=R(g.rate);
+     const [L,,T,B]=api.S.ideal,x=L+8+rnd(115),sum=pop();
+     const y=sum===1?B+10:T-30,s=sum===1?1:-1;
+     stalker(api,x,y,sum,true,0);
+     stalker(api,x,y+25*s,sum,false,1);stalker(api,x,y+50*s,sum,false,0);stalker(api,x,y+75*s,sum,false,1);
+    }
+    return;
+   }
+   if(tick(g,'a0'))smallWave(m,api,g);
+   for(const k of ['a2','a3','a4'])if(tick(g,k))smallMeet(api,g,g[k+'i']);
+  },
+  endAttack(m){m.v.gen=null},
+  flavor:m=>m.v.stage===0?'* Moldsmal sits motionless.':'* Moldbygg needs some distance.'
+ });
+
+ // ----------------------------------------------------------------- Temmie --
+ function temSay(api,m,text,then,who){
+  const st=api.S,o=who||m,p={x:o.x+95,y:o.y-25};
+  const b={m:o,x:p.x,y:p.y,wide:false,w:new NB.Writer([text],{typer:2,x:p.x+15,y:p.y+10,sound:'text'})};
+  st.bubbles.push(b);m.v.say={b,then};
+ }
+ function temSayStep(api,m){
+  const v=m.v,st=api.S;if(!v.say)return;
+  if(st.mnfight!==1&&st.mnfight!==2)v.say.b.w.step();
+  if(v.say.b.w.done){const s=v.say;v.say=null;st.bubbles=st.bubbles.filter(b=>b!==s.b);if(s.then)s.then()}
+ }
+ // blt_temhand: a white arm that grows in straight segments, turning toward the SOUL,
+ // then retracts. Only the arm (not the hand) hurts: dmg - df/5, double invincibility.
+ function handNew(m){
+  const x=m.x0+24,y=m.y+96;
+  const H={x,y,xs:y,ys:y,dir:270,sp:4,a0:20+Math.floor(rnd(20)),a1:-1,temno:0,turned:0,
+   dir_:[270],x1:[x],x2:[x+9],y1:[y],y2:[0],dmg:m.atk};
+  m.v.body.atk=1;m.v.hand=H;
+ }
+ function handStep(m,api){
+  const H=m.v.hand;if(!H)return;
+  const st=api.S,h=st.heart;
+  if(H.a0>0&&--H.a0<=0){
+   if(H.temno<8){
+    const n=++H.temno;H.x1[n]=H.x;H.y1[n]=H.y;
+    const xdif=H.x-h.x+6,ydif=H.y-h.y+6,final=Math.abs(xdif)-Math.abs(ydif);
+    let d=final<=0?(ydif>=0?90:270):(xdif>=0?180:0);
+    H.dir_[n]=d;
+    if(d===H.dir_[n-1]+180||d===H.dir_[n-1]-180){d-=90;H.dir_[n]-=90}
+    H.dir=d;
+    if(H.dir_[n]===H.dir_[n-1]){H.x1[n]=0;H.temno--}
+    const t=H.temno;
+    if(t>0){if(d===90&&H.dir_[t-1]===180)H.x2[t-1]=H.x;if(d===180&&H.dir_[t-1]===90)H.y2[t-1]=H.y}
+    H.a0=60+Math.floor(rnd(20));
+   }else H.a1=1;
+  }
+  if(H.a1>0&&--H.a1<=0){
+   const t=H.temno;
+   H.dir=((H.dir_[t]-180)%360+360)%360;H.sp=12;
+   if(H.dir===0&&H.x>=H.x1[t]-6){H.x1[t]=0;H.temno--;H.x=H.x2[H.temno]-22;H.y+=4}
+   else if(H.dir===180&&H.x<=H.x1[t]+6){H.x1[t]=0;H.temno--;H.x=H.x2[H.temno]+2}
+   else if(H.dir===270&&H.y>=H.y1[t]-6){H.x1[t]=0;H.temno--;H.y=H.y2[H.temno]-22}
+   else if(H.dir===90&&H.y<=H.y1[t]+6){H.x1[t]=0;H.temno--;H.x+=4;H.y=H.y2[H.temno]+2}
+   H.a1=1;
+   if(H.temno<4&&m.v.tt<2&&!H.turned){H.turned=1;m.v.endNow=1}
+   if(H.temno<=0&&H.y<H.ys+25){m.v.hand=null;m.v.body.atk=0;m.v.bodyA3=30;return}
+  }
+  H.x+=dcos(H.dir)*H.sp;H.y-=dsin(H.dir)*H.sp;
+  // Draw-event bookkeeping: the live segment follows the hand; closeness hurries the turn.
+  H.x2[H.temno]=H.x+10;H.y2[H.temno]=H.y+10;
+  const xd=H.x-h.x+2,yd=H.y-h.y+6;
+  if(Math.abs(xd)<20&&H.a0>5)H.a0-=2;
+  if(Math.abs(yd)<20&&H.a0>5)H.a0-=2;
+  if(Math.abs(xd)<10&&H.a0>4)H.a0/=2;
+  if(Math.abs(yd)<10&&H.a0>4)H.a0/=2;
+  for(let i=0;i<10;i++)if(H.x1[i]>0&&heartIn(H.x1[i],H.y1[i],H.x2[i],H.y2[i])&&st.invc<1){
+   api.damage(H.dmg,{inv:2});break;
+  }
+ }
+ function handDraw(g,H){
+  g.fillStyle='#ffffff';
+  for(let i=0;i<10;i++)if(H.x1[i]>0){const l=Math.min(H.x1[i],H.x2[i]),t=Math.min(H.y1[i],H.y2[i]);g.fillRect(R(l),R(t),R(Math.abs(H.x2[i]-H.x1[i])+1),R(Math.abs(H.y2[i]-H.y1[i])+1))}
+  const ax=(H.dir===0||H.dir===180)?4:0,ay=(H.dir===90||H.dir===270)?4:0;
+  img(g,images.temHand,H.x+ax,H.y+ay);
+ }
+ // obj_maintem + four obj_temleg: Temmie walks along the top of the box on long legs,
+ // drifting toward the SOUL. Body and legs hurt (scr_damagestandard).
+ function walker(m,api){
+  const [L,,T]=api.S.ideal;
+  const x=L+80+rnd(20),y=T,height=86,length=65;
+  const legs=[[20,0],[30,Math.PI*2],[40+length,0],[50+length,Math.PI*2]].map(([dx,s])=>({x:x+dx,y:y+height,siner:s,hs:0}));
+  api.spawn({x,y,hs:0,siner:0,legs,height,length,dmg:10,manual:true,wallKill:false,kill:false,box:[0,0,1,1],hidden:true,walker:1,
+   step(b){
+    const h=api.S.heart,cx=h.x+8,mid=(b.legs[0].x+b.legs[3].x)/2;
+    if(cx<=mid){b.hs-=.15;for(const l of b.legs)l.hs-=.15}
+    if(cx>=mid){b.hs+=.15;for(const l of b.legs)l.hs+=.15}
+    b.siner++;let hadd=Math.sin(b.siner/10)*.1;
+    if(Math.abs(b.hs)<.4){b.siner++;hadd*=1.5}
+    b.hs+=hadd;for(const l of b.legs)l.hs+=hadd;
+    b.x+=b.hs;for(const l of b.legs){l.siner-=l.hs;l.x+=l.hs}
+    if(heartIn(b.x+13,b.y+36,b.x+50+b.length,b.y+63)&&api.S.invc<1){api.damageStd(b.dmg);return}
+    for(const l of b.legs){
+     const xa=Math.sin(l.siner/4)*4,ya=Math.cos(l.siner/4)*4;
+     if(heartIn(l.x+xa,b.y+64-8,l.x+4+xa,l.y+b.height+ya)&&api.S.invc<1){api.damageStd(7);break}
+    }
+   },
+   draw(g,b){
+    g.fillStyle='#ffffff';
+    for(const l of b.legs){
+     const xa=Math.sin(l.siner/4)*4,ya=Math.cos(l.siner/4)*4,top=b.y+64-8,bot=l.y+b.height+ya;
+     g.fillRect(R(l.x+xa),R(top),5,R(bot-top+1));
+     img(g,images.temFoot,l.x+xa-5,bot);
+    }
+    img(g,images.temFront,b.x,b.y);
+    g.fillRect(R(b.x+48),R(b.y+36),R(b.length+3),27);
+    img(g,images.temBack,b.x+50+b.length,b.y);
+   }});
+ }
+ NB.defs.set('temmie',{
+  name:'Temmie',hp:5,atk:7,def:-20,xp:40,gold:50,mercymod:-40,wd:100,shudder:[8,1],
+  encounter:'* Special enemy Temmie appears&  here to defeat you!!',
+  size:()=>({w:100,h:100}),pos:(i,n,cx)=>n===1?{x:216,y:38}:{x:R(cx-50),y:38},
+  dmgPos:m=>({x:m.x+50-48,y:m.y+120}),
+  setup(m){m.v.body={atk:0,r:.5,facex:m.x+22,facey:m.y+40,facetime:0,smuggy:10,vis:1};m.v.dunk=0;m.v.flex=0},
+  draw(g,m){
+   const v=m.v,b=v.body;
+   if(m.hurt||v.dies||!b||!b.vis){img(g,images.temmieHurt,m.x,m.y);return}
+   // obj_tembody: jitters by random(r) (r creeps up to 2), face drawn separately.
+   const r=b.r;
+   imgO(g,b.atk===3?images.nbTemSmug:images.temmieBody,'tembody',m.x0+rnd(r),m.y+rnd(r),2);
+   if(b.atk!==3)img(g,images.temmieFace,b.facex+rnd(r),b.facey+rnd(r),2,2);
+  },
+  drawOver(g,m){if(m.v.hand)handDraw(g,m.v.hand)},
+  vaporDraw(g,m){img(g,images.temmieHurt,m.x,m.y)},
+  step(m,api){
+   const v=m.v,b=v.body,st=api.S;
+   if(b){
+    if(b.r<2)b.r+=.01;if(b.atk>0)b.r=0;
+    b.facetime++;if(b.facetime>300&&b.facex<m.x0+100)b.facex+=.01;
+    if(b.atk===3&&b.smuggy<100)b.smuggy++;
+   }
+   handStep(m,api);
+   if(v.bodyA3>0&&--v.bodyA3===0){if(b)b.smuggy=10;if(st.mnfight===2&&!st.bullets.some(x=>x.walker))v.endNow=1}
+   if(v.smugT>0&&--v.smugT===0){
+    // alarm[7]: the music comes back and Temmie attacks without a word.
+    musResume();v.cmd=R(rnd(100));v.wh=7;api.endPlayerTurn();
+   }
+   goldBonus(m,30,m.mercymod>10&&m.hp===m.maxhp);
+   temSayStep(api,m);
+   if(v.choice){
+    const h=st.heart;h.visible=true;
+    if(P.left||P.right){v.choice.c=1-v.choice.c;snd('move')}
+    h.x=st.ideal[0]+32+v.choice.c*252;h.y=st.ideal[2]+92;
+    if(P.confirm){
+     NB.clearPressed('confirm');snd('select');
+     const yas=v.choice.c===0;v.choice=null;h.visible=false;st.writer=null;st.myfight=2;
+     if(yas){
+      const k=st.items.findIndex(it=>it.id==='temmie_flakes');if(k>=0)st.items.splice(k,1);
+      v.wh=6;api.endPlayerTurn();
+     }else{
+      // NO!!!!!!!: Temmie turns smug, the music stops for 190 steps.
+      v.body.atk=3;musPause();v.smugT=190;st.myfight=99;
+     }
+    }
+   }
+  },
+  bubblePos:m=>({x:m.x+95,y:m.y-25}),
+  acts:['Check','Flex','Feed Temmie','Talk'],
+  actText:()=>'   * Check         * Flex&   * Feed Temmie   * Talk&     Flakes',
+  check:()=>'* TEMMIE - RATED TEM OUTTA TEM&* Loves to pet cute humans^1.&* But you\'re allergic!/^',
+  act(m,i,name,api){
+   const v=m.v,st=api.S;
+   if(name==='Feed Temmie'){
+    if(!st.items.some(it=>it.id==='temmie_flakes')){v.wh=1;return '* Temmie only wants the&  Temmie Flakes./^'}
+    v.choice={c:0};st.myfight=3;
+    st.writer=new NB.Writer(['   Give the Temmie Flakes?& &   Yas             NO!!!!!!!'],{instant:true});
+    return {custom:true};
+   }
+   if(name==='Flex'){
+    v.flex++;if(st.at<150)st.at+=7;m.atk++;v.wh=3;
+    if(v.dunk!==0)return '* You flex at Temmie...';
+    // The first flex: Temmie is horrified, and Aaron flexes his way in to disagree.
+    return {text:'* You flex at Temmie...',then:()=>{
+     st.myfight=99;v.dunk=1;
+     temSay(api,m,'NO!!!!!&muscles&r.....&NOT CUTE/%%',()=>{
+      const a=api.addMonster('aaron',420,38);a.alpha=0;a.v.alphaup=1;
+      temSay(api,m,'Ooh, I&have to&disagree&; )/%%',()=>{
+       v.dies=1;v.body.vis=0;
+       temSay(api,m,'NO!!!!!&!!!!!!!/%%',()=>{
+        m.mercymod=222;a.v.flex=2;
+        // scr_mercystandard with mercymod 222: Temmie is spared.
+        api.spare(m);st.myfight=4;st.sparePause=20;
+       });
+      },a);
+     });
+    }};
+   }
+   v.wh=4;m.mercymod=-10;
+   return '* You say hello to Temmie./^';
+  },
+  speech(m,api){
+   const v=m.v,st=api.S,wh=st.talked>=0&&st.talked<90?v.wh:-1;
+   if(v.wh===7){v.wh=-1;v.skipTalk=1;return null}
+   const c=v.cmd=R(rnd(100));
+   let t='awwAwa&cute!!&(pets u)';
+   if(c>25&&c<50){t='OMG!!&humans&TOO CUTE&(dies)';v.dies=1}
+   if(c>=50)t='hOI!!!&i\'m&TEMMIE!!';
+   if(c>=75)t='fhsdhjf&dsfjsd&dshjfsd';
+   if(wh===3)t='NO!!!!!&muscles&......&NOT CUTE';
+   if(wh===1){t='NO!!!&so&hungr...&(dies)';v.dies=1}
+   if(wh===4)t='hOI!!!&i\'m&tEMMIE!!';
+   if(v.wh===6){t='FOOB!!!';m.mercymod=300;st.talkLenExact=100}
+   v.wh=-1;
+   st.talkLenExact=Math.max(st.talkLenExact||0,110);
+   return t;
+  },
+  border:(m)=>{if(m.v.skipTalk){m.v.skipTalk=0;NB.S.talkLenExact=1;return 7}return 6},
+  attack(m,api){
+   const v=m.v,c=v.cmd??R(rnd(100)),n=pop();
+   v.dies=0;
+   api.border(c>=25?10:7);
+   // mnfight 2: obj_tembody is made again.
+   const old=v.body;v.body={atk:0,r:.5,facex:old?old.facex:m.x0+22,facey:m.y+40,facetime:old?old.facetime:0,smuggy:10,vis:1};
+   let tt=160;
+   v.endNow=0;
+   if(c<25){tt=200;handNew(m)}
+   else walker(m,api);
+   v.tt=tt;api.turntimer(tt);
+   let f='* Temmie is trying to glomp&  you.';
+   if(c>=25)f='* Temmie forgot her other&  attack.';
+   if(c>=50)f='* Temmie vibrates intensely.';
+   if(c>=75)f='* Temmie is doing her hairs.';
+   if(c>=83)f='* Temmiy accidentally misspells&  her own name.';
+   if(c>=90)f='* Smells like Temmie Flakes.';
+   if(m.hp<3)f='* How\'d you do that?';
+   return f;
+  },
+  attackStep(m,api){
+   const v=m.v,st=api.S;
+   if(v.tt>0)v.tt--;
+   if(v.endNow){v.endNow=0;st.turntimer=0;return}
+   // No generator watches the clock while the arm is out: the arm ends the turn itself.
+   if((v.hand||v.bodyA3>0)&&st.turntimer<=1)st.turntimer=2;
+  },
+  endAttack(m){},
+  flavor:()=>'* Temmie is trying to glomp&  you.'
+ });
+})();
+
 /* ---- NB 60 FPS: logic stays on UNDERTALE's 30 steps a second; drawing blends
    each moving thing between its last two step positions at the display's rate. */
 (()=>{
@@ -32612,6 +33203,8 @@ const NB_ASSETS={
  nbShards:[0,1,2,3].map(i=>RAW+`sprites/images/spr_heartshards_${i}.png`),
  nbBulletGen:[0,1,2].map(i=>RAW+`sprites/images/spr_bulletgenmd_${i}.png`),
  nbBlconTinyAbove:RAW+'sprites/images/spr_blcontinyabove_0.png',
+ nbTemSmug:RAW+'sprites/images/spr_temsmug_0.png',
+ shyrenNotes:[0,1,2,3].map(i=>RAW+`sprites/images/spr_musbul_1_${i}.png`),
  nbHeartBlue:RAW+'sprites/images/spr_heartblue_1.png', // _1 is image_index 0 (exports are swapped)
  nbPlainAtlas:RAW+'fonts/fnt_plain.png',
  nbBulletSm:RAW+'sprites/images/spr_bulletsm_0.png',
