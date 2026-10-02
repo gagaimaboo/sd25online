@@ -871,6 +871,9 @@ const SFX={
  item:RAW+'sound/audio/snd_item.wav',
  heal:RAW+'sound/audio/snd_heal_c.wav',
  text:RAW+'sound/audio/SND_TXT1.wav',
+ // SCR_TEXTTYPE: monster speech bubbles (typer 2, 33...) use sound 95, SND_TXT2.
+ txt2:RAW+'sound/audio/SND_TXT2.wav',
+ power:RAW+'sound/audio/snd_power.wav',
  torielText:RAW+'sound/audio/snd_txttor.wav',
  papyrusText:RAW+'sound/audio/snd_txtpap.wav',
  mdBell:RAW+'sound/audio/snd_bell.wav',mdSlide:RAW+'sound/audio/snd_slidewhist.wav',
@@ -29263,8 +29266,8 @@ const NB=(()=>{
  // typer 2 (monster bubble): fnt_plain, black, 9px spacing, 20px lines, 2 frames/char.
  const TYPERS={
   1:{font:'main',color:'#ffffff',dx:20,dy:20,wrap:(x)=>x+602-55,speed:1,sound:'text',spacing:16,vspacing:32},
-  2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:2,sound:null,spacing:9,vspacing:20},
-  33:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:1,sound:null,spacing:9,vspacing:20},
+  2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:2,sound:'txt2',spacing:9,vspacing:20},
+  33:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:1,sound:'txt2',spacing:9,vspacing:20},
   22:{font:'papyrus',color:'#000000',dx:10,dy:0,wrap:(x)=>x+200,speed:1,sound:'papyrusText',spacing:11,vspacing:20}
  };
  // Content written for the old engine uses "\n" and relies on word wrap. UNDERTALE
@@ -29740,7 +29743,7 @@ const NB=(()=>{
      const wide=o.wide??(m.def.bubble==='wide');
      const pos=o.pos||(m.def.bubblePos?m.def.bubblePos(m):{x:m.x+m.w,y:m.y});
      const pages=(o.pages||[o.text]).map(t=>String(t).replace(/\n/g,'&'));
-     const w=new NB.Writer(pages,{typer:o.typer||m.def.typer||2,x:pos.x+(o.tx??(wide?20:15)),y:pos.y+10,sound:o.voice||m.def.voice||'text'});
+     const w=new NB.Writer(pages,{typer:o.typer||m.def.typer||2,x:pos.x+(o.tx??(wide?20:15)),y:pos.y+10,sound:o.voice||m.def.voice||undefined});
      if(o.onFace)w.onFace=o.onFace;
      S.bubbles.push({m,x:pos.x,y:pos.y,wide,img:o.img||(m.def.bubbleImg?m.def.bubbleImg(m):null),hold:!!o.hold,w});
     }
@@ -29876,6 +29879,7 @@ const NB=(()=>{
  // ------------------------------------------------------------ effects ----
  function fxStep(){
   for(const e of S.fx){
+   if(e.step){e.step(e,api);continue} // self-contained effects (a boss's death scene)
    if(e.kind==='slice'){e.frame+=e.isp;e.t++;if(e.frame>=6)e.dead=true}
    else if(e.kind==='gen'){e.frame+=1;if(e.frame>=3)e.dead=true}
    else if(e.kind==='dust'){
@@ -29951,7 +29955,7 @@ const NB=(()=>{
  }
  NB.update=function(dt,now){
   if(!S||S.exited)return;
-  S.acc+=Math.min(dt*1000,250);
+  S.acc+=Math.min(dt*1000,250)*(S.speedMul||1);
   while(S.acc>=NB.STEP_MS){S.acc-=NB.STEP_MS;step();if(S.exited)break}
  };
 
@@ -29966,7 +29970,7 @@ const NB=(()=>{
   write,alive,spareable:monsterSpareable,endTurn:()=>{S.turntimer=0},
   remove:m=>{m.alive=false;m.gone=true;S.goldTotal+=m.goldBonus||0},
   heal:n=>{S.hp=Math.min(S.maxhp,S.hp+n)},
-  bubble:(m,text,opt={})=>{const wide=!!opt.wide,bx=opt.x??m.x+m.w,by=opt.y??m.y;const b={m,x:bx,y:by,wide,img:opt.img||null,w:new NB.Writer([String(text)],{typer:2,x:bx+(wide?36:15),y:by+10,sound:m.def.voice||'text'})};S.bubbles.push(b);return b},
+  bubble:(m,text,opt={})=>{const wide=!!opt.wide,bx=opt.x??m.x+m.w,by=opt.y??m.y;const b={m,x:bx,y:by,wide,img:opt.img||null,w:new NB.Writer([String(text)],{typer:2,x:bx+(wide?36:15),y:by+10,sound:m.def.voice||undefined})};S.bubbles.push(b);return b},
   leave:(text)=>{S.won=true;S.myfight=0;S.mnfight=0;S.heart.visible=false;S.bullets=[];try{stopMusic()}catch(_){}write(text,{end:'/%',onEnd:()=>exitBattle('win')})},
   kill:killMonster,spare:spareMonster,endPlayerTurn,win,
   // A monster joining mid-fight (Aaron flexing in on Temmie).
@@ -30049,6 +30053,7 @@ const NB=(()=>{
  }
  function drawFx(g,S){
   for(const e of S.fx){
+   if(e.draw){e.draw(g,e);continue}
    if(e.kind==='slice'){
     // spr_strike's exported frames are trimmed, so use the registered weapon sheet
     // (same frames, correct offsets) at obj_slice's image_speed.
@@ -30125,8 +30130,8 @@ const NB=(()=>{
   drawFx(ctx,S);
   // Bubbles over a monster's head go underneath the side bubbles next to them.
   for(const b of [...S.bubbles].sort((x,y)=>(x.m?.def.bubble==='above'?0:1)-(y.m?.def.bubble==='above'?0:1)))drawBubble(ctx,b);
-  drawBox(ctx,S);
-  if(S.writer&&!S.writer.done)S.writer.draw(ctx);
+  if(!S.cinematic)drawBox(ctx,S);
+  if(!S.cinematic&&S.writer&&!S.writer.done)S.writer.draw(ctx);
   // Target HP bars in the FIGHT menu (obj_battlecontroller Draw).
   if(S.bmenuno===1&&S.myfight===0&&S.mnfight===0){
    const al=S.mons.filter(m=>m.alive).slice(S.page*3,S.page*3+3);
@@ -30137,9 +30142,8 @@ const NB=(()=>{
   drawFight(ctx,S);
   drawBullets(ctx,S);
   for(const m of S.mons)if(m.alive&&m.def.drawOver)m.def.drawOver(ctx,m,NB.api);
-  drawHud(ctx,S);
-  drawButtons(ctx,S);
-  drawHeart(ctx,S);
+  if(!S.cinematic){drawHud(ctx,S);drawButtons(ctx,S);drawHeart(ctx,S)}
+  if(S.fade>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,S.fade)+')';ctx.fillRect(-40,-40,720,560)}
   for(const w of S.dmgw)drawDmg(ctx,w);
   ctx.restore();
  };
@@ -31587,6 +31591,30 @@ const NB=(()=>{
  const {rnd,dcos,dsin,snd}=NB,gm=NB.gm,R=Math.round;
  const S=()=>NB.S;
  const tick=(o,k)=>o[k]>0&&--o[k]===0;
+ // obj_torheart: fades in shaking; after 120 steps it cracks (snd_break1, spr_torheartbreak),
+ // 40 steps later it shatters into six obj_theartshard (snd_break2); then the screen fades out.
+ function torHeart(api,x,y){
+  return {x,y,xs:x,ys:y,a:0,shake:3,a0:120,brk:0,vis:1,shards:[],
+   step(e){
+    const st=api.S;
+    if(tick(e,'a0')){st.speedMul=1;snd('break1');e.brk=1;e.xs-=2;e.shake=0;e.a1=40}
+    if(tick(e,'a1')){
+     snd('break2');e.vis=0;
+     for(const [dx,dy] of [[-2,0],[0,3],[2,6],[8,0],[10,3],[12,6]]){const d=rnd(360);e.shards.push({x:e.x+dx,y:e.y+dy,vx:dcos(d)*7,vy:-dsin(d)*7,f:0})}
+     e.a2=180;
+    }
+    if(tick(e,'a2')){e.fading=1;e.a3=20}
+    if(e.fading)st.fade=(st.fade||0)+1/20;
+    if(tick(e,'a3')){api.end('win');return}
+    e.x=e.xs+rnd(e.shake)-rnd(e.shake);e.y=e.ys+rnd(e.shake)-rnd(e.shake);e.a+=.01;
+    for(const s of e.shards){s.vy+=.2;s.x+=s.vx;s.y+=s.vy;s.f+=.25}
+   },
+   draw(g,e){
+    if(e.vis){const im=e.brk?images.monsterSoulBreak:images.monsterSoul;if(im){g.save();g.globalAlpha=Math.min(1,e.a);g.drawImage(im,R(e.x),R(e.y));g.restore()}}
+    const fr=images.monsterSoulShards||[];
+    for(const s of e.shards){const im=fr[fr.length-1-(Math.floor(s.f)%Math.max(1,fr.length))];if(im)g.drawImage(im,R(s.x),R(s.y))}
+   }};
+ }
  // Sprite -> [image, dx, dy, scale] (dx/dy undo the exporter's crop, in sprite pixels).
  const SPR={
   normal:()=>[images.toriel,0,1],hurt:()=>[images.torielHurt,0,0],reallyhurt:()=>[images.torielReallyHurt,0,0],
@@ -31775,8 +31803,15 @@ const NB=(()=>{
   attack(m,api){
    const v=m.v,st=api.S;
    if(v.dying){
-    // alarm[10]: she smiles one last time, then turns to dust.
-    v.spr='kneelsmile2';api.kill(m);api.win();return null;
+    // alarm[10]: she smiles one last time and turns to dust. The battle UI goes away,
+    // the room slows to 20 steps a second and her SOUL (obj_torheart) appears.
+    v.spr='kneelsmile2';
+    const im=images.nbTorKneelSmile2,hx=st.heart.x,hy=m.y+56+((im&&im.naturalHeight)||100)/2;
+    api.kill(m);
+    st.cinematic=1;st.speedMul=20/30;st.bullets=[];st.bubbles=[];st.writer=null;st.myfight=99;st.mnfight=99;
+    api.border(0);try{stopMusic()}catch(_){}
+    st.fx.push(torHeart(api,hx,hy));
+    return null;
    }
    if(v.conv===99){api.remove(m);api.end('spare');return null}
    const c=v.cmd;
@@ -32931,7 +32966,7 @@ const NB=(()=>{
  // ----------------------------------------------------------------- Temmie --
  function temSay(api,m,text,then,who){
   const st=api.S,o=who||m,p={x:o.x+95,y:o.y-25};
-  const b={m:o,x:p.x,y:p.y,wide:false,w:new NB.Writer([text],{typer:2,x:p.x+15,y:p.y+10,sound:'text'})};
+  const b={m:o,x:p.x,y:p.y,wide:false,w:new NB.Writer([text],{typer:2,x:p.x+15,y:p.y+10})};
   st.bubbles.push(b);m.v.say={b,then};
  }
  function temSayStep(api,m){
@@ -33349,7 +33384,7 @@ NB.mdText={
     }
     if(b.a7>0&&--b.a7===0){
      b.reds++;b.spr=b.spr==='red'?0:'red';b.a7=5;
-     if(b.reds>4){b.a7=-1;b.a5=90;const d=Math.atan2(-b.vy,b.vx);b.vx=b.vy=0;b.charge=1;b.cd=d;b.csp=2}
+     if(b.reds>4){b.a7=-1;b.a5=90;b.charge=1;b.cd=[0,180,270,90][b.side]*Math.PI/180;b.csp=2}
     }
     if(b.a5>0&&--b.a5===0){b.alive=false;return}
     if(b.charge){b.csp+=.2;b.vx=Math.cos(b.cd)*b.csp;b.vy=-Math.sin(b.cd)*b.csp}
@@ -33362,7 +33397,6 @@ NB.mdText={
       if(b.type===2)b.a5=-1;
      }
     }
-    if(b.type===1&&b.a7>0&&b.cdir!=null)b.cd=b.cdir;
     gmMove(b);
    },
    draw(g,b){if(b.hidden)return;const im=rev(images[DSPR[b.spr]]||images.nbDummyBullet,b.side);if(im)g.drawImage(im,R(b.x),R(b.y))}});
@@ -33835,7 +33869,7 @@ NB.mdWaves=function(v,I,CW,DB,ALL,T,ATK,rnd){
  function say(api,m,pages){
   const st=api.S,x=XS+100,y=YS;
   if(m.v.say)st.bubbles=st.bubbles.filter(b=>b!==m.v.say);
-  const w=new NB.Writer(pages,{typer:33,x:x+25,y:y+10,sound:'text'});
+  const w=new NB.Writer(pages,{typer:33,x:x+25,y:y+10});
   w.onFace=d=>{m.v.face=d};
   const b={m,x,y,wide:true,img:images.nbBlconWdShrt,w};
   st.bubbles.push(b);m.v.say=b;
@@ -33987,7 +34021,7 @@ NB.mdWaves=function(v,I,CW,DB,ALL,T,ATK,rnd){
    if(v.con2===21){say(api,m,t.knives);v.con2=22}
    if(v.con2===22){
     st.turntimer=999;
-    if(!v.say){const h=st.heart,k=v.knife;if(k){M.setDir(k,M.pdir(k.x,k.y,h.x+10,h.y+10),9);k.thrown=1}snd('undyneArrow');v.con2=23;v.a4=90}
+    if(!v.say){const h=st.heart,k=v.knife;if(k){k.dir=M.pdir(k.x,k.y,h.x+10,h.y+10);k.alpha=1;M.setDir(k,k.dir,9);k.thrown=1}snd('undyneArrow');v.con2=23;v.a4=90}
    }
    if(v.con2===24){v.a4=30;v.con2=25}
    if(v.con2===25){if(d.rotmod>0)d.rotmod-=.2;if(d.speedmod>0)d.speedmod-=.2}
@@ -34205,7 +34239,7 @@ const DR=(()=>{
  const A=DR_ASSETS,STEP_MS=1000/30;
  const imgs={},masks={};let ready=false,loading=null,S=null;
  const sndKeys={menumove:'snd_menumove',select:'snd_select',laz:'snd_laz_c',crit:'snd_criticalswing',damage:'snd_damage',impact:'snd_impact',hurt:'snd_hurt1',graze:'snd_graze',mercyadd:'snd_mercyadd',spare:'snd_spare',power:'snd_power',rbswing:'snd_rudebuster_swing',rbhit:'snd_rudebuster_hit',pacify:'snd_pacify',text:'snd_text',boost:'snd_boost',icespell:'snd_icespell',snowgrave:'snd_snowgrave',petrify:'snd_petrify',deathnoise:'snd_deathnoise',ghostappear:'snd_ghostappear',spellpacify:'snd_spell_pacify'};
- const sndFiles={snd_mercyadd:'snd_mercyadd.ogg',snd_pacify:'snd_pacify.ogg',snd_text:'snd_text.wav'};
+ const sndFiles={snd_mercyadd:'snd_mercyadd.ogg',snd_pacify:'snd_pacify.ogg',snd_text:'snd_text.wav',snd_icespell:'snd_icespell.ogg',snd_snowgrave:'snd_snowgrave.ogg',snd_ghostappear:'snd_ghostappear.ogg',snd_spell_pacify:'snd_spell_pacify.ogg'};
  const sndUrl=n=>DR_RAW+`sounds/${n}/${sndFiles[n]||n}`;
  let music=null;
 
@@ -34628,10 +34662,8 @@ const DR=(()=>{
     S.fx.push({kind:'frozen',m,timer:0,fresh:0});
     S.fx.push({kind:'recruit',x0:monsterx(m),y:monstery(m)-40,vy:0,timer:0,lt:0,xs:4,ys:0,a:1});
    }else if(how==='fatal'){
-    snd('deathnoise');
-    const bs=6,xs=Math.ceil(27/bs),ys=Math.ceil(27/bs),bl=[];
-    for(let i=0;i<=xs;i++)for(let j=0;j<=ys;j++)bl.push({i,j,bx:m.x+i*bs*2,sp:0,sin:4+j*3-i});
-    S.fx.push({kind:'death',m,t2:0,redup:0,bs,xs,ys,bl});
+    // SnowGrave: the enemy is sealed inside an ice crystal that stays on the field.
+    S.fx.push({kind:'crystal',m,t2:0});
    }else S.fx.push({kind:'defeat',m,t:0});
   }
  }
@@ -35018,7 +35050,7 @@ const DR=(()=>{
    }
    else if(e.kind==='pacify'){
     if(e.timer===0&&e.z===0)snd('pacify');
-    if(--e.timer<=0){e.zs=e.zs||[];e.zs.push({x:e.x,y:e.y,dir:e.z*40,sp:12,a:1,s:1});e.timer=2;e.z++}
+    if(e.z<9&&--e.timer<=0){e.zs=e.zs||[];e.zs.push({x:e.x,y:e.y,dir:e.z*40,sp:12,a:1,s:1});e.timer=2;e.z++}
     for(const z of e.zs||[]){z.x+=Math.cos(z.dir*Math.PI/180)*z.sp;z.y-=Math.sin(z.dir*Math.PI/180)*z.sp;z.sp=Math.max(0,z.sp-1);z.a-=.05;z.s+=.05}
     if(e.z>=9&&(e.zs||[]).every(z=>z.a<=0))e.dead=1;
    }
@@ -35097,6 +35129,7 @@ const DR=(()=>{
     e.t2++;
    }
    else if(e.kind==='oflash'){e.siner++;if(e.siner>4&&Math.sin(e.siner/3)<0)e.dead=1}
+   else if(e.kind==='crystal'){e.t2++}
    else if(e.kind==='defeat'){if(e.t>40)e.dead=1}
    else if(e.kind==='rudebuster'){
     if(e.t===10){snd('rbswing');const x=e.h.x+40,y=e.h.y+30;const tx=monsterx(e.m),ty=monstery(e.m);
@@ -35369,6 +35402,7 @@ const DR=(()=>{
     }
    }
    else if(e.kind==='oflash'){const a=Math.sin(e.siner/3);if(a>0)draw(g,'spr_dummymonster',0,e.x,e.y,2,2,0,a,{fog:'#ffffff'})}
+   else if(e.kind==='crystal')drawCrystal(g,e);
    else if(e.kind==='rudebuster'){
     if(e.t<=28)draw(g,'spr_susie_rudebuster',e.t/2,e.h.x,e.h.y,2,2);
     const b=e.bolt;if(!b)continue;
@@ -35377,6 +35411,26 @@ const DR=(()=>{
     else for(const q of b.bursts)draw(g,'spr_rudebuster_beam',b.et/2,q.x,q.y,q.xs,2,q.ang,1);
    }
   }
+ }
+ // SnowGrave crystal statue: the crystal is fitted around the monster's sprite and the
+ // monster shows through as a dark silhouette (as in the UNDERTALE-engine SnowGrave).
+ function drawCrystal(g,e){
+  const m=e.m,im=frame('spr_dummymonster',0),cr=images.snowgraveCrystal;if(!im)return;
+  const r={x:m.x,y:m.y,w:im.naturalWidth*2,h:im.naturalHeight*2};
+  const a=Math.min(1,e.t2/10);
+  if(e.t2<10)g.drawImage(im,r.x,r.y,r.w,r.h);
+  if(!cr)return;
+  const aspect=(cr.naturalWidth||1080)/(cr.naturalHeight||1640);
+  let ch=Math.max(r.h*1.52,96),cw=ch*aspect;
+  if(cw<r.w*1.38){cw=r.w*1.38;ch=cw/aspect}
+  const cap=Math.max(96,Math.min(240,Math.max(r.h*1.2,(r.w*1.2)/aspect)));
+  if(ch>cap){ch=cap;cw=ch*aspect}
+  const cx=r.x+r.w/2,cy=r.y+r.h/2,x0=cx-cw/2,y0=cy-ch/2;
+  g.save();g.globalAlpha=a;g.imageSmoothingEnabled=false;
+  g.drawImage(cr,Math.round(x0),Math.round(y0),Math.round(cw),Math.round(ch));
+  const fit=Math.min((cw*.66)/r.w,(ch*.64)/r.h),dw=r.w*fit,dh=r.h*fit;
+  g.globalAlpha=.42*a;g.drawImage(NB.tinted(im,'#000000'),Math.round(cx-dw/2),Math.round(y0+ch*.515-dh/2),Math.round(dw),Math.round(dh));
+  g.restore();
  }
  function drawTensionBar(g){
   const tb=S.tbar,x=Math.round(tb.x),y=40;
