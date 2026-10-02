@@ -852,7 +852,7 @@ const SFX={
  mtt7:RAW+'sound/audio/snd_mtt7.wav',
  mtt8:RAW+'sound/audio/snd_mtt8.wav',
  mtt9:RAW+'sound/audio/snd_mtt9.wav',
- txtUnd:RAW+'sound/audio/snd_txtund.wav',
+ txtUnd:RAW+'sound/audio/snd_txtund.wav',txtUnd2:RAW+'sound/audio/snd_txtund2.wav',txtUnd3:RAW+'sound/audio/snd_txtund3.wav',txtUnd4:RAW+'sound/audio/snd_txtund4.wav',
  txtAl:RAW+'sound/audio/snd_txtal.wav',
  gbCharge:RAW+'sound/audio/mus_sfx_segapower.ogg',
  gbFire:RAW+'sound/audio/mus_sfx_rainbowbeam_1.ogg',
@@ -29322,7 +29322,9 @@ const NB=(()=>{
    }
    if(this.pos>=this.str.length){
     const end=this.str.trimEnd().replace(/%%$/,'%');
-    if(end.endsWith('/%')||end.endsWith('/^')||end.endsWith('/')||this.no+1<this.msgs.length)this.halt=1;
+    // A message ending in "%" without "/" closes as soon as it is typed out.
+    if(/(^|[^\/%])%%?$/.test(this.str.trimEnd())){if(this.no+1<this.msgs.length){this.no++;this.load()}else this.finish()}
+    else if(end.endsWith('/%')||end.endsWith('/^')||end.endsWith('/')||this.no+1<this.msgs.length)this.halt=1;
    }
   }
   finish(){this.done=true;if(this.onEnd){const f=this.onEnd;this.onEnd=null;f()}}
@@ -29336,7 +29338,8 @@ const NB=(()=>{
     if(c==='\\'){const k=s[i+1];if(k==='E'){i+=2;continue}if(TEXT_COLORS[k])color=TEXT_COLORS[k];i++;continue}
     if(c==='/'||c==='%')break;
     if(x>wrap){x=x0;y+=t.vspacing}
-    drawGlyph(g,t.font,c,x,y,color);
+    if(t.shake){const k=t.shake;drawGlyph(g,t.font,c,x+Math.random()*k-k/2,y+Math.random()*k-k/2,color)}
+    else drawGlyph(g,t.font,c,x,y,color);
     x+=t.spacing;
    }
   }
@@ -29502,9 +29505,10 @@ const NB=(()=>{
   if(S.items.length>4)s+=' &                     PAGE '+(S.page+1);
   return s;
  }
+ const noFlee=()=>alive().some(m=>m.def.noFlee&&m.def.noFlee(m,api));
  function mercyText(){
   const any=alive().some(monsterSpareable);
-  return (any?'\\Y':'\\W')+'   * Spare&\\W   * Flee';
+  return (any?'\\Y':'\\W')+'   * Spare'+(noFlee()?'':'&\\W   * Flee');
  }
  function openMenu(n){
   S.bmenuno=n;
@@ -29580,7 +29584,8 @@ const NB=(()=>{
    return;
   }
   if(S.bmenuno===4){
-   if(P.up||P.down){S.coord[4]=S.coord[4]?0:1;snd('move')}
+   if((P.up||P.down)&&!noFlee()){S.coord[4]=S.coord[4]?0:1;snd('move')}
+   if(noFlee())S.coord[4]=0;
    h.x=S.ideal[0]+32;h.y=S.ideal[2]+28+S.coord[4]*32;
    if(P.confirm){NB.clearPressed('confirm');if(S.coord[4]===0)doSpare();else doFlee()}
   }
@@ -29699,6 +29704,7 @@ const NB=(()=>{
  // ------------------------------------------------------------ MERCY ------
  function doSpare(){
   S.myfight=4;S.heart.visible=false;S.writer=null;snd('select');
+  for(const m of alive())if(m.def.onMercy)m.def.onMercy(m,api);
   let any=false;
   for(const m of alive())if(monsterSpareable(m)){spareMonster(m);any=true}
   if(!alive().length){win();return}
@@ -29782,7 +29788,7 @@ const NB=(()=>{
  }
  function returnStep(){
   if(NB.borderSettled()&&S.edge.T===S.ideal[2]&&S.edge.R===S.ideal[1]){
-   S.mnfight=0;S.myfight=0;S.bmenuno=0;S.turn++;S.heart.visible=true;S.heart.mode='red';
+   S.mnfight=0;S.myfight=0;S.bmenuno=0;S.turn++;S.heart.visible=true;S.heart.mode=S.soulMode==='green'?'green':'red';
    const al=alive();
    let flav=S.nextFlavor;
    if(!flav){const m=al[Math.floor(rnd(al.length))];flav=m?.def.flavor?m.def.flavor(m,api):`* ${m?.name||''} is here.`}
@@ -29995,11 +30001,12 @@ const NB=(()=>{
  function drawBox(g,S){
   const e=S.edge;
   g.fillStyle='#000';g.fillRect(e.L,e.T,e.R+5-e.L,e.B+5-e.T);
-  g.fillStyle='#fff';
+  g.fillStyle='#fff';g.save();g.globalAlpha=S.boxAlpha??1;
   g.fillRect(e.L,e.T,e.R-e.L,5);          // obj_uborder
   g.fillRect(e.L,e.B,e.R-e.L+5,5);        // obj_dborder
   g.fillRect(e.L,e.T,5,e.B-e.T);          // obj_lborder
   g.fillRect(e.R,e.T,5,e.B-e.T+5);        // obj_rborder
+  g.restore();
  }
  function drawHud(g,S){
   // scr_binfowrite
@@ -30026,6 +30033,8 @@ const NB=(()=>{
   let im=frames[Math.floor(h.frame)%frames.length]||images.heart;
   if(h.gtfo&&images.nbHeartGtfo)im=images.nbHeartGtfo[Math.floor(S.t/2)%2]||im;
   if(h.mode==='blue'&&images.nbHeartBlue)im=images.nbHeartBlue;
+  // spr_heartgreen (exports reversed: _1 is image_index 0).
+  if(h.mode==='green'&&images.nbHeartGreen)im=images.nbHeartGreen[1-(Math.floor(h.frame)%2)]||im;
   if(im)g.drawImage(im,Math.round(h.x),Math.round(h.y),16,16);
  }
  function drawFight(g,S){
@@ -34183,7 +34192,29 @@ const NB_ASSETS={
  nbOolBone:RAW+'sprites/images/spr_oolbone_0.png',
  nbDBone:RAW+'sprites/images/spr_dbone_0.png',
  nbUdeBone:RAW+'sprites/images/spr_udebone_0.png',
- nbSkateBone:RAW+'sprites/images/spr_skatebone_0.png'
+ nbSkateBone:RAW+'sprites/images/spr_skatebone_0.png',
+ // Undyne (obj_undyneboss / obj_undyneb_body / obj_spearblocker). Multi-frame exports
+ // are stored in reverse: file _k is image_index N-1-k.
+ nbHeartGreen:[0,1].map(i=>RAW+`sprites/images/spr_heartgreen_${i}.png`),
+ nbUndB:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_${i}.png`),
+ nbUndFace:[0,1,2,3,4,5,6,7,8].map(i=>RAW+`sprites/images/spr_undyneb_face_${i}.png`),
+ nbUndHair:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_hair_${i}.png`),
+ nbUndArmor:RAW+'sprites/images/spr_undyneb_armor_0.png',
+ nbUndPants:RAW+'sprites/images/spr_undyneb_pants_0.png',
+ nbUndLarm:RAW+'sprites/images/spr_undyneb_leftarm_0.png',
+ nbUndRarm:RAW+'sprites/images/spr_undyneb_rightarm_0.png',
+ nbUndLegs:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_legs_${i}.png`),
+ nbUndSmear:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_smear_${i}.png`),
+ nbUndMelt:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_melt_${i}.png`),
+ nbUndLastMelt:RAW+'sprites/images/spr_undyneb_lastmelt_0.png',
+ nbUndArrowL:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_l_${i}.png`),
+ nbUndArrowR:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_r_${i}.png`),
+ nbUndArrowU:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_u_${i}.png`),
+ nbUndArrowD:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_d_${i}.png`),
+ nbUndArrowX:[0,1,2,3].map(i=>RAW+`sprites/images/spr_bullet_testx_arrow_${i}.png`),
+ nbUndWhiteSpear:RAW+'sprites/images/spr_whitespearbullet_0.png',
+ nbUndRiseSpear:RAW+'sprites/images/spr_risespearbullet_0.png',
+ nbUndSpearR:RAW+'sprites/images/spr_undynespear_r_0.png'
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
