@@ -2515,6 +2515,7 @@ function stopMenuMusic(reset=true){
  try{a.pause();if(reset)a.currentTime=0}catch(_){}
 }
 function stopMusic(){
+ wantedBattleMusic=null;
  stopMenuMusic(true);stopBattleMusicTracks();
  if(music.gameover){try{music.gameover.pause();music.gameover.currentTime=0}catch(_){}}
 }
@@ -2556,40 +2557,86 @@ function syncMenuMusic(){
    else if(audioUnlocked&&a.paused)startMenuMusic();
  }else if(!a.paused){try{a.pause()}catch(_){}}
 }
+// Boss themes stream in the background after the loading screen. A fight that starts
+// before its track has arrived fetches that track straight away (ahead of the queue)
+// and starts it the moment it lands, instead of staying silent.
+const MUSIC_LOADERS={
+ menu:()=>loadAudioAsset(MUSIC.menu,.36,true),
+ battle:()=>loadAudioAsset(MUSIC.battle,.48,true),
+ core:()=>loadAudioAsset(MUSIC.core,.48,true),
+ flowey:()=>loadAudioAsset(MUSIC.flowey,.48,true),
+ toriel:()=>loadAudioAsset(MUSIC.toriel,.50,true),
+ napstablook:()=>loadAudioAsset(MUSIC.napstablook,.50,true),
+ maddummy:()=>loadAudioAsset(MUSIC.maddummy,.50,true),
+ papyrusIntro:()=>loadAudioAsset(MUSIC.papyrusIntro,.50,true),
+ papyrus:()=>loadAudioAsset(MUSIC.papyrus,.50,true),
+ mettatonEx:()=>loadAudioAsset(MUSIC.mettatonEx,.50,true),
+ mettatonPre:()=>loadAudioAsset(MUSIC.mettatonPre,.50,true),
+ muffet:()=>loadAudioAsset(MUSIC.muffet,.50,true),
+ mettatonNeo:()=>loadAudioAsset(MUSIC.mettatonNeo,.50,true),
+ mettSad:()=>loadAudioAsset(MUSIC.mettSad,.50,true),
+ undyneex:()=>loadAudioAsset(MUSIC.undyneex,.50,true),
+ undyne:()=>loadSavedOrLocalUndyneMusic(),
+ undyneEnding1:()=>loadAudioAsset(MUSIC.undyneEnding1,.50,false),
+ undyneEnding2:()=>loadAudioAsset(MUSIC.undyneEnding2,.50,false),
+ sans:()=>loadAudioAsset(MUSIC.sans,.44,true),
+ flashback:()=>loadAudioAsset(MUSIC.flashback,.52,true),
+ gameover:()=>loadAudioAsset(MUSIC.gameover,.55,true),
+ mettatonQuiz:()=>loadAudioAsset(MUSIC.mettatonQuiz,.52,true)
+};
+const musicLoading={};
+function ensureMusicTrack(key){
+ if(music[key])return Promise.resolve(music[key]);
+ if(!musicLoading[key]){
+   const load=MUSIC_LOADERS[key];if(!load)return Promise.resolve(null);
+   musicLoading[key]=Promise.resolve().then(load).then(a=>{if(a&&!music[key])music[key]=a;return music[key]||a||null}).catch(()=>null).finally(()=>{if(!music[key])delete musicLoading[key]});
+ }
+ return musicLoading[key];
+}
+let wantedBattleMusic=null;
+function battleMusicKey(){
+ if(currentBoss==='flowey')return 'flowey';
+ if(currentBoss==='finalfroggit'||currentBoss==='whimsalot'||isCore3())return 'core';
+ if(currentBoss==='toriel')return 'toriel';
+ if(currentBoss==='napstablook')return 'napstablook';
+ if(currentBoss==='maddummy')return 'maddummy';
+ if(currentBoss==='sans5000')return 'sans';
+ if(currentBoss==='papyrus')return papyrusBlue?'papyrus':'papyrusIntro';
+ if(currentBoss==='undyneex')return uxDying?null:'undyneex';
+ if(currentBoss==='mettatonex')return (mex.phase==='battle'&&!mex.killed)?'mettatonEx':null;
+ if(currentBoss==='mettatonneo')return neo.dying?null:'mettatonNeo';
+ if(currentBoss==='muffet')return 'muffet';
+ if(currentBoss==='undyne')return undyneDying?(undyneDeathTrackPhase>=2?'undyneEnding2':'undyneEnding1'):'undyne';
+ if(currentBoss==='mettaton')return 'mettatonQuiz';
+ return 'battle';
+}
+function inBattleScreen(){return screen==='battle'||screen==='nb'}
 function startBattleMusic(){
  const over=music.gameover;if(over){over.pause();over.currentTime=0}
  stopMenuMusic(false);
  for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}
-
- // Standard encounters use UNDERTALE's actual Enemy Approaching battle track
- // (mus_battle1.ogg), NOT mus_prebattle1. Dedicated boss themes override it below.
- let track=music.battle;
- if(currentBoss==='flowey'){track=music.flowey||music.battle;if(track){track.playbackRate=1;track.preservesPitch=false;track.mozPreservesPitch=false;track.webkitPreservesPitch=false}}
- else if(currentBoss==='finalfroggit'||currentBoss==='whimsalot'||isCore3())track=music.core||music.battle;
- else if(currentBoss==='toriel')track=music.toriel||music.battle;
- else if(currentBoss==='napstablook')track=music.napstablook||music.battle;
- else if(currentBoss==='maddummy')track=music.maddummy||music.battle;
- else if(currentBoss==='sans5000')track=music.sans||music.battle;
- else if(currentBoss==='papyrus'){
-   track=papyrusBlue?(music.papyrus||music.papyrusIntro||music.battle):(music.papyrusIntro||music.battle);
- }else if(currentBoss==='undyneex')track=uxDying?null:(music.undyneex||null);
- else if(currentBoss==='mettatonex')track=(mex.phase==='battle'&&!mex.killed)?(music.mettatonEx||null):null;
- else if(currentBoss==='mettatonneo')track=neo.dying?null:(music.mettatonNeo||null);
- else if(currentBoss==='muffet')track=music.muffet||music.battle;
- else if(currentBoss==='undyne')track=undyneDying?(undyneDeathTrackPhase>=2?(music.undyneEnding2||null):(music.undyneEnding1||null)):(music.undyne||null);
- else if(currentBoss==='mettaton')track=music.mettatonQuiz||music.battle;
-
- if(track)playMusicElement(track);
+ const key=battleMusicKey();
+ wantedBattleMusic=key;
+ if(!key)return;
+ const track=music[key];
+ if(key==='flowey'&&track){track.playbackRate=1;track.preservesPitch=false;track.mozPreservesPitch=false;track.webkitPreservesPitch=false}
+ if(track){playMusicElement(track);return}
+ ensureMusicTrack(key).then(a=>{
+   if(!a||wantedBattleMusic!==key||!inBattleScreen()||battleMusicKey()!==key)return;
+   if(battleMusicTracks().some(t=>t&&!t.paused))return;
+   playMusicElement(a);
+ });
 }
 
 
 function switchPapyrusBlueMusic(){
  if(currentBoss!=='papyrus')return;
  if(music.papyrusIntro){music.papyrusIntro.pause();music.papyrusIntro.currentTime=0}
- if(music.papyrus){
-   music.papyrus.currentTime=0;
-   music.papyrus.play().catch(()=>{});
- }
+ wantedBattleMusic='papyrus';
+ ensureMusicTrack('papyrus').then(a=>{
+   if(!a||wantedBattleMusic!=='papyrus'||currentBoss!=='papyrus'||!inBattleScreen())return;
+   a.currentTime=0;playMusicElement(a);
+ });
 }
 // Exact UNDERTALE border 0 dialogue box: [32,602,250,385].
 const DIALOG=utRect(32,250,570,135);
@@ -28954,28 +29001,28 @@ async function boot(){
  IMG.scythemareSlash.forEach((u,i)=>add(`Scythemare thrash slash ${i+1}`,async()=>{images.scythemareSlash=images.scythemareSlash||[];images.scythemareSlash[i]=await needImage(u)}));
  // Source Rude Buster caster frames remain unused: this battle system has no standing party actors.
  for(const [name,url] of Object.entries(SFX))add(`SFX ${name}`,async()=>sounds[name]=await loadAudioAsset(url,name==='encounterNoise'?.93:((name==='text'||name==='torielText')?.18:(name==='susieText'?.22:(name==='noelleText'?.18:(name==='papyrusText'?.28:(name==='sansText'?.22:(name==='asgoreText'?.24:(name==='icespell'||name==='petrify'?.78:.66))))))),false));
- add('Menu Theme',async()=>music.menu=await loadAudioAsset(MUSIC.menu,.36,true));
- add('Enemy Approaching',async()=>music.battle=await loadAudioAsset(MUSIC.battle,.48,true));
- addBg('CORE',async()=>music.core=await loadAudioAsset(MUSIC.core,.48,true));
- addBg('Your Best Friend / Flowey',async()=>music.flowey=await loadAudioAsset(MUSIC.flowey,.48,true));
- addBg('Heartache',async()=>music.toriel=await loadAudioAsset(MUSIC.toriel,.50,true));
- addBg('Ghost Fight',async()=>music.napstablook=await loadAudioAsset(MUSIC.napstablook,.50,true));
- addBg('Dummy!',async()=>music.maddummy=await loadAudioAsset(MUSIC.maddummy,.50,true));
- addBg('Nyeh Heh Heh!',async()=>music.papyrusIntro=await loadAudioAsset(MUSIC.papyrusIntro,.50,true));
- addBg('Bonetrousle',async()=>music.papyrus=await loadAudioAsset(MUSIC.papyrus,.50,true));
- addBg('Death by Glamour',async()=>{music.mettatonEx=await loadAudioAsset(MUSIC.mettatonEx,.50,true);if(currentBoss==='mettatonex'&&screen==='battle'&&audioUnlocked&&mex.phase==='battle'&&!mex.killed)startBattleMusic()});
- addBg('Mettaton pre-transform',async()=>music.mettatonPre=await loadAudioAsset(MUSIC.mettatonPre,.50,true));
- addBg('Spider Dance',async()=>{music.muffet=await loadAudioAsset(MUSIC.muffet,.50,true);if(currentBoss==='muffet'&&screen==='battle'&&audioUnlocked)startBattleMusic()});
- addBg('Power of NEO',async()=>{music.mettatonNeo=await loadAudioAsset(MUSIC.mettatonNeo,.50,true);if(currentBoss==='mettatonneo'&&screen==='battle'&&audioUnlocked&&!neo.dying&&state!=='mexScene')startBattleMusic()});
- addBg('Mettaton sad',async()=>music.mettSad=await loadAudioAsset(MUSIC.mettSad,.50,true));
- addBg('Battle Against a True Hero',async()=>{music.undyneex=await loadAudioAsset(MUSIC.undyneex,.50,true);if(currentBoss==='undyneex'&&screen==='battle'&&audioUnlocked&&!uxDying)startBattleMusic()});
- addBg('Undyne exact music slot',async()=>music.undyne=await loadSavedOrLocalUndyneMusic());
- addBg('Undyne An Ending excerpt 1',async()=>music.undyneEnding1=await loadAudioAsset(MUSIC.undyneEnding1,.50,false));
- addBg('Undyne An Ending excerpt 2',async()=>music.undyneEnding2=await loadAudioAsset(MUSIC.undyneEnding2,.50,false));
- addBg('sans.',async()=>music.sans=await loadAudioAsset(MUSIC.sans,.44,true));
- addBg('Flashback (Excerpt)',async()=>music.flashback=await loadAudioAsset(MUSIC.flashback,.52,true));
- addBg('game over music',async()=>music.gameover=await loadAudioAsset(MUSIC.gameover,.55,true));
- addBg('Mettaton Quiz Show',async()=>music.mettatonQuiz=await loadAudioAsset(MUSIC.mettatonQuiz,.52,true));
+ add('Menu Theme',async()=>music.menu=await ensureMusicTrack('menu'));
+ add('Enemy Approaching',async()=>music.battle=await ensureMusicTrack('battle'));
+ addBg('CORE',async()=>music.core=await ensureMusicTrack('core'));
+ addBg('Your Best Friend / Flowey',async()=>music.flowey=await ensureMusicTrack('flowey'));
+ addBg('Heartache',async()=>music.toriel=await ensureMusicTrack('toriel'));
+ addBg('Ghost Fight',async()=>music.napstablook=await ensureMusicTrack('napstablook'));
+ addBg('Dummy!',async()=>music.maddummy=await ensureMusicTrack('maddummy'));
+ addBg('Nyeh Heh Heh!',async()=>music.papyrusIntro=await ensureMusicTrack('papyrusIntro'));
+ addBg('Bonetrousle',async()=>music.papyrus=await ensureMusicTrack('papyrus'));
+ addBg('Death by Glamour',async()=>{music.mettatonEx=await ensureMusicTrack('mettatonEx');if(currentBoss==='mettatonex'&&screen==='battle'&&audioUnlocked&&mex.phase==='battle'&&!mex.killed)startBattleMusic()});
+ addBg('Mettaton pre-transform',async()=>music.mettatonPre=await ensureMusicTrack('mettatonPre'));
+ addBg('Spider Dance',async()=>{music.muffet=await ensureMusicTrack('muffet');if(currentBoss==='muffet'&&screen==='battle'&&audioUnlocked)startBattleMusic()});
+ addBg('Power of NEO',async()=>{music.mettatonNeo=await ensureMusicTrack('mettatonNeo');if(currentBoss==='mettatonneo'&&screen==='battle'&&audioUnlocked&&!neo.dying&&state!=='mexScene')startBattleMusic()});
+ addBg('Mettaton sad',async()=>music.mettSad=await ensureMusicTrack('mettSad'));
+ addBg('Battle Against a True Hero',async()=>{music.undyneex=await ensureMusicTrack('undyneex');if(currentBoss==='undyneex'&&screen==='battle'&&audioUnlocked&&!uxDying)startBattleMusic()});
+ addBg('Undyne exact music slot',async()=>music.undyne=await ensureMusicTrack('undyne'));
+ addBg('Undyne An Ending excerpt 1',async()=>music.undyneEnding1=await ensureMusicTrack('undyneEnding1'));
+ addBg('Undyne An Ending excerpt 2',async()=>music.undyneEnding2=await ensureMusicTrack('undyneEnding2'));
+ addBg('sans.',async()=>music.sans=await ensureMusicTrack('sans'));
+ addBg('Flashback (Excerpt)',async()=>music.flashback=await ensureMusicTrack('flashback'));
+ addBg('game over music',async()=>music.gameover=await ensureMusicTrack('gameover'));
+ addBg('Mettaton Quiz Show',async()=>music.mettatonQuiz=await ensureMusicTrack('mettatonQuiz'));
  loadTotal=tasks.length;
  // iOS Safari/WebViews are much happier with a small request pool than ~500
  // simultaneous image/audio loads, so they keep 4 workers. Desktop/hosted pages
