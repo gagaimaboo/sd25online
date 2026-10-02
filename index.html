@@ -29452,7 +29452,8 @@ const NB=(()=>{
  function pagesOf(text,end){
   const p=NB.toUT(text);
   // Text already in UT codes keeps its own "/" and "%"; add the end code if missing.
-  if(!Array.isArray(p))return [/[\/%^]\s*$/.test(p)&&/\/[%^]?\s*$/.test(p)?p:p+end];
+  // A mid-string "/" halts OBJ_WRITER and continues with the rest as the next page.
+  if(!Array.isArray(p)){const q=/[\/%^]\s*$/.test(p)&&/\/[%^]?\s*$/.test(p)?p:p+end;return q.split(/(?<=\/)(?![%^]|\s*$)/)}
   return p.map((s,i)=>i<p.length-1?s+'/':s+end);
  }
  function write(text,opt={}){
@@ -29614,7 +29615,7 @@ const NB=(()=>{
  function hurtMonster(){
   const m=S.mons[S.target];
   // obj_*monster alarm[3]: hurt frame, dmgwriter + snd_damage, then shudder 16,-16,14,-14...
-  m.hurt=true;m.shudder=16;m.shakeT=0;snd('damage');
+  m.hurt=true;m.shudder=m.def.shudder?.[0]??16;m.shakeT=0;snd('damage');
   spawnDmgWriter(m,m.takedamage);
   m.hurtanim=3;
  }
@@ -29626,7 +29627,8 @@ const NB=(()=>{
   if(m.hurtanim!==3)return;
   if(++m.shakeT<2)return;m.shakeT=0;
   m.x+=m.shudder;
-  if(m.shudder<0)m.shudder=-(m.shudder+2);else m.shudder=-m.shudder;
+  const sd=m.def.shudder?.[1]??2;
+  if(m.shudder<0)m.shudder=-(m.shudder+sd);else m.shudder=-m.shudder;
   if(m.shudder===0){
    m.hurtanim=0;m.x=m.x0;m.hurt=false;
    m.hp-=m.takedamage;
@@ -29808,9 +29810,19 @@ const NB=(()=>{
   if(opt.min&&amt<opt.min)amt=opt.min;if(opt.max&&amt>opt.max)amt=opt.max;
   S.hp=Math.max(0,S.hp-amt);snd('hurt');
   S.shake={h:2,v:2,speed:2,t:0};
-  S.invc=S.inv;
+  S.invc=Math.round(S.inv*(opt.inv||1));
   if(S.hp<=0)gameOver();
   return true;
+ }
+ function damageStd(dmg,opt={}){
+  // scr_damagestandard: mode 1 blue (only hurts while moving), 2 orange (only while still);
+  // +1 damage for each HP threshold the player is above.
+  const mode=opt.mode||0;
+  if(mode===1&&!NB.heartMoving())return false;
+  if(mode===2&&NB.heartMoving())return false;
+  let d=dmg;
+  if(S.hp>20)d++;for(let t=30;t<=90;t+=10)if(S.hp>=t)d++;
+  return damagePlayer(d,opt);
  }
  function bulletsStep(){
   const f=NB.inner();
@@ -29939,7 +29951,7 @@ const NB=(()=>{
  Object.defineProperty(api,'heart',{get:()=>S&&S.heart});
  Object.assign(api,{
   rnd,clamp,dcos,dsin,snd,img,
-  spawn,damage:damagePlayer,border:n=>NB.setBorder(n),borderRect:(l,r,t,b)=>NB.setBorderRect(l,r,t,b),
+  spawn,damage:damagePlayer,damageStd,border:n=>NB.setBorder(n),borderRect:(l,r,t,b)=>NB.setBorderRect(l,r,t,b),
   turntimer:n=>{S.turntimer=n},inner:()=>NB.inner(),ideal:()=>S.ideal,
   moving:()=>NB.heartMoving(),soul:mode=>{S.soulMode=mode;if(S.mnfight===2)S.heart.mode=mode},
   write,alive,spareable:monsterSpareable,endTurn:()=>{S.turntimer=0},
@@ -32268,6 +32280,289 @@ const NB=(()=>{
   flavor:m=>m.v.spares?'* Papyrus is sparing you.':'* Papyrus is preparing a bone&  attack.'
  });
 })();
+/* ---- NB content: Waterfall I (obj_aaron + obj_aaronbody, obj_muscbulgen/blt_muscbul,
+   obj_sweatbulgen/blt_sweatdrop; obj_woshua + obj_woshbody, obj_woshspiralgen/blt_growbullet,
+   blt_soapbul/blt_shinebullet) ---- */
+(()=>{
+ const {rnd,snd,dcos,dsin}=NB,R=Math.round;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum
+ const gg3=()=>Math.floor(rnd(3));
+ const tick=(o,k)=>o[k]>0&&--o[k]<=0;
+ // GameMaker motion: speed/direction + friction, as the source objects use it.
+ function setDir(b,dir,sp){b.dir=dir;b.sp=sp;b.vx=dcos(dir)*sp;b.vy=-dsin(dir)*sp}
+ function gmMove(b){
+  if(b.fric){const s=Math.hypot(b.vx,b.vy);if(s>0){const n=Math.max(0,s-b.fric);b.vx*=n/s;b.vy*=n/s}}
+  b.x+=b.vx;b.y+=b.vy;
+ }
+ const ideal=()=>S().ideal;
+ const goldBonus=(m,n)=>{m.goldBonus=m.mercymod>10&&m.hp===m.maxhp?n:0};
+
+ // ------------------------------------------------------------------ Aaron --
+ function muscle(m,api,side,offset,dmg){
+  const [L,Rr,T,B]=ideal();
+  let x=side===1?(offset?L-34:L+4):(offset?Rr+34:Rr-4);
+  const right=x>320;if(right)x-=86;
+  // blt_muscbul: rises at 3 (4 with company), flexing between two frames every 15 steps.
+  return api.spawn({x,y:B+12,vy:-3,manual:true,clip:true,wallKill:false,kill:false,dmg,fr:0,right,flex:15,offset,
+   box:[0,30,86,18],
+   step(b){
+    if(tick(b,'flex')){b.fr=1-b.fr;b.flex=15;if(b.offset)b.vy=-4}
+    b.y+=b.vy;
+    const bb=b.right?(b.fr?[12,17,77,30]:[1,30,86,16]):(b.fr?[0,17,75,26]:[0,30,86,18]);b.box=bb;
+    if(b.y<150)b.alive=false;
+   },
+   draw(g,b){const im=(b.right?images.aaronArmR:images.aaronArmL)?.[b.fr];if(im)g.drawImage(im,R(b.x),R(b.y))},
+   // Its own collision: not destroyed, double invincibility.
+   onHit(b){return api.damage(b.dmg,{inv:2})}});
+ }
+ function sweat(m,api,dmg){
+  const [L,Rr,T]=ideal(),st=api.S;
+  const n=st.bullets.filter(b=>b.sweat&&b.alive).length+1,gg=n%4;
+  let x,y,dir;
+  if(gg<2){x=st.edge.L+rnd(Rr-L);y=T-40;dir=270}
+  else if(gg===2){x=L-16;y=T-40+rnd(118)*1.5;dir=310}
+  else{x=Rr+16;y=T-40+rnd(118)*1.5;dir=235}
+  const b=api.spawn({x,y,sweat:1,manual:true,clip:true,wallKill:false,kill:true,dmg,alpha:0,box:[5,6,2,3],img:images.napstaTear,
+   step(b){gmMove(b);if(b.alpha<1)b.alpha+=.05}});
+  setDir(b,dir,3.5);
+ }
+ const AARON_SPEECH=c=>c>=75?'Whew,&I\'m&sweating&; )':c>=50?'Edu-&cation?&Hobby?&Talent?':c>=25?'No need&for a&swimming&suit ; )':'Come on&in, the&water\'s&fine ; )';
+ NB.defs.set('aaron',{
+  name:'Aaron',hp:98,atk:7,def:2,xp:52,gold:25,mercymod:5,wd:100,shudder:[8,1],
+  encounter:'* Aaron flexes in!',
+  size:()=>({w:114,h:200}),pos:(i,n,cx)=>n===1?{x:216,y:38}:{x:R(cx-57),y:38},
+  dmgPos:m=>({x:m.x+57-48,y:m.y+140}),
+  setup(m){Object.assign(m.v,{flex:0,siny:0,yo:0})},
+  draw(g,m){
+   if(m.hurt){const im=images.aaron?.[0];if(im)g.drawImage(im,R(m.x),R(m.y));return}
+   // obj_aaronbody: spr_aaronbody at 2x, bobbing sin(siny/30)*9.
+   const im=images.aaronBody;if(im)g.drawImage(im,R(m.x),R(m.y+m.v.yo+Math.sin(m.v.siny/30)*9),114,198);
+  },
+  step(m,api){
+   const v=m.v;v.siny++;
+   // obj_aaron: once the flex-out text reaches its second page he rises at vspeed -4.
+   if(v.flexOut){const w=api.S.writer;if(v.flexOut===2||(w&&!w.done&&w.no>=1)){v.flexOut=2;v.yo-=4}}
+   goldBonus(m,30);
+  },
+  bubblePos:m=>({x:m.x+95,y:m.y-25}),
+  acts:['Check','Flex','Shoo'],
+  check:()=>'* AARON - ATK 24 DEF 12&* This seahorse has a lot of&  HP (Horsepower)./* All of his attacks are harder&  to dodge at the bottom of the&  box./',
+  act(m,i,name,api){
+   const v=m.v,st=api.S;v.heard=name;
+   if(name==='Shoo'){m.mercymod=-10;return '* You tell Aaron to go away.'}
+   // Flex: both of you get stronger; the third flex sends him out of the room.
+   let t=v.flex===0?'* You flex^1.&* Aaron flexes twice as hard.&* ATTACK increases for you two.':v.flex===1?'* You flex harder^1.&* Aaron flexes thrice as hard.&* ATTACK increases for you two.':null;
+   const out=v.flex===2;
+   if(out){m.mercymod=400;t='* You flex^1.&* Aaron flexes very hard.../* He flexes himself out of&  the room!'}
+   v.flex++;if(st.at<150)st.at+=15;m.atk++;
+   if(!out)return t;
+   v.flexOut=1;
+   return {text:t,then:()=>{
+    if(api.spareable(m)){m.alive=false;m.spared=true;m.gone=true;st.goldTotal+=m.gold+(m.goldBonus||0)}
+   }};
+  },
+  speech(m,api){
+   const v=m.v,st=api.S,g=gg3(),c=v.cmd=R(rnd(100));
+   let t=AARON_SPEECH(c);
+   const h=st.talked===-1||st.talked===90||st.talked===91?null:(v.heard||m.heardName);v.heard=null;
+   if(h==='Flex'){t='Flagrant&error&; )';if(v.flex===1)t='Flexing&contest?&OK, flex&more ; )';if(v.flex===2)t='Nice!!&I won\'t&lose&tho ; )'}
+   if(h==='Shoo')t=['Fiesty,&huh?&; )','Wow!&Spunky!&Love it&; )','You\'ll&change&your&mind ; )'][g];
+   if(h==='Check')t='CHECK&all you&want ; )';
+   if(h==='joke')t='Ha, nice.&My kind&of humor&; )';
+   st.talkLenExact=Math.max(st.talkLenExact||0,110);
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd;
+   api.border(7);api.turntimer(160);
+   let rate=25;if(p===3)rate*=2.4;if(p===2)rate*=1.7;
+   if(c>=0&&c<=50)v.gen={kind:'musc',a0:1,fs:rate+1,side:Math.floor(rnd(2))===1?-1:1,offset:p>1?1:0,dmg:m.atk};
+   else{let r=5;if(p===3)r*=2.7;if(p===2)r*=1.8;v.gen={kind:'sweat',a0:r,rate:r,dmg:7}}
+   let f='* Aaron is splashing you&  playfully.';
+   if(c>=25)f='* Aaron is sweating bullets^3.&* Literally.';
+   if(c>=50)f='* Aaron is admiring his own&  muscles.';
+   if(c>=75)f='* Smells like an underwater&  barnyard.';
+   if(c>=90)f='* Smells like a mussel farm.';
+   if(v.flex>0)f='* Aaron is ready for your&  next flex.';
+   if(m.hp<30)f='* Aaron\'s muscles droop&  comically.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g)return;
+   if(g.kind==='musc'){if(tick(g,'a0')){muscle(m,api,g.side,g.offset,g.dmg);g.side=-g.side;g.a0=Math.ceil(g.fs);g.fs-=2}}
+   else if(tick(g,'a0')){sweat(m,api,g.dmg);g.a0=Math.ceil(g.rate)}
+  },
+  endAttack(m){m.v.gen=null},
+  flavor:m=>m.hp<30?'* Aaron\'s muscles droop&  comically.':'* Aaron is splashing you&  playfully.'
+ });
+
+ // ----------------------------------------------------------------- Woshua --
+ // blt_growbullet: accelerates (friction -0.25) and grows with its speed; blue ones
+ // only hurt a moving SOUL; the green one heals 1 and makes Woshua spareable.
+ function growBullet(m,api,gen){
+  const sum=gen.sum;
+  const b=api.spawn({x:gen.x,y:gen.y,manual:true,clip:false,wallKill:false,kill:true,dmg:gen.dmg,fric:-.25,a7:45,alpha:1,blue:gen.blue?1:0,
+   step(b){
+    gmMove(b);
+    const sp=Math.hypot(b.vx,b.vy);b.sc=b.blue===3?sp/2:sp/3;
+    if(b.blue===3)b.a7+=.5;
+    if(--b.a7<=0){b.alive=false;return}
+    if(b.a7<10)b.alpha-=.1;
+    // spr_waterbul bbox (6,6)-(8,10) / spr_waterbul_mask (4,4)-(10,13) around the 7,7 origin, rotated and scaled.
+    const [x0,y0,x1,y1]=b.blue===3?[-3,-3,3,6]:[-1,-1,1,3],a=(b.dir+90)*Math.PI/180,s=b.sc;
+    let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
+    for(const [px,py] of [[x0,y0],[x1,y0],[x0,y1],[x1,y1]]){const rx=(px*Math.cos(a)+py*Math.sin(a))*s,ry=(-px*Math.sin(a)+py*Math.cos(a))*s;mnx=Math.min(mnx,rx);mny=Math.min(mny,ry);mxx=Math.max(mxx,rx);mxy=Math.max(mxy,ry)}
+    b.box=[mnx,mny,Math.max(1,mxx-mnx+1),Math.max(1,mxy-mny+1)];
+   },
+   draw(g,b){
+    const im=images.waterBul?.[b.blue===3?0:b.blue?1:2];if(!im||b.sc<=0)return;
+    g.save();g.globalAlpha=Math.max(0,b.alpha);g.translate(b.x,b.y);g.rotate(-(b.dir+90)*Math.PI/180);g.scale(b.sc,b.sc);g.drawImage(im,-7,-7);g.restore();
+   },
+   onHit(b){
+    if(b.blue===3){m.mercymod=200;m.v.clean=2;api.heal(1);snd('power');return true}
+    return api.damageStd(b.dmg,{mode:b.blue?1:0});
+   }});
+  setDir(b,gen.dir,.5);
+  if(sum===1){b.vx/=1.1;b.vy/=1.1;b.fric/=1.25}
+  if(gen.green===0&&gen.cleaner){b.blue=3;b.fric/=3}
+  return b;
+ }
+ function spiralStep(m,api){
+  const gen=m.v.gen;
+  if(tick(gen,'a0')){
+   gen.a0=gen.rate;growBullet(m,api,gen);
+   gen.green--;if(gen.green<0)gen.green=gen.sum>1?4:9;
+  }
+  gen.dir+=gen.turn;
+  if(gen.sum===1)gen.turn+=.05;else gen.turn+=.01;
+  if(gen.backwards)gen.turn-=.1;
+  if(gen.sum===1){gen.siner++;gen.x+=Math.sin(gen.siner/6)}
+ }
+ function soap(m,api,x,y,dmg,offset,speed){
+  // blt_soapbul: bounces off the four border objects, sheds glitter every 7 (10) steps.
+  let dir=rnd(180);if(dir<10)dir+=20;if(Math.abs(dir-90)<10)dir+=30;if(Math.abs(dir-180)<10)dir-=20;
+  const b=api.spawn({x,y,manual:true,clip:false,wallKill:false,kill:false,dmg,fric:-.04,a0:4,offset,img:images.soapBul,box:[6,6,18,28],
+   step(b){
+    if(tick(b,'a0')){shine(m,api,b.x+12,b.y+16,b.dmg-2);b.a0=7;if(b.offset){const s=Math.hypot(b.vx,b.vy)||1;b.vx*=5/s;b.vy*=5/s;b.a0=10}}
+    gmMove(b);
+    const e=api.S.edge,x0=b.x+6,x1=b.x+23,y0=b.y+6,y1=b.y+33;
+    const inX=x1>=e.L&&x0<=e.R+5,inY=y1>=e.T&&y0<=e.B+5;
+    if(inX&&y0<=e.T+5&&y1>=e.T){b.y-=b.vy;b.vy=-b.vy}
+    if(inX&&y1>=e.B&&y0<=e.B+5){b.y-=b.vy;b.vy=-b.vy}
+    if(inY&&x0<=e.L+5&&x1>=e.L){b.x-=b.vx;b.vx=-b.vx}
+    if(inY&&x1>=e.R&&x0<=e.R+5){b.x-=b.vx;b.vx=-b.vx}
+   },
+   onHit(b){api.damageStd(b.dmg);return false}});
+  setDir(b,dir,speed);
+  if(Math.abs(b.vx)<.2)b.vx*=3;if(Math.abs(b.vy)<.2)b.vy*=3;
+ }
+ function shine(m,api,x,y,dmg){
+  api.spawn({x,y,manual:true,wallKill:false,kill:true,dmg,sc:1.5,fr:0,box:[-7,-7,14,14],
+   step(b){b.fr+=.2;b.sc-=.03;if(b.sc<.1){b.alive=false;return}const h=4.5*b.sc;b.box=[-h,-h,2*h,2*h]},
+   draw(g,b){const im=images.glitterBul?.[Math.floor(b.fr)%2];if(!im)return;const d=20*b.sc;g.drawImage(im,b.x-10*b.sc,b.y-10*b.sc,d,d)},
+   onHit(b){api.damageStd(b.dmg);return true}});
+ }
+ const WOSH_PART=c=>c>=20?'hand':c>=15?'SOUL':c>=10?'leg':c>=5?'teeth&and eyes':'face';
+ NB.defs.set('woshua',{
+  name:'Woshua',hp:70,atk:7,def:1,xp:52,gold:25,mercymod:5,wd:104,shudder:[8,1],
+  encounter:'* Woshua shuffles up.',
+  size:()=>({w:110,h:112}),pos:(i,n,cx)=>n===1?{x:114,y:136}:{x:R(cx-55),y:136},
+  setup(m){Object.assign(m.v,{dub:0,clean:0,dirtyjoke:0,hy:34,fy:0,fu:1,a1:5,a2:5,ducky:18,waterxx:0,wu:1,anim:0})},
+  draw(g,m){
+   const v=m.v;
+   if(m.hurt){const im=images.woshuaSprite?.[1];if(im)g.drawImage(im,R(m.x),R(m.y));return}
+   // obj_woshbody: hanger, duck, two sloshing water strips, tub, tail, head and face (offsets as in the old engine).
+   const x=R(m.x),y=R(m.y),d=(im,dx,dy,w,h)=>{if(im)g.drawImage(im,x+dx,y+dy,w,h)};
+   d(images.woshHanger,30,6,52,30);
+   d(images.woshDuck?.[0],46,R(v.ducky-6),26,70);
+   if(images.woshWater){
+    g.drawImage(images.woshWater,0,0,16,28,R(x+40-Math.sin(v.anim/2)*4),y+34,32,56);
+    g.drawImage(images.woshWater,0,0,16,28,R(x+40+Math.sin(v.anim/2)*4),y+34,32,56);
+   }
+   d(images.woshBody,20,36,68,74);
+   const tail=images.woshTail||[];d(tail[Math.floor(v.anim)%Math.max(1,tail.length)],88,52,16,22);
+   d(images.woshHead,0,R(v.hy+2),44,44);
+   d(images.woshFace,4,R(v.hy+6+v.fy),24,18);
+  },
+  drawOver(g,m,api){
+   // The little bird's "tweet" (spr_blcontinyabove) while Woshua talks.
+   if(api.S.mnfight!==1||!m.v.tweet)return;
+   const im=images.nbBlconTinyAbove;if(im)g.drawImage(im,R(m.x),R(m.y-40));
+   NB.drawGlyph&&'tweet'.split('').forEach((ch,i)=>NB.drawGlyph(g,'plain',ch,m.x+35+i*9+R(rnd(1)-.5),m.y-30+R(rnd(1)-.5),'#000000'));
+  },
+  step(m,api){
+   const v=m.v;v.anim+=.2;
+   if(tick(v,'a1')){v.a1=5;v.fy+=v.fu;v.hy+=-v.fu/2;if(v.fy>3)v.fu=-2;if(v.fy<-6)v.fu=2}
+   if(tick(v,'a2')){v.a2=5;v.waterxx+=v.wu;if(v.waterxx>15)v.wu=-1;if(v.waterxx<1)v.wu=1;v.ducky-=v.wu}
+   goldBonus(m,25);
+  },
+  bubblePos:m=>({x:m.x+95,y:m.y-25}),
+  acts:['Check','Clean','Touch','Joke'],
+  check:()=>'* WOSHUA - ATK 18 DEF 5&* This humble germophobe seeks&  to cleanse the whole world./',
+  act(m,i,name,api){
+   const v=m.v;v.heard=name;
+   if(name==='Touch')return v.clean===2?'* You give Woshua a friendly&  pat.':'* You reach out^1.&* Woshua recoils from your&  touch.';
+   if(name==='Clean'){const t=v.clean===2?'* Woshua continues cleaning.':'* You ask Woshua to clean you^1.&* It hops around excitedly.';if(v.clean===0)v.clean=1;if(v.clean===2)v.clean=3;return t}
+   const jj=Math.floor(rnd(3));
+   const t=['* You tell a joke about two&  kids who played in a&  muddy flower garden.','* You tell a joke about a kid&  who ate a pie with&  their bare hands.','* You tell a joke about a kid&  who slept in the soil.'][jj]+'/* Woshua\'s powers neutralized!';
+   v.dirtyjoke++;
+   for(const o of api.alive())if(o.id==='aaron'){o.v.heard='joke';o.mercymod=450}
+   if(m.atk>3)m.atk-=2;
+   return t;
+  },
+  speech(m,api){
+   const v=m.v,st=api.S,c=v.cmd=R(rnd(100));
+   let t='Wosh u&'+WOSH_PART(c);
+   if(c>=25)t=(typeof menuTotalOutcome==='function'&&menuTotalOutcome('kills')>0)?'Your&SOUL&is&unclean':'*whistle&as it&cleans*';
+   if(c>=50)t='Out!!!&Darned&spot';
+   if(c>=75&&v.dub===1)t='Oops, I&meant...&scrub a&sub-SUBS';
+   if(c>=75&&v.dub===0){t='Scrub a&dub-dubs';v.dub=1}
+   const h=st.talked===-1||st.talked===90||st.talked===91?null:(v.heard||m.heardName);v.heard=null;
+   if(h==='Clean')t='Green&means&clean';
+   if(h==='Touch')t=v.clean===2?'Fresh!':'Yuck!';
+   if(h==='Joke')t='NO. THAT&JOKE\'S&TOO...&DIRTY';
+   v.tweet=1;
+   st.talkLenExact=Math.max(st.talkLenExact||0,110);
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd,[L,Rr,T,B]=api.S.ideal;
+   // The attack box (border 7) is where the generators are placed.
+   const b7=NB.BORDERS[7],w=b7[1]-b7[0],h=b7[3]-b7[2];
+   api.border(7);v.tweet=0;
+   let tt=160,rate=3;if(p===3)rate*=3;if(p===2)rate*=2;
+   let type=2;if(c>=0&&c<50)type=1;if(v.clean===1||v.clean===3)type=1;
+   if(type===1){
+    tt=p===1?150:180;if(p===1)rate=3;
+    rate+=v.dirtyjoke;if(v.dirtyjoke>3)v.dirtyjoke=2;
+    const gen={kind:'spiral',x:b7[0]+w/2,y:p>1?b7[2]+90+h/2:b7[2]-5+h/2,rate,a0:6,dir:0,turn:5,blue:1,green:-1+rnd(6),cleaner:0,backwards:0,sum:p,siner:rnd(30),dmg:m.atk};
+    if(p===1){gen.blue=0;if(c)gen.turn=6;if(Math.floor(rnd(2))===0){gen.turn=-6;gen.backwards=1}gen.dir=60+rnd(40)}
+    if(v.clean===1){gen.cleaner=1;v.clean=0}
+    if(v.clean===3){gen.cleaner=1;v.clean=2}
+    v.gen=gen;
+   }else{
+    let qd=0;if(v.dirtyjoke>0)qd=v.dirtyjoke*.5;if(qd>1)qd=1;
+    soap(m,api,b7[0]+w/2,b7[2]-60+h/2,m.atk,p>1?1:0,4-qd);
+    v.gen=null;
+   }
+   api.turntimer(tt);
+   let f='* Woshua wonders if tears are&  sanitary.';
+   if(c>=25)f='* Woshua is friends with&  a little bird.';
+   if(c>=50)f='* Woshua is rinsing off a&  pizza.';
+   if(c>=75)f='* Woshua is looking for some&  good clean fun.';
+   if(c>=90)f='* Smells like detergent.';
+   if(m.hp<30)f='* Woshua is revolted at its own&  wounds.';
+   return f;
+  },
+  attackStep(m,api){if(m.v.gen)spiralStep(m,api)},
+  endAttack(m){m.v.gen=null},
+  flavor:m=>m.hp<30?'* Woshua is revolted at its own&  wounds.':'* Woshua is friends with&  a little bird.'
+ });
+})();
+
 /* ---- NB 60 FPS: logic stays on UNDERTALE's 30 steps a second; drawing blends
    each moving thing between its last two step positions at the display's rate. */
 (()=>{
@@ -32316,6 +32611,7 @@ const NB_ASSETS={
  nbHeartBreak:RAW+'sprites/images/spr_heartbreak_0.png',
  nbShards:[0,1,2,3].map(i=>RAW+`sprites/images/spr_heartshards_${i}.png`),
  nbBulletGen:[0,1,2].map(i=>RAW+`sprites/images/spr_bulletgenmd_${i}.png`),
+ nbBlconTinyAbove:RAW+'sprites/images/spr_blcontinyabove_0.png',
  nbHeartBlue:RAW+'sprites/images/spr_heartblue_1.png', // _1 is image_index 0 (exports are swapped)
  nbPlainAtlas:RAW+'fonts/fnt_plain.png',
  nbBulletSm:RAW+'sprites/images/spr_bulletsm_0.png',
