@@ -29094,6 +29094,7 @@ async function boot(){
 }
  loadLabel=loadFailures.length?'loaded with network fallbacks':'ready';screen=tutorialWasPrompted()?'title':'tutorialPrompt';tutorialPromptSelected=0;canvas.focus();
 }
+const NB_PAPYRUS_GLYPHS={"32":[110,90,3,18,3,0],"33":[69,110,2,12,3,1],"34":[41,110,4,9,6,1],"35":[44,54,7,12,7,0],"36":[58,74,6,12,8,1],"37":[89,54,7,12,8,1],"38":[71,54,7,12,8,1],"39":[81,110,2,9,3,1],"40":[91,90,4,14,5,1],"41":[97,90,4,14,5,0],"42":[47,110,4,9,5,0],"43":[106,74,6,11,7,1],"44":[31,110,3,14,3,0],"45":[103,90,5,11,5,0],"46":[73,110,2,12,3,1],"47":[24,35,9,14,8,-1],"48":[53,54,7,12,7,0],"49":[36,110,3,13,7,2],"50":[18,74,6,12,7,1],"51":[83,74,5,14,7,1],"52":[62,54,7,12,7,0],"53":[90,74,5,14,7,1],"54":[42,74,6,12,7,1],"55":[98,54,6,14,7,1],"56":[30,90,5,12,7,1],"57":[36,54,6,14,7,0],"58":[77,110,2,12,3,1],"59":[8,110,3,15,4,0],"60":[20,54,7,13,7,0],"61":[115,90,5,10,7,1],"62":[113,54,6,13,7,1],"63":[114,74,5,12,5,0],"64":[87,35,9,12,10,0],"65":[18,2,12,14,12,0],"66":[73,2,11,14,12,1],"67":[99,2,11,14,12,1],"68":[86,2,11,14,12,0],"69":[60,2,11,15,12,0],"70":[46,35,9,14,9,0],"71":[15,19,11,14,12,1],"72":[53,19,10,14,12,1],"73":[57,110,2,14,4,1],"74":[77,35,8,14,8,0],"75":[89,19,10,14,11,1],"76":[35,35,9,14,9,0],"77":[28,19,11,14,12,1],"78":[13,35,9,14,11,1],"79":[32,2,12,14,14,1],"80":[57,35,8,15,8,0],"81":[2,2,14,15,13,1],"82":[67,35,8,14,9,1],"83":[2,19,11,14,12,0],"84":[112,2,11,14,11,0],"85":[41,19,10,14,12,1],"86":[2,35,9,14,9,0],"87":[46,2,12,14,13,0],"88":[101,19,9,14,9,0],"89":[77,19,10,14,10,0],"90":[65,19,10,14,10,0],"91":[26,110,3,14,5,1],"92":[112,19,9,14,7,0],"93":[21,110,3,14,5,1],"94":[13,110,6,7,7,1],"95":[107,35,7,15,7,0],"96":[85,110,2,7,5,1],"97":[2,90,5,12,6,0],"98":[2,74,6,12,8,1],"99":[51,90,5,12,6,1],"100":[34,74,6,12,8,1],"101":[26,74,6,12,7,1],"102":[37,90,5,12,5,0],"103":[98,35,7,15,7,0],"104":[23,90,5,12,7,1],"105":[65,110,2,12,4,1],"106":[29,54,5,18,4,-2],"107":[10,74,6,12,7,1],"108":[61,110,2,12,4,1],"109":[10,54,8,12,10,1],"110":[9,90,5,12,7,1],"111":[66,74,6,12,8,1],"112":[116,35,6,17,8,1],"113":[106,54,5,16,7,1],"114":[2,110,4,12,5,1],"115":[65,90,5,12,6,1],"116":[16,90,5,12,5,0],"117":[72,90,5,12,7,1],"118":[44,90,5,12,5,0],"119":[80,54,7,12,8,0],"120":[50,74,6,12,6,0],"121":[2,54,6,16,7,0],"122":[58,90,5,12,5,0],"123":[85,90,4,14,5,1],"124":[53,110,2,14,8,3],"125":[79,90,4,14,6,1],"126":[97,74,7,10,8,1],"127":[74,74,7,10,8,1]};
 const NB_PLAIN_GLYPHS={32:[2,2,9,16,9,0],33:[96,102,2,14,9,4],34:[77,102,5,6,9,3],35:[13,2,9,14,9,0],36:[75,2,8,15,9,1],37:[32,20,8,14,9,1],38:[92,52,8,14,9,1],39:[122,102,2,6,9,4],40:[9,102,5,15,9,3],41:[16,102,5,15,9,1],42:[43,102,6,10,9,1],43:[63,85,8,11,9,1],44:[63,102,3,15,9,3],45:[23,102,8,8,9,1],46:[84,102,2,14,9,4],47:[38,85,7,13,9,1],48:[82,36,8,14,9,1],49:[57,102,4,14,9,2],50:[92,69,7,14,9,1],51:[74,69,7,14,9,1],52:[82,20,8,14,9,1],53:[11,69,7,14,9,1],54:[83,69,7,14,9,1],55:[29,69,7,14,9,1],56:[38,69,7,14,9,1],57:[20,85,7,14,9,1],58:[112,102,2,12,9,3],59:[68,102,3,14,9,3],60:[73,85,8,11,9,1],61:[109,85,8,10,9,1],62:[83,85,8,11,9,1],63:[52,20,8,14,9,1],64:[12,20,8,14,9,1],65:[102,20,8,14,9,1],66:[72,20,8,14,9,1],67:[52,36,8,14,9,1],68:[72,52,8,14,9,1],69:[42,20,8,14,9,1],70:[62,20,8,14,9,1],71:[2,36,8,14,9,1],72:[62,52,8,14,9,1],73:[92,102,2,14,9,4],74:[101,85,6,14,9,1],75:[32,52,8,14,9,1],76:[11,85,7,14,9,1],77:[42,52,8,14,9,1],78:[42,36,8,14,9,1],79:[112,36,8,14,9,1],80:[2,52,8,14,9,1],81:[55,2,8,15,9,1],82:[92,36,8,14,9,1],83:[2,20,8,14,9,1],84:[92,20,8,14,9,1],85:[12,52,8,14,9,1],86:[22,20,8,14,9,1],87:[22,52,8,14,9,1],88:[22,36,8,14,9,1],89:[95,2,8,14,9,1],90:[56,69,7,14,9,1],91:[2,102,5,15,9,3],92:[24,2,9,14,9,0],93:[119,85,5,15,9,1],94:[104,102,6,4,9,2],95:[85,2,8,15,9,1],96:[116,102,4,4,9,2],97:[102,36,8,14,9,1],98:[52,52,8,14,9,1],99:[32,36,8,14,9,1],100:[82,52,8,14,9,1],101:[12,36,8,14,9,1],102:[110,69,7,14,9,1],103:[102,52,7,15,9,1],104:[2,85,7,14,9,1],105:[88,102,2,14,9,4],106:[51,102,4,15,9,2],107:[101,69,7,14,9,1],108:[100,102,2,14,9,4],109:[72,36,8,14,9,1],110:[2,69,7,14,9,1],111:[115,2,8,14,9,1],112:[35,2,8,15,9,1],113:[65,2,8,15,9,1],114:[93,85,6,14,9,2],115:[20,69,7,14,9,1],116:[65,69,7,14,9,1],117:[47,69,7,14,9,1],118:[62,36,8,14,9,1],119:[112,20,8,14,9,1],120:[105,2,8,14,9,1],121:[45,2,8,15,9,1],122:[29,85,7,14,9,1],123:[47,85,6,15,9,2],124:[73,102,2,15,9,4],125:[55,85,6,15,9,1],126:[33,102,8,8,9,1],127:[111,52,7,14,9,1]};
 /* ==========================================================================
    NEW BATTLE ENGINE (NB)
@@ -29209,7 +29210,8 @@ const NB=(()=>{
  // typer 2 (monster bubble): fnt_plain, black, 9px spacing, 20px lines, 2 frames/char.
  const TYPERS={
   1:{font:'main',color:'#ffffff',dx:20,dy:20,wrap:(x)=>x+602-55,speed:1,sound:'text',spacing:16,vspacing:32},
-  2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:2,sound:null,spacing:9,vspacing:20}
+  2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:2,sound:null,spacing:9,vspacing:20},
+  22:{font:'papyrus',color:'#000000',dx:10,dy:0,wrap:(x)=>x+200,speed:1,sound:'papyrusText',spacing:11,vspacing:20}
  };
  // Content written for the old engine uses "\n" and relies on word wrap. UNDERTALE
  // text uses "&" line breaks, "/" wait-for-Z and "%" message ends. Normalise to UT
@@ -29262,7 +29264,7 @@ const NB=(()=>{
     if(this.sound&&c!==' '&&c!=='/'&&c!=='%')snd(this.sound);
    }
    if(this.pos>=this.str.length){
-    const end=this.str.trimEnd();
+    const end=this.str.trimEnd().replace(/%%$/,'%');
     if(end.endsWith('/%')||end.endsWith('/^')||end.endsWith('/')||this.no+1<this.msgs.length)this.halt=1;
    }
   }
@@ -29299,8 +29301,8 @@ const NB=(()=>{
   return c;
  }
  function drawGlyph(g,font,ch,x,y,color){
-  if(font==='plain'){
-   const at=images.nbPlainAtlas,gl=NB_PLAIN_GLYPHS[ch.charCodeAt(0)];
+  if(font==='plain'||font==='papyrus'){
+   const pap=font==='papyrus',at=pap?images.nbPapyrusAtlas:images.nbPlainAtlas,gl=(pap?NB_PAPYRUS_GLYPHS:NB_PLAIN_GLYPHS)[ch.charCodeAt(0)];
    if(!at||!gl)return;
    const [sx,sy,sw,sh,,off]=gl;if(sw>0&&sh>0)g.drawImage(tinted(at,color),sx,sy,sw,sh,Math.round(x+off),Math.round(y),sw,sh);
    return;
@@ -29570,7 +29572,7 @@ const NB=(()=>{
   m.hurtanim=3;
  }
  function spawnDmgWriter(m,dmg){
-  const x=m.x+m.wd/2-48,y=m.y-24;
+  const p=m.def.dmgPos?m.def.dmgPos(m):null,x=p?p.x:m.x+m.wd/2-48,y=p?p.y:m.y-24;
   S.dmgw.push({x,y,ystart:y,vy:dmg!==0?-4:0,dmg,m,maxhp:m.maxhp,apparent:m.hp,actual:m.hp,life:-1,tick:0});
  }
  function monsterHurtStep(m){
@@ -29680,7 +29682,7 @@ const NB=(()=>{
      const wide=o.wide??(m.def.bubble==='wide');
      const pos=o.pos||(m.def.bubblePos?m.def.bubblePos(m):{x:m.x+m.w,y:m.y});
      const pages=(o.pages||[o.text]).map(t=>String(t).replace(/\n/g,'&'));
-     const w=new NB.Writer(pages,{typer:2,x:pos.x+(o.tx??(wide?20:15)),y:pos.y+10,sound:o.voice||m.def.voice||'text'});
+     const w=new NB.Writer(pages,{typer:o.typer||m.def.typer||2,x:pos.x+(o.tx??(wide?20:15)),y:pos.y+10,sound:o.voice||m.def.voice||'text'});
      if(o.onFace)w.onFace=o.onFace;
      S.bubbles.push({m,x:pos.x,y:pos.y,wide,img:o.img||(m.def.bubbleImg?m.def.bubbleImg(m):null),hold:!!o.hold,w});
     }
@@ -31744,6 +31746,481 @@ const NB=(()=>{
   endAttack(m){m.v.gen=null;m.v.torgen=0}
  });
 })();
+/* ---- NB content: Papyrus (obj_papyrusboss + obj_papyrusbody, blt_sizebone/blt_topbone,
+   obj_blueattackgen, blt_tobydogbone, blt_coolbus, blt_superbone, blt_scootdog,
+   obj_papyrusdeadhead/body) ---- */
+(()=>{
+ const {rnd,snd}=NB,R=Math.round,P=NB.pressed,H=NB.held;
+ const S=()=>NB.S;
+ // Every pattern is laid out from border 5's idealborder [192,442,250,385].
+ const L=192,RR=442,T=250,B=385;
+ const BLUE='#14a9ff';
+ // Some exports are opaque on black; knock the matte out once per image.
+ const matCache=new Map();
+ function mat(k,i){
+  const v=images[k],im=Array.isArray(v)?(v[i|0]||v[0]):v;if(!im)return null;
+  let c=matCache.get(im);if(!c){try{c=transparentCharacterSprite(im)||im}catch(_){c=im}matCache.set(im,c)}
+  return c;
+ }
+ // global.flag[67]: 0 first fight, -1/-2/-3 after each capture (then the fight starts blue), 1 killed.
+ const FLAG='utbg.nbPapyrusFlag67';
+ const getFlag=()=>{try{return Number(localStorage.getItem(FLAG))||0}catch(_){return 0}};
+ const setFlag=v=>{try{localStorage.setItem(FLAG,String(v))}catch(_){}};
+ const tick=(o,k)=>o[k]>0&&--o[k]<=0;
+
+ // ------------------------------------------------------------------ hurt --
+ // blt_sizebone user event 1 (every Papyrus bullet inherits it).
+ function papHurt(api,m,b){
+  const st=api.S,v=m.v;
+  if(st.invc>=1||v.cap)return false;
+  let amt=R(b.dmg-st.df/5);if(amt<3)amt=3;
+  if(!hardModeEnabled&&v.fighto>13){if(st.hp<10)amt--;if(st.hp<5)amt--}
+  st.hp-=amt;st.invc=st.inv*3;
+  snd('hurt');st.shake={h:2,v:2,speed:2,t:0};
+  if(st.hp>0){b.alive=false;return true}
+  // A hit that would kill you captures you instead.
+  st.hp=1;st.invc=50;v.cap={t:0};v.dc=1;v.tt=300;v.bgen=null;
+  for(const o of st.bullets)if(o.pap){o.active=2;o.hidden=true}
+  api.heart.vspeed=0;
+  return true;
+ }
+ // ------------------------------------------------------------------ bones --
+ function boneStep(b,api){
+  if(b.active!==1)return;
+  const [iL,iR,iT,iB]=api.S.ideal;
+  if(b.drawn&&b.osc){if(b.y<=b.ystart-b.oscmax||b.y>=b.ystart-b.oscmin)b.osc=-b.osc;b.y+=b.osc}
+  b.x+=b.hs;
+  if(b.x>iL-5&&b.x<iR-4)b.drawn=1;
+  if(b.kind==='s'){const y0=b.y+2,y1=iB-2;b.box=[3,2,7,Math.max(1,y1-y0+1)]}
+  else{const a=Math.min(b.y,iT+10),z=Math.max(b.y,iT+10);b.box=[3,a-b.y,7,z-a+1]}
+  if(b.x<iL-10&&b.hs<0)b.alive=false;
+  if(b.x>iR+10&&b.hs>0)b.alive=false;
+ }
+ function drawBone(g,b,api){
+  if(b.hidden)return;
+  const [iL,iR,iT,iB]=api.S.ideal,f=b.blue?1:0,x=R(b.x),y=R(b.y);
+  const top=mat('nbBoneTop',f),bot=mat('nbBoneBottom',f);
+  g.fillStyle=b.blue?BLUE:'#ffffff';
+  if(b.kind==='s'){
+   if(top)g.drawImage(top,x,y);if(bot)g.drawImage(bot,x,iB-10);
+   if(b.x>iL-5&&b.x<iR-4)g.fillRect(x+3,y+4,7,Math.max(0,iB-6-(y+4)+1));
+  }else{
+   if(bot)g.drawImage(bot,x,y);if(top)g.drawImage(top,x,iT+6);
+   if(b.x>iL-5&&b.x<iR-4){const a=Math.min(y,iT+10),z=Math.max(y,iT+10);g.fillRect(x+3,a,7,z-a+1)}
+  }
+ }
+ function bone(api,m,kind,x,y,hs,o={}){
+  return api.spawn({x,y,ystart:y,hs,manual:true,wallKill:false,kill:false,clip:true,pap:1,bone:1,kind,
+   dmg:o.dmg??6,blue:o.blue?1:0,osc:o.osc||0,oscmin:o.oscmin??20,oscmax:o.oscmax??20,drawn:0,active:1,box:[3,2,7,1],
+   step:boneStep,draw:drawBone,
+   onHit:b=>{if(b.active!==1)return false;if(b.blue&&!api.moving())return false;return papHurt(api,m,b)}});
+ }
+ // A pattern row: [kind, side ('L'|'R'), x offset, y offset from the floor, hspeed, extras].
+ function lay(api,m,rows){
+  for(const [k,side,dx,dy,hs,o] of rows){
+   const b=bone(api,m,k,(side==='L'?L:RR)+dx,B+dy,hs,o||{});
+   // collision_rectangle needs |heart.x - x| < 15 as well (obj_heart bbox is the full 16x16).
+   b.mask=h=>Math.abs(h.x-b.x)<15;
+  }
+ }
+ const bones=()=>S().bullets.filter(b=>b.bone&&b.alive);
+ // `blt_sizebone.speed = n`: every bone keeps its direction at the new speed.
+ const speedAll=n=>{for(const b of bones())b.hs=Math.sign(b.hs||1)*n};
+ const O=(osc,oscmin,oscmax)=>({osc,oscmin,oscmax});
+
+ // obj_papyrusboss mnfight==2, one block per fighto (descending in the source).
+ const PAT={
+  [-1]:(api,m)=>{lay(api,m,[['s','R',30,-20,-3],['s','R',200,-20,-3],['s','R',370,-40,-3]]);return 200},
+  0:(api,m)=>{lay(api,m,[['s','R',20,-20,-4],['s','R',150,-40,-4],['s','R',280,-40,-4],['s','R',410,-40,-4],['s','R',390,-60,-3],['s','R',510,-60,-3],['s','R',630,-60,-3]]);return 300},
+  1:(api,m,v)=>{lay(api,m,[['s','L',-10,-60,3],['t','L',-80,-40,3],['s','L',-230,-20,4],['s','L',-310,-20,4],['s','L',-390,-20,4],['s','L',-490,-50,4],['t','L',-580,-40,4]]);if(v.xfight>0)speedAll(4.5);return 220},
+  2:(api,m,v)=>{lay(api,m,[['s','L',-30,-60,3.5],['s','L',-160,-60,3.5],['s','L',-290,-60,3.5],['s','L',-390,-80,3.5,{blue:1}]]);if(v.xfight>0)speedAll(4);lay(api,m,[['s','R',1120,-30,-6]]);return 240},
+  3:(api,m,v)=>{lay(api,m,[['s','L',-40,-50,4],['t','L',-40,-90,4],['t','R',140,-40,-4],['s','L',-260,-20,4],['s','L',-280,-30,4],['s','L',-300,-40,4],['s','L',-320,-50,4],['s','L',-340,-50,4],['s','L',-360,-40,4],['s','L',-380,-30,4],['s','L',-400,-20,4]]);if(v.xfight>0)speedAll(4.5);return 150},
+  4:(api,m)=>{lay(api,m,[['s','L',-40,-30,4],['t','L',-40,-80,4],['s','L',-60,-30,4],['t','L',-60,-80,4],['s','L',-170,-60,4],['t','L',-170,-110,4],['s','L',-190,-60,4],['t','L',-190,-110,4],['s','L',-320,-90,4,{blue:1}],['s','R',480,-60,-4],['s','R',700,-30,-4],['t','R',700,-80,-4],['s','L',-700,-30,4],['t','L',-700,-80,4]]);return 240},
+  5:(api,m)=>{const r=[];
+   [[40,-30],[70,-45],[100,-60],[130,-45],[160,-30],[190,-15],[300,-15],[330,-30],[360,-45],[390,-60]].forEach(([x,y])=>r.push(['s','R',x,y,-3]));
+   [[700,-30],[730,-45],[760,-60],[790,-45],[820,-30],[850,-15],[970,-15],[1000,-30],[1030,-45],[1060,-60]].forEach(([x,y])=>r.push(['s','R',x,y,-4]));
+   lay(api,m,r);return 330},
+  6:(api,m)=>{lay(api,m,[['s','L',-10,-35,2],['s','L',-110,-35,2],['s','L',-210,-35,2],['s','R',10,-35,-2],['s','R',110,-35,-2],['s','R',210,-35,-2]]);return 200},
+  7:(api,m,v)=>{lay(api,m,[['s','L',-10,-20,2],['s','L',-110,-20,2],['s','L',-210,-20,2],['s','L',-310,-20,2],['s','R',10,-20,-2],['s','R',110,-20,-2],['s','R',210,-20,-2],['s','R',310,-20,-2]]);speedAll(v.xfight>0?4.4:4);return 150},
+  8:(api,m)=>{lay(api,m,[['s','R',40,-20,-4],['s','R',170,-20,-4],['t','R',170,-70,-4],['s','R',310,-30,-4],['t','R',310,-80,-4],['s','R',460,-40,-4],['t','R',460,-90,-4],['s','R',610,-50,-4],['t','R',610,-100,-4],['s','R',760,-60,-4],['t','R',760,-110,-4]]);speedAll(4.4);return 230},
+  9:(api,m)=>{lay(api,m,[['s','R',60,-60,-4],['s','R',220,-60,-4],['t','R',220,-100,-4],['s','R',360,-50,-4],['t','R',360,-90,-4],['s','R',500,-40,-4],['t','R',500,-80,-4],['s','R',640,-30,-4],['t','R',640,-70,-4],['s','R',780,-10,-4],['t','R',780,-50,-4],['s','R',990,-30,-4,O(-1,-1,30)],['t','R',990,-80,-4,O(-1,-1,30)],['s','R',1130,-50,-4,O(-2,-20,30)],['t','R',1130,-100,-4,O(-2,-20,30)]]);speedAll(4.2);return 355},
+  10:(api,m)=>{lay(api,m,[['s','L',-40,-30,4],['s','L',-60,-40,4],['t','L',-60,-90,4],['s','L',-80,-50,4],['t','L',-80,-100,4],['s','L',-100,-60,4],['t','L',-100,-110,4],['s','L',-280,-50,4],['t','L',-280,-100,4],['s','L',-295,-40,4],['t','L',-295,-90,4],['s','L',-310,-30,4],['t','L',-310,-80,4],['s','R',600,-30,-4,O(-3,-1,60)],['s','R',620,-30,-4,O(-3,-1,60)],['s','R',640,-30,-4,O(-3,-1,60)]]);speedAll(4.2);return 230},
+  11:(api,m)=>{const r=[];for(let i=0;i<8;i++)r.push(['s','R',60+i*80,i%2?-20:-80,-4.5,{blue:i%2?0:1}]);r.push(['s','R',1250,-80,-7,{blue:1}],['s','R',1330,-20,-7]);lay(api,m,r);return 250},
+  12:(api,m)=>{lay(api,m,[['s','L',-60,-30,4],['s','L',-87,-40,4],['s','L',-114,-50,4],['s','L',-141,-60,4],['s','L',-168,-50,4],['s','L',-195,-40,4],['s','L',-222,-30,4],['s','R',600,-30,-6.4],['s','R',640,-40,-6.4],['s','R',680,-50,-6.4],['s','R',720,-60,-6.4],['s','R',760,-50,-6.4],['s','R',800,-40,-6.4],['s','R',840,-30,-6.4]]);return 200},
+  13:(api,m)=>{lay(api,m,[['s','R',20,-30,-4,O(-3,-1,60)],['s','R',60,-30,-4,O(-3,-1,60)],['s','R',100,-30,-4,O(-3,-1,60)],['t','R',240,-10,-4,O(-3,-1,60)],['t','R',270,-10,-4,O(-3,-1,60)],['t','R',300,-10,-4,O(-3,-1,60)],['s','R',460,-30,-4],['t','R',460,-40,-4,O(-3,-1,40)],['s','R',580,-50,-4],['t','R',580,-60,-4,O(-3,-1,40)]]);return 220}
+ };
+ // fighto 14, the two fixed waves before the special attack.
+ function wave14(api,m,mc){
+  if(mc<20){lay(api,m,[[-60,-30],[-90,-40],[-120,-50],[-150,-60],[-180,-50],[-210,-40],[-240,-30]].map(([x,y])=>['s','L',x,y,4]).concat([[680,-30],[720,-40],[760,-50],[800,-60],[840,-50],[880,-40],[920,-30]].map(([x,y])=>['s','R',x,y,-6.4])));return 210}
+  const r=[];for(let i=0;i<8;i++)r.push(['s','R',10+i*80,i%2?-20:-80,-5,{blue:i%2?0:1}]);r.push(['s','R',1150,-80,-8,{blue:1}],['s','R',1230,-20,-8]);lay(api,m,r);return 200;
+ }
+
+ // ------------------------------------------------- the normal attack's cast --
+ function sprBox(k,i){const im=mat(k,i);return im?[im.naturalWidth||im.width,im.naturalHeight||im.height]:[0,0]}
+ function prop(api,m,o){
+  // blt_coolbus / blt_superbone / blt_scootdog: draw_self_border, hurt through blt_sizebone's user event 1.
+  return api.spawn(Object.assign({manual:true,wallKill:false,kill:false,clip:true,pap:1,active:1,frame:0,
+   step(b){if(b.active!==1)return;b.x+=b.hs;if(b.anim)b.frame+=b.anim;if(b.tick)b.tick(b,api)},
+   draw(g,b){if(b.hidden)return;const im=mat(b.spr,Math.floor(b.frame));if(im)g.drawImage(im,R(b.x),R(b.y))},
+   onHit:b=>b.active===1&&papHurt(api,m,b)},o));
+ }
+ const BBOX={nbScoot:[0,12,62,26],nbCBone:[2,10,38,49],nbOolBone:[3,40,103,19],nbDBone:[3,8,36,50],nbUdeBone:[0,35,111,23],nbSkateBone:[20,19,19,41]};
+ function normalAttack(api,m){
+  const os=O;
+  lay(api,m,[['s','L',-10,-20,4],['s','L',-60,-20,4],['s','R',160,-20,-4],['s','R',210,-20,-4],['s','L',-360,-60,4],['s','R',360,-60,-4],
+   ['s','L',-540,-30,4,os(-4,-1,60)],['s','R',540,-30,-4,os(-4,-1,60)],['t','L',-640,-50,4,os(-4,-1,60)],['t','R',640,-50,-4,os(-4,-1,60)],
+   ['s','L',-740,-30,4,os(-2,-1,40)],['s','R',740,-30,-4,os(-2,-1,40)],['s','L',-890,-30,4,os(-2,-1,40)],['s','R',890,-30,-4,os(-2,-1,40)],
+   ['s','R',1090,-30,-4,os(-1,-1,30)],['s','R',1120,-30,-4,os(-1,-1,30)],['s','R',1150,-30,-4,os(-1,-1,30)],
+   ['s','L',-1340,-30,4,os(-1,-1,30)],['s','L',-1370,-30,4,os(-1,-1,30)],['s','L',-1400,-30,4,os(-1,-1,30)]]);
+  const scoot=(x,y,hs,spr)=>prop(api,m,{x,y,hs,spr,dmg:3,anim:spr==='nbScoot'?.2:0,box:BBOX[spr],
+   tick(b){if(b.x<0)b.alive=false},mask:()=>true});
+  scoot(RR+2000,B-40,-5,'nbScoot');scoot(RR+2240,B-60,-5,'nbCBone');scoot(RR+2280,B-60,-5,'nbOolBone');
+  scoot(RR+2500,B-60,-5,'nbDBone');scoot(RR+2540,B-60,-5,'nbUdeBone');scoot(RR+2220,B-60,-4,'nbSkateBone');
+  const k=RR+1900;
+  for(let i=0;i<9;i++){
+   const bus=prop(api,m,{x:k+10+i*60,y:B-60,hs:-3,spr:'nbCoolbus',dmg:6,box:[5,10,51,(B-10)-(B-50)+1],tick:busTick});
+   bus.mask=()=>api.S.invc<2&&Math.abs(api.heart.x+25-bus.x)<50;
+  }
+  const sb=prop(api,m,{x:k+550,y:B-240,hs:-3,spr:'nbSuperbone',dmg:3,box:[15,15,26,223],appear:0,superbone:1,
+   tick(b){
+    const [iL,iR]=api.S.ideal,h=api.heart;
+    if(b.x<iR+40&&b.x>iR+10&&h.x>iR-60&&!b.appear){b.appear=1;b.y=h.y}
+    if(b.x<iL+20&&b.hs<0)api.border(5);
+    if(b.x<iL-40&&b.hs<0)b.alive=false;
+   }});
+  sb.mask=h=>api.S.invc<2&&Math.abs(h.x+30-sb.x)<80;
+  lay(api,m,[['s','R',970,-20,-1]]);
+ }
+ // blt_coolbus: holding UP while the superbone is coming lets the SOUL float up,
+ // and the top of the box follows it (border 51). One bus acts per frame.
+ function busTick(b,api){
+  const st=api.S,h=api.heart,sb=st.bullets.find(o=>o.superbone&&o.alive);
+  if(b.x<st.ideal[0]-100&&b.hs<0){b.alive=false;return}
+  if(sb&&b.x<st.ideal[1]&&H.up&&st._busMoved!==st.t&&h.x<sb.x+20&&h.y>50){
+   st._busMoved=st.t;
+   if(h.y<270)api.borderRect(st.ideal[0],st.ideal[1],R((h.y-20)/5)*5,st.ideal[3]);
+   if(h.vspeed>=-2&&h.yprev>h.y)h.vspeed=-2;
+  }
+ }
+
+ // -------------------------------------------------------------- talking --
+ const POS=m=>({x:m.x+145,y:m.y+52});
+ function say(api,m,pages,then,pos){
+  const p=pos||POS(m),st=api.S;
+  if(m.v.say)st.bubbles=st.bubbles.filter(b=>b!==m.v.say.b);
+  const b={m,x:p.x,y:p.y,wide:true,img:images.nbBlconWdShrt,w:new NB.Writer(pages,{typer:22,x:p.x+15,y:p.y+10,sound:'papyrusText'})};
+  st.bubbles.push(b);m.v.say={b,then};
+  return b;
+ }
+ function sayStep(api,m){
+  const v=m.v,st=api.S;if(!v.say)return;
+  // Bubbles are stepped by the talk/attack phases; anything else steps its own.
+  if(st.mnfight!==1&&st.mnfight!==2)v.say.b.w.step();
+  if(v.say.b.w.done){const s=v.say;v.say=null;if(!s.keep)st.bubbles=st.bubbles.filter(b=>b!==s.b);if(s.then)s.then()}
+ }
+ const introMusic=()=>music.papyrusIntro,bossMusic=()=>music.papyrus;
+ function fadeTrack(a,by){if(!a)return true;if(a._nbVol0===undefined)a._nbVol0=a.volume;a.volume=Math.max(0,a.volume-by);if(a.volume<.06){a.pause();a.volume=a._nbVol0;return true}return false}
+
+ // ---------------------------------------------------- obj_blueattackgen --
+ function blueGenStep(api,m){
+  const v=m.v,g=v.bgen,st=api.S,h=api.heart;
+  if(tick(g,'a0')){
+   if(v.tt<600){
+    const rsize=rnd(70);
+    if(Math.floor(rnd(2))===0)lay(api,m,[['s','R',20,-40+rsize,-3-rnd(3),{blue:1,dmg:1}]]);
+    else{const b=bone(api,m,'t',RR+20,T+40+rsize,-3-rnd(3),{blue:1,dmg:1});b.mask=hh=>Math.abs(hh.x-b.x)<15}
+    g.a0=Math.ceil(5+rnd(20));
+   }else g.a1=20;
+   v.tt+=37;
+  }
+  if(tick(g,'a1')){g.a3=2;g.a2=100}
+  if(tick(g,'a3')){if(!fadeTrack(introMusic(),.05))g.a3=2}
+  if(tick(g,'a2')){api.soul('blue');h.mode='blue';h.jumpstage=2;h.vspeed=-2;snd('bell');g.a4=2}
+  if(tick(g,'a4')){
+   if(h.y>B-60){
+    if(h.x>(st.ideal[0]+st.ideal[1])/2)lay(api,m,[['s','R',10,-20,-6]]);else lay(api,m,[['s','L',-10,-20,6]]);
+    g.a5=2;
+   }else g.a4=2;
+  }
+  if(tick(g,'a5')){
+   if(!bones().length&&st.invc<1){
+    v.dc=1;
+    say(api,m,[" YOU'RE BLUE NOW./"," THAT'S MY ATTACK!/"," NYEH HEH HEH& HEH HEH HEH& HEH HEH HEH!!!/%%"],()=>{
+     v.truefight=1;v.bgen=null;v.dc=0;v.tt=2;
+     papyrusBlue=true;try{switchPapyrusBlueMusic()}catch(_){}
+     st.nextFlavor="* You're blue now.";
+    });
+   }else g.a5=2;
+  }
+ }
+
+ // ------------------------------------------- the special attack (alarm 7) --
+ function specialTalk(api,m){
+  const v=m.v,dog=v.dog,st=api.S;
+  say(api,m,[' WHAT THE HECK!/',' THAT\'S MY& SPECIAL ATTACK!/%%'],()=>{
+   if(dog){dog.spr='nbTobySurprise';dog.frame=0;dog.anim=0}
+   say(api,m,[' HEY^1!& YOU STUPID DOG!/%%'],()=>{
+    if(dog)dog.frame=1;
+    say(api,m,[' DO YOU HEAR& ME!?/',' STOP MUNCHING ON& THAT BONE!!!/%%'],()=>{
+     if(dog){dog.spr='nbTobyScoot';dog.anim=.2;dog.hs=1}
+     say(api,m,[' HEY!!!& WHAT ARE YOU& DOING!!!/',' COME BACK HERE& WITH MY SPECIAL& ATTACK!!!/%%'],()=>{
+      api.border(5);
+      say(api,m,[' .../',' OH WELL./',' I\'LL JUST USE& A REALLY COOL& REGULAR ATTACK./%%'],()=>{
+       st.nextFlavor='* Papyrus is getting ready&  for a regular attack.';
+       if(dog)dog.alive=false;v.dog=null;v.dc=0;v.tt=Math.min(v.tt,2);
+      });
+     });
+    });
+   });
+  });
+ }
+ // ---------------------------------------------- the spare offer (alarm 8) --
+ function spareTalk(api,m){
+  const v=m.v;v.fadeBoss=1;
+  say(api,m,[' WELL...! *HUFF^1*& IT\'S CLEAR...& YOU CAN\'T^1! *HUFF^1*& DEFEAT ME!!!/',' YEAH!!!& I CAN SEE YOU& SHAKING IN YOUR& BOOTS!!!/',' THEREFORE I^1, THE& GREAT PAPYRUS^1,& ELECT TO GRANT& YOU PITY!!/','\\X I WILL \\RSPARE\\X YOU,& HUMAN!!!/',' \\XNOW\'S YOUR CHANCE& TO ACCEPT MY& \\RMERCY\\X./%%'],()=>{
+   v.fadeBoss=0;try{const a=bossMusic();if(a){a.pause();if(a._nbVol0!==undefined)a.volume=a._nbVol0}}catch(_){}
+   v.dc=0;m.mercymod=8000;m.df=-m.hp*2;v.spares=1;
+   api.S.nextFlavor='* Papyrus is sparing you.';
+  });
+ }
+ // ------------------------------------------------------------- capture --
+ const CAPTURED={
+  [-1]:[' YOU\'RE TOO WEAK!!& I WAS EASILY ABLE& TO CAPTURE YOU!!!/',' I WILL NOW SEND& YOU TO THE& CAPTURE ZONE!!/',' OR^1, AS SANS& CALLS IT^1.../',' OUR GARAGE???/',' YOU\'RE IN THE& DOGHOUSE NOW!/',' NYEH HEH HEH HEH& HEH HEH HEH!!!/%%'],
+  [-2]:[' WELL!!^1! YOU MAY& HAVE CLEVERLY& ESCAPED FROM& JAIL BEFORE.../',' BUT THIS TIME^1,& I\'VE UPGRADED& THE FACILITIES./',' NOT ONLY WILL& YOU BE& TRAPPED.../',' BUT YOU WON\'T& EVEN WANT& TO LEAVE!!!/',' NYEH HEH HEH HEH& HEH HEH HEH!!!/%%'],
+  [-3]:[' YOU ARE...& PERSISTENT!/',' BUT^1!& IT JUST WON\'T& WORK ON ME!/',' I AM THE& PERSISTENTEST!/',' AND IF YOU& THINK YOU ARE& PERSISTENESTER.../',' THAT IS WRONG^1!& GRAMATICALLY& WRONG!/',' BECAUSE THE& CORRECT FORM& WOULD BE.../',' NOT AS& PERSISTENTEST AS& PAPYRUS^1, THE& PERSISTENTESTEST!/',' I HOPE YOU& ENJOYED THIS& LESSON./',' NYEH HEH HEH HEH& HEH HEH HEH!!!/%%']
+ };
+ function captureStep(api,m){
+  const v=m.v,c=v.cap,st=api.S;c.t++;
+  if(c.t>=4&&!c.faded){const a=v.truefight?bossMusic():introMusic();c.faded=fadeTrack(a,.01)}
+  if(c.t===42)say(api,m,CAPTURED[v.flag]||[' THIS IS AN ERROR& MESSAGE^1.& REALLY!!!/%%'],()=>{c.fade=1;snd('asgoreText')});
+  if(c.fade){c.fade++;if(c.fade>=52){try{stopMusic()}catch(_){}api.end('captured')}}
+ }
+
+ // ---------------------------------------------------------------- death --
+ function deathStep(api,m){
+  const v=m.v,d=v.death,st=api.S;
+  const hd=d.head,bd=d.body;
+  // obj_papyrusdeadhead
+  if(hd.c===1){hd.hs=1.5;hd.g=.2;hd.vs=-1;hd.c=2}
+  if(hd.c===2&&hd.y>hd.y0+70){hd.hs=0;hd.vs=0;hd.g=0;hd.c=3}
+  if(hd.c===5){hd.g=.2;hd.c=6}
+  if(hd.c===6&&hd.y>hd.y0+135){hd.vs=0;hd.g=0}
+  hd.vs+=hd.g||0;hd.x+=hd.hs||0;hd.y+=hd.vs||0;
+  if(hd.c===7&&!hd.gone){hd.gone=1;vapor(st,mat('nbPapHead'),hd.x-2,hd.y-2)}
+  if(bd.c===4&&!bd.gone){bd.gone=1;vapor(st,mat('nbPapBody'),m.x,m.y)}
+  sayStep(api,m);
+  if(!tick(d,'a10'))return;
+  d.a10=2; // alarm[10] re-arms itself while the talk is on
+  const b4=d.b4;
+  if(b4===0){hd.c=1;d.a10=60;d.b4=1}
+  else if(b4===1){say(api,m,[v.murder?' W-WELL^1, THAT\'S& NOT WHAT I& EXPECTED.../%%':' ALAS^1, POOR& PAPYRUS!/%%'],null,{x:m.x+145,y:m.y+52});d.b4=2}
+  else if(b4===2&&!v.say){hd.c=4;bd.c=4;d.a10=30;d.b4=2.5}
+  else if(b4===2.5){hd.c=5;d.b4=3;d.a10=80}
+  else if(b4===3){say(api,m,v.murder?[' BUT.../',' ST..^1. STILL^1!& I BELIEVE IN& YOU!/',' YOU CAN DO A& LITTLE BETTER!/',' EVEN IF YOU& DON\'T THINK SO!/',' I..^1.& I PROMISE.../%%']:[' WELL^1, AT LEAST I& STILL HAVE MY& HEAD!/%%'],null,{x:m.x+145,y:m.y+104});d.b4=3.5}
+  else if(b4===3.5&&!v.say){d.b4=4;d.a10=100}
+  else if(b4===4){st.xpTotal+=200;hd.c=7;d.a10=150;d.b4=5}
+  else if(b4===5){d.b4=6;setFlag(1);m.alive=false;m.killed=true;api.win()}
+ }
+ function vapor(st,im,x,y){
+  if(!im)return;const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+  st.fx.push({kind:'vapor',m:{x,y,w,h,def:{draw:(g,mm)=>g.drawImage(im,mm.x,mm.y)}},line:0,parts:[]});
+  snd('vaporized');
+ }
+
+ const ACT_CODE={Check:0,Insult:1,Flirt:3};
+ NB.defs.set('papyrus',{
+  name:'Papyrus',hp:680,atk:8,def:2,xp:0,gold:0,wd:148,voice:'papyrusText',typer:22,
+  get encounter(){return papyrusGenocideMode()?'* Papyrus is sparing you.':'* Papyrus blocks the way!'},
+  size:()=>({w:148,h:208}),pos:()=>({x:250,y:42}),
+  dmgPos:m=>({x:m.x,y:m.y+150}),
+  setup(m){
+   const murder=papyrusGenocideMode();
+   let flag=getFlag();
+   const v=Object.assign(m.v,{fighto:-1,xfight:0,truefight:0,conversation:0,insult:0,hotcha:0,flirt2:0,date:0,xxtalk:0,
+    murder:murder?1:0,dc:0,tt:0,mycommand:0,prevhp:m.hp,hearthp:0,hearthp2:0,flag});
+   if(flag<0){v.truefight=1;v.conversation=1}
+   if(flag===-2)flag=-3;if(flag===-1)flag=-2;if(flag===0)flag=-1;
+   v.flag=flag;setFlag(flag);
+   if(murder){m.df=-20000;m.mercymod=8000;v.spares=1}
+   papyrusBlue=!!v.truefight; // startBattleMusic: Bonetrousle straight away after a capture
+   if(!sounds.bell)loadAudioAsset(RAW+'sound/audio/snd_bell.wav',.7,false).then(a=>{sounds.bell=a}).catch(()=>{});
+  },
+  draw(g,m){
+   const v=m.v;
+   if(v.death){
+    const d=v.death;
+    if(!d.body.gone){const im=mat('nbPapBody');if(im)g.drawImage(im,R(m.x),R(m.y))}
+    if(!d.head.gone){const im=mat('nbPapHead');if(im)g.drawImage(im,R(d.head.x-2),R(d.head.y-2))}
+    return;
+   }
+   if(m.hurt||(!m.alive&&!m.spared)){const im=mat('nbPapBoss',1);if(im)g.drawImage(im,R(m.x),R(m.y));return}
+   // obj_papyrusbody: spr_papyrusboss_anim at 2x over the boss.
+   const im=mat('nbPapAnim');if(im)g.drawImage(im,R(m.x),R(m.y),148,208);
+  },
+  drawOver(g,m,api){
+   const c=m.v.cap;
+   if(c&&c.fade){g.save();g.globalAlpha=Math.min(1,c.fade/40);g.fillStyle='#000';g.fillRect(-20,-20,680,520);g.restore()}
+  },
+  acts:m=>m.v.murder?['Check']:['Check','Flirt','Insult'],
+  check:m=>m.v.murder?'* PAPYRUS - ATK 3 DEF 3&* Forgettable./':'* PAPYRUS - ATK 20 DEF 20&* He likes to say:&  "Nyeh heh heh!"/',
+  act(m,i,name,api){
+   const v=m.v,st=api.S;v.wh=ACT_CODE[name]??-1;
+   if(name==='Insult'){
+    if(v.insult<=2&&!v.truefight){
+     const pages=v.insult===0?[' HOW SELFLESS.../',' YOU WANT ME TO& FEEL BETTER& ABOUT FIGHTING& YOU.../%%']:v.insult===1?[' THERE\'S NO NEED& TO LIE TO& YOURSELF!!!/%%']:[' DON\'T...!/%%'];
+     v.insult++;st.writer=null;
+     say(api,m,pages,()=>api.endPlayerTurn());
+     return {custom:true};
+    }
+    return v.truefight?'* Papyrus is too busy FIGHTing&  to accept your insult./':'* You INSULT^1, but to no avail^1.&* Seems ACTing won\'t escalate&  this battle.../';
+   }
+   if(name==='Flirt'){
+    v.hotcha++;
+    if(v.hotcha<=2&&!v.truefight){
+     v.date=1;st.writer=null;
+     if(v.hotcha===2){say(api,m,[' OH NO!!!/%%'],()=>api.endPlayerTurn());return {custom:true}}
+     say(api,m,[' WHAT!^1?& FL-FLIRTING!?/','\\X SO YOU FINALLY& REVEAL YOUR\\R & ULTIMATE FEELINGS\\X!/',' W-WELL^1!& I\'M A SKELETON& WITH VERY HIGH& STANDARDS!!!/%%'],()=>{
+      // bmenuno 6: two answers, the SOUL on the bottom row (idealborder0 + 32 + c*252, idealborder2 + 92).
+      v.choice={c:0};st.myfight=3;
+      st.writer=new NB.Writer(['   I can           I have zero&   make            redeeming&   spaghetti       qualities'],{instant:true});
+     });
+     return {custom:true};
+    }
+    return v.truefight?'* Papyrus is too busy FIGHTing&  to flirt back./':'* You FLIRT^1, but to no avail^1.&* Seems ACTing won\'t escalate&  this battle.../';
+   }
+   return '* Nothing happened.';
+  },
+  step(m,api){
+   const v=m.v,st=api.S;
+   if(st.t===2&&v.murder){try{stopMusic()}catch(_){}}
+   if(v.death){deathStep(api,m);return}
+   if(v.choice){
+    const h=st.heart;h.visible=true;
+    if(P.left||P.right){v.choice.c=1-v.choice.c;snd('move')}
+    h.x=st.ideal[0]+32+v.choice.c*252;h.y=st.ideal[2]+92;
+    if(P.confirm){
+     NB.clearPressed('confirm');snd('select');
+     v.wh=6+v.choice.c;v.choice=null;h.visible=false;st.writer=null;st.myfight=2;st.talked=v.wh;
+     say(api,m,v.wh===6?[' OH NO!!^1! YOU\'RE& MEETING ALL MY& STANDARDS!!!/',' I GUESS THIS MEANS& I HAVE TO GO ON A& DATE WITH YOU...?/%%']:[' OH NO!!^1!& THAT HUMILITY..^1.& IT REMINDS ME OF,/',' MYSELF!!!/',' YOU\'RE MEETING ALL&  MY STANDARDS!!!/%%'],()=>api.endPlayerTurn());
+    }
+    return;
+   }
+   if(st.mnfight!==2)sayStep(api,m);
+  },
+  // A killing blow: the head comes off and the two of them talk before turning to dust.
+  onLethal(m,api){
+   const st=api.S;st.myfight=99;st.mnfight=99;st.bubbles=[];
+   try{stopMusic()}catch(_){}
+   m.v.death={a10:30,b4:0,head:{x:m.x+41,y:m.y,y0:m.y,c:0},body:{c:0}};
+   return true;
+  },
+  onSpare(){setFlag(0)},
+  border:()=>5,
+  speech(m,api){
+   const v=m.v,st=api.S;
+   if(v.death)return null;
+   const wh=st.talked===-1||st.talked===90||st.talked===91?-1:(v.wh??ACT_CODE[m.heardName]??-1);v.wh=null;
+   v.mycommand=R(rnd(100));
+   let text='  ...',talkify=false;
+   if(v.conversation===0&&st.talked===91)text=' OH^1, I SHOULD& HAVE BROUGHT ONE&  OF THOSE.';
+   if(v.conversation===0&&wh===-1&&st.talked!==91&&!v.murder){
+    talkify=true;
+    text=[m.hp<v.prevhp?' SO YOU\'RE& SERIOUS.../':' SO YOU WON\'T& FIGHT.../',' THEN^1, LET\'S SEE& IF YOU CAN HANDLE& MY FABLED& \'BLUE ATTACK!\'/%%'];
+    v.conversation=1;v.mycommand=-1;
+   }
+   if(m.hp<=140&&v.fighto<=14&&v.xfight<4){v.fighto=14;v.xfight=4}
+   if(m.hp<=80&&v.fighto<15){v.fighto=15;v.xfight=0}
+   if(v.truefight){
+    talkify=false;
+    const f=v.fighto,x=v.xfight,dt=v.date;let t=null;
+    if(f===-1)t=dt?' HMMM... I WONDER& WHAT I SHOULD& WEAR...':' BEHOLD!';
+    if(f===0){t=dt?' WHAT!? I\'M NOT& THINKING ABOUT& THAT DATE THING!!':' HOW HIGH CAN YOU& JUMP?';
+     if(v.hearthp2<v.hearthp&&v.xxtalk===0){t=' TRY HOLDING THE& \'UP\' BUTTON TO& JUMP!!!';v.fighto=-1;v.xxtalk=1}}
+    if(f===1){t='\\X YEAH!& DON\'T MAKE ME& USE MY \\RSPECIAL& ATTACK\\X!';
+     if(v.hearthp2<v.hearthp&&v.xxtalk<2){t=' HOLD \'UP\' LONGER& TO JUMP HIGHER!& JEEZ!!!';v.fighto=0;v.xxtalk=2}}
+    const lines={2:' I CAN ALMOST& TASTE MY FUTURE& POPULARITY!!!',3:' PAPYRUS:& HEAD OF THE& ROYAL GUARD!',4:' PAPYRUS:& UNPARALLELED& SPAGHETTORE!',5:' UNDYNE WILL BE& REALLY PROUD& OF ME!!',6:' THE KING WILL& TRIM A HEDGE& IN THE SHAPE& OF MY SMILE!!!',7:' MY BROTHER WILL& ... WELL, HE& WON\'T CHANGE& VERY MUCH.',8:' I\'LL HAVE LOTS& OF ADMIRERS!!& BUT...',10:' SOMEONE LIKE& YOU IS REALLY& RARE...',12:' AFTER YOU\'RE& CAPTURED AND& SENT AWAY.',13:' URGH...& WHO CARES!& GIVE UP!!'};
+    if(lines[f])t=lines[f];
+    if(f===9)t=dt?' WILL ANYONE LIKE& ME AS SINCERELY& AS YOU?':' HOW WILL I& KNOW IF PEOPLE& SINCERELY LIKE& ME???';
+    if(f===11)t=dt?' AND DATING MIGHT& BE KIND OF& HARD...':' I DON\'T THINK& THEY\'LL LET YOU& GO...';
+    if(f===14)t=x===0?'\\X GIVE UP OR& FACE MY...& \\RSPECIAL ATTACK\\X!!!':x===1?'\\X YEAH!!!& VERY SOON I WILL& USE MY& \\RSPECIAL ATTACK\\X! ':x===2?'\\X NOT TOO LONG& AND I WILL& USE THAT& \\RSPECIAL ATTACK\\X!!!':x>3?'\\X BEHOLD...!& MY \\RSPECIAL& ATTACK\\X!':'\\X THIS IS YOUR& LAST CHANCE...& BEFORE MY& \\RSPECIAL ATTACK\\X!!';
+    if(f===15)t=' *SIGH* HERE\'S AN& ABSOLUTELY& NORMAL ATTACK.';
+    if(t)text=t;
+   }
+   if(wh>-1&&v.fighto<0){
+    talkify=false;
+    if(wh===0)text=' NYEH HEH HEH!';
+    if(wh===1)text=v.insult>2?' DON\'T WASTE YOUR& WORDS ON ME!':v.insult===2?' YOUR BARBS HIDE A& HIDDEN AFFECTION^1!& YOU EMOTIONAL& CACTUS!':' I DON\'T DESERVE& SUCH HOSPITALITY& FROM YOU ...';
+    if(wh===6||wh===7||wh===3)text=' LET\'S DATE& L-LATER!^1!& AFTER I CAPTURE& YOU!';
+   }
+   if(v.murder)text='  ...';
+   // alarm[5]=320 (Z skips once the box is in place); the blue-attack challenge holds until read.
+   if(!talkify)st.talkLenExact=320;
+   return {pages:Array.isArray(text)?text:[text],wide:true,hold:talkify,pos:POS(m),tx:15,img:images.nbBlconWdShrt,voice:'papyrusText',typer:22};
+  },
+  attack(m,api){
+   const v=m.v,st=api.S,h=api.heart;
+   if(v.death)return null;
+   api.turntimer(99999);v.tt=4;v.dc=0;v.bgen=null;v.prevhp=m.hp;
+   const mc=v.mycommand;
+   const blue=()=>{api.soul('blue');h.mode='blue';h.vspeed=-1;h.jumpstage=2};
+   if(!v.truefight&&mc>=0){
+    v.tt=v.murder?2:140;api.border(5);
+    lay(api,m,[['s','R',10,-20+R(rnd(20)),-3],['s','R',90,-20+R(rnd(20)),-3],['s','R',170,-20+R(rnd(20)),-3]]);
+   }
+   if(v.truefight)api.soul('blue');
+   if(v.truefight&&v.fighto===15){blue();v.dc=4;v.tt=1300;api.border(5);normalAttack(api,m);v.fighto=16}
+   if(v.truefight&&v.fighto===14&&v.xfight>3){
+    blue();v.fighto=15;v.xfight=0;v.dc=1;api.border(50);
+    // blt_tobydogbone at the right edge (created before border 50 widens the box).
+    v.dog=api.spawn({x:RR,y:B-40,manual:true,wallKill:false,kill:false,clip:true,box:[0,0,0,0],hidden:false,spr:'nbTobyEat',frame:0,anim:.2,hs:0,
+     step(b){b.x+=b.hs},draw(g,b){const im=mat(b.spr,Math.floor(b.frame));if(im)g.drawImage(im,R(b.x),R(b.y),(im.naturalWidth||im.width)*2,(im.naturalHeight||im.height)*2)},onHit:()=>false});
+    v.a7=80;
+   }
+   if(v.truefight&&v.fighto===14){
+    blue();v.xfight++;
+    if(mc<40){api.border(5);v.tt=wave14(api,m,mc)}
+    else v.fighto=Math.floor(rnd(11))+2;
+   }
+   if(v.truefight&&v.fighto>=-1&&v.fighto<=13){
+    const f=v.fighto;v.fighto++;blue();api.border(5);v.tt=PAT[f](api,m,v);
+   }
+   if(mc===-1){api.border(5);v.tt=300;v.bgen={a0:20}}
+   v.hearthp=st.hp;
+   let fl=null;
+   if(mc>=0)fl='* Papyrus is preparing a bone&  attack.';
+   if(mc>15)fl='* Papyrus prepares a non-bone&  attack then spends a minute&  fixing his mistake.';
+   if(mc>=20)fl='* Papyrus is cackling.';
+   if(mc>=30)fl='* Papyrus whispers "Nyeh heh&  heh!"';
+   if(mc>=40)fl='* Papyrus is rattling his bones.';
+   if(mc>=60)fl='* Papyrus is trying hard to play&  it cool.';
+   if(mc>=80)fl='* Papyrus is considering his&  options.';
+   if(mc>=90)fl='* Smells like bones.';
+   if(mc>=97)fl='* Papyrus remembered a bad joke&  Sans told and is frowning.';
+   if(v.date)v.flirt2++;
+   const DATE=[null,'* Papyrus is thinking about&  what to wear for his date.','* Papyrus is thinking about&  what to cook for his date.','* Papyrus dabs some Bone&  Cologne behind his ear.','* Papyrus dabs marinara sauce&  behind his ear.','* Papyrus dabs MTT-Brand Bishie&  Cream behind his ear.','* Papyrus dabs MTT-Brand Anime&  Powder behind his ear.','* Papyrus dabs MTT-Brand Cute&  Juice behind his ear.','* Papyrus dabs MTT-Brand&  Attraction Slime behind his&  ear.','* Papyrus dabs MTT-Brand&  Beauty Yogurt behind his&  ear.','* Papyrus realizes he doesn\'t&  have ears.'];
+   if(v.flirt2>0&&v.flirt2<11)fl=DATE[v.flirt2];
+   if(m.hp<100)fl='* Papyrus is at the edge of&  defeat.';
+   if(m.mercymod>=8000||v.murder)fl='* Papyrus is sparing you.';
+   if(v.xfight>0)v.fighto=14;
+   return fl;
+  },
+  attackStep(m,api){
+   const v=m.v,st=api.S;
+   st.turntimer=99999;
+   if(v.death)return;
+   sayStep(api,m);
+   v.tt--;
+   if(v.cap){captureStep(api,m);return}
+   if(v.bgen)blueGenStep(api,m);
+   if(v.a7>0&&--v.a7===0)specialTalk(api,m);
+   if(v.fadeBoss)fadeTrack(bossMusic(),.01);
+   if(v.tt<3&&v.dc===4){v.dc=5;spareTalk(api,m)}
+   if(v.tt<3&&v.dc===0)api.endTurn();
+  },
+  endAttack(m,api){m.v.hearthp2=api.S.hp;m.v.dog=null;m.v.a7=0},
+  flavor:m=>m.v.spares?'* Papyrus is sparing you.':'* Papyrus is preparing a bone&  attack.'
+ });
+})();
 /* ---- NB 60 FPS: logic stays on UNDERTALE's 30 steps a second; drawing blends
    each moving thing between its last two step positions at the display's rate. */
 (()=>{
@@ -31792,7 +32269,7 @@ const NB_ASSETS={
  nbHeartBreak:RAW+'sprites/images/spr_heartbreak_0.png',
  nbShards:[0,1,2,3].map(i=>RAW+`sprites/images/spr_heartshards_${i}.png`),
  nbBulletGen:[0,1,2].map(i=>RAW+`sprites/images/spr_bulletgenmd_${i}.png`),
- nbHeartBlue:RAW+'sprites/images/spr_heartblue_0.png',
+ nbHeartBlue:RAW+'sprites/images/spr_heartblue_1.png', // _1 is image_index 0 (exports are swapped)
  nbPlainAtlas:RAW+'fonts/fnt_plain.png',
  nbBulletSm:RAW+'sprites/images/spr_bulletsm_0.png',
  nbMigospHappy:[0,1].map(i=>RAW+`sprites/images/spr_migosphappy_${i}.png`),
@@ -31820,7 +32297,26 @@ const NB_ASSETS={
  nbTorKneelAnguish:RAW+'sprites/images/spr_torielboss_kneelanguish_0.png',
  nbTorKneelAnguish2:RAW+'sprites/images/spr_torielboss_kneelanguish2_0.png',
  nbTorKneelSmile2:RAW+'sprites/images/spr_torielboss_kneelsmile2_0.png',
- nbBlconWdShrt:RAW+'sprites/images/spr_blconwdshrt_0.png' // obj_blconwdflowey
+ nbBlconWdShrt:RAW+'sprites/images/spr_blconwdshrt_0.png', // obj_blconwdflowey
+ nbPapyrusAtlas:RAW+'fonts/fnt_papyrus.png',
+ // Two-frame exports come out swapped (_1 is image_index 0), like the SOUL.
+ nbPapBoss:[1,0].map(i=>RAW+`sprites/images/spr_papyrusboss_${i}.png`),
+ nbPapAnim:RAW+'sprites/images/spr_papyrusboss_anim_0.png',
+ nbPapHead:RAW+'sprites/images/spr_papyrusboss_head_0.png',
+ nbPapBody:RAW+'sprites/images/spr_papyrusboss_body_0.png',
+ nbBoneTop:[1,0].map(i=>RAW+`sprites/images/spr_bonetop_${i}.png`),
+ nbBoneBottom:[1,0].map(i=>RAW+`sprites/images/spr_bonebottom_${i}.png`),
+ nbSuperbone:RAW+'sprites/images/spr_superbone_0.png',
+ nbCoolbus:RAW+'sprites/images/spr_coolbus_0.png',
+ nbScoot:[0,1].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
+ nbTobyScoot:[0,1].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
+ nbTobyEat:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_tobydogeat_${i}.png`),
+ nbTobySurprise:[0,1].map(i=>RAW+`sprites/images/spr_tobydogsurprise_${i}.png`),
+ nbCBone:RAW+'sprites/images/spr_cbone_0.png',
+ nbOolBone:RAW+'sprites/images/spr_oolbone_0.png',
+ nbDBone:RAW+'sprites/images/spr_dbone_0.png',
+ nbUdeBone:RAW+'sprites/images/spr_udebone_0.png',
+ nbSkateBone:RAW+'sprites/images/spr_skatebone_0.png'
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
@@ -31841,6 +32337,7 @@ function nbCanRun(){
  if(typeof bossRushActive!=='undefined'&&bossRushActive)return false;
  if(typeof mpBattleActive!=='undefined'&&mpBattleActive)return false;
  if(practiceMode!=='classic')return false;
+ if(currentBoss==='papyrus'&&papyrusNhbMode())return false; // NOT HOLDING BACK is this game's own mode
  return nbBattleIds().every(id=>NB.supports(id));
 }
 function nbStartBattle(){
