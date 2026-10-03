@@ -852,7 +852,7 @@ const SFX={
  mtt7:RAW+'sound/audio/snd_mtt7.wav',
  mtt8:RAW+'sound/audio/snd_mtt8.wav',
  mtt9:RAW+'sound/audio/snd_mtt9.wav',
- txtUnd:RAW+'sound/audio/snd_txtund.wav',
+ txtUnd:RAW+'sound/audio/snd_txtund.wav',txtUnd2:RAW+'sound/audio/snd_txtund2.wav',txtUnd3:RAW+'sound/audio/snd_txtund3.wav',txtUnd4:RAW+'sound/audio/snd_txtund4.wav',
  txtAl:RAW+'sound/audio/snd_txtal.wav',
  gbCharge:RAW+'sound/audio/mus_sfx_segapower.ogg',
  gbFire:RAW+'sound/audio/mus_sfx_rainbowbeam_1.ogg',
@@ -29322,7 +29322,9 @@ const NB=(()=>{
    }
    if(this.pos>=this.str.length){
     const end=this.str.trimEnd().replace(/%%$/,'%');
-    if(end.endsWith('/%')||end.endsWith('/^')||end.endsWith('/')||this.no+1<this.msgs.length)this.halt=1;
+    // A message ending in "%" without "/" closes as soon as it is typed out.
+    if(/(^|[^\/%])%%?$/.test(this.str.trimEnd())){if(this.no+1<this.msgs.length){this.no++;this.load()}else this.finish()}
+    else if(end.endsWith('/%')||end.endsWith('/^')||end.endsWith('/')||this.no+1<this.msgs.length)this.halt=1;
    }
   }
   finish(){this.done=true;if(this.onEnd){const f=this.onEnd;this.onEnd=null;f()}}
@@ -29336,7 +29338,8 @@ const NB=(()=>{
     if(c==='\\'){const k=s[i+1];if(k==='E'){i+=2;continue}if(TEXT_COLORS[k])color=TEXT_COLORS[k];i++;continue}
     if(c==='/'||c==='%')break;
     if(x>wrap){x=x0;y+=t.vspacing}
-    drawGlyph(g,t.font,c,x,y,color);
+    if(t.shake){const k=t.shake;drawGlyph(g,t.font,c,x+Math.random()*k-k/2,y+Math.random()*k-k/2,color)}
+    else drawGlyph(g,t.font,c,x,y,color);
     x+=t.spacing;
    }
   }
@@ -29502,9 +29505,10 @@ const NB=(()=>{
   if(S.items.length>4)s+=' &                     PAGE '+(S.page+1);
   return s;
  }
+ const noFlee=()=>alive().some(m=>m.def.noFlee&&m.def.noFlee(m,api));
  function mercyText(){
   const any=alive().some(monsterSpareable);
-  return (any?'\\Y':'\\W')+'   * Spare&\\W   * Flee';
+  return (any?'\\Y':'\\W')+'   * Spare'+(noFlee()?'':'&\\W   * Flee');
  }
  function openMenu(n){
   S.bmenuno=n;
@@ -29580,7 +29584,8 @@ const NB=(()=>{
    return;
   }
   if(S.bmenuno===4){
-   if(P.up||P.down){S.coord[4]=S.coord[4]?0:1;snd('move')}
+   if((P.up||P.down)&&!noFlee()){S.coord[4]=S.coord[4]?0:1;snd('move')}
+   if(noFlee())S.coord[4]=0;
    h.x=S.ideal[0]+32;h.y=S.ideal[2]+28+S.coord[4]*32;
    if(P.confirm){NB.clearPressed('confirm');if(S.coord[4]===0)doSpare();else doFlee()}
   }
@@ -29699,6 +29704,7 @@ const NB=(()=>{
  // ------------------------------------------------------------ MERCY ------
  function doSpare(){
   S.myfight=4;S.heart.visible=false;S.writer=null;snd('select');
+  for(const m of alive())if(m.def.onMercy)m.def.onMercy(m,api);
   let any=false;
   for(const m of alive())if(monsterSpareable(m)){spareMonster(m);any=true}
   if(!alive().length){win();return}
@@ -29782,7 +29788,7 @@ const NB=(()=>{
  }
  function returnStep(){
   if(NB.borderSettled()&&S.edge.T===S.ideal[2]&&S.edge.R===S.ideal[1]){
-   S.mnfight=0;S.myfight=0;S.bmenuno=0;S.turn++;S.heart.visible=true;S.heart.mode='red';
+   S.mnfight=0;S.myfight=0;S.bmenuno=0;S.turn++;S.heart.visible=true;S.heart.mode=S.soulMode==='green'?'green':'red';
    const al=alive();
    let flav=S.nextFlavor;
    if(!flav){const m=al[Math.floor(rnd(al.length))];flav=m?.def.flavor?m.def.flavor(m,api):`* ${m?.name||''} is here.`}
@@ -29995,11 +30001,12 @@ const NB=(()=>{
  function drawBox(g,S){
   const e=S.edge;
   g.fillStyle='#000';g.fillRect(e.L,e.T,e.R+5-e.L,e.B+5-e.T);
-  g.fillStyle='#fff';
+  g.fillStyle='#fff';g.save();g.globalAlpha=S.boxAlpha??1;
   g.fillRect(e.L,e.T,e.R-e.L,5);          // obj_uborder
   g.fillRect(e.L,e.B,e.R-e.L+5,5);        // obj_dborder
   g.fillRect(e.L,e.T,5,e.B-e.T);          // obj_lborder
   g.fillRect(e.R,e.T,5,e.B-e.T+5);        // obj_rborder
+  g.restore();
  }
  function drawHud(g,S){
   // scr_binfowrite
@@ -30026,6 +30033,8 @@ const NB=(()=>{
   let im=frames[Math.floor(h.frame)%frames.length]||images.heart;
   if(h.gtfo&&images.nbHeartGtfo)im=images.nbHeartGtfo[Math.floor(S.t/2)%2]||im;
   if(h.mode==='blue'&&images.nbHeartBlue)im=images.nbHeartBlue;
+  // spr_heartgreen (exports reversed: _1 is image_index 0).
+  if(h.mode==='green'&&images.nbHeartGreen)im=images.nbHeartGreen[1-(Math.floor(h.frame)%2)]||im;
   if(im)g.drawImage(im,Math.round(h.x),Math.round(h.y),16,16);
  }
  function drawFight(g,S){
@@ -32278,7 +32287,9 @@ const NB=(()=>{
     blue();v.fighto=15;v.xfight=0;v.dc=1;api.border(50);
     // blt_tobydogbone at the right edge (created before border 50 widens the box).
     v.dog=api.spawn({x:RR,y:B-40,manual:true,wallKill:false,kill:false,clip:true,box:[0,0,0,0],hidden:false,spr:'nbTobyEat',frame:0,anim:.2,hs:0,
-     step(b){b.x+=b.hs},draw(g,b){const im=mat(b.spr,Math.floor(b.frame));if(im)g.drawImage(im,R(b.x),R(b.y),(im.naturalWidth||im.width)*2,(im.naturalHeight||im.height)*2)},onHit:()=>false});
+     step(b){b.x+=b.hs},
+     // draw_self_border goes through draw_sprite_part, which ignores the 2x image scale.
+     draw(g,b){const im=mat(b.spr,Math.floor(b.frame));if(im)g.drawImage(im,R(b.x),R(b.y))},onHit:()=>false});
     v.a7=80;
    }
    if(v.truefight&&v.fighto===14){
@@ -34108,6 +34119,1141 @@ function cycleNewEngineSetting(dir=1){
  if(!newEngineEnabled)newEngineFps=newEngineFps||30;
  saveNewEngineSetting();
 }
+NB.undText={"taunt":"Urahhh!!","cause":{"1":"\\E1  You're strong...&  But not strong&  enough!","2":"\\E4  You're a pain in&  the neck, huh?","3":"\\E5  DIE ALREADY, YOU&  LITTLE BRAT!"},"o1":["  \\XAs long as you're&  \\GGREEN\\X you \\RCAN'T&  ESCAPE\\X!/","  \\XUnless you learn&  to \\Rface danger&  head-on\\X.../","  You won't last&  a SECOND against&  ME!/%%"],"o2":"  Not bad^1!&  Then how about&  THIS!?/%%","hit3":["\\E0  I wanted this to&  be a fair fight./","\\E1  I thought if I&  beat you like&  this.../","  It'd truly show&  how strong&  monsters can be./","\\E4  BUT NOW???/","\\E5  I DON'T CARE!/","  I'M NOT YOUR&  FREAKING&  KINDERGARTEN&  TEACHER!/","\\E1  Unless your&  kindergarten&  teacher.../","\\E5  DOES THIS!/%%"],"hit2":["\\E5  WHAT ARE YOU&  DOING?/","  JUST FACE&  UPWARDS!!!/","  IT'S NOT HARD!/","\\E0 %%"],"hit1":["\\E4  Look./","\\E4  I gave you a&  spear to block&  the bullets with./","\\E4  Do I have to&  explain this&  any more&  clearly?/","\\E0 %%"],"hit0":["\\E1  \\XWhen I said&  \\Rface towards&  danger\\X.../","\\E4  I meant face&  towards the&  bullets!/","\\E0 %%"],"o3":"  For years,&  we've dreamed&  of a happy&  ending...","o4":"  And now,&  sunlight is&  just within&  our reach!","o5":"  I won't let&  you snatch it&  away from&  us!","o6":"\\E1  NGAHHH!&  Enough warming&  up!/%%","o7":"  Heh...&  You're tough!","o7m":["  Mercy^1!&  Ha!/","  I still can't&  believe YOU&  want to spare&  ME!/%%"],"o8":"  But even if&  you could&  beat me...","o8m":"  But even if&  I spared&  YOU...","o9":"\\X  No human has&  EVER made it&  past&  \\RASGORE\\X!","o10":"  Honestly^1,&  killing you&  now is an act&  of mercy...!","o11":"  ...","r9":"  Honestly, I'm&  doing you&  a favor...","r10":"\\X  No human has&  EVER made it&  past&  \\RASGORE\\X!","r11":"\\E1  Killing you&  now is an act&  of mercy!","o12":"\\E4  So STOP being&  so damn&  resilient!/%%","o13":"  What the&  hell are&  humans made&  out of!?","o14":"  Anyone else&  would be DEAD&  by now!","o15":"  Alphys told me&  humans were&  determined...","o16":"  I see now what&  she meant by&  that!","o17":"  But I'm&  determined,&  too!","o18":"  Determined to&  end this&  RIGHT NOW!","o19":"  ... RIGHT NOW!","o20":"  ... RIGHT...&  ...&  ... NOW!!","o21":"  Ha...&  Ha...","o22":"\\E5  NGAHHH!!!&  DIE ALREADY, YOU&  LITTLE BRAT!/%%","o23":"  YOU'RE GETTING&  IN MY WAY!","o23m":"  I WILL NEVER&  TAKE MERCY FROM&  THE LIKES OF YOU!","o24":"  I WILL NOT&  BE DEFEATED!","o24m":"  YOU! WILL!&  NEVER! SPARE! ME!","oX":"  ...","n40":["  Come on^1, is that&  all you've got!?/%%"],"n39":["  ... pathetic./","  You're going to&  have to try&  harder than that!/%%"],"n38":["  S-see how strong&  we are when we&  believe in&  ourselves?/%%"],"n37":["  H... heh.../","  Had enough yet?/%%"],"n36":["\\E7  .../","  ... I won't..^1.&  ... give up.../%%"],"flavHurt":["* The wind is howling...","* Undyne flips her spear&  impatiently.","* Flower pollen drifts in&  front of you.","* Water rushes around you.","* The spears pause for a&  moment."],"flavHigh":["* Undyne points heroically&  towards the sky.","* Undyne flips her spear&  impatiently.","* Undyne suplexes a huge&  boulder^1, just because&  she can.","* Undyne bounces impatiently.","* Undyne flashes a menacing&  smile.","* Undyne draws her finger&  across her neck.","* Undyne holds her fist in&  front of her and shakes&  her head.","* Undyne towers threateningly.","* Undyne thinks of her friends&  and pounds the ground&  with her fists.","* Smells like sushi."],"flavLate":["* Undyne's eye is twitching&  involuntarily.","* Undyne is smashing spears&  on the ground.","* Undyne's eyes dart around&  to see if this is&  a prank.","* Undyne is hyperventilating.","* Smells like angry fish."],"flavDead":{"-40":"* Undyne is smiling as if&  nothing is wrong.","-39":"* Undyne's body is wavering.","-38":"* Undyne's body is losing&  its shape.","-37":"* Undyne's body...","-36":"* ..."},"check":"* UNDYNE - ATK 50 DEF 20&* The heroine that NEVER gives&  up./^","chalNo":"* You tell UNDYNE her attacks&  are too easy^1.&* She doesn't care./^","chalYes":"* You tell UNDYNE her attacks&  are too easy^1.&* The bullets get faster./^","chalUnfair":"* You tell UNDYNE her attacks&  are too easy^1.&* The bullets get unfair./^","noWork":"* Didn't work./^","pleadNo":"* You told Undyne you didn't&  want to fight^1.&* But nothing happened./^","pleadYes":["* You told Undyne you just&  want to be friends.&* She remembers someone.../","* Her attacks became a little&  less extreme./^"],"intro":{"1":"En guarde!/%%","2":"\\E1  You won't get&  away from me&  this time!/%%","3":"\\E4  You've escaped&  from me for&  the LAST time!/%%","4":"\\E5  STOP RUNNING&  AWAY!!!/%%","5":"\\E5  COME BACK HERE^1,&  YOU LITTLE&  PUNK!!/%%"},"attacks":"* Undyne attacks!","d50":["Ngahhh.../","You were stronger...&Than I thought.../","So then..^1.&... this is where..^1.&... it ends.../",".../%%"],"d51":["  No.../%%"],"d52":["NO!/","I won't die!/","Alphys..^1.&Asgore..^1.&Papyrus.../","Everyone is counting&on me to protect&them!/","NNNNGAH!/%%"],"d55":["Human!/","In the name of&everybody's hopes&and dreams.../","I WILL DEFEAT YOU!/%%"],"determined":"* Undyne looks determined.","d60":[".../","Ha..^1. ha.../","... Alphys.../","This is what I&  was afraid of.../","This is why I&  never told you.../",".../%%"],"d61":["No..^1.&No!/","Not yet!/","I won't die!/%%"],"d62":["NGAHHHHHHHH!!^2! %%"],"d63":[" I WON'T DIE^3! %%"],"d65":[" I WON'T DIE^3! %%"],"d67":[" I WON'T DIE^3! %%"],"d69":[" I^2 WON'T^2 %%"]};
+// obj_spearblocker User Event 1, transpiled: sr() is scr_sr.
+NB.undLessons=(c,sr)=>{
+if(c.lesson == -51) {
+    sr(4, 0, 0, 0);
+    sr(4, 0, 0, 0);
+    sr(4, 0, 0, 0);
+    sr(4, 0, 2, 0);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+    sr(4, 0, 1, 1.4);
+}
+if(c.lesson == -50) {
+    sr(3, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+}
+if(c.lesson == -40) {
+    for(let _r=0;_r<15;_r++)sr(4, 0, 0, 2);
+    c.genDmg= 1;
+    c.dmg= 1;
+}
+if(c.lesson == -39) {
+    c.rating= 12;
+    for(let _r=0;_r<12;_r++)sr(4, 0, 0, 1.2);
+    c.genDmg= 1;
+    c.dmg= 1;
+    c.genRating+= 2;
+    c.tt= 300;
+}
+if(c.lesson == -38) {
+    sr(0, 0, 0, 0.8);
+    sr(1, 0, 0, 0.8);
+    sr(2, 0, 0, 0.8);
+    sr(3, 0, 0, 0.8);
+    sr(0, 0, 0, 0.8);
+    sr(1, 0, 0, 0.8);
+    sr(2, 0, 0, 0.8);
+    sr(3, 0, 0, 0.8);
+    c.genRating= 16;
+    c.tt= 300;
+    c.genDmg= 1;
+    c.dmg= 1;
+}
+if(c.lesson == -37) {
+    c.tt= 300;
+    sr(0, 0, 0, 0.5);
+    sr(1, 0, 0, 0.5);
+    sr(0, 0, 0, 0.5);
+    sr(1, 0, 0, 0.5);
+    sr(1, 0, 0, 0.5);
+    sr(0, 0, 0, 0.5);
+    sr(0, 0, 0, 0.5);
+    sr(1, 0, 0, 0.5);
+    c.genRating= 20;
+    c.genDmg= 1;
+    c.dmg= 1;
+}
+if(c.lesson >= -36 && c.lesson < -25) {
+    c.tt= 300;
+    c.genRating= 34;
+    for(let _r=0;_r<3;_r++)sr(3, 0, 1, 0.25);
+    c.genDmg= 1;
+    c.dmg= 1;
+}
+if(c.lesson == -5) {
+    sr(3, 0, 2, 0.5);
+    sr(3, 0, 2, 0.5);
+    sr(3, 0, 6.5, 0.5);
+    sr(1, 0, 0, 1.6);
+    sr(2, 0, 0, 1.6);
+    sr(0, 0, 0, 1.6);
+    sr(3, 0, 0, 1.6);
+    sr(0, 0, 0, 1.6);
+    sr(2, 0, 0, 1.6);
+    sr(1, 0, 0, 1.6);
+    sr(2, 0, 0, 1.6);
+    sr(0, 0, 0, 1.6);
+    sr(3, 0, 0, 1.6);
+}
+if(c.lesson == -6) {
+    sr(0, 0, 0, 1.8);
+    sr(1, 0, 0, 1.8);
+    sr(0, 0, 0.5, 1.8);
+    sr(0, 0, 0, 1.8);
+    sr(1, 0, 0, 1.8);
+    sr(1, 0, 0, 1.8);
+    sr(0, 0, 0, 1.8);
+    sr(1, 0, 0.5, 1.8);
+    sr(1, 0, 0, 1.8);
+    sr(0, 0, 0, 1.8);
+    sr(1, 0, 0, 2);
+    sr(0, 0, 0, 2);
+    sr(1, 0, 0, 2);
+    sr(0, 0, 0, 2);
+}
+if(c.lesson == -7) {
+    for(let _r=0;_r<18;_r++)sr(4, 0, 0, 0.4);
+    c.refuse= 1;
+}
+if(c.lesson == -8) {
+    sr(3, 0, 0, 1);
+    sr(0, 0, 0, 1.8);
+    sr(2, 0, 0, 1);
+    sr(1, 0, 0, 1.8);
+    sr(0, 0, 0, 1);
+    sr(3, 0, 0, 0.5);
+    sr(2, 0, 0, 0.47);
+    sr(1, 0, 0, 1.8);
+    sr(0, 0, 0, 1);
+}
+if(c.lesson == -9) {
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0, 2);
+    sr(0, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0, 2);
+    sr(1, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 1, 2);
+    sr(0, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 1, 2);
+    sr(1, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+    sr(3, 0, 0.5, 2);
+}
+if(c.lesson == -10) {
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(0, 1, 0, 0);
+    sr(3, 1, 0, 0);
+    sr(0, 1, 0, 0);
+    sr(3, 1, 0, 0);
+    sr(0, 1, 0, 0);
+    sr(3, 1, 0, 0);
+    c.refuse= 1;
+}
+if(c.lesson == -11) {
+    sr(1, 1, 1.25, 2);
+    sr(3, 1, 1.25, 2);
+    sr(0, 1, 1.25, 2);
+    sr(2, 1, 2, 2);
+    sr(3, 0, 1.25, 2);
+    sr(0, 0, 1.25, 2);
+    sr(2, 0, 1.25, 2);
+    sr(1, 0, 2, 2);
+    sr(2, 1, 1.25, 2);
+    sr(0, 1, 1.25, 2);
+    sr(1, 1, 1.25, 2);
+    sr(3, 1, 1.25, 2);
+}
+if(c.lesson == -12) {
+    for(let _r=0;_r<2;_r++){
+        sr(0, 0, 0, 1.3);
+        sr(1, 0, 0, 1.3);
+        sr(3, 0, 0.1, 1.3);
+        sr(2, 1, 2.2, 1.3);
+        sr(0, 0, 0, 1.3);
+        sr(1, 0, 0, 1.3);
+        sr(2, 0, 0.1, 1.3);
+        sr(3, 1, 2.2, 1.3);
+    }
+}
+if(c.lesson == -13) {
+    sr(0, 0, 0, 1.5);
+    sr(0, 1, 2, 1.5);
+    sr(2, 0, 0, 1.5);
+    sr(2, 1, 2, 1.5);
+    sr(1, 0, 0, 1.5);
+    sr(1, 1, 2.2, 1.5);
+    sr(3, 0, 0, 1.5);
+    sr(3, 1, 2, 1.5);
+    sr(0, 0, 0, 1.5);
+    sr(0, 1, 2, 1.5);
+    sr(2, 0, 0, 1.5);
+    sr(2, 1, 2, 1.5);
+    sr(1, 0, 0, 1.5);
+    sr(1, 1, 2.2, 1.5);
+}
+if(c.lesson == -14) {
+    for(let _r=0;_r<24;_r++)sr(4, 0, 0, 0.3);
+    c.refuse= 1;
+}
+if(c.lesson == 0) {
+    sr(0, 0, 1, 0);
+    sr(0, 0, 1, 0);
+    sr(0, 0, 0.5, 0);
+    sr(0, 0, 0.5, 0);
+    sr(0, 0, 1, 0);
+    sr(0, 2, 1, 0);
+    sr(0, 2, 1, 0);
+    sr(1, 2, 0, 0);
+    sr(1, 2, 0, 0);
+}
+if(c.lesson == 1) {
+    for(let _r=0;_r<3;_r++)sr(3, 0, 1, 0.5);
+}
+if(c.lesson == 2) {
+    sr(3, 0, 1, 0.625);
+    sr(3, 0, 1, 0.625);
+    sr(0, 0, 1, 0.625);
+    sr(0, 0, 1, 0.625);
+    sr(1, 0, 1, 0.625);
+    sr(1, 0, 1, 0.625);
+}
+if(c.lesson == 3) {
+    sr(0, 0, 0, 0.75);
+    sr(1, 0, 0, 0.75);
+    sr(0, 0, 0, 0.75);
+    sr(1, 0, 0, 0.75);
+    sr(1, 0, 0, 0.75);
+    sr(0, 0, 0, 0.75);
+    sr(0, 0, 0, 0.75);
+    sr(2, 0, 0, 0.75);
+}
+if(c.lesson == 4) {
+    sr(3, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(2, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(2, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0.5, 0);
+    sr(3, 0, 0.5, 0);
+    sr(3, 0, 0.5, 0);
+    sr(3, 0, 0.5, 0);
+}
+if(c.lesson == 5) {
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0.5, 0);
+    sr(3, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(3, 0, 0.5, 0);
+    sr(3, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(2, 0, 0, 0);
+}
+if(c.lesson == 6) {
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(2, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(2, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(2, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    c.refuse= 1;
+}
+if(c.lesson == 7 || c.lesson == 8) {
+    sr(3, 0, 1.2, 0);
+    sr(2, 0, 1.2, 0);
+    sr(3, 0, 0, 0);
+    sr(2, 0, 0, 0);
+    sr(2, 0, 0.8, 0);
+    sr(3, 0, 0.8, 0);
+    sr(2, 0, 0.8, 0);
+    sr(3, 0, 0.8, 0);
+}
+if(c.lesson == 9) {
+    c.rr= c.rating;
+    if(c.rating >= 11) c.rr--;
+    sr(0, 0, 2, 3 / c.rr);
+    sr(3, 0, 1, 1.5);
+    sr(1, 0, 1, 1.5);
+    sr(2, 0, 1, 1.5);
+    sr(3, 0, 1, 1.5);
+    sr(1, 0, 1, 1.5);
+    sr(2, 0, 1, 1.5);
+}
+if(c.lesson == 10) {
+    c.rr= 0;
+    if(c.rating <= 11) c.rr= 0.5;
+    sr(0, 0, 0.1, 1);
+    sr(0, 0, 0.1, 1.5);
+    sr(0, 0, 2 + c.rr, 2);
+    sr(1, 0, 0.1, 1);
+    sr(1, 0, 0.1, 1.5);
+    sr(1, 0, 2 + c.rr, 2);
+    sr(2, 0, 1, 2);
+    sr(3, 0, 1, 2);
+    sr(2, 0, 1, 2);
+    sr(3, 0, 1, 2);
+}
+if(c.lesson == 11) {
+    sr(4, 0, 0, 0);
+    sr(4, 0, 0, 0);
+    sr(4, 0, 0, 0);
+    sr(4, 0, 2.2, 0);
+    sr(4, 0, 1, 1.5);
+    sr(4, 0, 1, 1.5);
+    sr(4, 0, 1, 1.5);
+    sr(4, 0, 2.2, 1.5);
+    sr(4, 0, 1, 2);
+    sr(4, 0, 1, 2);
+    sr(4, 0, 1, 2);
+    sr(4, 0, 1, 2);
+    c.refuse= 1;
+}
+if(c.lesson == 12 || c.lesson == 13) {
+    sr(1, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(1, 1, 0, 0);
+}
+if(c.lesson == 14) {
+    sr(0, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(2, 1, 2, 0);
+    sr(2, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(3, 0, 0, 0);
+    sr(2, 1, 1, 0);
+}
+if(c.lesson == 15) {
+    sr(0, 0, 1, 1.6);
+    sr(2, 0, 1, 1.6);
+    sr(1, 0, 1, 1.6);
+    sr(3, 0, 1.6, 1.6);
+    sr(1, 1, 1.2, 0);
+    sr(3, 1, 1.2, 0);
+    sr(0, 1, 1.2, 0);
+    sr(2, 1, 1.2, 0);
+}
+if(c.lesson == 16) {
+    sr(1, 0, 0, 0);
+    sr(1, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(0, 0, 0, 0);
+    sr(2, 2, 3, 0);
+    sr(3, 2, 2, 0);
+    sr(2, 0, 3, 0);
+    sr(1, 0, 1, 2);
+    sr(0, 0, 1, 2);
+}
+if(c.lesson == 17) {
+    sr(4, 0, 0, 1.6);
+    sr(4, 0, 0, 1.6);
+    sr(4, 0, 0, 1.6);
+    sr(4, 1, 1.6, 0);
+    sr(4, 0, 0, 0);
+    sr(4, 0, 0, 0);
+    sr(0, 2, 1, 0);
+    sr(4, 0, 0, 0);
+}
+if(c.lesson == 18) {
+    for(let _r=0;_r<10;_r++)sr(4, 0, 0, 2);
+}
+if(c.lesson == 19) {
+    sr(0, 0, 1, 0);
+    sr(0, 0, 1, 0);
+    sr(0, 0, 0.5, 0);
+    sr(0, 0, 0.5, 0);
+    sr(0, 0, 1, 0);
+    sr(0, 2, 1, 0);
+    sr(0, 2, 1, 0);
+    sr(1, 2, 0, 0);
+    sr(1, 2, 0, 0);
+}
+if(c.lesson == 20) {
+    for(let _r=0;_r<3;_r++){
+        sr(1, 1, 1.25, 1.5);
+        sr(3, 1, 1.25, 1.5);
+        sr(0, 1, 1.25, 1.5);
+        sr(2, 1, 1.25, 1.5);
+        c.refuse= 1;
+    }
+}
+if(c.lesson > 20) {
+    sr(4, 0, 0, 1.6);
+    sr(4, 0, 0, 1.6);
+    sr(4, 0, 0, 1.6);
+    sr(4, 1, 2, 0);
+    sr(4, 0, 0, 0);
+    sr(4, 0, 0, 0);
+    sr(0, 2, 1, 0);
+    sr(4, 0, 0, 0);
+}
+
+};
+/* ---- NB content: Undyne (obj_undyneboss). Part 1: obj_undyneb_body, obj_undynesiner2,
+   obj_boxsiner and the shared helpers. Lines live in NB.undText, lessons in NB.undLessons. ---- */
+(()=>{
+ const {rnd}=NB,R=Math.round;
+ // Multi-frame exports are stored in reverse: file _k is image_index N-1-k.
+ const rv=(k,i)=>{const a=images[k];return Array.isArray(a)?a[a.length-1-((i|0)%a.length)]:a};
+ const tick=(o,k)=>o[k]>0&&--o[k]<=0;
+ const X0=210,Y0=20; // scr_battlegroup: instance_create(210, 20, obj_undyneboss)
+
+ // SCR_TEXTSETUP for Undyne's typers: fnt_plain, black, x+16, wrap x+190.
+ const T=NB.TYPERS,base={font:'plain',color:'#000000',dx:16,dy:0,wrap:x=>x+190,spacing:9,vspacing:20};
+ T[39]={...base,speed:1,sound:'txtUnd'};
+ T[40]={...base,speed:2,sound:'txtUnd',shake:1};
+ T[41]={...base,speed:1,sound:'txtUnd'};
+ T[42]={...base,speed:4,sound:'txtUnd',shake:2};
+ T[43]={...base,speed:4,sound:'txtUnd2',shake:2};
+ T[44]={...base,speed:5,sound:'txtUnd3',shake:2};
+ T[45]={...base,speed:7,sound:'txtUnd4',shake:2};
+
+ // ---------------------------------------------------------- obj_undyneb_body --
+ // Seven obj_npc_marker parts at 2x; depth = body depth + index (legs at the back).
+ const PARTS={head:[80,0],hair:[4,-4],armor:[52,56],rarm:[148,78],pants:[78,120],larm:[82,66],legs:[78,154]};
+ function bodyNew(){
+  const p={};
+  for(const k in PARTS){const x=X0+PARTS[k][0],y=Y0+PARTS[k][1];p[k]={x,y,x0:x,y0:y}}
+  return {p,siner:0,hair:0,move:0,slash:0,a1:0,larmA:0,rarmA:0,smear:null,alpha:1,ia:1,fade:0};
+ }
+ // User Event 2: the spear slash that turns the SOUL green or red.
+ function bodySlash(b){if(b&&b.move===0)b.move=2}
+ function bodyStep(v){
+  const b=v.body;if(!b)return;
+  b.hair+=.25;
+  if(tick(b,'a1'))b.slash++;
+  const p=b.p;
+  if(b.move===0){
+   b.siner+=1.2;
+   const o=v.order;
+   if(o===-39)b.siner-=.2;if(o===-38)b.siner-=.4;if(o===-37)b.siner-=.6;if(o===-36)b.siner-=.8;if(o===-35)b.siner-=1;
+   const s=Math.sin(b.siner/6),s3=Math.sin(b.siner/3);
+   p.hair.y=p.hair.y0+s*4;p.head.y=p.head.y0+s*2;p.armor.y=p.armor.y0+s*4;p.pants.y=p.pants.y0+s*2;
+   p.larm.y=p.larm.y0+s*5;p.larm.x=p.larm.x0+s*5;
+   p.rarm.y=p.rarm.y0+s*6+s3*2;p.rarm.x=p.rarm.x0-s3*2;p.legs.y=p.legs.y0;
+   if(b.rarmA>0)b.rarmA-=15;
+   if(b.larmA<0)b.larmA+=15;
+  }else{
+   for(const k of ['head','hair','armor','pants']){p[k].x=p[k].x0;p[k].y=p[k].y0}
+  }
+  if(b.move===2){
+   if(b.slash===0&&b.larmA>-84)b.larmA-=25;
+   if(b.slash===0&&b.larmA<=-84){b.larmA=-84;b.a1=5;b.slash=.1}
+   if(b.slash===1.1){b.slash=1;b.a1=2}
+   if(b.slash===1)b.larmA+=55;
+   if(b.slash===2){b.larmA=66;b.smear={x:p.larm.x-180,y:p.larm.y+20,a:1,f:0};b.slash=3}
+   if(b.slash===3){b.smear.a-=.1;b.larmA+=.5;if(b.larmA>70){b.smear=null;b.slash=4;b.a1=3}}
+   if(b.slash===5){b.larmA-=15;if(b.larmA<=6){b.larmA=0;b.slash=0;b.move=0}}
+  }
+  if(b.smear)b.smear.f++;
+  // User Event 3 (fadeout): the parts fade out while the melting sprite fades in.
+  if(b.fade){
+   if(v.melt){v.melt.f=0;v.melt.a=Math.min(1,v.melt.a+.2)}
+   b.ia-=.05;b.alpha=Math.max(0,b.alpha-.2);
+   if(b.ia<=0)v.body=null;
+  }
+ }
+ function bodyDraw(g,v,b,ox=0,oy=0){
+  const p=b.p,a=b.alpha;if(a<=0)return;
+  g.save();g.globalAlpha*=a;
+  const put=(im,x,y)=>{if(im)g.drawImage(im,R(x)+ox,R(y)+oy,im.naturalWidth*2,im.naturalHeight*2)};
+  put(rv('nbUndLegs',b.move===1?1:0),p.legs.x,p.legs.y);
+  // spr_undyneb_leftarm: origin (35,-6), rotated by image_angle.
+  const la=images.nbUndLarm;
+  if(la){g.save();g.translate(R(p.larm.x)+ox,R(p.larm.y)+oy);g.rotate(-b.larmA*Math.PI/180);g.drawImage(la,-70,12,la.naturalWidth*2,la.naturalHeight*2);g.restore()}
+  put(images.nbUndPants,p.pants.x,p.pants.y);
+  const ra=images.nbUndRarm;
+  if(ra){g.save();g.translate(R(p.rarm.x)+ox,R(p.rarm.y)+oy);g.rotate(-b.rarmA*Math.PI/180);g.drawImage(ra,0,0,ra.naturalWidth*2,ra.naturalHeight*2);g.restore()}
+  put(images.nbUndArmor,p.armor.x,p.armor.y);
+  put(rv('nbUndHair',Math.floor(b.hair)),p.hair.x,p.hair.y);
+  put(rv('nbUndFace',v.face),p.head.x,p.head.y);
+  g.restore();
+  const s=b.smear;
+  if(s&&s.a>0){const im=rv('nbUndSmear',s.f%2);if(im){g.save();g.globalAlpha=Math.max(0,s.a);g.drawImage(im,R(s.x)+ox,R(s.y)+oy);g.restore()}}
+ }
+
+ // ---------------------------------------------------------- obj_undynesiner2 --
+ // Copies the screen around Undyne and redraws it a row at a time, each row pushed
+ // sideways by sin(a/qq)*c, where c starts at ww and drops 0.1 per row (scr_waver_height).
+ function waverNew(){return {a:0,a0:0,qq:1,ww:1,dww:1,idealww:0}}
+ function waverUser1(v){
+  const w=v.waver;if(!w)return;
+  const I=w.idealww;
+  if(I===50){w.idealww=.1;v.body&&(v.body.fade=1,v.melt={f:1,a:0})}
+  if(I===26)w.idealww=50;if(I===18)w.idealww=26;if(I===14)w.idealww=18;if(I===10)w.idealww=14;
+  if(I===6)w.idealww=10;if(I===2)w.idealww=6;if(I===0)w.idealww=2;
+ }
+ let wcan=null;
+ function waverDraw(g,v,top){
+  const w=v.waver;if(!w)return;
+  const xx=X0-20,yy=Y0-20,ht=Math.max(1,Math.round(top-yy));
+  if(!wcan)wcan=document.createElement('canvas');
+  if(wcan.width!==240||wcan.height!==ht){wcan.width=240;wcan.height=ht}
+  const c=wcan.getContext('2d');c.imageSmoothingEnabled=false;c.clearRect(0,0,240,ht);
+  drawMelt(c,v,-xx,-yy);
+  if(v.body)bodyDraw(c,v,v.body,-xx,-yy);
+  let cc=w.dww,a=w.a0;
+  g.save();g.globalAlpha*=.9;
+  for(let i=ht;i>0;i--){
+   a++;
+   if(cc>0)cc-=.1;
+   if(cc<0)cc-=.1;
+   g.drawImage(wcan,0,i,240,1,xx+Math.sin(a/w.qq)*cc,yy+i,240,1);
+  }
+  g.restore();
+ }
+ // Once per step: the rows counter advances by the strip height, ww drifts toward idealww+random(6).
+ function waverStep(v,top){
+  const w=v.waver;if(!w)return;
+  const ht=Math.max(1,Math.round(top-(Y0-20)));
+  w.a0=w.a;w.dww=w.ww;w.a+=ht;
+  const ideal2=w.idealww+rnd(6);
+  if(w.ww>ideal2)w.ww--;
+  if(w.ww<ideal2)w.ww++;
+  if(w.idealww===.1&&w.ww<2)v.waver=null;
+ }
+ function drawMelt(g,v,ox=0,oy=0){
+  const m=v.melt;if(!m||m.a<=0)return;
+  const im=rv('nbUndMelt',m.f);if(!im)return;
+  g.save();g.globalAlpha*=Math.min(1,m.a);g.drawImage(im,X0+ox,Y0+oy,im.naturalWidth*2,im.naturalHeight*2);g.restore();
+ }
+
+ // ------------------------------------------------------------- obj_boxsiner --
+ // Two rows of six green rectangles that bob on a sine (Undyne has no battle grid).
+ function boxsinerStep(bs){if(!bs)return;bs.siner++;if(bs.fade)bs.alpha-=.01}
+ function boxsinerDraw(g,bs){
+  if(!bs||bs.alpha<=0)return;
+  g.save();g.globalAlpha=bs.alpha;g.strokeStyle='#008000';g.lineWidth=1;
+  for(const yoff of [0,120])for(let i=0;i<6;i++){
+   const ysin=Math.sin((i*3+bs.siner/2)/8)*20;
+   g.strokeRect(20+i*100+.5,16+yoff+ysin+.5,100,120);
+  }
+  g.restore();
+ }
+
+ NB.und={rv,tick,X0,Y0,bodyNew,bodySlash,bodyStep,bodyDraw,waverNew,waverUser1,waverStep,waverDraw,drawMelt,boxsinerStep,boxsinerDraw};
+})();
+/* ---- NB content: Undyne. Part 2: obj_spearblocker + obj_greenspeargen (green SOUL),
+   obj_blockbullet/obj_blockbullet2, obj_spearbulletfollowgen/obj_spearbullet_follow,
+   obj_risespearbulletgen/obj_risespearbullet and the spear across the box. ---- */
+(()=>{
+ const {rnd,snd,dcos,dsin}=NB,R=Math.round,U=NB.und,{rv,tick}=U;
+ const HEART=['..##........##..','.#####....#####.','#######..#######','#######..#######','################','################','################','################','################','################','..############..','..############..','....########....','....########....','......####......','......####......'];
+ const pdir=(x1,y1,x2,y2)=>(Math.atan2(-(y2-y1),x2-x1)*180/Math.PI+360)%360;
+
+ // scr_damagestandard on the calling object: its dmg grows by the HP bonus every call
+ // (the source adds to the instance variable itself), then the hit costs round(dmg-df/5).
+ function hitStd(api,o){
+  const hp=api.S.hp;let bonus=hp>20?1:0;for(let t=30;t<=90;t+=10)if(hp>=t)bonus++;
+  o.dmg+=bonus;
+  return api.damage(o.dmg);
+ }
+ // collision_line against the SOUL's precise mask.
+ function lineHitsHeart(h,x1,y1,x2,y2){
+  const n=Math.ceil(Math.hypot(x2-x1,y2-y1)*2)+1;
+  for(let k=0;k<=n;k++){
+   const px=x1+(x2-x1)*k/n-h.x,py=y1+(y2-y1)*k/n-h.y;
+   const i=Math.floor(px),j=Math.floor(py);
+   if(i>=0&&i<16&&j>=0&&j<16&&HEART[j][i]==='#')return true;
+  }
+  return false;
+ }
+ function segRect(x1,y1,x2,y2,l,t,r,b){
+  const n=Math.ceil(Math.hypot(x2-x1,y2-y1))+1;
+  for(let k=0;k<=n;k++){const x=x1+(x2-x1)*k/n,y=y1+(y2-y1)*k/n;if(x>=l&&x<=r+1&&y>=t&&y<=b+1)return true}
+  return false;
+ }
+
+ // ------------------------------------------------- obj_blockbullet(2) arrows --
+ const arrows=api=>api.S.bullets.filter(b=>b.arrow&&b.alive);
+ const OR={L:[16,12],R:[13,12],U:[12,12],D:[12,18]};
+ function spawnArrow(api,v,site,sm,yellow){
+  // instance_number(): obj_blockbullet counts its child obj_blockbullet2 as well.
+  const cd=arrows(api).filter(b=>yellow?b.yellow:true).length+1;
+  const blk=v.blk,ox=blk?blk.x:320,oy=blk?blk.y:240;
+  const a=api.spawn({arrow:1,yellow:!!yellow,site,sm:sm||1,cd,fr:cd<=1&&!yellow?1:0,a0:1,down:0,alpha:0,hs:0,vs:0,part:0,active:0,
+   rating:yellow?(v.gen?v.gen.rating:10):0,manual:true,wallKill:false,kill:false,box:[0,0,0,0],onHit:()=>false,
+   step(b){
+    if(tick(b,'a0')){
+     if(b.yellow)b.truesite=[1,0,3,2][b.site];
+     const s=b.site;
+     b.x=s===0?ox-300:s===1?ox+300:ox;b.y=s===2?oy+300:s===3?oy-300:oy;
+     const d=Math.hypot(ox-b.x,oy-b.y)||1,sp=8*b.sm;b.hs=(ox-b.x)/d*sp;b.vs=(oy-b.y)/d*sp;
+     b.active=1;
+    }
+    if(b.yellow&&b.active){
+     // obj_blockbullet2: 80px out it hops over the SOUL and comes back from the far side.
+     const s=b.site,rater=10,r2=20;
+     if(b.part===0&&((s===0&&b.x>ox-80)||(s===1&&b.x<ox+80)||(s===2&&b.y<oy+80)||(s===3&&b.y>oy-80)))b.part=1;
+     if(b.part===1){b.siner=0;b.part=2;b.hs=0;b.vs=0;b.remx=b.x;b.remy=b.y;b.totalx=145+Math.max(0,b.rating-8)*8}
+     if(b.down){b.cd--;b.down=0}
+     if(b.part===2){
+      b.siner++;const S1=Math.sin(b.siner*Math.PI/r2)*b.totalx,S2=Math.sin(b.siner*Math.PI/rater)*100;
+      if(s===0){b.x=b.remx+S1;b.y=b.remy-S2}
+      if(s===1){b.x=b.remx-S1;b.y=b.remy-S2}
+      if(s===2){b.y=b.remy-S1;b.x=b.remx-S2}
+      if(s===3){b.y=b.remy+S1;b.x=b.remx+S2}
+      if(b.siner===rater){b.part=3;const sp=8*b.sm;if(s===0)b.hs=-sp;if(s===1)b.hs=sp;if(s===2)b.vs=sp;if(s===3)b.vs=-sp}
+     }
+    }else if(!b.yellow){
+     if(b.down){b.cd--;b.down=0}
+     if(b.cd<=1)b.fr=1;
+    }
+    if(b.alpha<1)b.alpha+=.2;
+    b.x+=b.hs;b.y+=b.vs;
+   },
+   draw(g,b){
+    let k=null,im=null;
+    if(b.yellow){if(!b.active)return;im=rv('nbUndArrowX',b.truesite);k='X'}
+    else{
+     if(b.hs>0)k='L';else if(b.hs<0)k='R';else if(b.vs>0)k='D';else if(b.vs<0)k='U';
+     if(!k)return;im=rv('nbUndArrow'+k,b.fr);
+    }
+    if(!im)return;const o=k==='X'?[13,12]:OR[k];
+    g.save();g.globalAlpha=Math.max(0,Math.min(1,b.alpha));g.drawImage(im,R(b.x-o[0]),R(b.y-o[1]));g.restore();
+   }});
+  return a;
+ }
+ // Masks: spr_bullet_test (obj_blockbullet) and spr_bullet_testx (obj_blockbullet2), origin (12,12).
+ const arrowRect=b=>b.yellow?[b.x-11,b.y-11,b.x+7,b.y+6]:[b.x-10,b.y-11,b.x+7,b.y+6];
+
+ // -------------------------------------------------- obj_greenspeargen --------
+ function genNew(v,c){
+  const list=[];
+  const sr=(a0,a1,a2,a3)=>{
+   if(a0===4)a0=Math.floor(rnd(4));
+   if(a1===3)a1=Math.floor(rnd(2));
+   if(a2===0&&a1!==2)a2=1;
+   if(a3===0)a3=1;
+   list.push({dir:a0,type:a1,time:a2,speed:a3});
+  };
+  NB.undLessons(c,sr);
+  return {list,no:0,a0:5,done:0,rating:c.genRating,dmg:c.genDmg};
+ }
+ function genStep(api,v){
+  const g=v.gen;if(!g)return;
+  if(v.tt<1){v.gen=null;return}
+  if(!tick(g,'a0'))return;
+  const s=g.list[g.no];if(!s){g.done=1;return}
+  g.a0=g.rating*s.time;
+  let b;
+  if(s.type===0)b=spawnArrow(api,v,s.dir,s.speed,false);
+  if(s.type===1)b=spawnArrow(api,v,s.dir,s.speed,true);
+  if(s.type===2){
+   g.a0=g.rating*2;
+   spawnArrow(api,v,s.time,1,true);
+   b=spawnArrow(api,v,s.dir,s.speed,false);
+  }
+  g.no++;
+  if(g.no>g.list.length-1){g.a0=0;g.done=1}
+ }
+
+ // ---------------------------------------------------- obj_spearblocker -------
+ function blkNew(api,v,lesson,rating,dmg){
+  const blk={x:320,y:240,dir:270,ideal:270,flash:0,neg:0,lesson,rating,dmg,refuse:0,buffer:0,drawDir:270,red:false};
+  v.blk=blk;
+  const c={lesson,rating,genRating:rating,genDmg:7,dmg,refuse:0,tt:v.tt};
+  v.gen=genNew(v,c);
+  blk.rating=c.rating;blk.dmg=c.dmg;blk.refuse=c.refuse;v.tt=c.tt;
+  return blk;
+ }
+ // Step: the turn ends once every spear is dealt with (or time runs out, or the SOUL went red).
+ function blkStep(api,v,onEnd){
+  const blk=v.blk;if(!blk)return;
+  let ender=0;blk.buffer++;
+  if(blk.refuse!==2){
+   if(v.tt<1){v.tt=-1;ender=1}
+   if(!v.green)ender=1;
+   if(blk.buffer>30&&!arrows(api).length&&v.gen&&v.gen.done)ender=1;
+  }
+  if(ender){
+   for(const b of arrows(api))b.alive=false;
+   v.blk=null;
+   onEnd(blk);
+  }
+ }
+ // Draw event: the arrow keys turn the shield; a spear on its line is blocked, one that
+ // reaches the middle hits.
+ function blkLogic(api,v){
+  const blk=v.blk;if(!blk)return;
+  const H=NB.held,st=api.S;
+  blk.red=blk.flash>=2;blk.flash--;blk.drawDir=blk.dir;
+  if(H.down)blk.ideal=90;if(H.up)blk.ideal=270;if(H.left)blk.ideal=0;if(H.right)blk.ideal=180;
+  if(blk.dir!==blk.ideal){
+   if(blk.ideal===0&&blk.dir>180){blk.neg=1;blk.dir-=360}
+   if(blk.dir>=0&&blk.dir<90&&blk.ideal===270){blk.neg=2;blk.dir=360}
+   if(blk.neg===0){
+    blk.dir%=360;const dif=blk.ideal-blk.dir;blk.dir+=dif*.666666666666667;
+    if(blk.dir<0)blk.dir+=360;
+    if(Math.abs(dif)<15){blk.dir=blk.ideal;blk.neg=0}
+   }
+   if(blk.neg===1){
+    blk.dir%=360;const dif=Math.abs(blk.ideal-blk.dir);blk.dir+=dif*.666666666666667;
+    if(Math.abs(Math.abs(blk.ideal)-Math.abs(blk.dir))<15){blk.dir=blk.ideal;blk.neg=0}
+   }
+   if(blk.neg===2){
+    const dif=blk.ideal-blk.dir;blk.dir+=dif*.666666666666667;
+    if(Math.abs(Math.abs(blk.ideal)-Math.abs(blk.dir))<15){blk.dir=blk.ideal;blk.neg=0}
+   }
+  }
+  const t=blk.ideal*Math.PI/180,r=30,x=blk.x,y=blk.y,c=Math.cos(t),s=Math.sin(t);
+  const x1=x-c*r-s*r,y1=y+s*r-c*r,x2=x-c*r+s*r,y2=y+s*r+c*r;
+  const all=arrows(api);
+  const col=all.find(b=>b.active&&segRect(x1,y1,x2,y2,...arrowRect(b)));
+  if(col){
+   col.alive=false;for(const b of all)b.down=1;
+   blk.dir=blk.ideal;blk.flash=5;snd('mdBell');
+  }
+  const col2=all.find(b=>b.alive&&b.active&&(()=>{const [l,tt,rr,bb]=arrowRect(b);return l<=x+5&&rr>=x-5&&tt<=y+5&&bb>=y-5})());
+  if(col2){
+   col2.alive=false;for(const b of all)b.down=1;
+   if(st.invc<1)v.hitno++;
+   hitStd(api,blk);
+  }
+ }
+ function blkDraw(g,v){
+  const blk=v.blk;if(!blk)return;
+  const t=blk.drawDir*Math.PI/180,r=30,x=blk.x,y=blk.y,c=Math.cos(t),s=Math.sin(t);
+  const XB='#4040ff'; // merge_color(c_blue, c_white, .25)
+  const line=(ax,ay,bx,by,col)=>{g.strokeStyle=col;g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke()};
+  const x1=x-c*r-s*r,y1=y+s*r-c*r;
+  line(x1,y1,x-c*r+s*r,y+s*r+c*r,blk.red?'#ff0000':XB);
+  const t2=t-.2,c2=Math.cos(t2),s2=Math.sin(t2);
+  line(x1,y1,x-c2*r/2+s2*r/2,y+s2*r/2+c2*r/2,XB);
+  // draw_circle with circle precision 12, outline, c_green.
+  g.strokeStyle='#008000';g.lineWidth=1;g.beginPath();
+  for(let i=0;i<=12;i++){const a=i/12*Math.PI*2;const px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;if(i)g.lineTo(px,py);else g.moveTo(px,py)}
+  g.stroke();
+ }
+
+ // ------------------------------------------- obj_spearbullet_follow ----------
+ function spawnFollow(api,v){
+  const h=api.heart;
+  let x=h.x-4+rnd(8),y=h.y-4+rnd(8);
+  const od=pdir(x,y,h.x,h.y);
+  x+=dcos(od)*140;y-=dsin(od)*140;
+  snd('undyneSpearAppear');
+  api.spawn({follow:1,x,y,dir:od,sp:4,fric:.2,alpha:0,ang:0,rot:32,dmg:7,deact:0,manual:true,wallKill:false,kill:false,
+   box:[-40,-40,80,80],onHit:()=>false,
+   step(b){
+    b.alpha+=.05;b.ang-=b.rot;if(b.rot>0)b.rot--;
+    if(b.rot===0&&b.sp<1){
+     snd('undyneArrow');
+     b.dir=pdir(b.x,b.y,h.x+10,h.y+10);b.sp=3;b.fric=-.3;b.ang=b.dir;
+    }
+    const xo=dcos(b.dir)*25,yo=-dsin(b.dir)*25;
+    if(b.rot===0&&!b.deact&&api.S.mnfight===2&&h.visible&&lineHitsHeart(h,b.x-xo/2,b.y-yo/2,b.x+xo,b.y+yo))hitStd(api,b);
+    if(b.deact){b.alpha-=.1;if(b.alpha<=0)b.alive=false}
+    // GameMaker motion: friction, then the move.
+    if(b.fric>0)b.sp=Math.max(0,b.sp-b.fric);else if(b.fric<0)b.sp-=b.fric;
+    b.x+=dcos(b.dir)*b.sp;b.y-=dsin(b.dir)*b.sp;
+    if(b.x<-60||b.x>700||b.y<-60||b.y>540)b.alive=false;
+    if(v.tt<1)b.alive=false;
+   },
+   draw(g,b){
+    const im=images.nbUndWhiteSpear;if(!im)return;
+    g.save();g.globalAlpha=Math.max(0,Math.min(1,b.alpha));
+    g.translate(b.x,b.y);g.rotate(-b.ang*Math.PI/180);g.drawImage(im,-30,-30);g.restore();
+    if(b.rot===0){
+     const xo=dcos(b.dir)*25,yo=-dsin(b.dir)*25;
+     g.save();g.strokeStyle='#ffffff';g.lineWidth=1;g.globalAlpha=Math.max(0,Math.min(1,b.alpha));g.beginPath();g.moveTo(b.x-xo/2,b.y-yo/2);g.lineTo(b.x+xo,b.y+yo);g.stroke();g.restore();
+    }
+   }});
+ }
+ // ------------------------------------------- obj_risespearbullet -------------
+ function spawnRise(api,v,x,y){
+  api.spawn({rise:1,x,y,vis:false,a1:1,a0:20,part:0,alpha:1,vs:0,deact:0,dmg:7,manual:true,wallKill:false,kill:false,clip:true,
+   box:[8,6,7,54],hidden:true,
+   step(b){
+    if(tick(b,'a1')){b.vis=true;b.vs=-1;snd('undyneSpearAppear')}
+    b.hidden=!b.vis;
+    if(tick(b,'a0')){
+     if(b.part===3)b.part=4;
+     else if(b.part===2){b.vs=0;b.part=3;b.a0=2}
+     else if(b.part===1){b.vs=-10;snd('undyneSpearRise');b.part=2;b.a0=6}
+     else if(b.part===0){b.part=1;b.vs=0;b.a0=12}
+    }
+    if(b.part===4||b.deact){b.alpha-=.1;if(b.alpha<=0)b.alive=false}
+    b.y+=b.vs;
+   },
+   onHit(b){if(b.part>0&&b.part<4&&!b.deact)hitStd(api,b);return false},
+   draw(g,b){if(!b.vis)return;const im=images.nbUndRiseSpear;if(!im)return;g.save();g.globalAlpha=Math.max(0,b.alpha);g.drawImage(im,R(b.x),R(b.y));g.restore()}});
+ }
+ // The spear thrown across the box when the SOUL turns back to red (blt_parent_noborder).
+ function spawnCross(api,y,hs){
+  api.spawn({x:-10,y,vx:hs,dmg:6,wallKill:false,kill:true,box:[0,13,53,7],img:images.nbUndSpearR,
+   step(b){if(b.x>700)b.alive=false}});
+ }
+
+ // ------------------------------------------------------------- the gens ------
+ // obj_spearbulletfollowgen / obj_risespearbulletgen: both stop at turntimer 3-4; on
+ // orders 9 and 15 Undyne turns the SOUL green instead and the turn ends there.
+ function redGenStep(api,v,toGreen){
+  const g=v.rgen;if(!g)return;
+  const st=api.S;
+  if(g.kind==='follow'){
+   if(tick(g,'a0')){spawnFollow(api,v);g.a0=v.fr}
+   if(v.tt<3){for(const b of st.bullets)if(b.follow)b.deact=1;v.dark=3;v.rgen=null;return}
+  }else{
+   if(tick(g,'a0')&&v.tt>8){
+    let xset=Math.floor(rnd(3));if(xset===g.mem)xset++;if(xset===3)xset=0;g.mem=xset;
+    spawnRise(api,v,st.edge.L+xset*23,st.edge.B);
+    g.a0=v.fr;
+   }
+   if(v.tt<1){for(const b of st.bullets)if(b.rise)b.deact=1;v.rgen=null;return}
+  }
+  if(v.tt<4){
+   g.a0=0;
+   const deact=()=>{for(const b of st.bullets)if(b.follow||b.rise)b.deact=1};
+   if(g.kind==='rise')deact();
+   if(v.order===9||v.order===15){
+    v.tt=30;
+    if(v.order===9)v.lesson=8;if(v.order===15)v.lesson=13;
+    deact();if(g.kind==='follow')v.dark=3;
+    toGreen();
+   }
+   v.rgen=null;
+  }
+ }
+
+ Object.assign(NB.und,{hitStd,spawnArrow,arrows,blkNew,blkStep,blkLogic,blkDraw,genStep,spawnFollow,spawnRise,spawnCross,redGenStep});
+})();
+/* ---- NB content: Undyne. Part 3: obj_undyneboss (intro, lessons, ratings, ACTs, death). ---- */
+(()=>{
+ const {rnd}=NB,R=Math.round,U=NB.und,{tick,X0,Y0}=U,T=()=>NB.undText;
+ // global.flag[99] (encounters) and flag[351] (her HP) carry over when you run away.
+ const UND={f99:0,f351:1500};NB.undState=UND;
+ const BLX=X0+180,BLY=Y0+10; // blconx / blcony: obj_blconwdflowey
+
+ function say(api,m,pages,typer){
+  const st=api.S,v=m.v;
+  if(v.say)st.bubbles=st.bubbles.filter(b=>b!==v.say);
+  const w=new NB.Writer(pages,{typer,x:BLX+15,y:BLY+10});
+  w.onFace=d=>{v.face=d};
+  v.say={m,x:BLX,y:BLY,wide:true,img:images.nbBlconWdShrt,w};
+  st.bubbles.push(v.say);
+ }
+ function sayStep(api,m){
+  const v=m.v,st=api.S,b=v.say;if(!b)return;
+  if(st.mnfight!==1&&st.mnfight!==2)b.w.step();
+  if(b.w.done){st.bubbles=st.bubbles.filter(x=>x!==b);v.say=null}
+ }
+ function setSoul(api,v,green){
+  v.green=green;const st=api.S;
+  st.soulMode=green?'green':'red';st.heart.mode=st.soulMode;
+ }
+ // User Event 1: the slash; alarm[10] flips the SOUL ten steps later.
+ function slash(v){if(v.glock===0){v.a10=10;U.bodySlash(v.body);v.glock=2}}
+ function darken(v){v.dark=1;v.darkA=0}
+ function alarm10(api,v){
+  if(!v.green){setSoul(api,v,true);if(v.order===9||v.order===15||v.order===24)v.a11=15}
+  else setSoul(api,v,false);
+  v.glock=0;
+  if(v.lesson===7||v.lesson===12||v.lesson===21){
+   v.tt=60;
+   U.spawnCross(api,api.heart.y,v.lesson===7?11:v.lesson===12?13:14);
+  }
+ }
+ // mnfight 4: the ratings move with how the turn went, then alarm[7] returns to the menu.
+ function mn4(api,v){
+  if(!v.attacked)return;
+  if(v.hitno>0){
+   if(v.hitno===1)v.rating++;
+   if(v.hitno>1)v.rating+=2;
+   if(v.berserk)v.rating--;
+  }else{
+   if(v.rating>=10&&v.lesson>5)v.rating-=2;
+   else if(v.rating>8)v.rating--;
+   if(v.berserk&&v.rating>6)v.rating--;
+  }
+  v.attacked=0;
+  if(api.S.border===12)api.border(13);
+  v.endT=10;
+  U.waverUser1(v);
+ }
+ function toMenu(api,flavor){
+  const st=api.S;st.nextFlavor=flavor;st.myfight=0;st.mnfight=3;api.border(0);
+ }
+
+ NB.defs.set('undyne',{
+  name:'Undyne',hp:1500,atk:7,def:0,xp:0,gold:0,mercymod:-9999999999,wd:250,
+  encounter:' ',
+  size:()=>({w:174,h:238}),pos:()=>({x:X0,y:Y0}),
+  dmgPos:m=>({x:m.x0,y:m.y+80}),
+  shudder:[8,1],
+  setup(m,api){
+   UND.f99++;
+   if(UND.f99===1)UND.f351=1500;
+   m.maxhp=1500;m.hp=UND.f351;
+   const f=UND.f99;
+   Object.assign(m.v,{con:0,a4:0,a9:0,a10:0,a11:0,glock:0,green:false,lesson:1,order:1,rating:16,ratingb:0,
+    hitno:0,hitfirst:0,berserk:0,mercied:0,dc:0,borderspec:0,defadjust:0,died:0,mc:0,attacked:0,
+    face:f===2?1:f===3?4:f>3?5:0,body:U.bodyNew(),waver:null,melt:null,bs:{siner:0,fade:0,alpha:1},
+    dark:0,darkA:0,img:0,shakify:0,sx:0,sy:0,say:null,tt:0,fr:15,rgen:null,gen:null,blk:null,endT:0,endNow:false,
+    greenlock:0,talkBorder:6,heartPos:null});
+   const st=api.S;st.bgFrame=-1; // obj_battlebg is destroyed
+   try{undyneDying=false}catch(_){}
+   const prev=st.onExit;
+   st.onExit=(reason,S)=>{if(reason==='win'||reason==='gameover'){UND.f99=0;UND.f351=1500}if(prev)prev(reason,S)};
+  },
+  draw(g,m,api){
+   const v=m.v;
+   U.boxsinerDraw(g,v.bs);
+   if(v.gone)return;
+   U.drawMelt(g,v);
+   const img=m.hurt?(v.died?2:1):v.img;
+   if(img){const im=U.rv('nbUndB',img);if(im)g.drawImage(im,R(m.x+v.sx),R(m.y+v.sy))}
+   if(v.body&&!m.hurt)U.bodyDraw(g,v,v.body);
+   if(v.waver)U.waverDraw(g,v,api.S.edge.T);
+   if(v.darkA>0){g.save();g.fillStyle='#000';g.globalAlpha=Math.min(1,v.darkA);g.fillRect(-20,-20,680,520);g.restore()}
+  },
+  drawOver(g,m){U.blkDraw(g,m.v)},
+  acts:['Check','Plead','Challenge'],
+  check:()=>T().check,
+  act(m,i,name){
+   const v=m.v,t=T();
+   if(name==='Challenge'){
+    const to={8:7,9:8,10:9,11:10,12:10,13:11,14:11,15:12,16:12}[v.rating];
+    let text=t.chalNo;
+    if(to!=null){v.rating=to;if(v.ratingb<6)v.ratingb++;text=v.rating===7?t.chalUnfair:t.chalYes}
+    return v.con>=50?t.noWork:text;
+   }
+   if(name==='Plead'){
+    let e=0;
+    const rb={7:6,8:7,9:7}[v.ratingb];if(rb!=null){v.ratingb=rb;e=1}
+    const r={9:10,8:10,7:9}[v.rating];if(r!=null){v.rating=r;e=1}
+    return v.con>=50?t.noWork:(e?t.pleadYes.join(''):t.pleadNo);
+   }
+   return '* Nothing happened.';
+  },
+  onMercy(m){m.v.mercied++},
+  noFlee:m=>m.v.green||!!m.v.died,
+  onDamaged(m){m.v.body=U.bodyNew();UND.f351=m.hp},
+  onLethal(m,api){
+   const v=m.v,st=api.S;
+   if(v.died){api.endPlayerTurn();return true}
+   try{stopMusic()}catch(_){}
+   v.con=50;setSoul(api,v,false);v.bs.fade=1;v.order=-40;v.lesson=-40;v.died=1;
+   st.mnfight=99;st.myfight=99;
+   return true;
+  },
+  border:m=>m.v.talkBorder,
+  // alarm[6]: what she says, which box comes next and where the SOUL waits.
+  speech(m,api){
+   const v=m.v,st=api.S,t=T();
+   if(v.order===-35){
+    // The last stand: no talk, no menu; the closing speech plays out.
+    v.finale=1;v.con=60;st.mnfight=99;st.myfight=99;api.heart.visible=false;
+    return null;
+   }
+   if(v.green&&!v.died){
+    if(m.hp<m.maxhp*.75&&v.lesson<5){v.lesson=6;v.order=6;v.dc=1}
+    if(m.hp<m.maxhp*.5&&v.lesson<11){v.lesson=11;v.order=12;v.dc=2}
+    if(m.hp<m.maxhp*.2&&v.lesson<20){v.lesson=20;v.order=22;v.dc=3;v.rating+=2}
+   }
+   if(v.order===12&&UND.f99<2)UND.f99=2;
+   if(v.order===22&&UND.f99<3)UND.f99=3;
+   if(v.lesson>19&&!v.green&&!v.defadjust){
+    const h=m.hp,mx=m.maxhp;let d=-15;
+    if(h>mx*.3)d=-25;if(h>mx*.4)d=-35;if(h>mx*.5)d=-50;if(h>mx*.75)d=-70;if(h===mx)d=-90;
+    m.df=d;v.defadjust=1;
+   }
+   let wide=false,unc=false;
+   v.mc=R(rnd(100));
+   let pages=[t.taunt];
+   if(v.dc>0){pages=[t.cause[v.dc]];wide=true}
+   const mer=v.mercied>0,O=n=>v.order===n;
+   if(v.order>0){
+    if(O(1)){unc=wide=true;pages=t.o1}
+    if(O(2)){
+     unc=wide=true;pages=[t.o2];
+     if(v.hitno>0&&v.hitfirst===3){pages=t.hit3;v.rating=6;v.berserk=1;v.order=12;v.lesson=11;v.hitfirst++}
+     if(v.hitno>0&&v.hitfirst===2){pages=t.hit2;v.order=1;v.lesson=1;v.hitfirst++}
+     if(v.hitno>0&&v.hitfirst===1){pages=t.hit1;v.order=1;v.lesson=1;v.hitfirst++}
+     if(v.hitno>0&&v.hitfirst===0){pages=t.hit0;v.order=1;v.lesson=1;v.hitfirst++}
+    }
+    for(const n of [3,4,5])if(O(n)){wide=true;pages=[t['o'+n]]}
+    if(O(6)){pages=[t.o6];wide=unc=true}
+    if(O(7)){wide=true;pages=[t.o7];if(mer){unc=true;pages=t.o7m}}
+    if(O(8)){wide=true;pages=[mer?t.o8m:t.o8]}
+    for(const n of [9,10,11])if(O(n)){wide=true;pages=[t['o'+n]]}
+    if(UND.f99>1)for(const n of [9,10,11])if(O(n)){wide=true;pages=[t['r'+n]]}
+    if(O(12)&&v.hitfirst<3){pages=[t.o12];wide=unc=true}
+    for(let n=13;n<=21;n++)if(O(n)){wide=true;pages=[t['o'+n]]}
+    if(O(22)){pages=[t.o22];wide=unc=true}
+    if(O(23)){wide=true;pages=[mer?t.o23m:t.o23]}
+    if(O(24)){wide=true;pages=[mer?t.o24m:t.o24]}
+    if(v.order>24){wide=true;pages=[t.oX]}
+   }
+   if(v.order<0){
+    const k={[-40]:'n40',[-39]:'n39',[-38]:'n38',[-37]:'n37',[-36]:'n36'}[v.order];
+    if(k)pages=t[k];
+    wide=unc=true;
+   }
+   v.borderspec=v.mc>50&&!v.green?1:0;
+   let border=6;v.heartPos=null;
+   if(v.green){border=13;v.heartPos={x:312,y:st.edge.T+34};v.greenlock=1}
+   else if(v.borderspec){border=14;v.heartPos={x:312,y:st.edge.T+34}}
+   v.talkBorder=border;v.dc=0;
+   if(!unc)st.talkLenExact=110;
+   return {pages:pages.filter(p=>p!=null),wide,hold:unc,pos:wide?{x:BLX,y:BLY}:{x:X0+245,y:Y0+52},tx:15,typer:39,
+    img:wide?images.nbBlconWdShrt:null,onFace:d=>{v.face=d}};
+  },
+  // mnfight 2: the green SOUL's lesson, or spears that follow you, or spears from below.
+  attack(m,api){
+   const v=m.v,st=api.S,h=api.heart,t=T();
+   if(v.finale)return null;
+   api.turntimer(99999);v.endNow=false;v.endT=0;
+   if(v.borderspec===0)api.border(7);
+   if(v.green){api.border(12);darken(v)}
+   if(v.heartPos){h.x=v.heartPos.x;h.y=v.heartPos.y}
+   v.hitno=0;v.tt=200;v.fr=15;
+   if(v.green)U.blkNew(api,v,v.lesson,v.rating,7);
+   else if(v.mc<=50){
+    darken(v);v.ratingb++;v.lesson--;if(v.ratingb>9)v.ratingb=9;v.fr=19-v.ratingb;
+    v.rgen={kind:'follow',a0:1};
+   }else{
+    v.borderspec=1;v.ratingb++;v.lesson--;if(v.ratingb>9)v.ratingb=9;v.fr=23-v.ratingb;
+    v.rgen={kind:'rise',a0:10,mem:-1};
+   }
+   const mc=v.mc;let fl=null;
+   if(m.hp<m.maxhp)fl=t.flavHurt[mc>=80?4:mc>=60?3:mc>=40?2:mc>=20?1:0];
+   if(m.hp>=m.maxhp/2){
+    fl=t.flavHigh[Math.min(9,Math.floor(mc/10))];
+    if(v.order>22)fl=t.flavLate[mc>=90?4:mc>=75?3:mc>=50?2:mc>=25?1:0];
+   }
+   if(v.order<0&&t.flavDead[v.order])fl=t.flavDead[v.order];
+   v.attacked=1;v.order++;v.lesson++;
+   return fl;
+  },
+  attackStep(m,api){
+   const v=m.v,st=api.S;
+   st.turntimer=v.endNow?0:99999;
+   v.tt--;
+   if(v.endT>0&&--v.endT===0)v.endNow=true;
+   U.genStep(api,v);
+   U.blkStep(api,v,blk=>{
+    if(blk.refuse===0)mn4(api,v);
+    if(blk.refuse===1&&(blk.lesson===6||blk.lesson===11||blk.lesson===20)){v.dark=3;slash(v)}
+   });
+   U.redGenStep(api,v,()=>slash(v));
+   if(!v.green&&v.tt<1)mn4(api,v);
+  },
+  endAttack(m){const v=m.v;v.blk=null;v.gen=null;v.rgen=null;if(v.dark>0&&v.dark!==3)v.dark=3},
+  step(m,api){
+   const v=m.v,st=api.S,h=api.heart,t=T();
+   if(!v.started){v.started=1;st.writer=null;try{stopMusic()}catch(_){}}
+   if(tick(v,'a4'))v.con=Math.round((v.con+1)*10)/10;
+   if(tick(v,'a9')){api.end('win');return}
+   if(tick(v,'a10'))alarm10(api,v);
+   if(tick(v,'a11')&&st.mnfight===2)mn4(api,v);
+   if(st.mnfight===2)U.blkLogic(api,v);
+   U.bodyStep(v);U.waverStep(v,st.edge.T);U.boxsinerStep(v.bs);
+   // darkify 1 fades the pseudodarker in to half, 3 fades it out; the box walls follow.
+   if(v.dark===1){if(v.darkA<.5)v.darkA+=.04;else v.dark=2;st.boxAlpha=1-v.darkA}
+   if(v.dark===3){if(v.darkA>0)v.darkA-=.04;st.boxAlpha=1-Math.max(0,v.darkA);if(v.darkA<=0){v.dark=0;v.darkA=0;st.boxAlpha=1}}
+   if(st.mnfight===3&&v.dark>0&&v.dark!==3)v.dark=3;
+   // greenlock: the green SOUL rides 34px under the top of the box.
+   if(v.greenlock&&st.mnfight>0&&st.mnfight<99){if(v.green)h.y=st.edge.T+34;else v.greenlock=0}else v.greenlock=0;
+
+   const c=v.con;
+   // ------------------------------------------------------------- intro --
+   if(c===0){v.con=1;v.a4=30}
+   if(v.con===1){st.myfight=99;st.mnfight=99;h.visible=true;h.x=312;h.y=232}
+   if(v.con===2){if(UND.f99<4){slash(v);v.con=3.1;v.a4=30}else v.con=4.1}
+   if(v.con===4.1){
+    const f=UND.f99;
+    if(f===2){v.lesson=8;v.order=9}
+    if(f===3){v.lesson=13;v.order=15}
+    if(f>=4){v.lesson=22;v.order=22}
+    say(api,m,[t.intro[Math.min(5,f)]],39);v.con=5;
+   }
+   if(v.con===5&&!v.say){
+    toMenu(api,t.attacks);
+    try{startBattleMusic()}catch(_){}
+    v.con=6;
+   }
+   // ------------------------------------------------------------- death --
+   if(v.con===50){
+    v.body=null;v.img=2;v.shakify=1;st.mnfight=99;st.myfight=99;api.border(4);
+    say(api,m,t.d50,40);v.con=51;
+   }
+   if(v.con===51&&!v.say){v.con=50.1;v.shakify=3;v.a4=60}
+   if(v.con===51.1){v.shakify=0;v.img=3;v.face=8;say(api,m,t.d51,40);v.con=52}
+   if(v.con===53&&!v.say){slash(v);v.con=54;v.a4=30}
+   if(v.con===52&&!v.say){
+    v.img=0;v.body=U.bodyNew();v.waver=U.waverNew();
+    try{undyneDying=true;startUndyneEndingTrack(1)}catch(_){}
+    say(api,m,t.d52,41);v.con=53;
+   }
+   if(v.con===55){say(api,m,t.d55,41);v.con=56}
+   if(v.con===56&&!v.say){toMenu(api,t.determined);v.con=57}
+   // ------------------------------------------------------------ finale --
+   if(v.con===60){try{stopMusic()}catch(_){}v.face=7;say(api,m,t.d60,40);v.con=61}
+   if(v.con===61&&!v.say){v.face=8;U.waverUser1(v);say(api,m,t.d61,40);v.con=62}
+   if(v.con===62&&!v.say){U.waverUser1(v);say(api,m,t.d62,42);v.con=63}
+   if(v.con===63&&!v.say){v.con=64;U.waverUser1(v);v.a4=120;say(api,m,t.d63,42)}
+   if(v.con===65&&!v.say){v.con=66;if(v.melt)v.melt.f=1;v.a4=120;say(api,m,t.d65,43)}
+   if(v.con===67&&!v.say){v.con=68;if(v.melt)v.melt.f=2;v.a4=120;say(api,m,t.d67,44)}
+   if(v.con===69&&!v.say){v.con=70;if(v.melt)v.melt.f=3;v.a4=120;say(api,m,t.d69,45)}
+   if(v.con===71&&!v.say){
+    // obj_vaporized on spr_undyneb_lastmelt.
+    const im=images.nbUndLastMelt;
+    if(im)st.fx.push({kind:'vapor',m:{x:X0,y:Y0,w:im.naturalWidth,h:im.naturalHeight,def:{draw:(g,mm)=>g.drawImage(im,mm.x,mm.y)}},line:0,parts:[]});
+    NB.snd('vaporized');
+    v.melt=null;v.body=null;v.waver=null;v.gone=1;st.xpTotal+=500;
+    v.con=72;v.a4=200;
+   }
+   if(v.con===73){v.con=74;v.a9=10}
+   if(v.con>=73)st.fade=Math.min(1,(st.fade||0)+.1);
+
+   if(v.shakify>0){v.sx=rnd(v.shakify);v.sy=rnd(v.shakify)}else{v.sx=0;v.sy=0}
+   sayStep(api,m);
+   UND.f351=m.hp;
+  },
+  flavor:m=>T().attacks
+ });
+})();
 const NB_ASSETS={
  nbBattleBg:[0,1].map(i=>RAW+`sprites/images/spr_battlebg_${i}.png`),
  // Exported frames are swapped: spr_heart_1 is the normal red SOUL, _0 the dark hurt flash.
@@ -34143,7 +35289,8 @@ const NB_ASSETS={
  nbCircleMed2:RAW+'sprites/images/spr_circlebulletmed2_0.png',
  nbCircleMd1:RAW+'sprites/images/spr_circlebulletmd1_0.png',
  nbStreamBullet:[0,1].map(i=>RAW+`sprites/images/spr_streambullet_${i}.png`),
- nbBlookHat:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`),
+ // Multi-frame exports are stored in reverse (file _k is image_index N-1-k).
+ nbBlookHat:[5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`),
  nbRotClaw:RAW+'sprites/images/spr_rotclawbullet_0.png',
  nbIceCube:RAW+'sprites/images/spr_icecube_0.png',
  nbIceCubeHurt:RAW+'sprites/images/spr_icecubehurt_0.png',
@@ -34175,15 +35322,37 @@ const NB_ASSETS={
  nbBoneBottom:[1,0].map(i=>RAW+`sprites/images/spr_bonebottom_${i}.png`),
  nbSuperbone:RAW+'sprites/images/spr_superbone_0.png',
  nbCoolbus:RAW+'sprites/images/spr_coolbus_0.png',
- nbScoot:[0,1].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
- nbTobyScoot:[0,1].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
- nbTobyEat:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_tobydogeat_${i}.png`),
- nbTobySurprise:[0,1].map(i=>RAW+`sprites/images/spr_tobydogsurprise_${i}.png`),
+ nbScoot:[1,0].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
+ nbTobyScoot:[1,0].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
+ nbTobyEat:[7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_tobydogeat_${i}.png`),
+ nbTobySurprise:[1,0].map(i=>RAW+`sprites/images/spr_tobydogsurprise_${i}.png`),
  nbCBone:RAW+'sprites/images/spr_cbone_0.png',
  nbOolBone:RAW+'sprites/images/spr_oolbone_0.png',
  nbDBone:RAW+'sprites/images/spr_dbone_0.png',
  nbUdeBone:RAW+'sprites/images/spr_udebone_0.png',
- nbSkateBone:RAW+'sprites/images/spr_skatebone_0.png'
+ nbSkateBone:RAW+'sprites/images/spr_skatebone_0.png',
+ // Undyne (obj_undyneboss / obj_undyneb_body / obj_spearblocker). Multi-frame exports
+ // are stored in reverse: file _k is image_index N-1-k.
+ nbHeartGreen:[0,1].map(i=>RAW+`sprites/images/spr_heartgreen_${i}.png`),
+ nbUndB:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_${i}.png`),
+ nbUndFace:[0,1,2,3,4,5,6,7,8].map(i=>RAW+`sprites/images/spr_undyneb_face_${i}.png`),
+ nbUndHair:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_hair_${i}.png`),
+ nbUndArmor:RAW+'sprites/images/spr_undyneb_armor_0.png',
+ nbUndPants:RAW+'sprites/images/spr_undyneb_pants_0.png',
+ nbUndLarm:RAW+'sprites/images/spr_undyneb_leftarm_0.png',
+ nbUndRarm:RAW+'sprites/images/spr_undyneb_rightarm_0.png',
+ nbUndLegs:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_legs_${i}.png`),
+ nbUndSmear:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_smear_${i}.png`),
+ nbUndMelt:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_melt_${i}.png`),
+ nbUndLastMelt:RAW+'sprites/images/spr_undyneb_lastmelt_0.png',
+ nbUndArrowL:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_l_${i}.png`),
+ nbUndArrowR:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_r_${i}.png`),
+ nbUndArrowU:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_u_${i}.png`),
+ nbUndArrowD:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_d_${i}.png`),
+ nbUndArrowX:[0,1,2,3].map(i=>RAW+`sprites/images/spr_bullet_testx_arrow_${i}.png`),
+ nbUndWhiteSpear:RAW+'sprites/images/spr_whitespearbullet_0.png',
+ nbUndRiseSpear:RAW+'sprites/images/spr_risespearbullet_0.png',
+ nbUndSpearR:RAW+'sprites/images/spr_undynespear_r_0.png'
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
