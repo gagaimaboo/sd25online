@@ -32287,7 +32287,9 @@ const NB=(()=>{
     blue();v.fighto=15;v.xfight=0;v.dc=1;api.border(50);
     // blt_tobydogbone at the right edge (created before border 50 widens the box).
     v.dog=api.spawn({x:RR,y:B-40,manual:true,wallKill:false,kill:false,clip:true,box:[0,0,0,0],hidden:false,spr:'nbTobyEat',frame:0,anim:.2,hs:0,
-     step(b){b.x+=b.hs},draw(g,b){const im=mat(b.spr,Math.floor(b.frame));if(im)g.drawImage(im,R(b.x),R(b.y),(im.naturalWidth||im.width)*2,(im.naturalHeight||im.height)*2)},onHit:()=>false});
+     step(b){b.x+=b.hs},
+     // draw_self_border goes through draw_sprite_part, which ignores the 2x image scale.
+     draw(g,b){const im=mat(b.spr,Math.floor(b.frame));if(im)g.drawImage(im,R(b.x),R(b.y))},onHit:()=>false});
     v.a7=80;
    }
    if(v.truefight&&v.fighto===14){
@@ -34152,7 +34154,8 @@ const NB_ASSETS={
  nbCircleMed2:RAW+'sprites/images/spr_circlebulletmed2_0.png',
  nbCircleMd1:RAW+'sprites/images/spr_circlebulletmd1_0.png',
  nbStreamBullet:[0,1].map(i=>RAW+`sprites/images/spr_streambullet_${i}.png`),
- nbBlookHat:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`),
+ // Multi-frame exports are stored in reverse (file _k is image_index N-1-k).
+ nbBlookHat:[5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_blookhat_${i}.png`),
  nbRotClaw:RAW+'sprites/images/spr_rotclawbullet_0.png',
  nbIceCube:RAW+'sprites/images/spr_icecube_0.png',
  nbIceCubeHurt:RAW+'sprites/images/spr_icecubehurt_0.png',
@@ -34184,10 +34187,10 @@ const NB_ASSETS={
  nbBoneBottom:[1,0].map(i=>RAW+`sprites/images/spr_bonebottom_${i}.png`),
  nbSuperbone:RAW+'sprites/images/spr_superbone_0.png',
  nbCoolbus:RAW+'sprites/images/spr_coolbus_0.png',
- nbScoot:[0,1].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
- nbTobyScoot:[0,1].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
- nbTobyEat:[0,1,2,3,4,5,6,7].map(i=>RAW+`sprites/images/spr_tobydogeat_${i}.png`),
- nbTobySurprise:[0,1].map(i=>RAW+`sprites/images/spr_tobydogsurprise_${i}.png`),
+ nbScoot:[1,0].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
+ nbTobyScoot:[1,0].map(i=>RAW+`sprites/images/spr_tobydogscoot_${i}.png`),
+ nbTobyEat:[7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_tobydogeat_${i}.png`),
+ nbTobySurprise:[1,0].map(i=>RAW+`sprites/images/spr_tobydogsurprise_${i}.png`),
  nbCBone:RAW+'sprites/images/spr_cbone_0.png',
  nbOolBone:RAW+'sprites/images/spr_oolbone_0.png',
  nbDBone:RAW+'sprites/images/spr_dbone_0.png',
