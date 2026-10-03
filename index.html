@@ -1119,7 +1119,7 @@ function saveMercyActImpactSetting(){try{localStorage.setItem(MERCY_ACT_IMPACT_K
 let mercyActImpactEnabled=loadMercyActImpactSetting();
 
 // Sans tutorial / first-run orientation.
-const TUTORIAL_SEEN_KEY='undertaleBattlegrounds_sansTutorialPrompt_v1';
+const TUTORIAL_SEEN_KEY='undertaleBattlegrounds_sansTutorialPrompt_v2';
 let tutorialPromptSelected=0; // 0 YES, 1 NO
 let tutorialIndex=0;
 let tutorialShown='';
@@ -1128,36 +1128,38 @@ let tutorialTimer=0;
 let tutorialReturnScreen='title';
 let tutorialStartedFromSettings=false;
 
+// face: UNDERTALE's own sans textbox portraits (spr_face_sans*).
+const SANS_FACES={normal:'spr_face_sans_0',blink:'spr_face_sansblink_0',chuckle:'spr_face_sanschuckle_0',
+ chuckle2:'spr_face_sanschuckle2_0',wink:'spr_face_sanswink_0',noeyes:'spr_face_sansnoeyes_0'};
 const TUTORIAL_STEPS=[
- {view:'title',text:"heya. sans. apparently this thing has enough buttons now that alphys says it needs an orientation."},
- {view:'title',text:"me and alphys gotta waste all these clone amalgamates on something useful. so we figured you'd be a pretty good one to choose for testing them."},
- {view:'title',highlight:'battle',text:"the BATTLE tab starts whatever fight you've got loaded. simple. pick monster, press battle, try not to become the tutorial."},
- {view:'enemies',highlight:'enemyGrid',text:"ENEMIES is the real control room. pick the main enemy here. doggo, papyrus, toriel, ghosts, vegetables... very professional roster."},
- {view:'enemies',highlight:'enemyGrid',text:"snowdin's got ICE CAP now too. ignore the hat twice if you want the peaceful route. apparently not looking at somebody is a combat technique."},
- {view:'enemies',highlight:'support',text:"SUPPORT lets you throw extra monsters into the same fight. up to five. alphys called that 'stress testing.' i call it 'bad odds.'"},
- {view:'enemies',highlight:'sandbox',text:"VANILLA keeps the original rules. turn it OFF and the CUSTOM HUB opens instead."},
- {view:'enemies',highlight:'sandbox',text:"the CUSTOM HUB lets you edit player stats, character roles, enemy stats, supports, support stats, weapons and items."},
- {view:'enemies',highlight:'sandbox',text:"ICE CAP can be a support now. support Ice Caps use the wider-gap paired-enemy zigzag wave instead of the solo hat launcher."},
- {view:'title',highlight:'creator',text:"CREATOR is its own tab. it has a MONSTERS page now, so you're not trapped editing the same poor creature forever."},
- {view:'title',highlight:'creator',text:"MONSTERS lets you make up to eight separate custom monsters. pick one from the list, then edit that monster without overwriting the others."},
- {view:'title',highlight:'creator',text:"BASICS and SPRITES handle the selected monster's stats and look. USE IN BATTLE makes that selected monster the custom fight."},
- {view:'title',highlight:'creator',text:"PATTERN can store several different attacks for each monster instead of cramming everything into one."},
- {view:'title',highlight:'creator',text:"each attack pattern can merge up to three REAL attacks already in the game. one usable pattern is picked at random each enemy turn."},
- {view:'title',highlight:'creator',text:"some real attacks use more than one graphic. PATTERN has three ATTACK SPRITE slots per layer, so a hand sweep can keep its hand and fire separate instead of repainting everything with one image."},
- {view:'title',highlight:'creator',text:"ACTS builds that monster's pacifist route. you can require several ACT conditions before MERCY turns yellow."},
- {view:'title',highlight:'creator',text:"DIALOGUE lets each monster react differently to each player role. put a | between lines when you want a new speech bubble."},
- {view:'enemies',highlight:'sandbox',text:"the extra roles get their own attacks. toriel gets Fireshock and papyrus gets Boneffication."},
- {view:'enemies',highlight:'sandbox',text:"Flowey stays an enemy encounter here; the old playable Flowey SOUL role has been removed from battle config."},
- {view:'title',highlight:'history',text:"KILLS and SPARES keep track of what you've done. useful if you're the kind of person who likes receipts for violence."},
- {view:'settings',highlight:'noelle',text:"NOELLE MODE swaps the normal setup for Noelle's full MAGIC list, TP and DEFEND. during attacks her brown monster SOUL is MALICE: WASD moves and turns it; hold ENTER to charge and release a directional IceShock lane. only bullets caught by the lane freeze, then shatter free."},
- {view:'settings',highlight:'hardMode',text:"HARD MODE is the red one. right now TORIEL, NAPSTABLOOK and MAD DUMMY get determination-red battle outlines and kaizo attack patterns. we're adding the rest slowly instead of detonating the whole roster at once."},
- {view:'settings',highlight:'tutorial',text:"and this TUTORIAL button is here in case you close this and immediately forget every word i said. statistically, good feature."},
- {view:'battleMock',highlight:'battleButtons',text:"inside a fight: FIGHT, ACT and MERCY use the normal two-column UNDERTALE layout. extra choices page only when there are more than four. ITEM keeps its inventory list."},
- {view:'battleMock',highlight:'soul',text:"during attacks, move the SOUL with the arrow keys or WASD. red moves normally. blue has gravity, so jump instead of trying to negotiate with the floor."},
- {view:'title',highlight:'debug',text:"last thing: F2 or the DBG button opens the debug lab. it can trigger scenes, force states, change HP, test routes, and generally make alphys regret giving you access."},
- {view:'title',text:"that's the tour. pick a clone, push some buttons, and if reality folds in half... uh. write down what you clicked first."}
+ {view:'title',face:'wink',text:"heya. i'm sans. alphys asked me to show you around this place.\nit's a lot of buttons. i'll keep it short. i'm not exactly a long-winded guy."},
+ {view:'title',highlight:'tab:0',face:'normal',text:"BATTLE starts a fight with whoever you've got picked.\nyou choose your LV first, then it's just you and them."},
+ {view:'enemies',highlight:'enemyGrid',face:'normal',text:"ENEMIES is where you pick who that is.\nruins, snowdin, waterfall, hotland... the whole underground's in the lineup."},
+ {view:'enemies',highlight:'support',face:'chuckle',text:"SUPPORT throws up to five more monsters into the same fight.\nmore friends. or more problems. depends who you ask."},
+ {view:'enemies',highlight:'sandbox',face:'normal',text:"VANILLA plays it by the book. flip it to CUSTOM and the CUSTOM HUB opens:\nyour stats, roles, enemy stats, weapons, items. go nuts."},
+ {view:'title',highlight:'history',face:'noeyes',text:"KILLS and SPARES keep count of everyone you've fought.\njust so you know... i keep count too."},
+ {view:'title',highlight:'tab:5',face:'normal',text:"CREATOR lets you build your own monsters. up to eight of 'em.\nstats, sprites, attacks, ACTs, even what they say to you."},
+ {view:'title',highlight:'tab:6',face:'chuckle2',text:"SHOP takes the GOLD you earn in vanilla fights.\nfood, weapons, armor. no refunds. trust me, i asked."},
+ {view:'title',highlight:'tab:7',face:'wink',text:"BOSS RUSH is five bosses back to back at LV 5.\nno healing in between, and your HP carries over. good luck. you'll need it."},
+ {view:'title',highlight:'tab:8',face:'blink',text:"MODS are cheats and chaos rules. fun, but there's a catch:\nmodded fights don't give EXP or GOLD, and they don't go on the record."},
+ {view:'title',highlight:'tab:9',face:'normal',text:"DELTARUNE is a whole other world. pick a party and take on the dummy.\ndifferent rules over there. TP, DEFEND, spells, the works."},
+ {view:'settings',highlight:'set:0',face:'normal',text:"SETTINGS has the extras. NOELLE MODE gives you her MAGIC and DEFEND,\nand her SOUL turns into MALICE: WASD aims it, ENTER charges and fires."},
+ {view:'settings',highlight:'set:3',face:'chuckle',text:"HARD MODE gives the fights that support it red, determination-level patterns.\nrewards go up. so does the screaming."},
+ {view:'settings',highlight:'set:5',face:'blink',text:"NEW ENGINE is alphys's battle rebuild, made from the real game's code.\nit's still a beta, so not every fight is on it yet."},
+ {view:'settings',highlight:'set:4',face:'wink',text:"and SANS TUTORIAL brings me back if you forget all this.\ni won't take it personally. much."},
+ {view:'battleMock',highlight:'battleButtons',face:'normal',text:"in a fight: FIGHT attacks, ACT does stuff, ITEM heals, MERCY spares or runs.\narrows or WASD to choose, Z to confirm, X to back out."},
+ {view:'battleMock',highlight:'soul',face:'normal',text:"when they attack, move your SOUL with the arrows. hold X to go slow.\nred moves freely. blue falls, so jump with UP.\ngreen can't move at all. turn your shield instead."},
+ {view:'title',highlight:'debug',face:'chuckle2',text:"last thing. F2 or DBG opens the debug lab: skip scenes, edit HP, force routes.\ndon't break anything. or do. i'm not your supervisor."},
+ {view:'title',face:'wink',text:"that's the tour. go pick a fight. or don't.\ni'm not gonna make you. ...probably."}
 ];
 
+// Portraits load on first use; the embedded sans head stands in until they arrive.
+const sansFaceImages={};
+function sansFace(k){
+ const n=SANS_FACES[k]||SANS_FACES.normal;
+ if(!(n in sansFaceImages)){sansFaceImages[n]=null;loadImage(RAW+'sprites/images/'+n+'.png').then(im=>{sansFaceImages[n]=im}).catch(()=>{})}
+ return sansFaceImages[n]||images.sans;
+}
 function tutorialWasPrompted(){try{return localStorage.getItem(TUTORIAL_SEEN_KEY)==='1'}catch(_){return false}}
 function markTutorialPrompted(){try{localStorage.setItem(TUTORIAL_SEEN_KEY,'1')}catch(_){}}
 
@@ -27329,7 +27331,7 @@ function drawTutorialPrompt(now=performance.now()){
  ui6Behind(()=>drawTitle(now));
  ctx.save();ctx.globalAlpha=.7;ctx.fillStyle='#000';ui6Clear();ctx.restore();
  const box={x:150,y:600,w:W-300,h:300};
- ui6Dialogue(box,ui6Typed('tutprompt',"* hey kid. this thing has a lot of buttons now.\n* want me to show you around?"),{face:images.sans,faceW:170,f:'sans',s:2,lh:44,maxLines:3});
+ ui6Dialogue(box,ui6Typed('tutprompt',"* hey kid. this thing has a lot of buttons now.\n* want me to show you around?"),{face:sansFace('normal'),faceW:170,f:'sans',s:2,lh:44,maxLines:3});
  const yes=ui6Choice('YES',box.x+520,box.y+box.h-80,tutorialPromptSelected===0),no=ui6Choice('NO',box.x+820,box.y+box.h-80,tutorialPromptSelected===1);
  ui6Marks.tutYes=yes;ui6Marks.tutNo=no;
  ui6Hit(yes,()=>{tutorialPromptSelected=0;play('select');startTutorial(false)},()=>{tutorialPromptSelected=0});
@@ -27344,6 +27346,8 @@ function drawTutorialBattleMock(){
  ui6Marks.battleButtons={x:56,y:630,w:1336,h:116};ui6Marks.soul=arena;
 }
 function tutorialHighlightRect(keyName){
+ if(typeof keyName==='string'&&keyName.startsWith('tab:'))return titleTabRect(+keyName.slice(4));
+ if(typeof keyName==='string'&&keyName.startsWith('set:'))return settingsRowRect(+keyName.slice(4));
  if(keyName==='battle')return titleTabRect(0);
  if(keyName==='enemyGrid')return enemyRosterViewportRect();
  if(keyName==='support')return ui6Marks.enemySupport;
@@ -27374,7 +27378,7 @@ function drawTutorial(){
  if(hr){ctx.save();ctx.strokeStyle=UI6_C.yellow;ctx.lineWidth=6;ctx.setLineDash([18,12]);ctx.lineDashOffset=-(performance.now()/40)%30;ctx.strokeRect(Math.round(hr.x-10),Math.round(hr.y-10),Math.round(hr.w+20),Math.round(hr.h+20));ctx.restore()}
  const tray={x:40,y:H-290,w:W-80,h:250};
  ctx.fillStyle='#000';ui6Fill(tray,'#000');
- ui6Dialogue(tray,tutorialShown,{face:images.sans,faceW:150,f:'sans',s:2,lh:40,maxLines:5});
+ ui6Dialogue(tray,tutorialShown,{face:sansFace(step.face),faceW:150,f:'sans',s:2,lh:40,maxLines:5});
  ui6T(`${tutorialIndex+1} / ${TUTORIAL_STEPS.length}`,tray.x+tray.w-30,tray.y+18,{f:'small',s:2,c:UI6_C.gray,a:'right'});
  ui6Hit(tray,()=>{play('select');advanceTutorial()});
  ui6T(tutorialChar<step.text.length?'Z  FINISH LINE':'Z  NEXT      X  LEAVE TUTORIAL',W/2,24,{f:'small',s:3,c:UI6_C.gray,a:'center'});
