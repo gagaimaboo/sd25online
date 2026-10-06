@@ -29178,7 +29178,8 @@ const NB=(()=>{
  };
  // room_battle button instances (obj_fightbt/talkbt/itembt/sparebt).
  const BUTTONS=[{x:32,img:'fight'},{x:185,img:'act'},{x:345,img:'item'},{x:500,img:'mercy'}];
- const TEXT_COLORS={R:'#ff0000',G:'#00ff00',W:'#ffffff',Y:'#ffff00',X:'#000000',B:'#0000ff',O:'#ff9f40',L:'#14a9ff',P:'#ff00ff',p:'#ffbbd4'};
+ // g/c/m/n: DELTATRAVELER's grey (can't afford), TIRED blue, S-Action pink, N-Action yellow.
+ const TEXT_COLORS={R:'#ff0000',G:'#00ff00',W:'#ffffff',Y:'#ffff00',X:'#000000',B:'#0000ff',O:'#ff9f40',L:'#14a9ff',P:'#ff00ff',p:'#ffbbd4',g:'#888888',c:'#00a2e8',m:'#ff69ff',n:'#ffff69'};
  const defs=new Map();
  let S=null;
 
@@ -29467,6 +29468,7 @@ const NB=(()=>{
    intro:opt.intro,encounterDone:false,custom:!!opt.custom,curMon:null
   };
   NB.S=S;
+  if(opt.party&&opt.party.length>1)partySetup(opt);
   // opt.stats[k]: the CUSTOM HUB numbers for opt.monsters[k] (null when nothing was edited).
   const roster=opt.monsters.flatMap((id,k)=>{
    const c=opt.custom&&opt.stats?.[k]||null,g=NB.groups[id];
@@ -29675,6 +29677,7 @@ const NB=(()=>{
    m.hp-=m.takedamage;
    for(const w of S.dmgw)if(w.m===m&&w.life<0)w.life=15;
    if(m.def.onDamaged)m.def.onDamaged(m,m.takedamage,api);
+   if(m.partyHit){partyHitDone(m);return}
    if(m.hp<1&&m.def.onLethal&&m.def.onLethal(m,api)){return}
    if(m.hp<1)killMonster(m);
    endPlayerTurn();
@@ -29757,6 +29760,12 @@ const NB=(()=>{
 
  // -------------------------------------------------------- turn flow ------
  function endPlayerTurn(){
+  // In a party round this means "that step is over": the next member's action runs
+  // (or, mid-FIGHT, a monster finished reacting). The round itself ends in partyEndRound.
+  if(S.party&&S.pp){partyStepDone();return}
+  startEnemyTurn();
+ }
+ function startEnemyTurn(){
   if(!alive().length){win();return}
   S.myfight=0;S.mnfight=1;S.writer=null;S.heart.visible=false;
   S.talkT=0;
@@ -29767,6 +29776,7 @@ const NB=(()=>{
   // skipped with Z once the border is in place) ends the talk -> mnfight 2.
   if(S.talkT===0){
    S.bubbles=[];
+   if(S.party){S.pp=null;S.pf=null;S.pm=null;S.preact=false} // a script can jump here mid-round
    let border=null;
    for(const m of alive()){
     const sp=m.def.speech?m.def.speech(m,api):null;
@@ -29818,6 +29828,7 @@ const NB=(()=>{
  function returnStep(){
   if(NB.borderSettled()&&S.edge.T===S.ideal[2]&&S.edge.R===S.ideal[1]){
    S.mnfight=0;S.myfight=0;S.bmenuno=0;S.turn++;S.heart.visible=true;S.heart.mode=S.soulMode==='green'?'green':'red';
+   if(S.party)partyTurnEnd();
    const al=alive();
    let flav=S.nextFlavor;
    if(!flav){const m=al[Math.floor(rnd(al.length))];flav=m?.def.flavor?m.def.flavor(m,api):`* ${m?.name||''} is here.`}
@@ -29834,6 +29845,579 @@ const NB=(()=>{
  function exitBattle(reason){
   S.exited=true;
   if(S.onExit)S.onExit(reason,S);
+ }
+
+ // ------------------------------------------------------------- PARTY -----
+ // Party battles: VANILLA off with Susie and/or Noelle in the CUSTOM party. Rebuilt from
+ // DELTATRAVELER's Assembly-CSharp: BattleManager (per-member commands, the order they
+ // run in), GameManager (party stats, HandleDamageCalculations), PartyPanels (DOWN and
+ // revival), TPBar, FightTarget/FightTargetBar (one bar per attacker), SOULGraze and
+ // EnemyBase (MERCY %, S/N-Action, the spells). UNDERTALE's box, buttons and every
+ // monster script stay as they are; only the player's side becomes a party.
+ const TP_DEFEND=16;
+ const PARTY_SPELLS={
+  susie:[
+   {id:'saction',name:'S-Action',col:'m',target:'enemy',cost:0},
+   {id:'rudebuster',name:'Rude Buster',target:'enemy',cost:50,desc:'Deals RUDE Damage'},
+   {id:'ultimateheal',name:'UltimateHeal',target:'ally',cost:100,desc:'The best healing'}
+  ],
+  noelle:[
+   {id:'naction',name:'N-Action',col:'n',target:'enemy',cost:0},
+   {id:'sleepmist',name:'Sleep Mist',target:'none',cost:32,desc:'Spares TIRED Enemies'},
+   {id:'healprayer',name:'HealPrayer',target:'ally',cost:32,desc:'Uses LIGHT to heal'},
+   {id:'iceshock',name:'Ice Shock',target:'enemy',cost:24,desc:'Deals ICE Damage'}
+  ]
+ };
+ // PartyPanels.SetXPositions: panel centres for one, two or three members.
+ NB.partySlots=n=>n<=1?[320]:n===2?[190,450]:[130,320,510];
+ NB.partySpells=PARTY_SPELLS;
+ // DELTARUNE engine sounds (snd_graze, snd_mercyadd...) once its assets are in.
+ function dsnd(k,fb){if(typeof sounds!=='undefined'&&sounds['dr_'+k])snd('dr_'+k);else if(fb)snd(fb)}
+ const drg=()=>typeof DR!=='undefined'&&DR.ready&&DR.gfx?DR.gfx:null;
+
+ // DELTATRAVELER's PartyPanels colours (Kris cyan, Susie magenta, Noelle yellow; CHARA
+ // gets the red SOUL), DELTARUNE's head icons and attack-press lanes.
+ const PARTY_LOOK={
+  classic:{color:'#ff0000',light:'#ff8080',press:'#ff0000',head:null,pressIdx:-1},
+  kris:{color:'#00ffff',light:'#80ffff',press:'#0000ff',head:'spr_headkris',pressIdx:0},
+  susie:{color:'#ff00ff',light:'#ff80ff',press:'#800080',head:'spr_headsusie',pressIdx:1},
+  noelle:{color:'#ffff00',light:'#ffff80',press:'#ffff00',head:'spr_headnoelle',pressIdx:3}
+ };
+ function partySetup(opt){
+  S.party=opt.party.map((p,i)=>({...(PARTY_LOOK[p.role]||PARTY_LOOK.classic),...p,i,hp:Math.min(p.maxhp,p.hp??p.maxhp),revive:0,defending:false,act:null,shake:0}));
+  // One bag for the whole party, like DELTATRAVELER's inventory.
+  S.bag=S.items;
+  S.tp=0;S.tpb=0;S.tpCalc=0;S.tpPreview=0;S.pnums=[];S.pturn=0;S.pm=null;S.pp=null;S.pf=null;S.preact=false;S.grazeFx=0;S.zTap=false;
+  // Code written for one SOUL keeps reading and writing S.hp; for a party it is the
+  // sum of everyone's HP (GameManager.GetCombinedHP).
+  Object.defineProperty(S,'hp',{get:partyHpTotal,set:partySetTotal,configurable:true,enumerable:true});
+  Object.defineProperty(S,'maxhp',{get:()=>S.party.reduce((a,p)=>a+p.maxhp,0),set(){},configurable:true,enumerable:true});
+ }
+ const partyHpTotal=()=>S.party.reduce((a,p)=>a+Math.max(0,p.hp),0);
+ const partyLiving=()=>S.party.filter(p=>p.hp>0);
+ const partyFirst=()=>{const i=S.party.findIndex(p=>p.hp>0);return i<0?0:i};
+ // A script lowering S.hp (Papyrus's bones) hits a random member; raising it (a healing
+ // bite) helps whoever is worst off.
+ function partySetTotal(v){
+  const d=Math.round(Number(v)||0)-partyHpTotal();
+  if(d<0){const l=partyLiving();if(l.length)partyHurt(l[Math.floor(rnd(l.length))],-d)}
+  else if(d>0){const l=partyLiving().sort((a,b)=>a.hp/a.maxhp-b.hp/b.maxhp);partyHeal(l[0]||S.party[0],d)}
+ }
+ function pnum(p,text,color){S.pnums.push({i:p.i,text:String(text),color,t:0})}
+ function partyHurt(p,amt){
+  const before=p.hp;p.hp=Math.max(0,p.hp-amt);p.shake=8;
+  if(p.hp<=0){if(before>0)pnum(p,'DOWN','#ff0000');if(!p.revive)p.revive=4} // LateUpdate: back in 4 turns
+  else pnum(p,before-p.hp,p.light);
+ }
+ // GameManager.Heal: anyone at or under max gains it; a DOWNed member healed past 0 is up.
+ function partyHeal(p,n){
+  const before=p.hp;
+  if(p.hp<=p.maxhp)p.hp=Math.min(p.maxhp,p.hp+Math.max(0,n));
+  if(p.hp>0)p.revive=0;
+  if(p.hp>before)pnum(p,p.hp>=p.maxhp?'MAX':before<=0?'UP':p.hp-before,'#00ff00');
+  return p.hp-before;
+ }
+ // HandleDamageCalculations: one random living member takes the hit. DF/3 comes off, the
+ // party's LV scales it (1 + floor(LV/2)/10), DEFEND takes a third off, at least 1.
+ // CUSTOM HUB ATK edits still scale the monster's bullets.
+ function partyDamage(dmg,opt){
+  const l=partyLiving();if(!l.length)return false;
+  const p=l[Math.floor(rnd(l.length))];
+  let d=Math.max(0,Number(dmg)||0)*(S.curMon?.custom?.atkScale??1);
+  d-=p.df/3;d*=1+Math.floor(S.lv/2)/10;
+  if(p.defending)d*=2/3;
+  if(d<1)d=1;
+  let amt=Math.round(d);
+  if(opt.min&&amt<opt.min)amt=opt.min;if(opt.max&&amt>opt.max)amt=opt.max;
+  partyHurt(p,amt);snd('hurt');
+  S.shake={h:2,v:2,speed:2,t:0};
+  S.invc=Math.round(S.inv*(opt.inv||1));
+  if(partyHpTotal()<=0)gameOver();
+  return true;
+ }
+ // SOULGraze: a 0.45-unit circle (about 21px) round the SOUL. Entering it gives 1% TP
+ // (0.1 for a bullet already grazed), staying in it 0.075% a step; never while hurt.
+ function partyGraze(b){
+  const h=S.heart;
+  if(!h.visible||b.hidden||S.invc>0){b._gz=false;return}
+  const [bx,by,bw,bh]=b.box||[0,0,8,8],x0=b.x+bx,y0=b.y+by,cx=h.x+8,cy=h.y+8;
+  const nx=clamp(cx,x0,x0+bw),ny=clamp(cy,y0,y0+bh);
+  if((nx-cx)*(nx-cx)+(ny-cy)*(ny-cy)>441){b._gz=false;return}
+  if(!b._gz){b._gz=true;S.tpb+=b._gzd?.1:1;b._gzd=true;S.grazeFx=6;dsnd('graze')}
+  else S.tpb+=.075;
+  while(S.tpb>=1){S.tpb-=1;S.tp=Math.min(100,S.tp+1)}
+ }
+ // TPBar.GetCalculatedTP: while choosing, the bar already counts chosen DEFENDs (+16)
+ // and chosen spells' costs.
+ function partyCalcTP(){
+  let t=S.tp;
+  for(const p of S.party){const a=p.act;if(!a)continue;if(a.type==='defend')t=Math.min(100,t+TP_DEFEND);else t-=a.cost||0}
+  return t;
+ }
+ function partyTick(){
+  S.zTap=!!P.confirm;
+  S.tpCalc=partyCalcTP();
+  for(const p of S.party)if(p.shake>0)p.shake--;
+  for(const n of S.pnums)n.t++;
+  S.pnums=S.pnums.filter(n=>n.t<40);
+  if(S.grazeFx>0)S.grazeFx--;
+ }
+
+ // ---- menus (BattleManager state 0..2) ----
+ const partySpareable=m=>m.alive&&(monsterSpareable(m)||(m.mercy||0)>=100);
+ // UNDERTALE monsters have no TIRED flag of their own: like most of DELTARUNE's, they
+ // tire under half HP (DELTATRAVELER sets it per monster).
+ const partyTired=m=>m.alive&&m.hp<m.maxhp/2;
+ NB.partySpareable=partySpareable;NB.partyTired=partyTired;
+ const partyChooser=()=>S.party[S.pturn];
+ const partyBag=()=>S.bag.filter(it=>!S.party.some(q=>q.act?.item===it));
+ function partyFlavor(){S.writer=new NB.Writer(pagesOf(S.flavor,''),{instant:true})}
+ function partyNamesText(page){
+  return alive().slice(page*3,page*3+3).map(m=>(partySpareable(m)?'\\Y':partyTired(m)?'\\c':'\\W')+'   * '+m.name+'\\W').join('&');
+ }
+ function partyMagicText(p,c){
+  const sp=PARTY_SPELLS[p.role]||[],rows=[];
+  const cell=s=>'\\'+(s.cost>S.tpCalc?'g':s.col||(s.id==='sleepmist'&&alive().some(partyTired)?'c':'W'))+'* '+s.name+'\\W';
+  for(let r=0;r<2;r++){const L=sp[r*2],R=sp[r*2+1];if(!L)break;rows.push('   '+cell(L)+(R?' '.repeat(Math.max(2,14-L.name.length))+cell(R):''))}
+  return rows.join('&'); // the description line is drawn by the renderer ("%" ends a writer message)
+ }
+ function partyItemText(list,page){
+  const it=list.slice(page*4,page*4+4);
+  let s='   * '+shortName(it[0]?.name)+'     '+(it[1]?'* '+shortName(it[1].name):'')+' &';
+  if(it[2])s+='   * '+shortName(it[2].name)+'     ';
+  if(it[3])s+='* '+shortName(it[3].name);
+  if(list.length>4)s+=' &                     PAGE '+(page+1);
+  return s;
+ }
+ function partyMenuText(){
+  const pm=S.pm,p=partyChooser();
+  if(pm.kind==='enemy')writeInstant(partyNamesText(pm.page));
+  else if(pm.kind==='act')writeInstant(actText(pm.m));
+  else if(pm.kind==='magic'){S.tpPreview=(PARTY_SPELLS[p.role]||[])[pm.c]?.cost||0;writeInstant(partyMagicText(p,pm.c))}
+  else if(pm.kind==='item')writeInstant(partyItemText(partyBag(),pm.page));
+  else if(pm.kind==='ally')writeInstant(S.party.map(q=>(q.hp>0?'\\W':'\\g')+'   * '+q.list+'\\W').join('&'));
+  else if(pm.kind==='mercy')writeInstant((alive().some(partySpareable)?'\\Y':'\\W')+'   * Spare&\\W   * Defend');
+ }
+ function partyOpen(pm){
+  pm.c=pm.c||0;pm.page=pm.page||0;S.pm=pm;
+  if(pm.kind==='main'){S.tpPreview=0;partyFlavor();return}
+  partyMenuText();
+ }
+ function partyChoose(a){
+  a.cost=a.type==='spell'?a.spell.cost:0;
+  partyChooser().act=a;S.tpPreview=0;
+  partyAdvance();
+ }
+ function partyAdvance(){
+  let i=S.pturn+1;while(i<S.party.length&&S.party[i].hp<=0)i++;
+  if(i>=S.party.length){partyBeginRound();return}
+  S.pturn=i;partyOpen({kind:'main'});
+ }
+ // X on a later member: step back to the one before and undo their choice.
+ function partyBack(){
+  let i=S.pturn-1;while(i>=0&&S.party[i].hp<=0)i--;
+  if(i<0)return;
+  S.party[i].act=null;S.pturn=i;snd('move');partyOpen({kind:'main'});
+ }
+ function partyMenuStep(){
+  const h=S.heart;
+  if(!S.pm){S.pturn=partyFirst();for(const q of S.party)q.act=null;S.pm={kind:'main',c:0,page:0}}
+  const p=partyChooser();
+  if(!p||p.hp<=0){partyAdvance();return} // a DOWNed member's turn is skipped
+  const pm=S.pm;h.visible=true;
+  if(pm.kind==='main'){
+   const b=NB.BUTTONS[S.coord[0]];h.x=b.x+8;h.y=432+14;
+   if(P.left||P.right){S.coord[0]=(S.coord[0]+(P.right?1:3))%4;snd('move')}
+   if(P.confirm){
+    NB.clearPressed('confirm');const c=S.coord[0];
+    if(c===2&&!partyBag().length)return;
+    snd('select');
+    if(c===0)partyOpen({kind:'enemy',purpose:'fight'});
+    else if(c===1)partyOpen(p.leader?{kind:'enemy',purpose:'act'}:{kind:'magic'});
+    else if(c===2)partyOpen({kind:'item'});
+    else partyOpen({kind:'mercy'});
+   }else if(P.cancel){NB.clearPressed('cancel');partyBack()}
+   return;
+  }
+  if(P.cancel){
+   NB.clearPressed('cancel');snd('move');
+   if(pm.kind==='act')partyOpen({kind:'enemy',purpose:'act',c:pm.row,page:pm.page0});
+   else if((pm.kind==='enemy'||pm.kind==='ally')&&pm.purpose==='spell')partyOpen({kind:'magic',c:pm.from});
+   else if(pm.kind==='ally'&&pm.purpose==='item')partyOpen({kind:'item',c:pm.from,page:pm.fromPage});
+   else partyOpen({kind:'main'});
+   return;
+  }
+  if(pm.kind==='enemy'){
+   const al=alive(),count=Math.min(3,al.length-pm.page*3);
+   if(count<=0){partyOpen({kind:'main'});return}
+   if(pm.c>=count)pm.c=count-1;
+   if(P.up){pm.c--;if(pm.c<0){if(pm.page>0){pm.page--;pm.c=2;partyMenuText()}else pm.c=count-1}snd('move')}
+   if(P.down){pm.c++;if(pm.c>=count){if((pm.page+1)*3<al.length){pm.page++;pm.c=0;partyMenuText()}else pm.c=0}snd('move')}
+   h.x=S.ideal[0]+32;h.y=S.ideal[2]+28+pm.c*32;
+   if(P.confirm){
+    NB.clearPressed('confirm');const m=al[pm.page*3+pm.c];if(!m)return;
+    snd('select');
+    if(pm.purpose==='fight')partyChoose({type:'fight',m});
+    else if(pm.purpose==='act')partyOpen({kind:'act',m,row:pm.c,page0:pm.page});
+    else partyChoose({type:'spell',spell:pm.spell,m});
+   }
+   return;
+  }
+  if(pm.kind==='act'){
+   const n=actsOf(pm.m).slice(0,6).length;let c=pm.c;
+   if(P.left||P.right){const o=c%2===0?c+1:c-1;if(o<n)c=o}
+   const col=c%2,rows=Math.max(1,Math.ceil((n-col)/2));
+   if(P.up){let r=Math.floor(c/2)-1;if(r<0)r=rows-1;c=r*2+col}
+   if(P.down){let r=Math.floor(c/2)+1;if(r>=rows)r=0;c=r*2+col}
+   if(c!==pm.c){pm.c=c;snd('move')}
+   h.x=S.ideal[0]+(c%2?292:32);h.y=S.ideal[2]+28+Math.floor(c/2)*32;
+   if(P.confirm){NB.clearPressed('confirm');snd('select');partyChoose({type:'act',m:pm.m,i:pm.c})}
+   return;
+  }
+  if(pm.kind==='magic'){
+   const sp=PARTY_SPELLS[p.role]||[],n=sp.length;let c=pm.c;
+   if(P.left||P.right){const o=c%2===0?c+1:c-1;if(o<n)c=o}
+   if(P.up&&c>=2)c-=2;
+   if(P.down&&c+2<n)c+=2;
+   if(c!==pm.c){pm.c=c;snd('move');partyMenuText()}
+   h.x=S.ideal[0]+(c%2?292:32);h.y=S.ideal[2]+28+Math.floor(c/2)*32;
+   if(P.confirm){
+    NB.clearPressed('confirm');const s=sp[c];if(!s)return;
+    if(s.cost>S.tpCalc){snd('move');return} // TPBar.ValidTPAmount
+    snd('select');
+    if(s.target==='enemy')partyOpen({kind:'enemy',purpose:'spell',spell:s,from:c});
+    else if(s.target==='ally')partyOpen({kind:'ally',purpose:'spell',spell:s,from:c,c:S.pturn});
+    else partyChoose({type:'spell',spell:s});
+   }
+   return;
+  }
+  if(pm.kind==='item'){
+   const bag=partyBag();if(!bag.length){partyOpen({kind:'main'});return}
+   let c=pm.c,page=pm.page;
+   const pg=()=>bag.slice(page*4,page*4+4);
+   if(P.left||P.right){
+    const nc=c%2===0?c+1:c-1;
+    if(P.right&&c%2===1&&(page+1)*4<bag.length){page++;c=c-1}
+    else if(P.left&&c%2===0&&page>0){page--;c=c+1}
+    else if(pg()[nc])c=nc;
+   }
+   if(P.up&&c>=2)c-=2;
+   if(P.down&&c<2&&bag[page*4+c+2])c+=2;
+   while(c>0&&!pg()[c])c--;
+   if(c!==pm.c||page!==pm.page){pm.c=c;pm.page=page;snd('move');partyMenuText()}
+   h.x=S.ideal[0]+(c%2?280:32);h.y=S.ideal[2]+(c<2?28:60);
+   if(P.confirm){
+    NB.clearPressed('confirm');const it=bag[page*4+c];if(!it)return;
+    snd('select');
+    if(S.party.length>1)partyOpen({kind:'ally',purpose:'item',item:it,from:c,fromPage:page,c:S.pturn});
+    else partyChoose({type:'item',item:it,target:p});
+   }
+   return;
+  }
+  if(pm.kind==='ally'){
+   const n=S.party.length;
+   if(P.up){pm.c=(pm.c+n-1)%n;snd('move')}
+   if(P.down){pm.c=(pm.c+1)%n;snd('move')}
+   h.x=S.ideal[0]+32;h.y=S.ideal[2]+28+pm.c*32;
+   if(P.confirm){
+    NB.clearPressed('confirm');snd('select');const t=S.party[pm.c];
+    if(pm.purpose==='item')partyChoose({type:'item',item:pm.item,target:t});
+    else partyChoose({type:'spell',spell:pm.spell,target:t});
+   }
+   return;
+  }
+  if(pm.kind==='mercy'){
+   if(P.up||P.down){pm.c=pm.c?0:1;snd('move')}
+   h.x=S.ideal[0]+32;h.y=S.ideal[2]+28+pm.c*32;
+   if(P.confirm){NB.clearPressed('confirm');snd('select');partyChoose({type:pm.c?'defend':'spare'})}
+  }
+ }
+
+ // ---- the round (DecideMemberAction -> AdvancePlayerTurn) ----
+ // ACT/MAGIC/ITEM run one by one in party order, then everyone's SPARE at once, then
+ // every FIGHT together on one target box.
+ function partyBeginRound(){
+  S.pm=null;S.tpPreview=0;
+  S.tp=Math.max(0,Math.min(100,partyCalcTP())); // TPBar.UseTP
+  const q=[],sparers=[],fighters=[];
+  for(const p of S.party){
+   const a=p.act;p.act=null;p.defending=!!a&&a.type==='defend'&&p.hp>0;
+   if(!a||p.hp<=0)continue;
+   if(a.type==='spare')sparers.push(p);
+   else if(a.type==='fight')fighters.push({p,m:a.m});
+   else if(a.type!=='defend')q.push({...a,p});
+  }
+  if(sparers.length)q.push({type:'spare',sparers});
+  if(fighters.length)q.push({type:'fight',fighters});
+  S.pp={phase:'exec',q,i:0,wait:null};S.preact=false;
+  S.myfight=2;S.heart.visible=false;S.writer=null;S.bmenuno=0;
+  partyNext();
+ }
+ function partyNext(){
+  const pp=S.pp;if(!pp||S.exited||S.won||S.gameover)return;
+  if(!alive().length){S.pp=null;win();return}
+  pp.wait=null;
+  const a=pp.q[pp.i++];
+  if(!a){partyEndRound();return}
+  S.myfight=2;S.heart.visible=false;
+  if(a.type==='act'){if(!a.m.alive){partyNext();return}doAct(a.m,a.i);return} // its text ends in endPlayerTurn()
+  if(a.type==='item'){partyUseItem(a);return}
+  if(a.type==='spell'){partyCast(a);return}
+  if(a.type==='spare'){partySpare(a);return}
+  partyFightStart(a.fighters);
+ }
+ // api.endPlayerTurn() during a round: an ACT's text is over, or a monster finished
+ // reacting to a hit (Mad Dummy, Toriel's last blow).
+ function partyStepDone(){
+  S.preact=false;
+  const pp=S.pp;if(!pp||pp.phase!=='exec'||pp.wait)return;
+  partyNext();
+ }
+ function partyBusy(){return S.preact||S.mons.some(m=>m.hurtanim===3||m.hitQ?.length)}
+ function partyExecStep(){
+  const pp=S.pp;if(!pp||pp.phase!=='exec'||!pp.wait)return;
+  if(S.writer&&!S.writer.done)return;
+  if(partyBusy()||!pp.wait())return;
+  partyNext();
+ }
+ function partyEndRound(){S.pp=null;S.pf=null;S.preact=false;startEnemyTurn()}
+ function partyWait(text,cond){write(text,{end:'/'});S.pp.wait=cond||(()=>true)}
+ // End of the enemy turn (BattleManager state 6): DOWNed members count down and come
+ // back with a quarter of their HP; DEFEND wears off.
+ function partyTurnEnd(){
+  let up=false;
+  for(const p of S.party){
+   if(p.hp<=0){if(--p.revive<=0){p.revive=0;p.hp=Math.max(1,Math.floor(p.maxhp/4));pnum(p,'UP','#00ff00');up=true}}
+   else p.revive=0;
+   p.defending=false;p.act=null;
+  }
+  if(up)snd('heal');
+  S.pp=null;S.pf=null;S.pm=null;S.preact=false;S.tpPreview=0;
+ }
+
+ // ---- ITEM (Items.ItemUse / GetRecoveryString) ----
+ const partyWho=p=>p.leader?'You':p.say;
+ function partyRecovery(p,n){
+  if(p.hp+n>=p.maxhp)return p.leader?'* Your HP was maxed out.':`* ${p.say}'s HP was maxed out.`;
+  return `* ${partyWho(p)} recovered ${n} HP!`;
+ }
+ const partyItemHeal=(it,p)=>Math.max(0,Math.round(itemBaseHealForRole(it,p.role)));
+ function partyUseItem(a){
+  const it=a.item,from=a.p,to=a.target||from;
+  S.talked=91;
+  const k=S.bag.indexOf(it);if(k>=0)S.bag.splice(k,1);
+  if(it.onUse)it.onUse(api);
+  let text=from===to?`* ${partyWho(from)} ate the ${it.name}.`
+   :`* ${partyWho(from)} gave the ${it.name}\n  to ${to.leader?'you':to.say} and ${to.leader?'you':'she'} ate it.`;
+  if(it.healsParty){const n=partyItemHeal(it,to);text+=`\n* Everyone recovered ${n} HP!`;for(const p of S.party)partyHeal(p,n)}
+  else{const n=partyItemHeal(it,to);text+='\n'+partyRecovery(to,n);partyHeal(to,n)}
+  if(it.tpGain)S.tp=Math.min(100,S.tp+Number(it.tpGain));
+  snd('heal');partyFxHeal(to);
+  partyWait(text);
+ }
+
+ // ---- MAGIC / S-Action / N-Action / SPARE ----
+ const partyRetarget=m=>m&&m.alive?m:(alive()[0]||null);
+ function partyMercy(m,n){ // EnemyBase.AddActPoints
+  m.mercy=Math.min(100,(m.mercy||0)+n);dsnd('mercyadd','select');
+  const x=m.x+m.w/2-32,y=m.y-10;
+  S.fx.push({t:0,step(e){if(++e.t>=40)e.dead=true},draw(g,e){g.save();g.globalAlpha=e.t<30?1:1-(e.t-30)/10;NB.drawText(g,'+'+n+'%',x,y-Math.min(e.t,10)*2,'#ffff00');g.restore()}});
+ }
+ // EnemyBase.CalculateDamage while a RudeBusterEffect is out: (6+AT)/2*9 + MAGIC*5 - DF,
+ // +20 for the well-timed Z (rawDmg 40), x0.6 without a weapon.
+ function partyRudeDamage(p,m,bonus){
+  let n=(6+p.at)/2*9+p.mag*5-fightDef(m);if(bonus)n+=20;if(p.noWeapon)n*=.6;
+  n=Math.round(n);return n<=0?1:n;
+ }
+ function partyCast(a){
+  const p=a.p,s=a.spell,id=s.id;
+  if(id==='saction'||id==='naction'){
+   const m=a.m;
+   // EnemyBase.PerformAssistAct: the default S/N-Action is +50% MERCY.
+   if(!m.alive)partyWait(`* ${p.say} tried to ACT,\n  but ${m.name} was\n  already spared!`);
+   else{partyMercy(m,50);partyWait(`* ${p.say} used ${id==='saction'?'S':'N'}-ACTION!\n* ${m.name} liked that!`)}
+   return;
+  }
+  if(id==='ultimateheal'||id==='healprayer'){
+   const t=a.target||p;
+   // ULTIMATE HEAL: floor(Susie's MAGIC). HEAL PRAYER: maxHP/4 + floor(MAGIC/2) + ring MAGIC.
+   const n=id==='ultimateheal'?Math.floor(p.magRaw):Math.floor(p.maxhp/4)+Math.floor(p.magRaw/2)+(p.iceMag||0);
+   const onto=t===p?'herself.':t.leader?'you.':t.say+'.';
+   const text=`* ${p.say} cast ${id==='ultimateheal'?'ULTIMATE HEAL':'HEAL PRAYER'}\n  onto ${onto}\n${partyRecovery(t,n)}`;
+   partyHeal(t,n);dsnd('power','heal');partyFxHeal(t);
+   partyWait(text);return;
+  }
+  if(id==='sleepmist'){
+   const al=alive(),tired=al.filter(partyTired);
+   let text=`* ${p.say} cast SLEEP MIST!`;
+   if(!tired.length)text+=al.length===1?"\n* But the enemy wasn't\n  TIRED...":'\n* But none of the enemies\n  were TIRED...';
+   dsnd('ghostappear');if(tired.length)dsnd('spellpacify');
+   for(const m of al)partyFxMist(m,tired.includes(m));
+   for(const m of tired)spareMonster(m);
+   partyWait(text);return;
+  }
+  const m=partyRetarget(a.m);
+  if(id==='rudebuster'){
+   if(!m){partyWait(`* ${p.say} cast RUDE BUSTER!`);return}
+   const fx=partyFxRudeBuster(p,m);
+   partyWait(`* ${p.say} cast RUDE BUSTER!`,()=>fx.dead);return;
+  }
+  if(id==='iceshock'){
+   if(!m){partyWait(`* ${p.say} cast ICE SHOCK!`);return}
+   // IceShock.DamageEnemy -> CalculateDamage: 10 + MAGIC*8 + random(-5..4), no DF.
+   const fx=partyFxIceShock(m,()=>partyHit(m,Math.max(1,Math.round(10+p.mag*8+Math.floor(rnd(10))-5))));
+   dsnd('icespell');
+   partyWait(`* ${p.say} cast ICE SHOCK!`,()=>fx.dead);
+  }
+ }
+ function partySpare(a){
+  const who=a.sparers,everyone=S.party.length===3&&who.length===3,two=who.length>1&&!everyone;
+  const subj=everyone?'* Everyone':'* '+who.map(partyWho).join(' and ');
+  const al=alive();
+  for(const m of al)if(m.def.onMercy)m.def.onMercy(m,api);
+  const ok=al.filter(partySpareable);
+  for(const m of ok)spareMonster(m);
+  let text=subj+(two?' spared\n  the enemies!':' spared the enemies!');
+  if(!ok.length)text+=al.length===1?"\n* But the enemy's name\n  wasn't YELLOW...":"\n* But none of the enemies'\n  names were YELLOW...";
+  partyWait(text);
+ }
+
+ // ---- FIGHT (FightTarget / FightTargetBar) ----
+ // One bar per attacker slides toward the hit spot. Z hits whichever bars are furthest
+ // along: dead on (frame 50) scores 20 and +6% TP, before it frames/2.5-5, after it
+ // 15 minus about 1 a frame; past frame 59 it's a MISS. Every hit is +3% TP. The blow
+ // lands 12 frames after the press.
+ function partyFightStart(fighters){
+  S.pp.phase='fight';S.myfight=1;S.writer=null;S.heart.visible=false;S.preact=false;
+  const n=fighters.length;
+  S.pf={n,bars:fighters.map((f,k)=>({p:f.p,m:f.m,row:k,frames:n===1?12:Math.floor(rnd(4))*4,active:true,ended:false,endT:0,rate:0,landed:false,miss:false,flash:0}))};
+ }
+ const partyRate=f=>f===50?20:f<50?f/2.5-5:Math.max(0,15-.988*(f-50));
+ function partyPush(b){
+  b.active=false;b.ended=true;b.rate=partyRate(b.frames);b.flash=1;
+  S.tp=Math.min(100,S.tp+3);
+  if(b.frames===50){S.tp=Math.min(100,S.tp+3);b.crit=true;dsnd('crit')}
+  b.m=partyRetarget(b.m);const m=b.m;if(!m)return;
+  const off=(b.row-(S.pf.n-1)/2)*16; // PlayerAttackAnimation spreads the party's swings
+  S.fx.push({kind:'slice',x:m.x+m.wd/2-5+off,y:m.y-5,cx:m.x+m.wd/2+5+off,cy:m.y+45,sc:1.5,isp:.25,frame:0,t:0});
+  snd('hit');
+ }
+ function partyBarLand(b){
+  const m=b.m;if(!m||!m.alive)return;
+  if(b.miss||b.rate<=0){spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;return}
+  // EnemyBase.CalculateDamage: (8+AT)*rate/8 - DF, x0.75 rate without a weapon; Hit: at least 1.
+  let raw=b.rate;if(b.p.noWeapon)raw*=.75;
+  let n=Math.round((8+b.p.at)*raw/8-fightDef(m));if(n<=0)n=1;
+  partyHit(m,n);
+ }
+ function partyFightStep(){
+  const pf=S.pf;if(!pf)return;
+  if(P.confirm){
+   // Only a press that hits a bar is used up: once the bars are done, Z belongs to
+   // whatever the monsters say while they react (Mad Dummy's rant).
+   let top=-1;for(const b of pf.bars)if(b.active&&b.frames>16)top=Math.max(top,Math.round(b.frames/1.25));
+   if(top>=0){NB.clearPressed('confirm');for(const b of pf.bars)if(b.active&&b.frames>16&&Math.round(b.frames/1.25)===top)partyPush(b)}
+  }
+  for(const b of pf.bars){
+   if(b.flash>0)b.flash=Math.max(0,b.flash-.1);
+   if(b.active&&++b.frames>59){b.active=false;b.ended=true;b.miss=true}
+   if(b.ended&&!b.landed&&++b.endT>=12){b.landed=true;partyBarLand(b)}
+  }
+  if(pf.bars.every(b=>b.landed&&b.flash<=0)&&!partyBusy()){S.pf=null;if(S.pp){S.pp.phase='exec';partyNext()}}
+ }
+ // A hit from the party (FIGHT or a spell). Several can queue on one monster.
+ function partyHit(m,dmg){
+  if(!m||!m.alive)return;
+  if(m.def.onHitCalc)dmg=m.def.onHitCalc(m,dmg,api);
+  dmg=Math.max(0,Math.round(dmg));
+  // A monster with its own FIGHT reaction (Mad Dummy) gets it once and hands control
+  // back through api.endPlayerTurn(), as after a solo hit.
+  if(m.def.hurt&&m.custom?.def==null){if(!S.preact){S.preact=true;m.def.hurt(m,api)}return}
+  if(m.hurtanim===3){(m.hitQ||(m.hitQ=[])).push(dmg);return}
+  partyStartHurt(m,dmg);
+ }
+ function partyStartHurt(m,dmg){
+  m.partyHit=true;m.takedamage=dmg;
+  m.hurt=true;m.shudder=m.def.shudder?.[0]??16;m.shakeT=0;snd('damage');
+  spawnDmgWriter(m,dmg);m.hurtanim=3;
+ }
+ function partyHitDone(m){
+  m.partyHit=false;
+  if(m.hp<1){
+   m.hitQ=null;
+   if(m.def.onLethal){S.preact=true;if(m.def.onLethal(m,api))return;S.preact=false}
+   killMonster(m);return;
+  }
+  const nx=m.hitQ?.shift();if(nx!=null)partyStartHurt(m,nx);
+ }
+
+ // ---- spell effects ----
+ function partyPanelX(p){return NB.partySlots(S.party.length)[p.i]}
+ function partyFxHeal(p){
+  const cx=partyPanelX(p);
+  S.fx.push({t:0,top:true,stars:[],step(e){
+   e.t++;if(e.t<=6)for(let k=0;k<2;k++)e.stars.push({x:cx-60+rnd(120),y:398+rnd(20),vy:-1-rnd(1.5),a:1.2});
+   for(const s of e.stars){s.y+=s.vy;s.a-=.04}if(e.t>30)e.dead=true;
+  },draw(g,e){
+   g.save();g.fillStyle='#00ff00';
+   for(const s of e.stars){g.globalAlpha=Math.max(0,Math.min(1,s.a));const x=Math.round(s.x),y=Math.round(s.y);g.fillRect(x-1,y-3,2,6);g.fillRect(x-3,y-1,6,2)}
+   g.restore();
+  }});
+ }
+ function partyFxMist(m,ok){
+  const x=m.x+m.w/2,y=m.y+m.h/2;
+  S.fx.push({t:0,step(e){if(++e.t>=40)e.dead=true},draw(g,e){
+   const G=drg(),al=Math.sin(e.t/9)-.3+(ok?.3:0),amp=Math.sin(e.t/9)*30;if(al<=0)return;
+   for(const s of [1,-1]){
+    const px=x+s*Math.sin(e.t/6)*amp,py=y+s*Math.cos(e.t/6)*amp/2;
+    if(G)G.draw(g,'spr_icespell_mist',0,px,py,3,2,0,al*.8);
+    else{g.save();g.globalAlpha=Math.min(1,al*.5);g.fillStyle='#ffffff';g.beginPath();g.ellipse(px,py,60,30,0,0,7);g.fill();g.restore()}
+   }
+  }});
+ }
+ function partyFlake(g,x,y,s,a){
+  const G=drg();
+  if(G){G.draw(g,'spr_icespell_snowflake',0,x,y,s,s,0,a);return}
+  g.save();g.globalAlpha=a;g.strokeStyle='#bfefff';g.lineWidth=2;g.beginPath();
+  for(let i=0;i<3;i++){const t=i*Math.PI/3,c=Math.cos(t)*12*s,d=Math.sin(t)*12*s;g.moveTo(x-c,y-d);g.lineTo(x+c,y+d)}
+  g.stroke();g.restore();
+ }
+ // IceShock: three snowflakes at frames 1/4/7, the hit at 10, then the pieces spin out.
+ function partyFxIceShock(m,onHit){
+  const x=m.x+m.w/2,y=m.y+m.h/2,pts=[[x-25,y-20],[x+25,y-20],[x,y+20]];
+  const fx={t:0,step(e){e.t++;if(e.t===10)onHit();if(e.t>=27)e.dead=true},draw(g,e){
+   for(let k=0;k<3;k++)if(e.t>=1+k*3&&e.t<10)partyFlake(g,pts[k][0],pts[k][1],1.2,1);
+   if(e.t>=10){
+    const q=Math.sin(Math.min(1,(e.t-10)/15)*Math.PI/2),r=15+25*q,a=Math.max(0,Math.min(1,1-(e.t-18)/9));
+    for(const [px,py] of pts)for(let j=0;j<6;j++){const an=(e.t*12+j*60)*Math.PI/180;partyFlake(g,px+Math.cos(an)*r,py+Math.sin(an)*r,.4,a)}
+   }
+  }};
+  S.fx.push(fx);return fx;
+ }
+ // RudeBusterEffect: the bolt flies from Susie to the target; Z while it flies is the bonus.
+ function partyFxRudeBuster(p,m){
+  const sx=partyPanelX(p),sy=392,tx=m.x+m.w/2,ty=m.y+m.h/2;
+  const fx={t:0,x:sx,y:sy,dir:90,bonus:false,hit:false,burst:0,after:[],top:true,step(e){
+   e.t++;if(e.t===1)dsnd('rbswing','hit');
+   if(!e.hit){
+    if(S.zTap&&e.t>1&&!e.bonus){e.bonus=true;dsnd('boost')}
+    const k=Math.min(1,e.t/18),ox=e.x,oy=e.y;
+    e.x=sx+(tx-sx)*k;e.y=sy+(ty-sy)*k-Math.sin(k*Math.PI)*60;
+    e.dir=Math.atan2(-(e.y-oy),e.x-ox)*180/Math.PI;
+    e.after.push({x:e.x,y:e.y,dir:e.dir,a:.8});
+    if(k>=1){e.hit=true;dsnd('rbhit','damage');partyHit(m,partyRudeDamage(p,m,e.bonus))}
+   }else if(++e.burst>14)e.dead=true;
+   for(const a of e.after)a.a-=.08;e.after=e.after.filter(a=>a.a>0);
+  },draw(g,e){
+   const G=drg();
+   g.save();
+   for(const a of e.after){if(G)G.draw(g,'spr_rudebuster_beam',4,a.x,a.y,1.5,1.2,a.dir,Math.max(0,a.a*.7));else{g.globalAlpha=Math.max(0,a.a*.6);g.fillStyle='#ff00ff';g.beginPath();g.arc(a.x,a.y,8,0,7);g.fill()}}
+   g.globalAlpha=1;
+   if(!e.hit){if(G)G.draw(g,'spr_rudebuster_beam',e.t/2,e.x,e.y,1.5,1.5,e.dir,1);else{g.fillStyle='#ffffff';g.beginPath();g.arc(e.x,e.y,9,0,7);g.fill();g.fillStyle='#ff00ff';g.beginPath();g.arc(e.x,e.y,6,0,7);g.fill()}}
+   else{g.globalAlpha=Math.max(0,1-e.burst/14);g.strokeStyle=e.bonus?'#ffffff':'#ff00ff';g.lineWidth=4;g.beginPath();g.arc(tx,ty,10+e.burst*5,0,7);g.stroke()}
+   g.restore();
+  }};
+  S.fx.push(fx);return fx;
  }
 
  // ------------------------------------------------------------ bullets ----
@@ -29856,6 +30440,7 @@ const NB=(()=>{
  function damagePlayer(dmg,opt={}){
   // scr_damagestandard / blt_parent collision.
   if(S.invc>0)return false;
+  if(S.party)return partyDamage(dmg,opt);
   let amt;
   if(S.custom){
    // VANILLA OFF: the old engine's hurtPlayer custom rules. The hit scales with the
@@ -29879,7 +30464,7 @@ const NB=(()=>{
   if(mode===2&&NB.heartMoving())return false;
   let d=dmg;
   // CUSTOM rules skip the HP-bracket bonus, like the old engine's hurtPlayer.
-  if(!S.custom){if(S.hp>20)d++;for(let t=30;t<=90;t+=10)if(S.hp>=t)d++}
+  if(!S.custom&&!S.party){if(S.hp>20)d++;for(let t=30;t<=90;t+=10)if(S.hp>=t)d++}
   return damagePlayer(d,opt);
  }
  function bulletsStep(){
@@ -29902,6 +30487,7 @@ const NB=(()=>{
     const hit=b.onHit?b.onHit(b,api):damagePlayer(b.dmg);
     if(hit!==false&&b.kill)b.alive=false;
    }
+   if(S.party&&b.alive&&S.mnfight===2)partyGraze(b);
   }
   for(const b of S.bullets)if(!b.alive&&b.onDie&&!b.diedOnce){b.diedOnce=true;S.curMon=b.owner||null;b.onDie(b,api)}
   S.curMon=null;
@@ -29982,13 +30568,15 @@ const NB=(()=>{
   if(S.gameover){gameOverStep();fxStep();return}
   if(S.won){if(S.writer)S.writer.step();fxStep();return}
   if(S.runaway){S.heart.x+=S.heart.hs;if(S.writer)S.writer.step();if(S.heart.x<-60&&!S.exitQueued){S.exitQueued=true;exitBattle('flee')}fxStep();return}
+  if(S.party)partyTick();
   if(S.mnfight===0&&S.myfight===0){
    if(S.writer)S.writer.step();
-   menuStep();
-  }else if(S.myfight===1){fightStep()}
+   if(S.party)partyMenuStep();else menuStep();
+  }else if(S.myfight===1){if(S.pf)partyFightStep();else fightStep()}
   else if(S.myfight===2||S.myfight===4){
    if(S.writer)S.writer.step();
    if(S.sparePause){if(--S.sparePause<=0){S.sparePause=0;endPlayerTurn()}}
+   if(S.pp)partyExecStep();
   }
   if(S.mnfight===1)monsterTalkStep();
   else if(S.mnfight===2){attackStep();bulletsStep();for(const b of S.bubbles)b.w.step()}
@@ -30052,6 +30640,7 @@ const NB=(()=>{
   g.restore();
  }
  function drawHud(g,S){
+  if(S.party){drawPartyHud(g,S);return}
   // scr_binfowrite
   drawMars(g,`${S.name}   LV ${S.lv}`,30,400);
   const hpn=images.hpHudSprite;if(hpn)g.drawImage(hpn,244,405);
@@ -30061,12 +30650,142 @@ const NB=(()=>{
   const hp=S.hp<10?'0'+Math.max(0,S.hp):String(S.hp);
   drawMars(g,`${hp} / ${S.maxhp}`,290+S.maxhp*1.2,400);
  }
+ // ---- party HUD (DELTATRAVELER PartyPanels + TPBar) ----
+ const drg=()=>typeof DR!=='undefined'&&DR.ready&&DR.gfx?DR.gfx:null;
+ function marsW(t){let w=0;for(const ch of String(t))w+=hudMarsGlyph(ch)[4];return w}
+ function marsAt(g,t,x,y,color,s=.6,align){
+  const w=marsW(t)*s;if(align==='right')x-=w;else if(align==='center')x-=w/2;
+  g.save();g.translate(Math.round(x),Math.round(y));g.scale(s,s);drawMars(g,t,0,3,color);g.restore();
+ }
+ function partyIcon(g,p,x,y,dim){
+  const G=drg();
+  g.save();if(dim)g.globalAlpha=.5;
+  if(p.head&&G)G.draw(g,p.head,0,x,y+1,.75,.75);
+  else if(!p.head&&images.heart)g.drawImage(images.heart,x+4,y+2,16,16);
+  else{g.fillStyle=p.color;g.fillRect(x+4,y+2,16,16)}
+  g.restore();
+ }
+ function drawPartyHud(g,S){
+  const n=S.party.length,cs=NB.partySlots(n),w=n===3?184:200,menu=S.myfight===0&&S.mnfight===0&&!S.won;
+  S.party.forEach((p,i)=>{
+   const down=p.hp<=0,cur=menu&&S.pturn===i&&!down;
+   const x0=Math.round(cs[i]-w/2)+(p.shake>0?(p.shake%2?2:-2):0),y0=cur?387:393;
+   g.fillStyle='#000';g.fillRect(x0,y0,w,36);
+   g.save();g.globalAlpha=down?1:(menu&&!cur?.55:1);
+   g.strokeStyle=down?'#808080':p.color;g.lineWidth=2;g.strokeRect(x0+1,y0+1,w-2,34);
+   g.restore();
+   partyIcon(g,p,x0+5,y0+4,down);
+   const chosen=menu&&p.act;
+   marsAt(g,p.hud,x0+34,y0+4,down?'#808080':chosen?'#ffff00':'#ffffff',.6);
+   // PartyPanels.UpdateHP: a DOWNed member shows the turns left as "-n/max".
+   const txt=down&&p.revive>0?`-${p.revive}/${p.maxhp}`:`${Math.max(0,p.hp)}/${p.maxhp}`;
+   const col=down?'#ff0000':p.defending?'#00ffff':p.hp<p.maxhp/4?'#ffff00':'#ffffff';
+   marsAt(g,txt,x0+w-7,y0+4,col,.6,'right');
+   const bw=w-41;
+   g.fillStyle='#800000';g.fillRect(x0+34,y0+24,bw,7);
+   if(p.hp>0){g.fillStyle=p.color;g.fillRect(x0+34,y0+24,Math.max(1,Math.round(bw*p.hp/p.maxhp)),7)}
+  });
+  drawTP(g,S);
+ }
+ // TPBar: 150px for 100%, orange (yellow at MAX); a hovered spell's cost blinks on top.
+ function drawTP(g,S){
+  const x=7,y=240,w=18,h=150,tp=Math.max(0,Math.min(100,S.tpCalc??S.tp)),fh=Math.round(tp*1.5);
+  g.fillStyle='#000';g.fillRect(x-2,y-2,w+4,h+4);
+  g.fillStyle='#3a1a00';g.fillRect(x,y,w,h);
+  g.fillStyle=tp>=100?'#ffff00':'#ffa040';g.fillRect(x,y+h-fh,w,fh);
+  const pv=Math.min(S.tpPreview||0,tp);
+  if(pv>0){g.save();g.globalAlpha=.35+.35*Math.abs(Math.sin(S.t/8));g.fillStyle='#ffffff';g.fillRect(x,y+h-fh,w,Math.round(pv*1.5));g.restore()}
+  g.strokeStyle='#ffffff';g.lineWidth=1;g.strokeRect(x-.5,y-.5,w+1,h+1);
+  marsAt(g,'TP',x+w/2,y-38,'#ffffff',.6,'center');
+  marsAt(g,tp>=100?'MAX':tp+'%',x+w/2,y-20,tp>=100?'#ffff00':'#ffffff',.55,'center');
+ }
+ function drawPartyNums(g,S){
+  const cs=NB.partySlots(S.party.length);
+  for(const n of S.pnums){
+   const cx=cs[n.i],y=372-Math.min(n.t,8)*2;
+   g.save();g.globalAlpha=n.t<30?1:Math.max(0,1-(n.t-30)/10);
+   NB.drawText(g,n.text,Math.round(cx-n.text.length*8),y,n.color||'#ffffff');
+   g.restore();
+  }
+ }
+ // MAGIC, spelled with UNDERTALE's own button letters: M/C from MERCY, A from ACT, G/I from FIGHT.
+ const magicBtn={};
+ function magicButton(sel){
+  const k=sel?'sel':'unsel';if(magicBtn[k])return magicBtn[k];
+  const act=images['btn_act_'+k],fi=images['btn_fight_'+k],me=images['btn_mercy_'+k];
+  const ok=im=>im&&(im.naturalWidth||im.width);
+  if(!ok(act)||!ok(fi)||!ok(me))return act||null;
+  const c=document.createElement('canvas');c.width=110;c.height=42;const cg=c.getContext('2d');cg.imageSmoothingEnabled=false;
+  cg.drawImage(act,0,0);cg.fillStyle='#000';cg.fillRect(26,6,80,31);
+  const L=[[me,29,44],[act,34,52],[fi,60,72],[fi,46,57],[me,79,90]];
+  const ww=L.reduce((a,[,x0,x1])=>a+x1-x0+1,0)+2*(L.length-1),word=document.createElement('canvas');word.width=ww;word.height=27;
+  const wg=word.getContext('2d');let cx=0;
+  for(const [im,x0,x1] of L){wg.drawImage(im,x0,8,x1-x0+1,27,cx,0,x1-x0+1,27);cx+=x1-x0+3}
+  cg.drawImage(word,0,0,ww,27,29,8,75,27);
+  return magicBtn[k]=c;
+ }
+ // BattleManager.DrawEnemyBars / DrawMemberBars: HP% and MERCY% next to the names.
+ function drawPartyMenu(g,S){
+  const pm=S.pm;
+  if(pm.kind==='enemy'){
+   const al=S.mons.filter(m=>m.alive).slice(pm.page*3,pm.page*3+3);if(!al.length)return;
+   marsAt(g,'HP',372,256,'#ffffff',.45);marsAt(g,'MERCY',466,256,'#ffffff',.45);
+   al.forEach((m,i)=>{
+    const y=280+i*32,hp=Math.max(1,Math.min(100,Math.ceil(m.hp/m.maxhp*100))),mc=Math.max(0,Math.min(100,Math.round(m.mercy||0)));
+    g.fillStyle='#ff0000';g.fillRect(372,y,76,17);g.fillStyle='#00ff00';g.fillRect(372,y,Math.ceil(hp*.75)+1,17);
+    marsAt(g,hp+'%',374,y+1,'#ffffff',.5);
+    g.fillStyle='#ff5e1b';g.fillRect(466,y,76,17);if(mc>0){g.fillStyle='#ffff00';g.fillRect(466,y,Math.ceil(mc*.75)+1,17)}
+    marsAt(g,mc+'%',468,y+1,'#8e0c00',.5);
+    // HandleEnemyNameColor: the SPARE star and TIRED mark after the name.
+    const nx=132+m.name.length*16+8,G=drg();
+    if(G&&NB.partySpareable(m))G.draw(g,'spr_sparestar',0,nx,y-8);
+    if(G&&NB.partyTired(m))G.draw(g,'spr_tiredmark',0,nx+20,y-8);
+   });
+  }else if(pm.kind==='magic'){
+   // BattleManager.ChangeACTTPCost: description and "% TP" under the spells.
+   const s=(NB.partySpells[S.party[S.pturn]?.role]||[])[pm.c];
+   if(s?.desc){NB.drawText(g,s.desc,100,334,'#888888');NB.drawText(g,s.cost+'% TP',100+(s.desc.length+2)*16,334,'#ff9f40')}
+  }else if(pm.kind==='ally'){
+   S.party.forEach((p,i)=>{const y=280+i*32;g.fillStyle='#ff0000';g.fillRect(372,y,101,17);if(p.hp>0){g.fillStyle='#00ff00';g.fillRect(372,y,Math.max(1,Math.round(p.hp/p.maxhp*101)),17)}});
+  }
+ }
+ // FightTarget with one lane per attacker, drawn with DELTARUNE's press sprites when they
+ // have loaded. The bolt reaches the spot on frame 50.
+ function drawPartyFight(g,S){
+  const pf=S.pf,G=drg(),lh=38,top=255+Math.round((130-pf.n*lh)/2),x0=40,spot=x0+80;
+  if(pf.bars.every(b=>b.landed&&b.flash<=0))return; // FightTarget is gone once every bar is done
+  for(const b of pf.bars){
+   const p=b.p,y=top+b.row*lh;
+   g.strokeStyle=p.press;g.lineWidth=1;g.strokeRect(spot-1.5,y+1.5,596-spot,35);
+   if(G&&p.pressIdx>=0){G.draw(g,'spr_pressfront',p.pressIdx,x0,y);G.draw(g,'spr_pressfront_b',0,x0,y);G.draw(g,'spr_pressspot',p.pressIdx,spot,y)}
+   else{
+    g.fillStyle='#000';g.fillRect(x0,y+1,74,36);g.strokeStyle=p.press;g.strokeRect(x0+.5,y+1.5,73,35);
+    partyIcon(g,p,x0+24,y+8,false);
+    g.strokeRect(spot+.5,y+1.5,9,35);
+   }
+   if(b.miss&&!b.active)continue;
+   const bx=b.active?spot+(50-b.frames)*8:spot+(50-Math.min(b.frames,59))*8;
+   if(bx>596)continue;
+   if(b.active){
+    const a=b.frames>50?Math.max(0,1-(b.frames-50)/9):1;
+    if(G)G.draw(g,'spr_attackspot',0,bx,y,1,1,0,a);
+    else{g.save();g.globalAlpha=a;g.fillStyle='#ffffff';g.fillRect(bx,y+1,10,36);g.restore()}
+   }else if(b.flash>0){
+    // the press: the bolt bursts in the member's colour (yellow when dead on)
+    const k=1-b.flash,bw=10+k*(b.crit?24:14),bh=36+k*(b.crit?24:14);
+    g.save();g.globalAlpha=b.flash;g.fillStyle=b.crit?'#ffff00':p.light;
+    g.fillRect(Math.round(bx+5-bw/2),Math.round(y+19-bh/2),Math.round(bw),Math.round(bh));g.restore();
+   }
+  }
+ }
  function drawButtons(g,S){
   for(let i=0;i<4;i++){
    const b=NB.BUTTONS[i];
    // obj_fightbt etc: yellow frame when highlighted and it's the player's menu.
    const lit=S.coord[0]===i&&S.myfight===0&&S.mnfight===0&&!S.won;
-   const im=images[`btn_${b.img}_${lit?'sel':'unsel'}`];
+   // DELTATRAVELER's ACT button turns into MAGIC on Susie's and Noelle's turns.
+   const magic=i===1&&S.party&&S.myfight===0&&S.mnfight===0&&S.party[S.pturn]&&!S.party[S.pturn].leader;
+   const im=magic?magicButton(lit):images[`btn_${b.img}_${lit?'sel':'unsel'}`];
    if(im)g.drawImage(im,b.x,432,110,42);
   }
  }
@@ -30079,8 +30798,11 @@ const NB=(()=>{
   // spr_heartgreen (exports reversed: _1 is image_index 0).
   if(h.mode==='green'&&images.nbHeartGreen)im=images.nbHeartGreen[1-(Math.floor(h.frame)%2)]||im;
   if(im)g.drawImage(im,Math.round(h.x),Math.round(h.y),16,16);
+  // SOULGraze: the ring flashes when a bullet comes close.
+  if(S.party&&S.grazeFx>0&&S.mnfight===2){g.save();g.globalAlpha=S.grazeFx/6;g.strokeStyle='#ffffff';g.lineWidth=2;g.beginPath();g.arc(h.x+8,h.y+8,21,0,Math.PI*2);g.stroke();g.restore()}
  }
  function drawFight(g,S){
+  if(S.pf){drawPartyFight(g,S);return}
   const f=S.fight;if(!f)return;
   const t=images.target;
   if(t){g.save();g.globalAlpha=Math.max(0,f.alpha);g.drawImage(t,f.tx,f.ty,546*f.xs,115);g.restore()}
@@ -30105,7 +30827,7 @@ const NB=(()=>{
  }
  function drawFx(g,S){
   for(const e of S.fx){
-   if(e.draw){e.draw(g,e);continue}
+   if(e.draw){if(!e.top)e.draw(g,e);continue}
    if(e.kind==='slice'){
     // spr_strike's exported frames are trimmed, so use the registered weapon sheet
     // (same frames, correct offsets) at obj_slice's image_speed.
@@ -30191,10 +30913,12 @@ const NB=(()=>{
    const xw=190+len*16;
    al.forEach((m,i)=>{ctx.fillStyle='#ff0000';ctx.fillRect(xw,280+i*32,101,17);ctx.fillStyle='#00ff00';ctx.fillRect(xw,280+i*32,Math.round(m.hp/m.maxhp*100)+1,17)});
   }
+  if(S.party&&S.pm&&S.myfight===0&&S.mnfight===0&&!S.won)drawPartyMenu(ctx,S);
   drawFight(ctx,S);
   drawBullets(ctx,S);
   for(const m of S.mons)if(m.alive&&m.def.drawOver)m.def.drawOver(ctx,m,NB.api);
   if(!S.cinematic){drawHud(ctx,S);drawButtons(ctx,S);drawHeart(ctx,S)}
+  if(S.party){for(const e of S.fx)if(e.top&&e.draw)e.draw(ctx,e);drawPartyNums(ctx,S)}
   if(S.fade>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,S.fade)+')';ctx.fillRect(-40,-40,720,560)}
   for(const w of S.dmgw)drawDmg(ctx,w);
   ctx.restore();
@@ -34727,7 +35451,8 @@ if(c.lesson > 20) {
  // scr_damagestandard on the calling object: its dmg grows by the HP bonus every call
  // (the source adds to the instance variable itself), then the hit costs round(dmg-df/5).
  function hitStd(api,o){
-  const hp=api.S.hp;let bonus=hp>20?1:0;for(let t=30;t<=90;t+=10)if(hp>=t)bonus++;
+  // A party has no HP bracket (DELTATRAVELER scales by LV instead), and its S.hp is the sum.
+  const hp=api.S.party?0:api.S.hp;let bonus=hp>20?1:0;for(let t=30;t<=90;t+=10)if(hp>=t)bonus++;
   o.dmg+=bonus;
   return api.damage(o.dmg);
  }
@@ -35415,8 +36140,11 @@ function nbCanRun(){
  if(!newEngineEnabled)return false;
  if(typeof bossRushActive!=='undefined'&&bossRushActive)return false;
  if(typeof mpBattleActive!=='undefined'&&mpBattleActive)return false;
- if(practiceMode!=='classic')return false;
- if(soloPartyConfigured())return false; // a CUSTOM party needs the old engine's party turns
+ // A CUSTOM party of CHARA/Kris with Susie and/or Noelle runs the new engine's
+ // DELTATRAVELER-style party battle; any other party stays on the old engine.
+ const party=nbPartyEligible();
+ if(!party&&practiceMode!=='classic')return false;
+ if(!party&&soloPartyConfigured())return false;
  if(currentBoss==='papyrus'&&papyrusNhbMode())return false; // NOT HOLDING BACK is this game's own mode
  return nbBattleIds().every(id=>NB.supports(id));
 }
@@ -35437,21 +36165,59 @@ function nbCustomStats(id,support){
  out.atkScale=out.atk!=null?out.atk/Math.max(1,Number(base.atk)||4):1;
  return out;
 }
+function nbPartyEligible(){
+ if(vanillaMode)return false;
+ const slots=sandboxPartySlots(),rest=slots.slice(1).filter(v=>v&&v!=='off');
+ return rest.length>0&&['classic','kris'].includes(slots[0])&&rest.every(r=>r==='susie'||r==='noelle');
+}
+// DELTATRAVELER's GameManager stats for the party at the current LV. The leader keeps the
+// CUSTOM HUB player stats (UNDERTALE's chart); Susie and Noelle use DELTATRAVELER's
+// formulas plus their own PARTY loadout (weapon, two armours).
+function nbBuildParty(){
+ const LV=Math.max(1,Math.min(20,Math.floor(Number(battleLevel())||1)));
+ const out=[];
+ sandboxPartySlots().forEach((role,slot)=>{
+  if(!role||role==='off')return;
+  const load=partyLoadoutForSlot(slot),w=weaponById(load.weapon||'stick'),a=sandboxArmorData(slot);
+  const eqAtk=(+w.atk||0)+(+a.atk||0),eqDef=(+w.def||0)+(+a.def||0),eqMag=(+w.magic||0)+(+a.magic||0);
+  if(slot===0){
+   const st=effectivePlayerStats(),wp=activeWeaponData();
+   out.push({role,slot,leader:true,hud:role==='kris'?'KRIS':roleDisplayName(role),list:role==='kris'?'Kris':roleDisplayName(role),say:'You',
+    maxhp:st.hp,at:Math.max(0,(+st.displayAtk||0)+(+wp.atk||0)),df:Math.max(0,+st.displayDef||0),mag:0,magRaw:0,noWeapon:false});
+   return;
+  }
+  // GameManager.GetMaxHP / GetATKRaw / GetDEFRaw / GetMagicRaw
+  const susie=role==='susie',base=(LV-1)*2;
+  const maxhp=LV===20?(susie?150:100):Math.round(susie?30+5*(LV-1):20+4*(LV-1));
+  const atRaw=susie?base+2+Math.floor(LV/4):Math.round(base*2/3);
+  const magRaw=susie?1+LV/5:LV;
+  out.push({role,slot,hud:susie?'SUSIE':'NOELLE',list:susie?'Susie':'Noelle',say:susie?'Susie':'Noelle',
+   maxhp,at:atRaw+eqAtk,df:Math.floor(LV/5)+eqDef,mag:magRaw+eqMag,magRaw,
+   noWeapon:!w.partyOnly,iceMag:!susie&&['snowring','freezering'].includes(w.id)?eqMag:0});
+ });
+ return out;
+}
 function nbStartBattle(){
  screen='nb';
  nbLoadAssets();
+ const partyOn=nbPartyEligible();
+ if(typeof soloPartyTurnIndex!=='undefined')soloPartyTurnIndex=0; // leader stats/loadout = slot 1
  // reset() builds this for the old engine: VANILLA uses the shop stock, CUSTOM the
  // hub LOADOUT (party slot 1's items). Without it the fight got the last fight's bag.
  if(vanillaMode)inventory=buildBattleInventory();else{resetPartyRuntimeItems();activatePartyRuntimeSlot(0)}
+ // A party shares one bag: every member's PARTY loadout items.
+ const bag=partyOn?sandboxPartySlots().flatMap((r,i)=>r&&r!=='off'?(partyRuntimeItems?.[i]||[]):[]):(inventory||[]);
+ if(partyOn&&typeof DR!=='undefined')DR.load(); // head icons, press lanes, spell sprites and sounds
  const ids=nbBattleIds(),custom=!vanillaMode;
  NB.start({
   monsters:ids,
   custom,
+  party:partyOn?nbBuildParty():null,
   stats:custom?ids.map((id,k)=>nbCustomStats(id,k>0)):null,
   name:(typeof playerDisplayName==='function'?playerDisplayName():roleDisplayName(practiceMode)),
   // battleItemHealing: role, Burnt Pan and armour multipliers. Using one spends the
   // VANILLA shop stock (a no-op on CUSTOM rules), like the old engine's ITEM menu.
-  items:(inventory||[]).map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id)})),
+  items:bag.map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id)})),
   onExit(reason){
    screen='battle';
    try{stopMusic()}catch(_){}
@@ -36875,7 +37641,7 @@ const DR=(()=>{
   try{music&&music.pause()}catch(_){}
   if(S.onExit)S.onExit(reason);
  }
- return {start,update,render,onKey,load,exit,get S(){return S},get ready(){return ready},_dbg:{P,held,mercyadd,heroHit,dmgwriter}};
+ return {start,update,render,onKey,load,exit,get S(){return S},get ready(){return ready},gfx:{draw,frame,meta},_dbg:{P,held,mercyadd,heroHit,dmgwriter}};
 })();
 
 // DELTARUNE tab: its own screen with its own engine (Dummy only for now).
