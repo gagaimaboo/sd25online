@@ -758,7 +758,10 @@ const SFX={
  weaponPunchWeak:RAW+'sound/audio/snd_punchweak.wav',
  weaponPunchStrong:RAW+'sound/audio/snd_punchstrong.wav',
  weaponPan:RAW+'sound/audio/mus_sfx_frypan.wav',
- weaponGun:RAW+'sound/audio/mus_sfx_gunshot.wav'
+ weaponGun:RAW+'sound/audio/mus_sfx_gunshot.wav',
+ weaponBook:RAW+'sound/audio/mus_sfx_bookspin.ogg',
+ victor:RAW+'sound/audio/snd_victor.wav',
+ laz:RAW+'sound/audio/snd_laz.wav'
 };
 const MUSIC={
  // UNDERTALE save/menu theme. Used across every front-end/config screen.
@@ -8451,7 +8454,7 @@ const NB=(()=>{
    turntimer:-1,target:null,shake:null,view:{x:0,y:0},
    won:false,runaway:false,gameover:null,flavor:'',onExit:opt.onExit||null,xpTotal:0,goldTotal:0,
    intro:opt.intro,encounterDone:false,custom:!!opt.custom,curMon:null,
-   mods:new Set(opt.mods||[])
+   mods:new Set(opt.mods||[]),weapon:String(opt.weapon||'stick')
   };
   NB.S=S;
   if(opt.mp)mpSetup(opt.mp);
@@ -8610,44 +8613,221 @@ const NB=(()=>{
  }
 
  // -------------------------------------------------------------- FIGHT ----
+ // ------------------------------------------------------- FIGHT, per weapon --
+ // scr_attack: the knives get obj_target + obj_targetchoice (one bar), the Tough Glove the
+ // fist bar (obj_targetchoicefist: then mash Z for up to 4 punches), and Ballet Shoes /
+ // Burnt Pan / Empty Gun / Torn Notebook obj_shoetargettest's bolts (press as each one
+ // crosses the middle).
+ const WEAPON_KIND={stick:'knife',toyknife:'knife',worndagger:'knife',realknife:'knife',toughglove:'fist',
+  balletshoes:'bolts',burntpan:'bolts',emptygun:'bolts',tornnotebook:'bolts'};
+ const W_ATLAS=()=>typeof weaponSpriteAtlas!=='undefined'?weaponSpriteAtlas:null;
  function startFight(){
   S.myfight=1;S.heart.visible=false;S.writer=null;
-  // obj_target at (idealborder0+6, idealborder2+6); obj_targetchoice starts 16px left.
-  const tx=S.ideal[0]+6,ty=S.ideal[2]+6;
-  S.fight={tx,ty,alpha:1,xs:1,fade:false,x:tx-16,x0:tx-16,t0:S.t,hs:(11+rnd(2))*(S.mods.has('turboMeter')?1.35:1),hit:false,blink:0,done:false,timer:0};
+  // obj_target at (idealborder0+6, idealborder2+6)
+  const tx=S.ideal[0]+6,ty=S.ideal[2]+6,w=S.weapon,kind=WEAPON_KIND[w]||'knife';
+  const base={tx,ty,alpha:1,xs:1,fade:false,hit:false,blink:0,done:false,timer:0,t0:S.t,kind,weapon:w};
+  if(kind==='bolts'){S.fight={...base,...boltSetup(tx,ty,w)};return}
+  // the Stick's bar always starts on the left; the others pick a side (x-16 or x+570)
+  const right=w!=='stick'&&Math.round(rnd(1))===1;
+  let hs=(11+rnd(2))*(S.mods.has('turboMeter')?1.35:1);
+  if(w==='toyknife')hs*=1.25;
+  if(kind==='fist')hs*=1.2;
+  const x=right?tx+570:tx-16;
+  S.fight={...base,x,x0:x,hs:right?-hs:hs};
+ }
+ // obj_shoetargettest Create: where each bolt starts (user events 4 = from the left,
+ // 5 = from the right) and how many there are.
+ function boltSetup(tx,ty,w){
+  const ch=(...a)=>a[Math.floor(rnd(a.length))];
+  const type={balletshoes:0,burntpan:1,emptygun:2,tornnotebook:3}[w];
+  const sp=(w==='emptygun'?15:10)*(S.mods.has('turboMeter')?1.35:1);
+  const bolts=[],fatalx=tx+274;
+  const add=(fromRight,wherex)=>{
+   const pri=bolts.length;
+   if(fromRight)bolts.push({x:tx+546+wherex-20,hs:-sp,pri,alpha:1});   // obj_ztarget
+   else bolts.push({x:tx-wherex,hs:sp,pri,alpha:1});                     // obj_xtarget
+  };
+  if(type===0){add(0,-50);add(0,ch(0,25,50));add(0,ch(100,125,150))}
+  if(type===1){add(1,-50);add(1,ch(0,25,50));add(1,ch(100,125,150));add(1,200)}
+  if(type===2){add(0,120);add(0,ch(180,210,240));add(0,ch(300,330,360));add(0,ch(400,430,460))}
+  if(type===3){add(1,ch(-50,-25));add(1,ch(0,25,50))}
+  return {bolts,num:bolts.length,fatalx,score:0};
+ }
+ // The FIGHT's own effects (punches, the gun/pan/notebook hits, fadebars) live in S.fx.
+ function wfx(o){S.fx.push(o);return o}
+ function weaponFrame(g,fr,x,y,{scale=1,alpha=1,angle=0,gold=false,sx}={}){
+  if(!fr||alpha<=0||scale<=0)return;
+  g.save();g.globalAlpha*=Math.min(1,alpha);g.translate(Math.round(x),Math.round(y));if(angle)g.rotate(angle*Math.PI/180);
+  g.scale(sx??scale,scale);g.drawImage(gold?fr.gold:fr.image,-fr.ox,-fr.oy);g.restore();
+ }
+ // obj_lightpunch / obj_strongpunch (spr_regfist/hyperfist, regfoot/hyperfoot for the shoes)
+ function punchFx(x,y,strong,foot,crit){
+  snd(strong?'weaponPunchStrong':'weaponPunchWeak');
+  if(strong){S.shake={h:3,v:3,speed:2,t:0};if(crit)snd('weaponSaber')}
+  return wfx({t:0,x,y,frame:0,step(e){e.t++;e.frame+=.5;const j=strong?2:1;e.x+=-j+rnd(j*2);e.y+=-j+rnd(j*2);if(e.frame>=(strong?6:5))e.dead=true},
+   draw(g,e){const A=W_ATLAS();if(!A)return;const set=strong?(foot?A.shoes:A.glove):(foot?A.shoeSmall:A.gloveSmall);weaponFrame(g,set[Math.floor(e.frame)],e.x,e.y,{gold:crit})}});
+ }
+ // obj_fadebar: grows and fades where a bolt was stopped (red / cyan good / yellow perfect)
+ function fadebarFx(x,y,frame){
+  return wfx({top:true,t:0,x:x+7,y:y+64,sc:1,a:1,step(e){e.a-=.1;e.sc+=.1;if(e.a<.1)e.dead=true},
+   draw(g,e){const A=W_ATLAS();if(A)weaponFrame(g,A.fade[frame],e.x,e.y,{scale:e.sc,alpha:e.a})}});
+ }
+ // obj_gunshot_stab (+ obj_gunshot_star x8, obj_gunshot_2 rings x3)
+ function gunFx(x,y,crit){
+  snd('weaponGun');
+  const stars=[],rings=[];
+  return wfx({t:0,x,y,frame:0,step(e){
+    e.t++;e.frame+=.5;
+    if(e.t===7){for(let i=0;i<8;i++)stars.push({ang:20*i,siner:45*i,amt:0,sp:16,a:1,size:.5});rings.push({size:1,form:0,a:1})}
+    if(e.t===10||e.t===13){rings.push({size:1,form:0,a:1});if(crit)snd('weaponSaber')}
+    for(const q of stars){q.siner+=15;q.amt+=q.sp;q.sp-=2;q.ang+=20;q.size=Math.max(0,1+q.sp/20);if(q.sp<0)q.a-=.07;if(q.amt<=.5)q.dead=true}
+    for(const r of rings){if(r.form===0)r.size+=.5;if(r.size>3.5)r.form=1;if(r.form===1){r.a-=.2;r.size-=.3;if(r.a<.1)r.dead=true}}
+    if(e.t>60)e.dead=true},
+   draw(g,e){const A=W_ATLAS();if(!A)return;
+    if(e.t<7)weaponFrame(g,A.gunStar[Math.floor(e.frame)%2],e.x,e.y,{scale:2,gold:crit});
+    for(const r of rings)if(!r.dead)weaponFrame(g,A.gunRing,e.x,e.y,{scale:r.size,alpha:r.a,gold:crit});
+    for(const q of stars)if(!q.dead){const a=q.siner*Math.PI/180;weaponFrame(g,A.gunStar[Math.floor(e.frame)%2],e.x+Math.sin(a)*q.amt,e.y+Math.cos(a)*q.amt,{scale:q.size,alpha:q.a,angle:-q.ang,gold:crit})}}});
+ }
+ // obj_frypan_impact (+ 8 obj_frypan_star)
+ function panFx(x,y,crit){
+  snd('weaponPan');if(crit)snd('weaponSaber');
+  const ang=6*(rnd(2)<1?1:-1),stars=[];
+  for(let i=0;i<8;i++)stars.push({x,y,dir:i*45,sp:8,ang:12.25,rot:0,a:1});
+  return wfx({t:0,x,y,frame:0,size:2,form:0,rot:0,a:1,step(e){
+    e.t++;e.frame+=1;e.rot+=ang;
+    if(e.form===0)e.size+=.3;
+    if(e.size>2.8&&e.form===0){e.form=1;S.shake={h:2,v:2,speed:2,t:0}}
+    if(e.form===1){e.size-=.6;e.a-=.2}
+    for(const q of stars){q.sp=Math.max(0,q.sp-.34);q.x+=Math.cos(q.dir*Math.PI/180)*q.sp;q.y-=Math.sin(q.dir*Math.PI/180)*q.sp;if(q.sp<6){q.a-=.05;if(q.ang>1)q.ang-=.5}q.rot+=q.ang}
+    if(e.t>70)e.dead=true},
+   draw(g,e){const A=W_ATLAS();if(!A)return;
+    if(e.a>0&&e.size>0)weaponFrame(g,A.bookBurst[Math.floor(e.frame)%2],e.x,e.y,{scale:e.size,alpha:e.a,angle:-e.rot,gold:crit});
+    for(const q of stars)if(q.a>.05)weaponFrame(g,A.star,q.x,q.y,{alpha:q.a,angle:-q.rot,gold:crit})}});
+ }
+ // obj_notebook_attackanim: the book spins in, then bursts like the pan
+ function bookFx(x,y,crit){
+  snd('weaponBook');
+  return wfx({t:0,x,y,siner:0,sx:2,sc:2,a:1,frame:0,step(e){
+    e.t++;e.siner++;
+    if(e.t<15)e.sx=Math.cos(e.siner/2)*2;
+    if(e.t===15){snd('weaponPunchStrong');if(crit)snd('weaponSaber');e.sx=e.sc=.5}
+    if(e.t>15){e.frame++;e.sc+=.5;e.sx=e.sc;if(e.sc>2)e.a-=.2;if(e.a<.1)e.dead=true}},
+   draw(g,e){const A=W_ATLAS();if(!A)return;
+    if(e.t<15)weaponFrame(g,A.notebook,e.x,e.y,{scale:2,sx:e.sx,gold:crit});
+    else weaponFrame(g,A.bookBurst[e.frame%2],e.x,e.y,{scale:e.sc,alpha:e.a,gold:crit})}});
  }
  function fightStep(){
-  // global.damagetimer: the monster reacts once obj_slice's animation has played.
+  // global.damagetimer: the monster reacts once the weapon's animation has played.
   if(S.fightWait>0){if(--S.fightWait===0)hurtMonster()}
   const f=S.fight;if(!f)return;
   if(f.phase==='wait')return;
+  if(f.kind==='bolts'){boltStep(f);return}
+  if(f.phase==='punch'){punchStep(f);return}
   if(f.hit){f.blink+=.4;return}
   f.x+=f.hs;
   const m=S.mons[S.target];
   const miss=()=>{f.fade=true;f.hit=true;f.cursorGone=true;spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn()};
-  // Online: a remote player's press reaches the host a little after they made it,
-  // so the bar waits a moment past the edge and the hit uses where it was when they pressed.
-  if(f.x>f.tx+546+(S.mp?f.hs*12:0)){miss();return} // obj_targetchoice ran off: MISS
+  // obj_targetchoice ran off the far side: MISS. Online: a remote player's press reaches the
+  // host a little after they made it, so the bar waits a moment past the edge and the hit
+  // uses where it was when they pressed.
+  const off=x=>f.hs>0?x>f.tx+546:x<f.tx;
+  if(off(f.x-(S.mp?f.hs*12:0))){miss();return}
   if(P.confirm){
    NB.clearPressed('confirm');
    if(S.mp){const at=S.mp.cur.pressAt;if(at>f.t0&&at<S.t)f.x=f.x0+f.hs*(at-f.t0)}
    if(S.mods.has('perfectHits'))f.x=f.tx+273-7;
-   if(f.x>f.tx+546){miss();return}
-   // scr_attackcalc + obj_targetchoice: pwr - def + random(2), scaled by accuracy.
+   if(off(f.x)){miss();return}
+   // scr_attackcalc + obj_targetchoice: pwr - def + random(2), scaled by accuracy
+   // (x2.2 within 12px of the middle; the glove's fist bar x2.1).
    let dmg=S.at+S.wstrength-fightDef(m)+rnd(2);
    const myx=f.x+7,perfect=f.tx+273;let bonus=Math.abs(myx-perfect);if(bonus===0)bonus=1;
    const stretch=(546-bonus)/546;
-   dmg=bonus<=12?Math.round(dmg*2.2):Math.round(dmg*stretch*2);
+   dmg=bonus<=12?Math.round(dmg*(f.kind==='fist'?2.1:2.2)):Math.round(dmg*stretch*2);
    if(m.def.onHitCalc)dmg=m.def.onHitCalc(m,dmg,api);
    if(S.mods.has('doubleDamage'))dmg*=2;
-   m.takedamage=Math.max(0,dmg);
-   f.hit=true;f.fade=true;
+   f.hit=true;
+   if(f.kind==='fist'){
+    // obj_targetchoicefist: the bar blinks and PRESS Z flashes on the monster for 30 frames
+    f.phase='punch';f.dmg=Math.max(0,dmg);f.punchT=0;f.punches=0;
+    const cx=m.x+m.wd/2,cy=m.y+50;
+    f.pressZ=wfx({t:0,x:cx,y:cy,step(e){e.t++;if(S.fight!==f||f.phase!=='punch')e.dead=true},
+     draw(g,e){const A=W_ATLAS();if(A&&(e.t%9)>=3)weaponFrame(g,A.press,e.x,e.y)}});
+    return;
+   }
+   m.takedamage=Math.max(0,dmg);f.fade=true;
    // obj_slice: spr_strike at image_speed .5-stretch/4, scaled stretch*2-.5.
    const isp=Math.max(.1,.5-stretch/4),sc=stretch*2-.5;
    S.fx.push({kind:'slice',x:m.x+m.wd/2-5,y:m.y-5,cx:m.x+m.wd/2+5,cy:m.y+45,sc,isp,frame:0,t:0});
-   snd('hit');
+   snd('laz');
    f.phase='wait';S.fightWait=Math.round(1/isp*6+3);
   }
+ }
+ // Tough Glove: up to 4 Z presses in 30 frames; damage x punches/4, the 4th a big punch.
+ function punchStep(f){
+  const m=S.mons[S.target];
+  f.blink+=.4;f.punchT++;
+  const wd=m.wd||100,ht=100;
+  if(P.confirm&&f.punches<4){
+   NB.clearPressed('confirm');f.punches++;
+   if(f.punches<4)punchFx(m.x+rnd(wd),m.y+rnd(ht),false,false);
+   else punchFx(m.x+wd/2,m.y+ht/2,true,false);
+  }
+  if(S.mods.has('perfectHits')&&f.punches<4&&f.punchT%2===0){f.punches++;punchFx(f.punches<4?m.x+rnd(wd):m.x+wd/2,f.punches<4?m.y+rnd(ht):m.y+ht/2,f.punches===4,false)}
+  if(f.punchT>=30||f.punches===4){
+   f.fade=true;f.cursorGone=true;
+   if(f.punches===0){f.phase='wait';spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn();return}
+   m.takedamage=Math.ceil(f.dmg*f.punches/4);
+   f.phase='wait';S.fightWait=10;
+  }
+ }
+ // obj_shoetargettest + obj_xtarget/obj_ztarget: only the first bolt in line takes Z.
+ function boltStep(f){
+  const m=S.mons[S.target];
+  for(const b of f.bolts){
+   if(b.dead)continue;
+   if(b.pri<0)b.pri=0;
+   const past=b.hs>0?b.x>f.fatalx:b.x<f.fatalx;
+   if(past){b.alpha-=.2;if(b.alpha<.1){b.dead=true;for(const o of f.bolts)o.pri--;continue}}
+   let press=b.pri===0&&P.confirm;
+   if(b.pri===0&&S.mods.has('perfectHits')&&Math.abs(b.x-f.fatalx)<=Math.abs(b.hs)/2)press=true;
+   if(press){
+    NB.clearPressed('confirm');
+    let x=b.x;
+    if(S.mp){const at=S.mp.cur.pressAt;if(at>f.t0&&at<S.t)x=b.x-b.hs*(S.t-at)}
+    if(S.mods.has('perfectHits'))x=f.fatalx;
+    boltScore(f,b,x);
+    b.dead=true;for(const o of f.bolts)o.pri--;
+    continue;
+   }
+   b.x+=b.hs;
+  }
+  f.bolts=f.bolts.filter(b=>!b.dead);
+  if(f.bolts.length||f.hit)return;
+  f.hit=true;f.fade=true;f.cursorGone=true;
+  if(f.score<=0){f.phase='wait';spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn();return}
+  let dmg=(S.at+S.wstrength-fightDef(m))*f.score/160*4/f.num;
+  dmg=Math.round(dmg)+Math.round(rnd(2));
+  if(m.def.onHitCalc)dmg=m.def.onHitCalc(m,dmg,api);
+  if(S.mods.has('doubleDamage'))dmg*=2;
+  m.takedamage=Math.max(0,dmg);
+  const crit=f.score>400*f.num/4,cx=m.x+(m.wd||100)/2,cy=m.y+50,w=f.weapon;
+  if(w==='balletshoes'){punchFx(cx,cy,true,true,crit);S.fightWait=10}
+  else if(w==='emptygun'){gunFx(cx,cy,crit);S.fightWait=20}
+  else if(w==='burntpan'){panFx(cx,cy,crit);S.fightWait=20}
+  else {bookFx(cx,cy,crit);S.fightWait=24}
+  f.phase='wait';
+ }
+ // obj_shoetargettest user event 3: score by how many frames off the middle it was.
+ function boltScore(f,b,x){
+  const sc=Math.abs(Math.floor(x/b.hs)-Math.floor(f.fatalx/b.hs));
+  let n=0;
+  if(sc<28)n=10;if(sc<22)n=15;if(sc<16)n=20;if(sc<10)n=40;if(sc<5)n=50;if(sc<4)n=70;if(sc<3)n=80;if(sc<2)n=90;
+  if(sc<1){n=110;x=f.fatalx}
+  f.score+=n;
+  fadebarFx(x,f.ty,sc<1?2:sc<5?1:0);
+  if(sc<1)snd('victor');else if(sc<5)snd('hit');
+  if(f.score>430)f.score*=1.8;
+  if(f.score>=400)f.score*=1.25;
  }
  function hurtMonster(){
   const m=S.mons[S.target];
@@ -10100,11 +10280,19 @@ const NB=(()=>{
  function drawFight(g,S){
   if(S.pf){drawPartyFight(g,S);return}
   const f=S.fight;if(!f)return;
+  if(f.kind==='bolts'){
+   // spr_dumbtarget + every bolt (white = the one that takes Z next)
+   const A=typeof weaponSpriteAtlas!=='undefined'?weaponSpriteAtlas:null,t=A?A.target[1]?.image:images.target;
+   if(t){g.save();g.globalAlpha=Math.max(0,f.alpha);g.drawImage(t,f.tx,f.ty,546*f.xs,115);g.restore()}
+   const ch=images.targetChoice;
+   for(const b of f.bolts){const im=Array.isArray(ch)?ch[b.pri===0?0:1]:ch;if(im&&b.alpha>0){g.save();g.globalAlpha=Math.max(0,b.alpha);g.drawImage(im,Math.round(b.x),f.ty,14,128);g.restore()}}
+   return;
+  }
   const t=images.target;
   if(t){g.save();g.globalAlpha=Math.max(0,f.alpha);g.drawImage(t,f.tx,f.ty,546*f.xs,115);g.restore()}
   if(!f.cursorGone){
    const ch=images.targetChoice;const fr=f.hit?Math.floor(f.blink)%2:0;
-   const im=Array.isArray(ch)?ch[fr]:ch;if(im&&f.x<=f.tx+560)g.drawImage(im,Math.round(f.x),f.ty,14,128);
+   const im=Array.isArray(ch)?ch[fr]:ch;if(im&&f.x<=f.tx+560&&f.x>=f.tx-20)g.drawImage(im,Math.round(f.x),f.ty,14,128);
   }
  }
  function drawDmg(g,w){
@@ -10130,7 +10318,7 @@ const NB=(()=>{
     const U=UT_SCALE,S2=NB.S,frames=typeof weaponSpriteAtlas!=='undefined'?weaponSpriteAtlas?.knife:null;
     if(frames&&typeof drawWeaponSequence==='function'){
      g.save();g.setTransform(1,0,0,1,0,0);g.translate(-S2.view.x*U,-S2.view.y*U);
-     drawWeaponSequence(frames,e.t*NB.STEP_MS,e.cx*U,e.cy*U,{stepsPerFrame:1/e.isp});
+     drawWeaponSequence(frames,e.t*NB.STEP_MS,e.cx*U,e.cy*U,{stepsPerFrame:1/e.isp,scale:Math.max(.5,e.sc)});
      g.restore();
     }else{
      const im=images.strike?.[Math.min(5,Math.floor(e.frame))];if(im)g.drawImage(im,e.cx-(im.naturalWidth||14)/2,e.cy-(im.naturalHeight||12)/2);
@@ -20440,6 +20628,8 @@ const NB_ASSETS={
 };
 let nbAssetsReady=false,nbAssetsLoading=null;
 function nbLoadAssets(){
+ // the weapon sheet (slashes, punches, bolts, the gun/pan/notebook hits)
+ try{loadWeaponSpriteAtlas().catch(()=>{})}catch(_){}
  if(nbAssetsReady)return Promise.resolve();
  if(nbAssetsLoading)return nbAssetsLoading;
  const one=async u=>{try{return await loadImage(u)}catch(_){return null}};
@@ -20536,7 +20726,8 @@ function nbBattleOpts(online=false){
   // battleItemHealing: role, Burnt Pan and armour multipliers. Using one spends the
   // VANILLA shop stock (a no-op on CUSTOM rules), like the old engine's ITEM menu.
   items:bag.map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id)})),
-  mods:MOD_DEFS.filter(m=>modEnabled(m.id)).map(m=>m.id)
+  mods:MOD_DEFS.filter(m=>modEnabled(m.id)).map(m=>m.id),
+  weapon:activeWeaponData()?.id||'stick'
  };
 }
 function nbStartBattle(){
@@ -22243,7 +22434,7 @@ const NBO=(()=>{
   const players=[{id:T.self,name:myName},...lobby.map(p=>({id:p.id,name:p.name}))];
   const ls={};for(const k of ['utbg.nbPapyrusFlag67','utbg.mttEssayNo']){const v=NB.store.get(k);if(v!=null)ls[k]=v}
   const cfg={boss:currentBoss,sandbox:sandboxConfig,vanilla:vanillaMode,support:supportPartyIds||[],
-   opts:{monsters:o.monsters,custom:o.custom,stats:o.stats,mods:o.mods,items:o.items.map(v=>({id:v.id,name:v.name,heal:v.heal,useText:v.useText})),
+   opts:{monsters:o.monsters,custom:o.custom,stats:o.stats,mods:o.mods,weapon:o.weapon,items:o.items.map(v=>({id:v.id,name:v.name,heal:v.heal,useText:v.useText})),
     st:{hp:stats.hp,at:stats.atk,df:stats.def,lv:battleLevel(),wstrength:Number(w?.atk)||0}},
    ls,players,seed:(Math.random()*4294967296)>>>0};
   const text=b64e(JSON.stringify(cfg)),size=T.kind==='room'?2700:20000,parts=[];
@@ -22349,7 +22540,7 @@ const NBO=(()=>{
   const o=cfg.opts;
   const items=o.items.map(v=>({...v,onUse:isHost?()=>{try{consumeVanillaInventoryItem(v.id)}catch(_){}}:null}));
   screen='nb';closePanel();
-  NB.start({monsters:o.monsters,custom:o.custom,stats:o.stats,mods:o.mods,items,st:o.st,name:cfg.players[me]?.name||'CHARA',
+  NB.start({monsters:o.monsters,custom:o.custom,stats:o.stats,mods:o.mods,weapon:o.weapon,items,st:o.st,name:cfg.players[me]?.name||'CHARA',
    mp:{players:cfg.players,me,seed:cfg.seed,ls:cfg.ls},
    onExit(reason){endBattle(reason)}});
   game.running=true;acc=0;sAcc=0;starve=0;inQ.length=0;
