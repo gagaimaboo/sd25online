@@ -35756,7 +35756,7 @@ if(c.lesson > 20) {
   const od=pdir(x,y,h.x,h.y);
   x+=dcos(od)*140;y-=dsin(od)*140;
   snd('undyneSpearAppear');
-  api.spawn({follow:1,x,y,dir:od,sp:4,fric:.2,alpha:0,ang:0,rot:32,dmg:7,deact:0,manual:true,wallKill:false,kill:false,
+  api.spawn({follow:1,x,y,dir:od,sp:4,fric:.2,alpha:0,ang:0,rot:32,dmg:v.spearDmg||7,deact:0,manual:true,wallKill:false,kill:false,
    box:[-40,-40,80,80],onHit:()=>false,
    step(b){
     b.alpha+=.05;b.ang-=b.rot;if(b.rot>0)b.rot--;
@@ -35785,7 +35785,7 @@ if(c.lesson > 20) {
  }
  // ------------------------------------------- obj_risespearbullet -------------
  function spawnRise(api,v,x,y){
-  api.spawn({rise:1,x,y,vis:false,a1:1,a0:20,part:0,alpha:1,vs:0,deact:0,dmg:7,manual:true,wallKill:false,kill:false,clip:true,
+  api.spawn({rise:1,x,y,vis:false,a1:1,a0:20,part:0,alpha:1,vs:0,deact:0,dmg:v.spearDmg||7,manual:true,wallKill:false,kill:false,clip:true,
    box:[8,6,7,54],hidden:true,
    step(b){
     if(tick(b,'a1')){b.vis=true;b.vs=-1;snd('undyneSpearAppear')}
@@ -35839,7 +35839,7 @@ if(c.lesson > 20) {
   }
  }
 
- Object.assign(NB.und,{hitStd,spawnArrow,arrows,blkNew,blkStep,blkLogic,blkDraw,genStep,spawnFollow,spawnRise,spawnCross,redGenStep});
+ Object.assign(NB.und,{hitStd,lineHitsHeart,spawnArrow,arrows,blkNew,blkStep,blkLogic,blkDraw,genStep,spawnFollow,spawnRise,spawnCross,redGenStep});
 })();
 /* ---- NB content: Undyne. Part 3: obj_undyneboss (intro, lessons, ratings, ACTs, death). ---- */
 (()=>{
@@ -36135,6 +36135,377 @@ if(c.lesson > 20) {
    UND.f351=api.srcHp(m); // source scale, so CUSTOM HP can't leak into a VANILLA re-encounter
   },
   flavor:m=>T().attacks
+ });
+})();
+/* ---- NB content: Undyne the Undying (obj_undyne_ex + obj_undynex_body; obj_rotspeargen_gen,
+   obj_rotspeargen/obj_rotspear, obj_followspeargen_2/obj_followspear_2). The green SOUL's
+   spear blocking and the follow/rise spears are Undyne's own (NB.und). ---- */
+(()=>{
+ const {rnd,snd,dcos,dsin}=NB,R=Math.round,U=NB.und,{rv,tick}=U,dse=(...a)=>NB.hl.dse(...a);
+ const X0=210,Y0=20,BLX=X0+180,BLY=Y0+10; // scr_battlegroup 25: obj_undyne_ex at (210, 20)
+ const T=NB.TYPERS,base={font:'plain',color:'#000000',dx:16,dy:0,wrap:x=>x+190,spacing:9,vspacing:20};
+ // her last words shake harder line by line (typers 94-96: shake 1/2/3)
+ T[94]={...base,speed:1,sound:'txtUnd',shake:1};
+ T[95]={...base,speed:2,sound:'txtUnd',shake:2};
+ T[96]={...base,speed:2,sound:'txtUnd',shake:3};
+ const pdir=(x1,y1,x2,y2)=>(Math.atan2(-(y2-y1),x2-x1)*180/Math.PI+360)%360;
+ const choose=(...a)=>a[Math.floor(rnd(a.length))];
+ const TX={
+  check:'* UNDYNE THE UNDYING 99ATK 99DEF&* Heroine reformed by her own&  DETERMINATION to save Earth./^',
+  wind:'* The wind is howling...',
+  d52:['Damn it.../',"So even THAT&power..^1.&It wasn't enough...?/",'.../','\\E1Heh.../','Heheheh.../','\\E2If you..^1./',"If you think I'm&gonna give up hope^1,&you're wrong./","'Cause I've..^1.&Got my friends&behind me./",'\\E3Alphys told me that&she would watch me&fight you.../','\\E4And if anything went&wrong^1, she would..^1.&evacuate everyone./','\\E5By now she\'s called&ASGORE and told him&to absorb the 6&human SOULs./%%'],
+  d53:['And with that&power.../%%'],
+  d54:['This world will&live on...!/%%']
+ };
+
+ // ------------------------------------------------------------- obj_undynex_body --
+ function bodyNew(){
+  return {x:X0,y:Y0,siner:0,eyetimer:0,slashno:0,move:0,armV:0,facetype:0,heady:0,pause:0,shakify:0,a1:0,
+   larm:{x:X0+64,y:Y0+78,ang:0,vis:false,front:false},smear:null};
+ }
+ // User Event 1: the windup and slash with her left arm (movetype 2).
+ function bodySlash(b){if(b.move===0)b.move=2}
+ function bodyStep(b){
+  if(tick(b,'a1'))b.slashno=Math.floor(b.slashno)+1;
+  const L=b.larm;
+  if(b.move===2){
+   L.vis=true;
+   if(b.slashno===0&&L.ang>-104){b.facetype=1;L.ang-=35;L.x-=4;L.y-=4;b.heady-=2}
+   if(b.slashno===0&&L.ang<=-104){L.ang=-104;b.a1=5;b.slashno=.1}
+   if(b.slashno===1.1){b.slashno=1;b.a1=2}
+   if(b.slashno===1){b.facetype=0;L.front=true;L.ang+=73.3333333333333}
+   if(b.slashno===2){
+    L.x=X0+64;L.y=Y0+78;L.ang=66;
+    b.smear={x:L.x-180,y:L.y+20,y2:L.y+20,a:1,f:0};
+    b.slashno=3;snd('undyneSpearAppear');
+   }
+   if(b.slashno===3){
+    if(b.heady<6)b.heady+=3;
+    const s=b.smear;if(s){s.a-=.1;s.y2+=24;s.f++}
+    L.ang+=.5;
+    if(L.ang>70){b.smear=null;b.slashno=4;b.a1=3}
+   }
+   if(b.slashno===5){
+    if(b.heady>0)b.heady--;
+    L.ang-=15;
+    if(L.ang<=6){b.heady=0;L.front=false;L.ang=0;b.slashno=0;b.move=0;b.armV=0;L.vis=false}
+   }
+  }
+  b.siner+=1.4;if(b.pause)b.siner=0;
+  if(b.facetype!==0)b.eyetimer=0;
+  b.eyetimer++;if(b.eyetimer>=41)b.eyetimer=0;
+  if(b.move===2)b.armV=1;
+  if(b.shakify>0){b.x=X0+rnd(b.shakify)-rnd(b.shakify);b.y=Y0+rnd(b.shakify)-rnd(b.shakify)}else{b.x=X0;b.y=Y0}
+ }
+ function bodyDraw(g,b,face){
+  const x=b.x,y=b.y,sf=Math.sin(b.siner/6),sf2=Math.sin(b.siner/3),sf3=Math.sin(b.siner/14),L=b.larm;
+  const larm=()=>{if(L.vis)dse(g,images.nbUxLarm,L.x+(b.x-X0),L.y+(b.y-Y0),2,2,L.ang,1,33,5)};
+  if(!L.front)larm();
+  dse(g,images.nbUxHair,x+85,y+sf*3+b.heady+4,2,2,70-sf*15,1,16,30);
+  dse(g,images.nbUxLegs,x+100,y+164,2,2,0,1,20,10);
+  if(b.armV===0)dse(g,images.nbUxLarm,x+64+sf*5,y+78+sf*5,2,2,0,1,33,5);
+  dse(g,images.nbUxRarm,x+136+sf2*3,y+78+sf*6+sf2*2,2,2,0,1,4,6);
+  dse(g,images.nbUxTorso,x+100,y+78+sf*4,2,2,-(sf*4),1,39,29);
+  dse(g,images.nbUxPants,x+100,y+122+sf*2,2,2,sf*2,1,20,0);
+  const fy=y+28+sf*2+b.heady,fr=Math.floor(b.siner/3);
+  if(b.facetype===0){
+   if(!b.pause)dse(g,rv('nbUxFace1',fr),x+100,fy,2,2,0,1,20,17);
+   else dse(g,rv('nbUxFaceDmg',fr),x+100,fy,2,2,0,1,20,16);
+  }
+  if(b.facetype===1)dse(g,rv('nbUxFaceLaugh',fr),x+100,fy,2,2,0,1,18,16);
+  if(b.facetype===2)dse(g,rv('nbUxFaceE',face||0),x+100,fy,2,2,0,1,20,16);
+  if(b.eyetimer>=10){
+   const e=b.eyetimer-10;
+   dse(g,images.nbUxEyebeam,x+110,y+24+sf*2,e/4,2.5-e/20,-(sf3*32),Math.min(1,1.5-e/20),0,12);
+  }
+  if(L.front)larm();
+  const s=b.smear;
+  if(s&&s.a>0){const im=rv('nbUndSmear',s.f%2);if(im){g.save();g.globalAlpha=Math.max(0,s.a);g.drawImage(im,R(s.x),R(s.y));g.drawImage(im,R(s.x),R(s.y2));g.restore()}}
+ }
+
+ // ----------------------------------------- scr_damagestandard_x (obj_followspear_2) --
+ // A spear that would kill leaves you at 1 HP; at 1 HP it kills.
+ function hitX(api,o){
+  const st=api.S;if(st.party||st.hp<=1)return U.hitStd(api,o);
+  const hp=st.hp;let bonus=hp>20?1:0;for(let t=30;t<=90;t+=10)if(hp>=t)bonus++;
+  o.dmg+=bonus;return api.damage(Math.min(o.dmg,hp-1));
+ }
+ const spearIm=()=>images.nbUxSpear2;
+ function drawSpear(g,x,y,ang,a){dse(g,spearIm(),x,y,1,1,ang,Math.max(0,Math.min(1,a)),30,30)}
+
+ // ------------------------------------------ obj_rotspeargen + obj_rotspear ----
+ // A ring of spears pointing in at where the SOUL was, spinning and closing in.
+ const RING={0:[0,8,2,7,220],1:[0,-8,-2,7,220],2:[null,8,2,8,230],3:[null,-8,-2,8,230]};
+ function spawnRing(api,v,x,y,type){
+  const [ca,rs,rm,num,rr]=RING[type];
+  const sp=[];for(let i=0;i<num;i++)sp.push({x:0,y:0,ang:0,alpha:0,deact:0,gone:false,dmg:12});
+  api.spawn({ring:1,x,y,curang:ca==null?rnd(360):ca,rotspeed:rs,rotmin:rm,num,rr,sp,
+   manual:true,wallKill:false,kill:false,box:[0,0,0,0],onHit:()=>false,
+   step(b){
+    if(b.rotspeed>b.rotmin)b.rotspeed-=.2;if(b.rotspeed<b.rotmin)b.rotspeed+=.2;
+    for(let i=0;i<b.num;i++){
+     const s=b.sp[i];if(s.gone)continue;
+     const a=b.curang+i/b.num*360;
+     s.x=b.x+dcos(a)*b.rr;s.y=b.y-dsin(a)*b.rr;s.ang=pdir(s.x,s.y,b.x,b.y);
+     if(b.rr<8)s.deact=1;
+    }
+    if(b.rr<8){b.rr++;b.rotspeed*=.8}
+    if(b.rr<-20)b.ringGone=1;
+    b.rr-=4;b.curang+=b.rotspeed;
+    const h=api.heart;
+    for(const s of b.sp){
+     if(s.gone)continue;
+     if(!s.deact&&s.alpha<1)s.alpha+=.2;
+     if(s.deact){s.alpha-=.2;if(s.alpha<.3){s.gone=true;continue}}
+     const xo=dcos(s.ang)*25,yo=-dsin(s.ang)*25;
+     if(s.alpha>=.8&&api.S.mnfight===2&&h.visible&&U.lineHitsHeart(h,s.x-xo/2,s.y-yo/2,s.x+xo,s.y+yo))U.hitStd(api,s);
+    }
+    if(b.ringGone&&b.sp.every(s=>s.gone))b.alive=false;
+    if(v.tt<1)b.alive=false;
+   },
+   draw(g,b){for(const s of b.sp)if(!s.gone)drawSpear(g,s.x,s.y,s.ang,s.alpha)}});
+ }
+ function rotGenStep(api,v){
+  const g=v.rot;if(!g)return;
+  const h=api.heart;
+  if(tick(g,'a0')){
+   if(g.type===0){spawnRing(api,v,h.x+8,h.y+8,g.t);g.t=g.t?0:1;g.a0=27}
+   else{spawnRing(api,v,h.x+8,h.y+8,choose(2,3));g.a0=24}
+  }
+  if(v.tt<4){
+   if(v.orderb===4){v.tt=30;v.a11=40;if(v.order===11)v.lesson=-11;slash(v)}
+   for(const b of api.S.bullets)if(b.ring){b.ringGone=1;for(const s of b.sp)s.deact=1}
+   v.rot=null;
+  }
+ }
+
+ // ---------------------------------------- obj_followspeargen_2 / obj_followspear_2 --
+ // Six spears at a time from a circle around you; each spins in, points at where you
+ // were, then shoots straight through.
+ function spawnF2(api,v,x,y){
+  const h=api.heart,off=pdir(x,y,h.x+8,h.y+8);
+  api.spawn({f2:1,x,y,rot:38,alpha:0,ang:off+20,dir:off,sp:4,fric:.2,dmg:11,deact:0,timer:0,fade:1,
+   manual:true,wallKill:false,kill:false,box:[0,0,0,0],onHit:()=>false,
+   step(b){
+    b.alpha+=.05;b.ang-=b.rot;if(b.rot>0)b.rot-=2;
+    if(b.rot===0&&b.sp<1){b.timer++;if(b.timer===5){b.sp=8;b.fric=-.3;b.dir=b.ang;snd('undyneArrow')}}
+    if(b.fade&&b.sp>=7){b.timer++;if(b.timer>=22)b.deact=1}
+    const xo=dcos(b.dir)*25,yo=-dsin(b.dir)*25;
+    if(b.rot===0&&!b.deact&&api.S.mnfight===2&&h.visible&&U.lineHitsHeart(h,b.x-xo/2,b.y-yo/2,b.x+xo,b.y+yo))hitX(api,b);
+    if(b.deact){b.alpha-=.25;if(b.alpha<=0)b.alive=false}
+    if(b.fric>0)b.sp=Math.max(0,b.sp-b.fric);else if(b.fric<0)b.sp-=b.fric;
+    b.x+=dcos(b.dir)*b.sp;b.y-=dsin(b.dir)*b.sp;
+    if(v.tt<1)b.alive=false;
+   },
+   draw(g,b){drawSpear(g,b.x,b.y,b.ang,b.alpha)}});
+ }
+ function f2GenStep(api,v){
+  const g=v.f2;if(!g)return;
+  const h=api.heart;
+  if(tick(g,'a0')){
+   for(let i=0;i<6;i++){const a=g.curang+i/6*360;spawnF2(api,v,h.x+8+dcos(a)*180,h.y+8-dsin(a)*180)}
+   snd('undyneSpearAppear');
+   if(g.rate>10)g.rate--;
+   g.curang+=10+choose(10,20,30);
+   g.a0=g.rate;
+  }
+  if(v.tt<3){for(const b of api.S.bullets)if(b.f2)b.deact=1;v.f2=null}
+ }
+
+ // ---------------------------- obj_spearbulletfollowgen / obj_risespearbulletgen --
+ // On her order 6 the red turn hands the SOUL back to green instead.
+ function redGenStep(api,v){
+  const g=v.rgen;if(!g)return;
+  const st=api.S,deact=k=>{for(const b of st.bullets)if(b[k])b.deact=1};
+  if(g.kind==='follow'){
+   if(tick(g,'a0')){U.spawnFollow(api,v);g.a0=v.fr}
+  }else if(tick(g,'a0')&&v.tt>8){
+   let xset=Math.floor(rnd(3));if(xset===g.mem)xset++;if(xset===3)xset=0;g.mem=xset;
+   U.spawnRise(api,v,st.edge.L+xset*23,st.edge.B);g.a0=v.fr;
+  }
+  if(v.tt<4){
+   g.a0=0;deact(g.kind==='follow'?'follow':'rise');
+   if(g.kind==='follow')v.dark=3;
+   if(v.order===6){v.tt=30;v.a11=40;v.lesson=-8;v.dark=3;slash(v)}
+   v.rgen=null;
+  }
+ }
+
+ // ------------------------------------------------------------------ obj_undyne_ex --
+ function say(api,m,pages,typer){
+  const st=api.S,v=m.v;
+  if(v.say)st.bubbles=st.bubbles.filter(b=>b!==v.say);
+  const w=new NB.Writer(pages,{typer,x:BLX+15,y:BLY+10});
+  w.onFace=d=>{v.face=d};
+  v.say={m,x:BLX,y:BLY,wide:true,img:images.nbBlconWdShrt,w};
+  st.bubbles.push(v.say);
+ }
+ function sayStep(api,m){
+  const v=m.v,st=api.S,b=v.say;if(!b)return;
+  if(st.mnfight!==1&&st.mnfight!==2)b.w.step();
+  if(b.w.done){st.bubbles=st.bubbles.filter(x=>x!==b);v.say=null}
+ }
+ function setSoul(api,v,green){
+  v.green=green;const st=api.S;
+  st.soulMode=green?'green':'red';st.heart.mode=st.soulMode;
+ }
+ function keyBlack(im){
+  if(!im)return null;
+  try{
+   const c=document.createElement('canvas');c.width=im.naturalWidth||im.width;c.height=im.naturalHeight||im.height;
+   const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);
+   const d=g.getImageData(0,0,c.width,c.height),a=d.data;
+   for(let i=0;i<a.length;i+=4)if(a[i]<48&&a[i+1]<48&&a[i+2]<48)a[i+3]=0;
+   g.putImageData(d,0,0);return c;
+  }catch(_){return im}
+ }
+ // User Event 1 (Other 11): she slashes, and alarm[10] flips the SOUL ten steps later.
+ function slash(v){if(v.glock===0){v.a10=10;bodySlash(v.body);v.glock=2}}
+ function darken(v){v.dark=1}
+ function alarm10(api,v){
+  if(!v.green){setSoul(api,v,true);if(v.order===3||v.order===7||v.order===12)v.a11=15}
+  else setSoul(api,v,false);
+  v.glock=0;
+  if(v.lesson===-7||v.lesson===-11||v.lesson===-14)v.tt=10;
+ }
+ // mnfight 4: a turn you got hit in makes her faster, a clean one slower; alarm[7] ends it.
+ function mn4(api,v){
+  if(!v.attacked)return;
+  if(v.hitno>0){if(v.hitno>=1&&v.rating<10)v.rating++;if(v.hitno>=3&&v.rating<10)v.rating=10}
+  else if(v.rating>8)v.rating--;
+  v.attacked=0;
+  if(api.S.border===12)api.border(13);
+  v.endT=10;
+ }
+
+ NB.defs.set('undyneex',{
+  name:'Undyne the Undying',hp:23000,atk:12,def:5,xp:0,gold:0,mercymod:-9999999999,wd:200,
+  encounter:'* The heroine appears.',
+  size:()=>({w:200,h:200}),pos:()=>({x:X0,y:Y0}),
+  dmgPos:m=>({x:m.x0,y:m.y+150}),
+  shudder:[8,1],noFlee:()=>true,vaporize:false,freezable:false,
+  setup(m,api){
+   Object.assign(m.v,{con:0,a4:0,a9:0,a10:0,a11:0,glock:0,green:false,lesson:-5,order:1,orderb:0,rating:9,ratingb:0,
+    hitno:0,attacked:0,face:0,body:bodyNew(),melt:null,dark:0,darkA:0,say:null,tt:0,fr:15,spearDmg:11,
+    rgen:null,rot:null,f2:null,gen:null,blk:null,endT:0,endNow:false,greenlock:0,talkBorder:6,heartPos:null});
+   api.S.bgFrame=-1; // obj_battlebg is destroyed
+   try{uxDying=false}catch(_){}
+   setSoul(api,m.v,true); // she starts you off green
+  },
+  draw(g,m){
+   const v=m.v;
+   if(v.gone)return;
+   if(v.melt){const im=rv('nbUxMelt',v.melt.f);if(im)g.drawImage(im,R(v.melt.x),R(v.melt.y))}
+   else if(v.body)bodyDraw(g,v.body,v.face);
+   if(v.darkA>0){g.save();g.fillStyle='#000';g.globalAlpha=Math.min(1,v.darkA);g.fillRect(-20,-20,680,520);g.restore()}
+  },
+  drawOver(g,m){U.blkDraw(g,m.v)},
+  acts:['Check'],
+  check:()=>TX.check,
+  // obj_undyne_ex Alarm 3: FIGHT hits for 21 times as much, never under 600.
+  onHitCalc(m,dmg){
+   if(!(dmg>0))return dmg;
+   let d=dmg*21;if(d<600)d=600+Math.floor(rnd(67));
+   if(m.hp-d<=0&&m.v.body){m.v.body.facetype=2;m.v.face=0;try{stopMusic()}catch(_){}}
+   return d;
+  },
+  onLethal(m,api){
+   const v=m.v,st=api.S;
+   if(v.con>=50)return true;
+   try{uxDying=true;stopMusic()}catch(_){}
+   v.con=50;v.died=1;setSoul(api,v,false);
+   st.mnfight=99;st.myfight=99;st.bullets=[];
+   return true;
+  },
+  border:m=>m.v.talkBorder,
+  // alarm[6]: no talking, just which box comes next and where the SOUL waits.
+  speech(m,api){
+   const v=m.v,st=api.S;
+   if(v.con>=50)return null;
+   v.heartPos={x:312,y:st.edge.T+34};
+   if(v.green){v.talkBorder=13;v.greenlock=1}
+   else{
+    v.talkBorder=31;
+    if(v.orderb===0||v.orderb===6)v.talkBorder=7;
+    if(v.orderb===1||v.orderb===7)v.talkBorder=14;
+   }
+   return null;
+  },
+  // mnfight 2: the lesson on green, or the next red attack in her order.
+  attack(m,api){
+   const v=m.v,st=api.S,h=api.heart;
+   if(v.con>=50)return null;
+   api.turntimer(99999);v.endNow=false;v.endT=0;
+   if(v.heartPos){h.x=v.heartPos.x;h.y=v.heartPos.y}
+   v.hitno=0;v.tt=300;v.fr=15;
+   const rb=()=>{v.ratingb=Math.max(8,Math.min(10,v.ratingb+1));v.lesson++};
+   if(v.green){api.border(12);darken(v);U.blkNew(api,v,v.lesson,v.rating,12)}
+   else{
+    const ob=v.orderb;
+    if(ob===0||ob===6){v.tt=240;darken(v);rb();v.fr=18-v.ratingb;v.rgen={kind:'follow',a0:1}}
+    if(ob===1||ob===7){v.tt=220;rb();v.fr=23-v.ratingb;v.rgen={kind:'rise',a0:10,mem:-1}}
+    if(ob===2||ob===3){v.tt=215;v.lesson++;v.rot={type:0,t:0,a0:1}}
+    if(ob===4){v.tt=400;v.lesson++;v.f2={curang:0,rate:20,a0:1}}
+    if(ob===5){v.tt=215;v.lesson++;v.rot={type:1,t:1,a0:1}}
+    v.orderb++;if(v.orderb>=8)v.orderb=4;
+   }
+   v.attacked=1;v.order++;v.lesson--;
+   return TX.wind;
+  },
+  attackStep(m,api){
+   const v=m.v;
+   api.S.turntimer=v.endNow?0:99999;
+   v.tt--;
+   if(v.endT>0&&--v.endT===0)v.endNow=true;
+   U.genStep(api,v);
+   U.blkStep(api,v,blk=>{
+    if(blk.refuse===0)mn4(api,v);
+    if(blk.refuse===1&&(blk.lesson===-7||blk.lesson===-10||blk.lesson===-14)){v.dark=3;slash(v)}
+   });
+   redGenStep(api,v);rotGenStep(api,v);f2GenStep(api,v);
+   if(!v.green&&v.tt<1)mn4(api,v);
+  },
+  endAttack(m){const v=m.v;v.blk=null;v.gen=null;v.rgen=null;v.rot=null;v.f2=null;if(v.dark>0&&v.dark!==3)v.dark=3},
+  step(m,api){
+   const v=m.v,st=api.S,h=api.heart;
+   if(tick(v,'a4'))v.con++;
+   if(tick(v,'a9')){api.end('win');return}
+   if(tick(v,'a10'))alarm10(api,v);
+   if(tick(v,'a11')&&st.mnfight===2)mn4(api,v);
+   if(st.mnfight===2)U.blkLogic(api,v);
+   if(v.body){v.body.pause=m.hurt&&v.con<50?1:0;bodyStep(v.body)}
+   // darkify 1 fades the pseudodarker in to half, 3 fades it out; the box walls follow.
+   if(v.dark===1){if(v.darkA<.5)v.darkA+=.04;else v.dark=2;st.boxAlpha=1-v.darkA}
+   if(v.dark===3){if(v.darkA>0)v.darkA-=.04;st.boxAlpha=1-Math.max(0,v.darkA);if(v.darkA<=0){v.dark=0;v.darkA=0;st.boxAlpha=1}}
+   if(st.mnfight===3&&v.dark>0&&v.dark!==3)v.dark=3;
+   // greenlock: the green SOUL rides 34px under the top of the box.
+   if(v.greenlock&&st.mnfight>0&&st.mnfight<99){if(v.green)h.y=st.edge.T+34;else v.greenlock=0}else v.greenlock=0;
+   // ------------------------------------------------------------- death --
+   if(v.con===50){v.con=51;v.a4=90}
+   if(v.con===52){
+    if(v.body){v.body.shakify=1;v.body.facetype=2}
+    st.mnfight=99;st.myfight=99;h.visible=false;api.border(0);
+    say(api,m,TX.d52,94);v.con=53;
+   }
+   if(v.con===53&&!v.say){
+    // scr_marker(mypart1.x - 20, -40, spr_undynex_melt)
+    v.melt={x:X0-20,y:-40,f:0};v.body=null;
+    say(api,m,TX.d53,95);v.con=54;
+   }
+   if(v.con===54&&!v.say){v.melt.f=1;say(api,m,TX.d54,96);v.con=71}
+   if(v.con===71&&!v.say){
+    // spr_undynex_melt sits on an opaque black backdrop: only her pixels turn to dust
+    const im=keyBlack(rv('nbUxMelt',1)),mx=v.melt.x,my=v.melt.y;
+    if(im)st.fx.push({kind:'vapor',m:{x:mx,y:my,w:im.width,h:im.height,def:{draw:(g,mm)=>g.drawImage(im,mm.x,mm.y)}},line:0,parts:[]});
+    snd('vaporized');
+    v.melt=null;v.gone=1;st.xpTotal+=1500;
+    v.con=72;v.a4=180;
+   }
+   if(v.con===73){v.con=74;v.a9=10}
+   if(v.con>=73)st.fade=Math.min(1,(st.fade||0)+.1);
+   sayStep(api,m);
+  },
+  flavor:()=>TX.wind
  });
 })();
 /* ---- NB content: Hotland I (obj_vulkin + obj_vulkinbody, obj_tsunderplane + obj_tsunderplane_body,
@@ -40300,6 +40671,16 @@ const NB_ASSETS={
  nbUndRarm:RAW+'sprites/images/spr_undyneb_rightarm_0.png',
  nbUndLegs:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_legs_${i}.png`),
  nbUndSmear:[0,1].map(i=>RAW+`sprites/images/spr_undyneb_smear_${i}.png`),
+ // Undyne the Undying (obj_undynex_body); multi-frame exports are stored last frame first
+ nbUxHair:RAW+'sprites/images/spr_undynex_hair_0.png',nbUxLegs:RAW+'sprites/images/spr_undynex_legs_0.png',
+ nbUxLarm:RAW+'sprites/images/spr_undynex_leftarm_0.png',nbUxRarm:RAW+'sprites/images/spr_undynex_rightarm_0.png',
+ nbUxTorso:RAW+'sprites/images/spr_undynex_torso_0.png',nbUxPants:RAW+'sprites/images/spr_undynex_pants_0.png',
+ nbUxFace1:[RAW+'sprites/images/spr_undynex_face1_0.png'],nbUxFaceDmg:[RAW+'sprites/images/spr_undynex_face_damage_0.png'],
+ nbUxFaceLaugh:[0,1].map(i=>RAW+`sprites/images/spr_undynex_face_laugh_${i}.png`),
+ nbUxFaceE:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_undynex_face_e_${i}.png`),
+ nbUxEyebeam:RAW+'sprites/images/spr_undynex_eyebeam_0.png',
+ nbUxMelt:[0,1].map(i=>RAW+`sprites/images/spr_undynex_melt_${i}.png`),
+ nbUxSpear2:RAW+'sprites/images/spr_followspear_2_0.png',
  nbUndMelt:[0,1,2,3].map(i=>RAW+`sprites/images/spr_undyneb_melt_${i}.png`),
  nbUndLastMelt:RAW+'sprites/images/spr_undyneb_lastmelt_0.png',
  nbUndArrowL:[0,1].map(i=>RAW+`sprites/images/spr_bullet_test_l_${i}.png`),
