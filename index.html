@@ -878,7 +878,7 @@ const SFX={
  power:RAW+'sound/audio/snd_power.wav',
  torielText:RAW+'sound/audio/snd_txttor.wav',
  papyrusText:RAW+'sound/audio/snd_txtpap.wav',
- mdBell:RAW+'sound/audio/snd_bell.wav',mdSlide:RAW+'sound/audio/snd_slidewhist.wav',
+ mdBell:RAW+'sound/audio/snd_bell.wav',hlDumbVictory:RAW+'sound/audio/snd_dumbvictory.wav',mdSlide:RAW+'sound/audio/snd_slidewhist.wav',
  // Shyren's notes (obj_shyren caster_load music/shyren/*).
  shyNote1:RAW+'sound/audio/mus_note1.ogg',shyNote2:RAW+'sound/audio/mus_note2.ogg',shyNote3:RAW+'sound/audio/mus_note3.ogg',
  shyNote4:RAW+'sound/audio/mus_note4.ogg',shyNote5:RAW+'sound/audio/mus_note5.ogg',shyNote6:RAW+'sound/audio/mus_note6.ogg',
@@ -29669,7 +29669,8 @@ const NB=(()=>{
  function monsterHurtStep(m){
   if(m.hurtanim!==3)return;
   if(++m.shakeT<2)return;m.shakeT=0;
-  m.x+=m.shudder;
+  // Most monsters step x by shudder; some (Vulkin, Tsunderplane, Pyrope) set x = start + shudder.
+  if(m.def.shudderAbs)m.x=m.x0+m.shudder;else m.x+=m.shudder;
   const sd=m.def.shudder?.[1]??2;
   if(m.shudder<0)m.shudder=-(m.shudder+sd);else m.shudder=-m.shudder;
   if(m.shudder===0){
@@ -29685,7 +29686,8 @@ const NB=(()=>{
  }
  function killMonster(m){
   m.alive=false;m.killed=true;S.xpTotal+=m.xp;S.goldTotal+=m.gold;
-  S.fx.push({kind:'vapor',m,line:0,parts:[]});snd('vaporized');
+  // vaporize:false - the monster's own death plays instead (Tsunderplane crashes).
+  if(m.def.vaporize!==false){S.fx.push({kind:'vapor',m,line:0,parts:[]});snd('vaporized')}
   if(m.def.onKill)m.def.onKill(m,api);
  }
  function spareMonster(m){
@@ -30361,7 +30363,7 @@ const NB=(()=>{
   const cg=c.getContext('2d');cg.imageSmoothingEnabled=false;
   try{(m.def.vaporDraw||m.def.draw)(cg,{...m,x:pad,y:pad,alpha:1,hurt:true},api)}catch(_){}
   const x=m.x-pad,y=m.y-pad,fog=NB.tinted(c,FREEZE_COL),mul=NB.multiplied(c,FREEZE_COL);
-  dsnd('petrify','petrify');
+  dsnd('petrify','petrify');m.frozen=true;
   // obj_frozennpc Draw: the sprite, then (cut from row t down, so the ice climbs from the
   // feet up over 20 steps) four offset copies in the fog colour and an additive layer.
   S.fx.push({timer:0,step(e){if(e.timer<1)e.timer+=.05},draw(g,e){
@@ -30970,6 +30972,7 @@ const NB=(()=>{
   drawBullets(ctx,S);
   for(const m of S.mons)if(m.alive&&m.def.drawOver)m.def.drawOver(ctx,m,NB.api);
   if(!S.cinematic){drawHud(ctx,S);drawButtons(ctx,S);drawHeart(ctx,S)}
+  if(S.overlay)S.overlay(ctx,S);
   if(S.party){for(const e of S.fx)if(e.top&&e.draw)e.draw(ctx,e);drawPartyNums(ctx,S)}
   if(S.fade>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,S.fade)+')';ctx.fillRect(-40,-40,720,560)}
   for(const w of S.dmgw)drawDmg(ctx,w);
@@ -36074,8 +36077,603 @@ if(c.lesson > 20) {
   flavor:m=>T().attacks
  });
 })();
+/* ---- NB content: Hotland I (obj_vulkin + obj_vulkinbody, obj_tsunderplane + obj_tsunderplane_body,
+        obj_pyrope + obj_pyropebody; obj_lavafiregen, obj_vulkincloudbul, obj_vertplanegen,
+        obj_incendiarygen, obj_ropebulgen, obj_bombgen and their bullets) ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB,gm=NB.gm;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum
+ const R=Math.round;
+ const choose=(...a)=>a[Math.floor(rnd(a.length))];
+ const talkLen=n=>{S().talkLenExact=Math.max(S().talkLenExact||0,n)};
+ const fr=(a,i)=>Array.isArray(a)?a[((Math.floor(i)%a.length)+a.length)%a.length]:a;
+ // GameMaker alarms count down by one a step and fire once they reach zero (fractional
+ // firing rates like 7*1.7 included).
+ const tick=(o,k)=>{if(o[k]>0){o[k]-=1;if(o[k]<=0){o[k]=-1;return true}}return false};
+ // draw_sprite_ext: origin (ox,oy) in sprite pixels, scale, rotation in degrees (counter-clockwise), alpha.
+ function dse(g,im,x,y,xs=1,ys=1,rot=0,alpha=1,ox=0,oy=0){
+  if(!im||alpha<=0)return;
+  g.save();g.globalAlpha*=Math.min(1,alpha);
+  if(rot){g.translate(x,y);g.rotate(-rot*Math.PI/180)}else g.translate(R(x),R(y));
+  g.scale(xs,ys);g.drawImage(im,-ox,-oy);g.restore();
+ }
+ // ---- precise collision (every one of these sprites uses a per-pixel mask in UNDERTALE):
+ // the SOUL's pixels against the sprite's opaque pixels, through scale and rotation.
+ const HEART=['..##........##..','.#####....#####.','#######..#######','#######..#######','################','################','################','################','################','################','..############..','..############..','....########....','....########....','......####......','......####......'];
+ const HPX=[];HEART.forEach((r,j)=>{for(let i=0;i<16;i++)if(r[i]==='#')HPX.push([i+.5,j+.5])});
+ const alphaCache=new WeakMap();
+ function alphaOf(im){
+  if(!im)return null;
+  let a=alphaCache.get(im);if(a!==undefined)return a;a=null;
+  try{
+   const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,c=document.createElement('canvas');c.width=w;c.height=h;
+   const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);
+   const d=g.getImageData(0,0,w,h).data,m=new Uint8Array(w*h);for(let i=0;i<w*h;i++)m[i]=d[i*4+3]>0?1:0;a={w,h,m};
+  }catch(_){a=null}
+  alphaCache.set(im,a);return a;
+ }
+ function pixHit(h,x,y,im,ox,oy,xs,ys,rot){
+  const M=alphaOf(im);if(!M)return true; // pixels unreadable: the box decides
+  const c=dcos(rot||0),s=dsin(rot||0);
+  for(const [px,py] of HPX){
+   const dx=h.x+px-x,dy=h.y+py-y;
+   const lx=(c*dx-s*dy)/xs+ox,ly=(s*dx+c*dy)/ys+oy,ix=Math.floor(lx),iy=Math.floor(ly);
+   if(ix>=0&&iy>=0&&ix<M.w&&iy<M.h&&M.m[iy*M.w+ix])return true;
+  }
+  return false;
+ }
+ // A bullet drawn and hit-tested as its sprite: b.im (or frames + b.frame), b.ox/oy origin,
+ // b.xs/ys scale, b.rot, b.alpha. The box is the sprite's bounds; the mask does the rest.
+ function sprite(b){
+  const im=fr(b.im,b.frame||0);if(!im)return null;
+  const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,xs=b.xs??1,ys=b.ys??1;
+  const pts=[[-b.ox,-b.oy],[w-b.ox,-b.oy],[-b.ox,h-b.oy],[w-b.ox,h-b.oy]].map(([u,v])=>{const c=dcos(b.rot||0),s=dsin(b.rot||0);u*=xs;v*=ys;return [c*u+s*v,-s*u+c*v]});
+  const x0=Math.min(...pts.map(p=>p[0])),x1=Math.max(...pts.map(p=>p[0])),y0=Math.min(...pts.map(p=>p[1])),y1=Math.max(...pts.map(p=>p[1]));
+  b.box=[x0,y0,x1-x0,y1-y0];return im;
+ }
+ function sprBullet(api,o){
+  return api.spawn(Object.assign({ox:0,oy:0,xs:1,ys:1,rot:0,alpha:1,frame:0,manual:true,wallKill:false,
+   mask(h){const im=sprite(this);return im?pixHit(h,this.x,this.y,im,this.ox,this.oy,this.xs,this.ys,this.rot):false},
+   draw(g,b){if(b.hidden)return;const im=sprite(b);dse(g,im,b.x,b.y,b.xs,b.ys,b.rot,b.alpha,b.ox,b.oy)}},o));
+ }
+ // GameMaker's end-of-step motion for manual bullets: friction, gravity, then the move.
+ function move(b){b.xp=b.x;b.yp=b.y;gm(b);b.x+=b.vx;b.y+=b.vy}
+ const dir=(b)=>Math.atan2(-b.vy,b.vx)*180/Math.PI;
+ const ptDir=(x0,y0,x1,y1)=>Math.atan2(-(y1-y0),x1-x0)*180/Math.PI;
+ // draw_self_border_e clips to the inside of the box (the bullet keeps its own size).
+ const clipBox=true;
+ // Small speech-bubble text drawn by a body (obj_tsunderplane_body's last words).
+ function bubbleText(g,lines,x,y){
+  let yy=y;for(const ln of lines){let xx=x;for(const ch of ln){const gl=typeof NB_PLAIN_GLYPHS!=='undefined'?NB_PLAIN_GLYPHS[ch.charCodeAt(0)]:null;NB.drawGlyph(g,'plain',ch,xx,yy,'#000000');xx+=gl?gl[4]:8}yy+=13}
+ }
+
+ // ------------------------------------------------------------------ Vulkin
+ // obj_vulkinbody: feet, body, crater lava and a face that sways (siner frozen while hurt).
+ function vulkinFace(m){return [images.vulkinFace,images.nbVulkinFace2,images.nbVulkinFace3,images.nbVulkinFace4,images.nbVulkinFace5][m.v.face-1]||images.vulkinFace}
+ NB.defs.set('vulkin',{
+  name:'Vulkin',hp:20,atk:8,def:-10,xp:70,gold:50,mercymod:-40,wd:100,
+  encounter:'* Vulkin strolls in.',
+  size:()=>({w:100,h:124}),
+  pos:(i,n,cx)=>n===1?{x:106,y:125}:n===2?{x:106+200*i,y:125}:{x:Math.round(cx-50),y:125},
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{siner:0,face:1,encourage:0,criticize:0,hug:0,a0:10})},
+  step(m,api){
+   const v=m.v;
+   if(m.hurt){v.siner=0;v.face=2}else v.siner++;
+   // alarm[0]: a smoke puff (obj_vulkincloud) every 15 steps.
+   if(tick(v,'a0')){
+    v.a0=15;if(m.hurt)return;
+    const x=m.x+50,y=m.y+4;
+    api.S.fx.push({x,y,size:.25,rot:rnd(360),vx:2-rnd(4),vy:-1,alpha:1,siner:rnd(100),
+     step(e){e.alpha-=.02;if(e.alpha<.05){e.dead=true;return}e.rot+=2;e.size+=.07;e.siner++;e.x+=Math.sin(e.siner/5)*2;
+      const sp=Math.hypot(e.vx,e.vy);if(sp>0){const n=Math.max(0,sp-.05);e.vx=e.vx/sp*n;e.vy=e.vy/sp*n}e.vy-=.2;e.x+=e.vx;e.y+=e.vy},
+     draw(g,e){dse(g,images.nbVulkinCloud,e.x,e.y,e.size,e.size,e.rot,e.alpha,9,8)}});
+   }
+  },
+  draw(g,m){
+   const s=m.v.siner,x=m.x,y=m.y;
+   dse(g,images.vulkinFeetBack,x+2+Math.cos(s/6)*2,y+102+Math.sin(s/6)*2,2,2);
+   dse(g,images.vulkinBody,x,y,2,2);
+   dse(g,fr(images.vulkinLava,s/8),x+42,y+10,2,2);
+   const face=m.hurt||(!m.alive&&!m.spared)?images.nbVulkinFace2:vulkinFace(m);
+   dse(g,fr(face,s/15),x+44+Math.sin(s/12)*7,y+50,2-Math.abs(Math.sin(s/12))*.2,2,0,1,13,0);
+   dse(g,images.vulkinFeetFront,x+2+Math.sin(s/6)*2,y+102+Math.cos(s/6)*2,2,2);
+  },
+  bubblePos:m=>({x:m.x+100,y:m.y}),
+  acts:['Check','Criticize','Encourage','Hug'],
+  check:()=>'* VULKIN - ATK 25 DEF 0&* Mistakenly believes its lava&  can heal people./',
+  act(m,i,name,api){
+   const v=m.v;
+   if(name==='Criticize'){
+    const t=v.criticize===1?'* You tell Vulkin that its&  rump looks like a sack&  of trash.':'* You tell Vulkin that its&  attacks are NOT helpful.';
+    v.encourage=0;v.criticize++;v.hug=0;m.mercymod=-200;return t;
+   }
+   if(name==='Encourage'){m.mercymod=100;v.encourage++;v.criticize=0;v.hug=0;return '* You tell Vulkin it\'s doing&  a great job.&* Its attacks become extreme...'}
+   m.mercymod=100;v.encourage=0;v.criticize=0;v.hug++;
+   let t2='* Nothing else happened.';
+   if(api.S.df>=5){api.S.df-=5;t2='* And your whole body!&* Ouch!&* Your DEFENSE dropped!'}
+   return '* You give Vulkin a hug^1.&* It warms your heart.../'+t2;
+  },
+  speech(m,api){
+   const v=m.v,c=v.cmd=Math.round(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t;
+   if(api.S.hp<api.S.maxhp)t=c<50?'Ah! I\'ll&help!&Healing&magmas!':'You\'re&hurt!&I\'ll&help!!!';
+   else t=c<50?'Thunder!&Helpful&speed&up!!!':'Speed&will&help&dodge!!';
+   if(v.criticize>0)t=c<50?'Ahh...':'Does&not&help...';
+   if(v.hug>0)t=c<50?'Oh!&Ah!&I\'m&helping!':'Feels&so&warm...';
+   if(v.encourage>0)t=c<50?'Ahh!&Tries&the&hardest!':'Works&hard!&Works&hot!';
+   if(h==='Encourage'){t='Ahh!&Ahh!&Does&my best!';v.face=3}
+   if(h==='Criticize'){v.face=5;t='Ahh...&Not...&helping?&OK...';if(v.criticize===2)t='Trash...&rump...&Ahh...'}
+   if(h==='Hug'){v.face=4;t='Ahh...&So...&LOVEY!';if(v.hug===2)t='Hug...&continue&...';if(v.hug===3)t='Starting&to get&weird.'}
+   return t;
+  },
+  border:()=>17,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0,h=m.heardName;m.heardName=null;
+   if(v.criticize===0)api.border(18);
+   api.turntimer(160);
+   let rate=7;if(p===3)rate*=2.4;if(p===2)rate*=1.7;
+   const num=h==='Encourage'||api.S.hp<api.S.maxhp;
+   if(v.criticize===0){
+    if(num){
+     if(v.encourage>0)rate-=2;
+     // obj_lavafiregen
+     v.gen={kind:'lava',a0:5,lavatime:1,rate,dmg:m.atk};
+    }else{
+     rate=9;if(v.encourage>0)rate-=4;if(p===3)rate*=2.6;if(p===2)rate*=1.7;
+     const [L,Rr,T]=api.S.ideal;
+     vulkinCloud(m,api,(L+Rr)/2-30,T+2,rate);
+    }
+   }
+   let f='* Vulkin parades around the&  room.';
+   if(c>=25)f='* Vulkin is making coffee&  in its crater.';
+   if(c>=50)f='* Vulkin is wiggling its&  weird rump.';
+   if(c>=75)f='* Vulkin makes a smoke hoop&  and jumps through it.';
+   if(c>=90)f='* Smells like a lava lamp.';
+   if(v.hug>0)f='* Vulkin\'s cheeks glow with&  a bright heat.';
+   if(v.encourage>0)f='* Vulkin parades around you&  proudly.';
+   if(v.criticize===1)f='* Vulkin stands in the corner.';
+   if(v.criticize>1)f='* Little streams of lava come&  from Vulkin\'s eyes.';
+   if(v.special){f='* Vulkin reassures you the&  plane turning tiny is^1, like^1,&  completely intentional.';v.special=0}
+   // A criticized Vulkin skips its turn (alone, or with another criticized Vulkin).
+   const vul=api.alive().filter(o=>o.id==='vulkin');
+   if(v.criticize>0&&(p===1||(vul.length>=2&&vul.every(o=>o.v.criticize>0))))api.endTurn();
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||g.kind!=='lava'||!tick(g,'a0'))return;
+   g.a0=g.rate;
+   const [L,Rr,T,B]=api.S.ideal;
+   for(const x of [L-40,Rr-10])sideLava(api,x,B,g.dmg);
+   g.lavatime++;
+   if(g.lavatime===2)lavaBullet(api,L+10,(T+B)/2+60-rnd(120),g.dmg);
+   if(g.lavatime===4){lavaBullet(api,Rr-10,(T+B)/2+60-rnd(120),g.dmg);g.lavatime=0}
+  },
+  endAttack(m,api){m.v.gen=null;if(m.v.mysp!=null){api.S.sp=m.v.mysp;m.v.mysp=null}},
+  onSpare(m,api){if(m.mercymod>10&&m.hp===m.maxhp)api.S.goldTotal+=40}
+ });
+ // obj_sidelava: an arc of lava rising from the floor, drawn inside the box.
+ function sideLava(api,x,y,dmg){
+  const left=x<320;
+  sprBullet(api,{x,y,im:images.vulkinSideLava,frame:left?0:1,vx:left?3:-3,vy:-3,grav:.1,gdir:left?180:0,dmg,clip:clipBox,
+   step(b){move(b);if(b.x<100||b.x>500)b.alive=false}});
+ }
+ // obj_lavabullet: a flame thrown across that curves back and fades past its own wall.
+ function lavaBullet(api,x,y,dmg){
+  const left=x<300;
+  sprBullet(api,{x,y,im:images.vulkinLavaFlame,frame:0,ox:10,oy:10,vx:left?6+rnd(2):-6-rnd(2),vy:-1+rnd(2),grav:.17,gdir:left?180:0,dmg,type:left?0:1,off:0,
+   step(b){
+    b.rot=dir(b);
+    const [L,Rr]=api.S.ideal;
+    if(b.type===0&&b.vx<0&&b.x<=L)b.off=1;
+    if(b.type===1&&b.vx>0&&b.x>=Rr)b.off=1;
+    if(b.off){b.alpha-=.12;if(b.alpha<.05){b.alive=false;return}}
+    move(b);
+   }});
+ }
+ // obj_vulkincloudbul: the cloud stops to fire five fans of seven bolts, then drifts off.
+ function vulkinCloud(m,api,x,y,rate){
+  m.v.mysp=api.S.sp;
+  sprBullet(api,{x,y,im:images.vulkinCloudBul,dmg:1,kill:false,firetime:0,firing:2,a0:2,a1:-1,rate,
+   onHit:()=>api.damageStd(1),
+   step(b){
+    if(tick(b,'a0')){b.firing++;b.a0=15;if(b.firing>3){b.firing=0;b.firetime=0;b.a1=2}}
+    if(tick(b,'a1')){
+     b.vx=0;b.vy=0;
+     const h=api.heart,to=ptDir(b.x+30,b.y+30,h.x+10,h.y+10),init=Math.floor(rnd(30));
+     for(let i=0;i<7;i++)lightning(api,b.x+30,b.y+30,to-110+init+i*30,b.rate);
+     b.firetime++;
+     if(b.firetime<5)b.a1=b.rate;
+     else{const d=to-110-rnd(50);b.vx=dcos(d)*2;b.vy=-dsin(d)*2}
+    }
+    b.x+=b.vx;b.y+=b.vy;
+    // End step: kept inside the box.
+    const e=api.S.edge;
+    if(b.x<e.L+4){b.x+=4;b.vx=0}
+    if(b.y<e.T+4){b.y+=4;b.vy=0}
+    if(b.x>e.R-4){b.x-=4;b.vx=0}
+    if(b.y>e.B-4){b.y-=4;b.vy=0}
+   }});
+ }
+ // obj_vulkinlightning: speeds up as it flies; a hit also speeds up the SOUL (global.sp).
+ function lightning(api,x,y,d,rate){
+  const fric=rate>12?-.07:rate>9?-.1:-.15;
+  sprBullet(api,{x,y,im:images.vulkinLightning,ox:11,oy:6,rot:d,vx:dcos(d),vy:-dsin(d),fric,dmg:7,wallKill:true,
+   onHit(b){if(api.S.sp<8)api.S.sp+=2;return api.damageStd(7)},
+   step(b){move(b);if(b.x<-40||b.x>680||b.y<-40||b.y>520)b.alive=false}});
+ }
+
+ // ------------------------------------------------------------ Tsunderplane
+ // spr_tsunderplane_blush shares the plane's origin (47,38); its exported frames are trimmed
+ // to the cheeks at (72,56) of the full frame, smaller frames centred where frame 0 sits.
+ const TSU_BLUSH_OFF=[[25,18],[26,18],[28,21],[28,23]];
+ function tsuFall(m,api){
+  // obj_tsunderplane_body event_user(0): it falls, smoking, says its last words, then blows up.
+  const v=m.v;v.fall=1;v.vy=0;v.rot=0;v.alpha=1.2;v.fx=m.x;v.fy=m.y;v.ft=m.t;
+ }
+ function tsuFallStep(m,api){
+  const v=m.v;
+  if(v.fall===1){
+   api.S.fx.push(tsuExhaust(v.fx+60+rnd(60),v.fy+60+rnd(60),rnd(1)<.5));
+   v.vy+=.08;v.fy+=v.vy;v.fx+=Math.sin(v.siner)*2;v.rot-=.75;
+   if(v.fy>160-77)v.fall=2;
+  }else if(v.fall===2){
+   // obj_flasher (white, fading .1 a step) + the explosion + scr_shake(5,5,2)
+   api.S.fx.push({t:0,step(e){if(++e.t>12)e.dead=true},draw(g,e){const a=e.t<2?0:1-(e.t-2)*.1;if(a<=0)return;g.save();g.globalAlpha=a;g.fillStyle='#ffffff';g.fillRect(-40,-40,720,560);g.restore()}});
+   snd('mexExplosion');api.S.shake={h:5,v:5,speed:2,t:0};v.fall=3;
+  }else if(v.fall===3){
+   v.rot--;v.alpha-=.03;if(v.alpha<.05)v.fall=4;
+  }
+ }
+ function tsuExhaust(x,y,front){
+  // obj_planeexhaust
+  return {x,y,size:2,siner:0,alpha:1,ang:rnd(360),vx:-2-rnd(1),vy:0,f:0,top:false,
+   step(e){e.ang++;e.size+=.05;e.siner++;e.x+=Math.sin(e.siner/2);e.y+=Math.cos(e.siner/2);if(e.siner>7)e.alpha-=.04;if(e.alpha<.05){e.dead=true;return}e.f+=.2;e.vy-=.2;e.x+=e.vx;e.y+=e.vy},
+   draw(g,e){dse(g,fr(images.nbTsuExhaust,e.f),e.x,e.y,e.size,e.size,e.ang,e.alpha,5,5)}};
+ }
+ function tsuDraw(g,m){
+  const v=m.v,s=v.siner,x=m.x,y=m.y;
+  if((v.fall||0)<3){
+   const yy=v.fall?v.fy:y,xx=v.fall?v.fx:x;
+   const red=v.grchange>0?Math.min(1,v.grchange/10):0;
+   let plane=images.tsunderplaneRaw||images.tsunderplane; // IMG.tsunderplane is loaded under this key
+   if(red>0&&plane){const k=Math.round(255*(1-red)).toString(16).padStart(2,'0');plane=NB.multiplied(plane,'#ff'+k+k)}
+   dse(g,plane,xx+94,yy+76+Math.sin(s/7)*3,2,2,v.rot||0,v.alpha??1,47,38);
+   dse(g,images.tsunderplaneHat,xx+154,yy+90+Math.sin(s/7)*3,2,2,v.rot||0,v.alpha??1,16,17);
+  }
+  if(v.fall===1){
+   // the last words, in a small bubble left where the plane started
+   const bx=m.x0+160+rnd(5),by=y+20+rnd(5);
+   if(images.torielBubbleSmall)g.drawImage(images.torielBubbleSmall,R(bx),R(by));
+   bubbleText(g,['B-but I','never','got to','...!'],R(m.x0+190+rnd(2)),R(y+30+rnd(2)));
+  }
+  if(v.fall===3){
+   const k=rnd(.3),a=v.alpha;
+   dse(g,images.nbPlaneExplosion,v.fx+90,240,3.5-a*1.8+k,3.8-a*2+k,0,a,46,90);
+   dse(g,images.tsunderplaneHat,v.fx+160,v.fy+90+Math.sin(s/7)*3,2,2,v.rot,a,16,17);
+  }
+  if(!v.fall&&m.alive&&v.graze>0){
+   const k=Math.min(3,Math.floor(v.graze-1)),off=TSU_BLUSH_OFF[k];
+   dse(g,fr(images.nbTsuBlush,k),x+94+Math.sin(s/7)*2,y+76+Math.sin(s/7)*4,2,2,0,.7+Math.sin(s/4)*.1,-off[0],-off[1]);
+  }
+ }
+ NB.defs.set('tsunderplane',{
+  name:'Tsunderplane',hp:80,atk:8,def:6,xp:95,gold:45,mercymod:5,wd:200,
+  encounter:'* Tsunderplane gets in the way!&* Not on purpose or anything.',
+  size:()=>({w:200,h:200}),
+  pos:(i,n,cx)=>n===1?{x:46,y:36}:{x:Math.round(cx-100),y:36},
+  shudder:[8,1],shudderAbs:true,vaporize:false,
+  setup(m){Object.assign(m.v,{siner:0,graze:0,grchange:0,prevgr:0,a0:10,fall:0})},
+  step(m,api){
+   const v=m.v;
+   if(!m.hurt)v.siner++;
+   v.grchange--;if(v.prevgr!==v.graze)v.grchange=7;v.prevgr=v.graze;
+   if(tick(v,'a0')&&!v.fall){api.S.fx.push(tsuExhaust(m.x+46,m.y+56,false));v.a0=10}
+  },
+  draw:tsuDraw,
+  // Killed, it doesn't turn to dust: the body falls and explodes (drawn from here on).
+  drawGone(g,m,api){if(m.killed&&m.v.fall&&m.v.fall<4){while(m.v.ft<m.t){m.v.ft++;m.v.siner++;tsuFallStep(m,api)}tsuDraw(g,m)}},
+  dmgPos:m=>({x:m.x,y:m.y+10}),
+  bubblePos:m=>({x:m.x+155,y:m.y-25}),
+  acts:['Check','Flirt','Approach'],
+  check:()=>'* TSUNDERPLANE - ATK 25 DEF 26&* Seems mean^1, but does&  it secretly like you?/',
+  act(m,i,name){
+   if(name==='Approach')return '* You get close to Tsunderplane^1.&* But not too close.';
+   return ['* You tell Tsunderplane it has&  an impressive wingspan.','* You tell Tsunderplane it has&  nice turbines.','* You tell Tsunderplane it has&  a powerful rudder.','* You tell Tsunderplane that&  you like its taste in&  movies and books.','* You tell Tsunderplane that&  it has cute winglets.'][Math.floor(rnd(5))];
+  },
+  speech(m){
+   const v=m.v,c=v.cmd=Math.round(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t=c<25?'It\'s not&like I&LIKE&you.':c<50?'Id...&Idiot!':c<75?'Hmph!&Don\'t&get in&my way.':'>_<...&Human&...';
+   if(v.graze>=5)t=c<50?'...&H-human&...&...?':'Id...&Idiot!';
+   if(h==='Approach')t=v.graze>=5?'Human,&I...':'Eeeeh?&H-human&...?';
+   if(h==='Flirt')t=v.graze>=5?'Ah...&Is that&true...?':'Huh!?&Y-you&sicko!';
+   if(h==='Check')t=v.graze>=5?'Human,&I...':'No way!&Why&would I&like YOU';
+   return t;
+  },
+  border:()=>17,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0,h=m.heardName;m.heardName=null;
+   api.border(18);api.turntimer(160);
+   let rate=20;if(p===3)rate*=2.4;if(p===2)rate*=1.7;
+   if(c<=50||h==='Approach')v.gen={kind:'vert',a0:5,rate,dmg:m.atk,green:h==='Approach'};
+   else{rate=30;if(p===3)rate*=2.2;if(p===2)rate*=1.5;v.gen={kind:'side',a0:2,rate,dmg:m.atk}}
+   let f='* Tsunderplane looks over^1,&  then turns up its nose.';
+   if(c>=25)f='* Tsunderplane shakes its&  nose dimissively at you.';
+   if(c>=50)f='* Tsunderplane "accidentally"&  bumps you with its wing.';
+   if(c>=75)f='* Tsunderplane gives you a&  condescending barrel roll.';
+   if(c>=90)f='* Smells like an airport&  perfume counter.';
+   if(m.mercymod>60)f='* Tsunderplane is looking away&  shyly.';
+   if(api.srcHp(m)<30)f='* Tsunderplane\'s body is smoking.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||!tick(g,'a0'))return;
+   if(g.kind==='vert'){
+    // obj_vertplanegen
+    const [L,Rr]=api.S.ideal;
+    vertPlane(m,api,L+20+rnd(Rr-L-70),g.dmg,g.green);
+    g.a0=g.rate+(g.green?10:0);
+   }else{
+    // obj_incendiarygen
+    sidePlane(api,g.dmg);g.a0=g.rate;
+   }
+  },
+  endAttack(m){m.v.gen=null},
+  onKill(m,api){if(!m.frozen)tsuFall(m,api)},
+  onSpare(m,api){
+   // Spared, it pays out by how much damage it took; untouched and won over, +60.
+   api.S.goldTotal+=Math.floor(m.gold*(m.maxhp-m.hp)/m.maxhp)-m.gold;
+   if(m.mercymod>10&&m.hp===m.maxhp)api.S.goldTotal+=60;
+   for(const o of api.S.mons)if(o.id==='vulkin'&&o.alive)o.v.special=1;
+  }
+ });
+ // obj_vertplanebullet (+ obj_vertplanegreen behind it after Approach): dives through the
+ // box trailing exhaust flames. Touching the green trail is a "graze".
+ function vertPlane(m,api,x,dmg,green){
+  const p=pop();
+  let vy=7+rnd(2);if(p>1)vy=6+rnd(1);if(green)vy/=1.3;
+  const b=sprBullet(api,{x,y:50,im:images.tsuVertPlane,vy,dmg,a0:10,off:0,green,
+   step(b){
+    if(tick(b,'a0')){
+     if(b.y>api.S.edge.T-10){
+      b.off=b.off===0?1:0;if(b.green)b.off=2;
+      exhaust(api,b.x+20,b.y+10,b.dmg,b.off);
+     }
+     b.a0=b.green?10:6;if(p>1)b.a0*=1.5;
+    }
+    b.y+=b.vy;
+    if(b.y>api.S.edge.B){b.alive=false;if(b.kid)b.kid.alive=false}
+    if(b.kid&&b.kid.alive){b.kid.x=b.x-(p>1?28:18);b.kid.y=b.y-8}
+   }});
+  if(green){
+   b.kid=sprBullet(api,{x:b.x-60,y:b.y-5,im:images.tsuVertGreen,xs:p>1?1.3:1,kill:true,
+    step(k){if(api.S.turntimer<2)k.alive=false},
+    onHit(){
+     const v=m.v;v.graze+=pop()>1?1.5:1;
+     if(v.graze<4)snd('mdBell');
+     if(v.graze>3)m.mercymod=30;
+     if(v.graze>=4){m.mercymod=100;m.df=-99;snd('hlDumbVictory')}
+     return true;
+    }});
+  }
+ }
+ // obj_exhaustbullet: a flame that drifts off sideways (or rises, behind a green plane).
+ function exhaust(api,x,y,dmg,off){
+  if(off===2&&pop()>1)return;
+  const gd=off===0?0:off===1?180:60+rnd(60);
+  sprBullet(api,{x,y,im:images.tsuFlame,dmg,grav:.1,gdir:gd,wallKill:true,
+   step(b){move(b);if(b.x<-40||b.x>680||b.y<-60||b.y>520)b.alive=false}});
+ }
+ // obj_sideplanebullet: crosses the top of the box dropping obj_incendiarybomb.
+ function sidePlane(api,dmg){
+  const [L,Rr]=api.S.ideal,right=rnd(1)<.5;let vx=6+rnd(2);if(right)vx=-vx;
+  sprBullet(api,{x:right?Rr+40:L-40,y:150+40+rnd(40),im:images.tsuSidePlane,frame:right?1:0,vx,dmg,a0:10,
+   step(b){
+    if(tick(b,'a0')){incBomb(api,b.x+15,b.y+10,b.dmg);b.a0=pop()>1?18:12}
+    b.x+=b.vx;
+    const h=api.heart;if(b.x>h.x+400||b.x<h.x-400)b.alive=false;
+   }});
+ }
+ function incBomb(api,x,y,dmg){
+  let vx=rnd(4)+.1;if(rnd(1)<.5)vx=-vx;
+  sprBullet(api,{x,y,im:images.tsuBomb,vx,dmg,grav:.1,gdir:270,
+   step(b){
+    const [L,Rr]=api.S.ideal,B=api.S.edge.B;
+    if(b.x>L&&b.x<Rr&&b.y>=B-20&&b.y<B){flame(api,b.x,b.y,b.vx,b.dmg,1);b.alive=false;return}
+    move(b);if(b.y>520)b.alive=false;
+   }});
+ }
+ // obj_incendiary: a column of twelve flames, each spawning the next 18px up.
+ function flame(api,x,y,vx,dmg,number){
+  sprBullet(api,{x,y,im:images.tsuFlame,vx,dmg,number,a0:1,fatal:0,kill:false,
+   onHit:b=>b.alpha>=.9?api.damageStd(b.dmg):false,
+   step(b){
+    if(tick(b,'a0')&&b.number<12)flame(api,b.x+rnd(8)-4,b.y-18,b.vx,b.dmg,b.number+1);
+    b.fatal++;if(b.fatal>10){b.alpha-=.1;if(b.alpha<=0){b.alive=false;return}}
+    b.x+=b.vx;
+   }});
+ }
+
+ // ----------------------------------------------------------------- Pyrope
+ // obj_pyropebody (at obj_pyrope + 8,108): hopping feet, six coils of rope, a swinging head.
+ // The coil frames are exported trimmed and in reverse order; they sit centred on the 49px frame.
+ function pyropeDraw(g,m){
+  const v=m.v,s=v.siner,x=m.x+8,y=m.y+108,hurt=m.hurt||(!m.alive&&!m.spared);
+  let nowy=y+120;
+  const hop=Math.abs(Math.sin(s/14)*20),kick=Math.abs(Math.sin(s/14)*40);
+  dse(g,images.pyropeFootL,x+38,nowy-hop,2,2,kick,1,21,6);
+  dse(g,images.pyropeFootR,x+60,nowy-hop,2,2,-kick,1,4,6);
+  nowy-=20+hop;
+  for(let i=5;i>-1;i--){
+   const im=images.pyropeBody?.[5-i]; // exported in reverse: _0 is the widest coil, under the head
+   if(im)dse(g,im,x+(49-(im.naturalWidth||im.width)),nowy,2,2);
+   nowy-=12;nowy-=Math.abs(Math.sin((s-i)/14)*6);
+  }
+  if(!hurt)dse(g,fr(images.pyropeHead,s/10),x+50,nowy-30,2,2,Math.sin(s/6)*4+Math.sin(v.rotto)*12,1,28,25);
+  else dse(g,images.nbPyropeHead2,x+50,nowy-30,2,2,Math.sin(v.rotto)*12,1,28,25);
+ }
+ // obj_heatwaver: once the room is heated, the box (bullets, SOUL and all) ripples, each
+ // row shifted by sin(a/b)*cfactor; Heat Up strengthens it, Cool Down removes it.
+ function heatWaver(g,st){
+  const w=st.hlWaver;if(!w)return;
+  const e=st.edge,x=e.L,y=e.T,W=e.R+5-e.L,H=e.B+5-e.T;
+  const t=g.getTransform(),dx=t.a*x+t.e,dy=t.d*y+t.f,sw=Math.round(W*t.a),sh=Math.round(H*t.d);
+  if(sw<=0||sh<=0)return;
+  const c=w.c||(w.c=document.createElement('canvas'));if(c.width!==sw||c.height!==sh){c.width=sw;c.height=sh}
+  const cg=c.getContext('2d');cg.clearRect(0,0,sw,sh);cg.drawImage(g.canvas,dx,dy,sw,sh,0,0,sw,sh);
+  const b=H/50;let a=st.t*(H+1);
+  g.save();g.imageSmoothingEnabled=false;
+  for(let i=0;i<H;i++){a++;const o=Math.sin(a/b)*w.cfactor;g.drawImage(c,0,i*t.d,sw,t.d,x+o,y+i,W,1)}
+  g.restore();
+ }
+ NB.defs.set('pyrope',{
+  name:'Pyrope',hp:110,atk:8,def:1,xp:80,gold:40,mercymod:20,wd:116,
+  encounter:'* Pyrope bounds towards you!',
+  size:()=>({w:116,h:242}),
+  pos:(i,n,cx)=>n===1?{x:108,y:7}:n===2?{x:106+200*i,y:10}:{x:Math.round(cx-58),y:10},
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{siner:0,rotto:0,heat:0})},
+  step(m){const v=m.v;if(m.hurt){v.rotto++;v.siner=28}else{v.rotto=0;v.siner++}},
+  draw:pyropeDraw,
+  dmgPos:m=>({x:m.x+58-48,y:m.y+242-60}),
+  bubblePos:m=>({x:m.x+110,y:m.y}),
+  acts:['Check','Cool Down','Heat Up','Invite'],
+  check:()=>'* PYROPE - ATK 29 DEF 14&* This mischievous monster&  is never warm enough./',
+  act(m,i,name,api){
+   const all=api.S.mons.filter(o=>o.id==='pyrope'&&o.alive);
+   if(name==='Cool Down'){
+    api.S.hlWaver=null;
+    for(const o of all){if(o.atk>2)o.atk-=2;o.v.heat=0;o.mercymod=-200;o.heardName='Cool Down'}
+    return '* You blow on Pyrope.&* Its flames die down.&* Pyrope\'s ATTACK dropped!';
+   }
+   if(name==='Heat Up'){
+    for(const o of all){o.heardName='Heat Up';o.mercymod+=30;o.v.heat++}
+    if(m.v.heat>1)for(const o of all)o.mercymod=900;
+    const h=m.v.heat;
+    if(h===1&&!api.S.hlWaver)api.S.hlWaver={cfactor:1};
+    if(h>1&&api.S.hlWaver&&api.S.hlWaver.cfactor<30)api.S.hlWaver.cfactor+=2;
+    api.S.overlay=heatWaver;
+    return h===2?'* You crank up the thermostat.&* It\'s super hot!&* Pyrope looks satisfied.':h>2?'* You crank up the thermostat.&* It\'s SOOOO hot!':'* You crank up the thermostat.&* Pyrope begins to get&  excited.';
+   }
+   return '* You invite Pyrope to hang&  out.';
+  },
+  speech(m){
+   const c=m.v.cmd=Math.round(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t=c<25?'Burn,&baby,&BURN!':c<50?'Hot&enough&for&ya!?':c<75?'Feel&the&heat.':'Is it&cold in&here?';
+   if(h==='Heat Up')t='Hot!!&HOT!!&Hotter!&HOTTER!!';
+   if(h==='Cool Down')t='BRRRR!&What\'s&the&deal!?';
+   if(h==='Invite')t='Sorry!!&I\'m all&tied&up!!';
+   return t;
+  },
+  border:()=>17,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0;m.heardName=null;
+   api.turntimer(180);
+   let rate=9;if(p===3)rate*=2.4;if(p===2)rate*=1.7;
+   if(c<50&&p===1)v.gen={kind:'rope',a0:10,dmg:m.atk};
+   else{rate=40;if(p===3)rate*=2.6;if(p===2)rate*=1.1;api.border(19);v.gen={kind:'bomb',a0:3,rate,dmg:m.atk}}
+   let f='* Pyrope is protected by its&  winsome smile.';
+   if(c>=25)f='* Pyrope is pretending to&  pull the fire alarm.';
+   if(c>=50)f='* Pyrope is chuckling through&  its teeth.';
+   if(c>=75)f='* Pyrope is pretending to be&  a candle.';
+   if(c>=90)f='* Smells like rope burn.';
+   if(v.heat===1)f='* Pyrope wants more heat.';
+   if(v.heat>1)f='* The room is sweltering!';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||!tick(g,'a0'))return;
+   const [L,Rr,T]=api.S.ideal;
+   if(g.kind==='rope'){g.a0=24;rope(api,Rr+10,T-100,g.dmg)}
+   else{g.a0=g.rate;bomb(api,(L+Rr)/2+50-rnd(100),T-20,g.dmg)}
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare(m,api){if(m.mercymod>10&&m.hp===m.maxhp)api.S.goldTotal+=45}
+ });
+ // obj_ropebul: a rope hanging in from above and one rising from below, three orange flames
+ // between them (they only burn a SOUL that stands still); the pair bobs as it moves left.
+ function rope(api,x,y,dmg){
+  const T=api.S.ideal[2],arb=T-50,arb2=T-120+10;
+  const top=sprBullet(api,{x,y,im:images.ropeBul,vx:-4,dmg,clip:clipBox,hidden:true,a0:1,go:0,
+   step(b){
+    if(tick(b,'a0')){
+     b.hidden=false;
+     b.y=arb2+1+rnd(arb-arb2-2);b.vy=(1+rnd(2))*(rnd(1)<.5?1:-1);
+     b.kid=sprBullet(api,{x:b.x,y:b.y+170,im:images.ropeBul,vx:-4,vy:b.vy,dmg,clip:clipBox,
+      step(k){k.yp=k.y;k.x+=k.vx;k.y+=k.vy;if(k.x<api.S.ideal[0]-20)k.alive=false}});
+     b.go=1;
+     for(let i=0;i<3;i++){
+      const fy=b.y+120+i*14;
+      sprBullet(api,{x:b.x,y:fy,rx:0,ry:fy-b.y,im:images.orangeFire,frame:0,siner:rnd(40),dmg,kill:false,clip:clipBox,parent:b,
+       onHit:f=>api.damageStd(f.dmg,{mode:2}),
+       step(f){if(!f.parent.alive){f.alive=false;return}f.frame++;f.x=f.parent.x+f.rx;f.y=f.parent.y+f.ry;f.siner++;f.x+=Math.sin(f.siner/3)*2;f.y+=Math.cos(f.siner/3)*2}});
+     }
+    }
+    b.yp=b.y;b.x+=b.vx;b.y+=b.vy;
+    if(b.go&&(b.y>arb||b.y<arb2)){
+     b.y=b.yp;b.vy=-b.vy;
+     const k=b.kid;if(k&&k.alive){k.y=k.yp;k.vy=-k.vy}
+    }
+    if(b.x<api.S.ideal[0]-20)b.alive=false;
+   }});
+  return top;
+ }
+ // obj_bombbul: thrown in from one side, bounces off the far wall, settles, flashes faster
+ // and faster, then explodes (obj_blastbul).
+ function bomb(api,x,y,dmg){
+  const [L,Rr,T,B]=api.S.ideal,type=Math.floor(rnd(4));
+  const o={x,y,im:images.bombD,frame:0,ox:15,oy:25,dmg,type,grav:.18,fric:.03,bounce:0,on:0,flash:0,expl:0,a0:-1,isp:0};
+  if(type===0||type===2){
+   o.vx=(2+rnd(3))*(rnd(1)<.5?-1:1);
+   if(type===0){o.gdir=270;o.y=T-20}else{o.rot=180;o.gdir=90;o.y=B+20}
+  }else{
+   o.y=(T+B)/2+50-rnd(100);o.vy=(2+rnd(4))*(rnd(1)<.5?-1:1);
+   if(type===1){o.rot=90;o.gdir=0;o.x=L-20}else{o.rot=270;o.gdir=180;o.x=Rr+20}
+  }
+  sprBullet(api,Object.assign(o,{
+   step(b){
+    if(tick(b,'a0')){blast(api,b.x,b.y,b.dmg);b.alive=false;return}
+    const [L,Rr,T,B]=api.S.ideal;
+    b.frame+=b.isp;
+    if(b.type===0&&b.y>B-10){if(b.bounce===1){b.on=1;b.grav=0;b.vy=0}else{b.y-=b.vy;b.vy=-1.5;b.bounce=1}}
+    if(b.type===1&&b.x>Rr-10){if(b.bounce===1){b.on=1;b.grav=0;b.vx=0}else{b.x-=b.vx;b.vx=-1.5;b.bounce=1}}
+    if(b.type===2&&b.y<T+10){if(b.bounce===1){b.on=1;b.grav=0;b.vy=0}else{b.y-=b.vy;b.vy=1.5;b.bounce=1}}
+    if(b.type===3&&b.x<L+10){if(b.bounce===1){b.on=1;b.grav=0;b.vx=0}else{b.x-=b.vx;b.vx=1.5;b.bounce=1}}
+    if((b.type===0||b.type===2)&&(b.x>Rr-15||b.x<L+15)&&b.xp!=null){b.x=b.xp;b.vx=-b.vx}
+    if((b.type===1||b.type===3)&&(b.y>B-15||b.y<T+15)&&b.yp!=null){b.y=b.yp;b.vy=-b.vy}
+    if(b.bounce===1){
+     b.flash++;
+     if(b.flash>14){b.flash=14;if(b.expl===0){b.a0=15;b.expl=1}}
+     b.isp=1/(3-b.flash/10);
+    }
+    move(b);
+   }}));
+ }
+ // obj_blastbul: the explosion (snd_impact), growing then fading, shaking in place.
+ function blast(api,x,y,dmg){
+  snd('impact');
+  const big=pop()<=1;
+  sprBullet(api,{x,y,x0:x,y0:y,im:images.bombExplosion,ox:20,oy:23,size:big?5:4.5,max:big?6.2:5.5,dmg,kill:false,
+   onHit:b=>api.damageStd(b.dmg),
+   step(b){b.size+=.1;if(b.size>b.max)b.alpha-=.2;b.xs=b.ys=b.size;if(b.alpha<.06){b.alive=false;return}b.x=b.x0+3-rnd(6);b.y=b.y0+3-rnd(6)}});
+ }
+})();
 const NB_ASSETS={
  nbBattleBg:[0,1].map(i=>RAW+`sprites/images/spr_battlebg_${i}.png`),
+ // Hotland I
+ nbVulkinFace2:[0,1].map(i=>RAW+`sprites/images/spr_vulkinface2_${i}.png`),
+ nbVulkinFace3:[0,1].map(i=>RAW+`sprites/images/spr_vulkinface3_${i}.png`),
+ nbVulkinFace4:[0,1].map(i=>RAW+`sprites/images/spr_vulkinface4_${i}.png`),
+ nbVulkinFace5:RAW+'sprites/images/spr_vulkinface5_0.png',
+ nbVulkinCloud:RAW+'sprites/images/spr_vulkincloud_0.png',
+ nbTsuBlush:[0,1,2,3].map(i=>RAW+`sprites/images/spr_tsunderplane_blush_${i}.png`),
+ nbTsuExhaust:[0,1].map(i=>RAW+`sprites/images/spr_tsunderplanecloud_${i}.png`),
+ nbPlaneExplosion:RAW+'sprites/images/spr_planeexplosion_0.png',
+ nbPyropeHead2:RAW+'sprites/images/spr_pyropehead2_0.png',
  // Exported frames are swapped: spr_heart_1 is the normal red SOUL, _0 the dark hurt flash.
  nbHeart:[1,0].map(i=>RAW+`sprites/images/spr_heart_${i}.png`),
  nbHeartGtfo:[0,1].map(i=>RAW+`sprites/images/spr_heartgtfo_${i}.png`),
