@@ -37248,15 +37248,13 @@ if(c.lesson > 20) {
  }
  // spr_mettatonb* (origins 52/54/55/56,66), [trim x, trim y] per frame
  const MT={body:{im:'mettaton',o:[52,66],t:[26,4]},arms1:{im:'nbMttArms1',o:[52,66],t:[8,14]},arms2:{im:'nbMttArms2',o:[52,66],t:[15,19]},
-  arms3:{im:'nbMttArms3',o:[52,66],t:[1,1]},arms4:{im:'nbMttArms4',o:[52,66],t:[0,14]},armsin:{im:'nbMttArmsIn',o:[56,66],center:[53.5,89]},
+  arms3:{im:'nbMttArms3',o:[52,66],t:[1,1]},arms4:{im:'nbMttArms4',o:[52,66],t:[0,14]},armsin:{im:'nbMttArmsIn',o:[56,66],t:[[3,4],[2,8],[1,12],[10,18],[21,24],[28,28]]},
   rocketoff:{im:'nbMttRocket',o:[56,66],t:[[26,28],[26,30]]}};
  function mtDraw(g,key,frame,x,y,ang){
   const d=MT[key];if(!d)return;
   const fs=images[d.im],im=Array.isArray(fs)?fs[((Math.floor(frame)%fs.length)+fs.length)%fs.length]:fs;if(!im)return;
-  let tx,ty;
-  if(d.center){const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;tx=d.center[0]-w/2;ty=d.center[1]-h}
-  else{const t=Array.isArray(d.t[0])?d.t[Math.floor(frame)%d.t.length]:d.t;tx=t[0];ty=t[1]}
-  dse(g,im,x,y,2,2,ang,1,d.o[0]-tx,d.o[1]-ty);
+  const t=Array.isArray(d.t[0])?d.t[Math.floor(frame)%d.t.length]:d.t;
+  dse(g,im,x,y,2,2,ang,1,d.o[0]-t[0],d.o[1]-t[1]);
  }
  // Bubbles (scr_blcon): 1 = spr_blconwdshrt_l, 2 = spr_blconabove (Alphys), 3 / x = spr_blconwdshrt.
  function bubble(api,pages,type,x,y,typer){
@@ -37567,7 +37565,8 @@ const NB_ASSETS={
  nbMttArms2:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_arms2_${i}.png`),
  nbMttArms3:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_arms3_${i}.png`),
  nbMttArms4:RAW+'sprites/images/spr_mettatonb_arms4_0.png',
- nbMttArmsIn:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_mettatonb_armsin_${i}.png`),
+ // exported last frame first (like spr_pyropebody): arms out on the pole -> folded in, box on the floor
+ nbMttArmsIn:[5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_mettatonb_armsin_${i}.png`),
  nbMttRocket:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_rocketoff_${i}.png`),
  nbMttBtnA:RAW+'sprites/images/spr_abutton_0.png',nbMttBtnB:RAW+'sprites/images/spr_bbutton_0.png',
  nbMttBtnC:RAW+'sprites/images/spr_cbutton_0.png',nbMttBtnD:RAW+'sprites/images/spr_dbutton_0.png',
