@@ -29411,7 +29411,7 @@ const NB=(()=>{
   if(n===3)return [118,320,522];
   const out=[];for(let i=0;i<n;i++)out.push(40+(560*(i+.5))/n);return out;
  }
- function makeMonster(id,i,n){
+ function makeMonster(id,i,n,custom=null){
   const d=NB.defs.get(id);
   const m={id,def:d,i,name:d.name,hp:d.hp,maxhp:d.hp,atk:d.atk,df:d.def,xp:d.xp||0,gold:d.gold||0,
    mercymod:d.mercymod??0,alive:true,spared:false,killed:false,alpha:1,shudder:0,shake:0,hurt:false,
@@ -29421,14 +29421,31 @@ const NB=(()=>{
   const p=d.pos?d.pos(i,n,cx):{x:Math.round(cx-m.w/2),y:(d.floor??250)-m.h-4};
   m.x=p.x;m.y=p.y;m.x0=m.x;
   if(d.setup)d.setup(m,api);
+  m.srcMaxhp=m.maxhp;
+  if(custom)applyCustomStats(m,custom);
   return m;
  }
+ // VANILLA OFF: the CUSTOM HUB's edited enemy/support stats. Only edited numbers
+ // arrive here; the rest keep the port's own values and scripts.
+ //  hp  - real HP (a group splits it between its members by their source HP)
+ //  def - what FIGHT hits against; scripted DEF changes still feed MERCY
+ //  atk - scales every bullet this monster fires (damagePlayer)
+ function applyCustomStats(m,c){
+  m.custom=c;
+  if(c.hp!=null){
+   const r=c.group?c.hp/Math.max(1,c.baseHp):c.hp/Math.max(1,m.maxhp);
+   m.maxhp=Math.max(1,Math.round(m.maxhp*r));m.hp=Math.max(1,Math.round(m.hp*r));
+  }
+ }
+ // HP in the source's scale, for code tuned to UNDERTALE's numbers (mercy, saved HP).
+ const srcHp=m=>m.maxhp===m.srcMaxhp||!m.srcMaxhp?m.hp:m.hp*m.srcMaxhp/m.maxhp;
+ const fightDef=m=>m.custom?.def??m.df;
  const alive=()=>S.mons.filter(m=>m.alive);
  const monsterSpareable=m=>{
   if(!m.alive)return false;
   if(m.def.spareable)return !!m.def.spareable(m,api);
   // scr_mercystandard: mercy = hp - at - wstrength + def - mercymod; spareable when < 0.
-  return m.hp-S.at-S.wstrength+m.df-m.mercymod<0;
+  return srcHp(m)-S.at-S.wstrength+m.df-m.mercymod<0;
  };
 
  // ---------------------------------------------------------------- start ---
@@ -29447,11 +29464,15 @@ const NB=(()=>{
    writer:null,bubbles:[],mons:[],bullets:[],fx:[],dmgw:[],
    turntimer:-1,target:null,shake:null,view:{x:0,y:0},
    won:false,runaway:false,gameover:null,flavor:'',onExit:opt.onExit||null,xpTotal:0,goldTotal:0,
-   intro:opt.intro,encounterDone:false
+   intro:opt.intro,encounterDone:false,custom:!!opt.custom,curMon:null
   };
   NB.S=S;
-  const ids=opt.monsters.flatMap(id=>NB.groups[id]||[id]).filter(id=>NB.defs.has(id));
-  S.mons=ids.map((id,i)=>makeMonster(id,i,ids.length));
+  // opt.stats[k]: the CUSTOM HUB numbers for opt.monsters[k] (null when nothing was edited).
+  const roster=opt.monsters.flatMap((id,k)=>{
+   const c=opt.custom&&opt.stats?.[k]||null,g=NB.groups[id];
+   return (g||[id]).map(mid=>({id:mid,custom:c&&(g?{...c,group:true}:c)}));
+  }).filter(r=>NB.defs.has(r.id));
+  S.mons=roster.map((r,i)=>makeMonster(r.id,i,roster.length,r.custom));
   const first=S.mons[0];
   const intro=opt.intro||first?.def.encounter||`* ${first?.name||'Something'} draws near!`;
   S.flavor=intro;
@@ -29614,7 +29635,7 @@ const NB=(()=>{
   if(P.confirm){
    NB.clearPressed('confirm');
    // scr_attackcalc + obj_targetchoice: pwr - def + random(2), scaled by accuracy.
-   let dmg=S.at+S.wstrength-m.df+rnd(2);
+   let dmg=S.at+S.wstrength-fightDef(m)+rnd(2);
    const myx=f.x+7,perfect=f.tx+273;let bonus=Math.abs(myx-perfect);if(bonus===0)bonus=1;
    const stretch=(546-bonus)/546;
    dmg=bonus<=12?Math.round(dmg*2.2):Math.round(dmg*stretch*2);
@@ -29630,7 +29651,10 @@ const NB=(()=>{
  }
  function hurtMonster(){
   const m=S.mons[S.target];
-  if(m.def.hurt){m.def.hurt(m,api);return} // monsters that react to FIGHT their own way (Mad Dummy)
+  // Monsters that react to FIGHT their own way (Mad Dummy). On CUSTOM rules the old
+  // engine lets FIGHT land (its hub DEF of 999 keeps that at 0 until edited), so an
+  // edited DEF makes it a normal target here too.
+  if(m.def.hurt&&m.custom?.def==null){m.def.hurt(m,api);return}
   // obj_*monster alarm[3]: hurt frame, dmgwriter + snd_damage, then shudder 16,-16,14,-14...
   m.hurt=true;m.shudder=m.def.shudder?.[0]??16;m.shakeT=0;snd('damage');
   spawnDmgWriter(m,m.takedamage);
@@ -29681,8 +29705,12 @@ const NB=(()=>{
  function doAct(m,i){
   S.myfight=2;S.heart.visible=false;
   const name=actsOf(m)[i];let text;
-  if(i===0&&name==='Check'&&!m.def.customCheck)text=m.def.check?m.def.check(m,api):`* ${m.name.toUpperCase()} - ATK ${m.atk} DEF ${m.df}&* ${m.def.checkText||'...'}`;
-  else text=m.def.act?m.def.act(m,i,name,api):'* Nothing happened.';
+  if(i===0&&name==='Check'&&!m.def.customCheck){
+   text=m.def.check?m.def.check(m,api):`* ${m.name.toUpperCase()} - ATK ${m.atk} DEF ${m.df}&* ${m.def.checkText||'...'}`;
+   // CUSTOM HUB: Check reads out the edited ATK/DEF instead of the source's.
+   const c=m.custom,fix=s=>String(s).replace(/ATK -?\d+/,v=>c.atk!=null?'ATK '+c.atk:v).replace(/DEF -?\d+/,v=>c.def!=null?'DEF '+c.def:v);
+   if(c&&text!=null)text=typeof text!=='object'?fix(text):typeof text.text==='string'?{...text,text:fix(text.text)}:text;
+  }else text=m.def.act?m.def.act(m,i,name,api):'* Nothing happened.';
   m.whatiheard=i;m.heardName=name;S.talked=i;
   if(text&&typeof text==='object'&&text.custom){return}
   // Some UNDERTALE ACTs set myfight=0/mnfight=1 directly (no text at all).
@@ -29720,7 +29748,7 @@ const NB=(()=>{
    // SCR_TEXT 1520 (weights from round(random(20))).
    const i=Math.round(rnd(20));
    let pick=i<=1?'   * I\'m outta here.':i===2?'   * I\'ve got better to do.':i===3?'   * Don\'t slow me down.':'   * Escaped...';
-   if(S.xpTotal>0||S.goldTotal>0)pick=`   * Ran away with ${S.xpTotal} EXP&     and ${S.goldTotal} GOLD.`;
+   if(!S.custom&&(S.xpTotal>0||S.goldTotal>0))pick=`   * Ran away with ${S.xpTotal} EXP&     and ${S.goldTotal} GOLD.`;
    writeInstant(pick);
    return;
   }
@@ -29770,7 +29798,7 @@ const NB=(()=>{
    const [L,R,T,B]=S.ideal;h.x=Math.round((L+R)/2)-8;h.y=Math.round((T+B)/2)-8;
    S.nextFlavor=null;
    for(const m of alive()){
-    const r=m.def.attack?m.def.attack(m,api):null;
+    S.curMon=m;const r=m.def.attack?m.def.attack(m,api):null;S.curMon=null;
     if(typeof r==='string'&&!S.nextFlavor)S.nextFlavor=r;
    }
    if(S.turntimer<0)S.turntimer=100;
@@ -29778,7 +29806,8 @@ const NB=(()=>{
  }
  function attackStep(){
   if(S.turntimer>0)S.turntimer--;
-  for(const m of alive())if(m.def.attackStep)m.def.attackStep(m,api);
+  for(const m of alive())if(m.def.attackStep){S.curMon=m;m.def.attackStep(m,api)}
+  S.curMon=null;
   if(S.turntimer<=0){
    S.mnfight=3;S.turntimer=-1;
    for(const m of S.mons)if(m.def.endAttack)m.def.endAttack(m,api);
@@ -29798,7 +29827,9 @@ const NB=(()=>{
  function win(){
   S.won=true;S.myfight=0;S.mnfight=0;S.heart.visible=false;S.bullets=[];
   if(typeof stopMusic==='function')stopMusic();
-  write(`* YOU WON!&* You earned ${S.xpTotal} XP and ${S.goldTotal} gold.`,{end:'/%',onEnd:()=>exitBattle('win')});
+  // CUSTOM rules never pay out, so don't claim they did (old engine's wording).
+  const msg=S.custom?'* YOU WON!\n* Non-vanilla battle: no EXP or G earned.':`* YOU WON!&* You earned ${S.xpTotal} XP and ${S.goldTotal} gold.`;
+  write(msg,{end:'/%',onEnd:()=>exitBattle('win')});
  }
  function exitBattle(reason){
   S.exited=true;
@@ -29807,7 +29838,8 @@ const NB=(()=>{
 
  // ------------------------------------------------------------ bullets ----
  function spawn(b){
-  const o=Object.assign({x:0,y:0,vx:0,vy:0,ax:0,ay:0,box:[0,0,8,8],dmg:1,wallKill:true,kill:true,alive:true,t:0,frame:0},b);
+  // owner: the monster whose hook is running, so a hit knows whose ATK it carries.
+  const o=Object.assign({x:0,y:0,vx:0,vy:0,ax:0,ay:0,box:[0,0,8,8],dmg:1,wallKill:true,kill:true,alive:true,t:0,frame:0,owner:S.curMon},b);
   S.bullets.push(o);return o;
  }
  function heartHit(b){
@@ -29824,7 +29856,14 @@ const NB=(()=>{
  function damagePlayer(dmg,opt={}){
   // scr_damagestandard / blt_parent collision.
   if(S.invc>0)return false;
-  let amt=Math.round(dmg-S.df/5);if(amt<1)amt=1;
+  let amt;
+  if(S.custom){
+   // VANILLA OFF: the old engine's hurtPlayer custom rules. The hit scales with the
+   // attacker's edited ATK, DF/5 comes off, and a real hit never drops below its
+   // own size clamped to 5..10, however much DEF the custom build stacks.
+   const base=Math.max(1,Number(dmg)||0),scale=S.curMon?.custom?.atkScale??1;
+   amt=Math.max(clamp(Math.round(base),5,10),Math.round(base*scale-Math.round(S.df/5)));
+  }else{amt=Math.round(dmg-S.df/5);if(amt<1)amt=1}
   if(opt.min&&amt<opt.min)amt=opt.min;if(opt.max&&amt>opt.max)amt=opt.max;
   S.hp=Math.max(0,S.hp-amt);snd('hurt');
   S.shake={h:2,v:2,speed:2,t:0};
@@ -29839,7 +29878,8 @@ const NB=(()=>{
   if(mode===1&&!NB.heartMoving())return false;
   if(mode===2&&NB.heartMoving())return false;
   let d=dmg;
-  if(S.hp>20)d++;for(let t=30;t<=90;t+=10)if(S.hp>=t)d++;
+  // CUSTOM rules skip the HP-bracket bonus, like the old engine's hurtPlayer.
+  if(!S.custom){if(S.hp>20)d++;for(let t=30;t<=90;t+=10)if(S.hp>=t)d++}
   return damagePlayer(d,opt);
  }
  function bulletsStep(){
@@ -29848,6 +29888,7 @@ const NB=(()=>{
    if(!b.alive)continue;
    b.t++;
    if(b.anim)b.frame+=b.anim;
+   S.curMon=b.owner||null;
    if(b.step)b.step(b,api);
    if(!b.manual){b.vx+=b.ax;b.vy+=b.ay;b.x+=b.vx;b.y+=b.vy}
    if(b.wallKill){
@@ -29862,7 +29903,8 @@ const NB=(()=>{
     if(hit!==false&&b.kill)b.alive=false;
    }
   }
-  for(const b of S.bullets)if(!b.alive&&b.onDie&&!b.diedOnce){b.diedOnce=true;b.onDie(b,api)}
+  for(const b of S.bullets)if(!b.alive&&b.onDie&&!b.diedOnce){b.diedOnce=true;S.curMon=b.owner||null;b.onDie(b,api)}
+  S.curMon=null;
   S.bullets=S.bullets.filter(b=>b.alive);
  }
 
@@ -29951,7 +29993,8 @@ const NB=(()=>{
   if(S.mnfight===1)monsterTalkStep();
   else if(S.mnfight===2){attackStep();bulletsStep();for(const b of S.bubbles)b.w.step()}
   else if(S.mnfight===3)returnStep();
-  for(const m of S.mons){monsterHurtStep(m);if(m.alive&&m.def.step)m.def.step(m,api);else if(!m.alive&&!m.killed&&!m.spared&&m.def.stepAway)m.def.stepAway(m,api)}
+  for(const m of S.mons){S.curMon=m;monsterHurtStep(m);if(m.alive&&m.def.step)m.def.step(m,api);else if(!m.alive&&!m.killed&&!m.spared&&m.def.stepAway)m.def.stepAway(m,api)}
+  S.curMon=null;
   NB.heartStep();
   fxStep();
   // obj_target fades out on its own, whatever phase the turn has moved on to.
@@ -29973,7 +30016,7 @@ const NB=(()=>{
   spawn,damage:damagePlayer,damageStd,border:n=>NB.setBorder(n),borderRect:(l,r,t,b)=>NB.setBorderRect(l,r,t,b),
   turntimer:n=>{S.turntimer=n},inner:()=>NB.inner(),ideal:()=>S.ideal,
   moving:()=>NB.heartMoving(),soul:mode=>{S.soulMode=mode;if(S.mnfight===2)S.heart.mode=mode},
-  write,alive,spareable:monsterSpareable,endTurn:()=>{S.turntimer=0},
+  write,alive,spareable:monsterSpareable,endTurn:()=>{S.turntimer=0},srcHp,
   remove:m=>{m.alive=false;m.gone=true;S.goldTotal+=m.goldBonus||0},
   heal:n=>{S.hp=Math.min(S.maxhp,S.hp+n)},
   bubble:(m,text,opt={})=>{const wide=!!opt.wide,bx=opt.x??m.x+m.w,by=opt.y??m.y;const b={m,x:bx,y:by,wide,img:opt.img||null,w:new NB.Writer([String(text)],{typer:2,x:bx+(wide?36:15),y:by+10,sound:m.def.voice||undefined})};S.bubbles.push(b);return b},
@@ -35068,7 +35111,7 @@ if(c.lesson > 20) {
   },
   onMercy(m){m.v.mercied++},
   noFlee:m=>m.v.green||!!m.v.died,
-  onDamaged(m){m.v.body=U.bodyNew();UND.f351=m.hp},
+  onDamaged(m,dmg,api){m.v.body=U.bodyNew();UND.f351=api.srcHp(m)},
   onLethal(m,api){
    const v=m.v,st=api.S;
    if(v.died){api.endPlayerTurn();return true}
@@ -35249,7 +35292,7 @@ if(c.lesson > 20) {
 
    if(v.shakify>0){v.sx=rnd(v.shakify);v.sy=rnd(v.shakify)}else{v.sx=0;v.sy=0}
    sayStep(api,m);
-   UND.f351=m.hp;
+   UND.f351=api.srcHp(m); // source scale, so CUSTOM HP can't leak into a VANILLA re-encounter
   },
   flavor:m=>T().attacks
  });
@@ -35373,16 +35416,42 @@ function nbCanRun(){
  if(typeof bossRushActive!=='undefined'&&bossRushActive)return false;
  if(typeof mpBattleActive!=='undefined'&&mpBattleActive)return false;
  if(practiceMode!=='classic')return false;
+ if(soloPartyConfigured())return false; // a CUSTOM party needs the old engine's party turns
  if(currentBoss==='papyrus'&&papyrusNhbMode())return false; // NOT HOLDING BACK is this game's own mode
  return nbBattleIds().every(id=>NB.supports(id));
+}
+// VANILLA OFF: the CUSTOM HUB numbers for one roster entry, or null when nothing
+// was edited. The hub seeds every override with its own base numbers (Check-style
+// values, not always the port's internal ones), so only edited fields count.
+function nbCustomStats(id,support){
+ const base=support?baseSupportDataById(id):baseBossDataById(id);
+ const o=sandboxConfig[support?'supportOverrides':'enemyOverrides']?.[id];
+ if(!base||!o)return null;
+ const out={},edited=k=>Number.isFinite(Number(o[k]))&&Number(o[k])!==Number(base[k]);
+ if(edited('hp'))out.hp=Math.max(1,Math.round(Number(o.hp)));
+ if(edited('atk'))out.atk=Math.max(0,Math.round(Number(o.atk)));
+ if(edited('def'))out.def=Math.round(Number(o.def));
+ if(!Object.keys(out).length)return null;
+ out.baseHp=Number(base.hp)||1;
+ // baseAttackFor/effectiveAttackFor: bullets scale by edited ATK / base ATK.
+ out.atkScale=out.atk!=null?out.atk/Math.max(1,Number(base.atk)||4):1;
+ return out;
 }
 function nbStartBattle(){
  screen='nb';
  nbLoadAssets();
+ // reset() builds this for the old engine: VANILLA uses the shop stock, CUSTOM the
+ // hub LOADOUT (party slot 1's items). Without it the fight got the last fight's bag.
+ if(vanillaMode)inventory=buildBattleInventory();else{resetPartyRuntimeItems();activatePartyRuntimeSlot(0)}
+ const ids=nbBattleIds(),custom=!vanillaMode;
  NB.start({
-  monsters:nbBattleIds(),
+  monsters:ids,
+  custom,
+  stats:custom?ids.map((id,k)=>nbCustomStats(id,k>0)):null,
   name:(typeof playerDisplayName==='function'?playerDisplayName():roleDisplayName(practiceMode)),
-  items:(inventory||[]).map(v=>({...v})),
+  // battleItemHealing: role, Burnt Pan and armour multipliers. Using one spends the
+  // VANILLA shop stock (a no-op on CUSTOM rules), like the old engine's ITEM menu.
+  items:(inventory||[]).map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id)})),
   onExit(reason){
    screen='battle';
    try{stopMusic()}catch(_){}
