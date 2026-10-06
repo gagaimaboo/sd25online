@@ -30265,7 +30265,8 @@ const NB=(()=>{
   if(id==='iceshock'){
    if(!m){partyWait(`* ${p.say} cast ICE SHOCK!`);return}
    // IceShock.DamageEnemy -> CalculateDamage: 10 + MAGIC*8 + random(-5..4), no DF.
-   const fx=partyFxIceShock(m,()=>partyHit(m,Math.max(1,Math.round(10+p.mag*8+Math.floor(rnd(10))-5))));
+   // obj_icespell: a hit that finishes the enemy off freezes it (global.flag[51+star] = 6).
+   const fx=partyFxIceShock(m,()=>partyHit(m,Math.max(1,Math.round(10+p.mag*8+Math.floor(rnd(10))-5)),{ice:true}));
    dsnd('icespell');
    partyWait(`* ${p.say} cast ICE SHOCK!`,()=>fx.dead);
   }
@@ -30326,18 +30327,18 @@ const NB=(()=>{
   if(pf.bars.every(b=>b.landed&&b.flash<=0)&&!partyBusy()){S.pf=null;if(S.pp){S.pp.phase='exec';partyNext()}}
  }
  // A hit from the party (FIGHT or a spell). Several can queue on one monster.
- function partyHit(m,dmg){
+ function partyHit(m,dmg,o={}){
   if(!m||!m.alive)return;
   if(m.def.onHitCalc)dmg=m.def.onHitCalc(m,dmg,api);
   dmg=Math.max(0,Math.round(dmg));
   // A monster with its own FIGHT reaction (Mad Dummy) gets it once and hands control
   // back through api.endPlayerTurn(), as after a solo hit.
   if(m.def.hurt&&m.custom?.def==null){if(!S.preact){S.preact=true;m.def.hurt(m,api)}return}
-  if(m.hurtanim===3){(m.hitQ||(m.hitQ=[])).push(dmg);return}
-  partyStartHurt(m,dmg);
+  if(m.hurtanim===3){(m.hitQ||(m.hitQ=[])).push({dmg,ice:!!o.ice});return}
+  partyStartHurt(m,dmg,o.ice);
  }
- function partyStartHurt(m,dmg){
-  m.partyHit=true;m.takedamage=dmg;
+ function partyStartHurt(m,dmg,ice){
+  m.partyHit=true;m.takedamage=dmg;m.hitIce=!!ice;
   m.hurt=true;m.shudder=m.def.shudder?.[0]??16;m.shakeT=0;snd('damage');
   spawnDmgWriter(m,dmg);m.hurtanim=3;
  }
@@ -30346,9 +30347,46 @@ const NB=(()=>{
   if(m.hp<1){
    m.hitQ=null;
    if(m.def.onLethal){S.preact=true;if(m.def.onLethal(m,api))return;S.preact=false}
-   killMonster(m);return;
+   if(m.hitIce&&m.def.freezable!==false)freezeMonster(m);else killMonster(m);
+   return;
   }
-  const nx=m.hitQ?.shift();if(nx!=null)partyStartHurt(m,nx);
+  const nx=m.hitQ?.shift();if(nx)partyStartHurt(m,nx.dmg,nx.ice);
+ }
+ // scr_defeatrun with the frozen flag: the enemy stays as an obj_frozennpc of its hurt
+ // sprite instead of turning to dust (snd_petrify), and obj_recruitanim pops "FROZEN".
+ const FREEZE_COL='#ccccE6'; // merge_color(c_navy, c_white, 0.8)
+ function freezeMonster(m){
+  m.alive=false;m.killed=true;S.xpTotal+=m.xp;S.goldTotal+=m.gold;
+  const pad=40,c=document.createElement('canvas');c.width=Math.ceil(m.w+pad*2);c.height=Math.ceil(m.h+pad*2);
+  const cg=c.getContext('2d');cg.imageSmoothingEnabled=false;
+  try{(m.def.vaporDraw||m.def.draw)(cg,{...m,x:pad,y:pad,alpha:1,hurt:true},api)}catch(_){}
+  const x=m.x-pad,y=m.y-pad,fog=NB.tinted(c,FREEZE_COL),mul=NB.multiplied(c,FREEZE_COL);
+  dsnd('petrify','petrify');
+  // obj_frozennpc Draw: the sprite, then (cut from row t down, so the ice climbs from the
+  // feet up over 20 steps) four offset copies in the fog colour and an additive layer.
+  S.fx.push({timer:0,step(e){if(e.timer<1)e.timer+=.05},draw(g,e){
+   const H=c.height,t=Math.max(0,Math.round(H*(1-Math.min(1,e.timer))));
+   g.drawImage(c,x,y);if(t>=H)return;
+   const part=(src,dx,dy,a)=>{g.save();g.globalAlpha=a;g.drawImage(src,0,t,c.width,H-t,x+dx,y+dy+t,c.width,H-t);g.restore()};
+   part(fog,-2,-2,.8);part(fog,2,-2,.4);part(fog,-2,2,.4);part(fog,2,2,.8);
+   g.save();g.globalCompositeOperation='lighter';part(mul,0,0,.4);g.restore();
+  }});
+  const x0=m.x+m.w/2,r={timer:0,lt:0,xs:4,ys:0,a:1,vy:0,y:m.y+m.h/2-40};
+  S.fx.push({top:!!S.party,step(e){
+   e.timer++;
+   if(e.timer<=5){e.lt++;e.xs+=(1-e.xs)*(e.lt/5);e.ys+=(1-e.ys)*(e.lt/5)}
+   if(e.timer===5)e.lt=0;
+   if(e.timer>=5&&e.timer<=8){e.lt++;e.xs+=(.5-e.xs)*(e.lt/3);e.ys+=(2-e.ys)*(e.lt/3)}
+   if(e.timer===8)e.lt=0;
+   if(e.timer>=8&&e.timer<=10){e.lt++;if(e.lt>=2)e.lt=2;e.xs+=(1-e.xs)*(e.lt/2);e.ys+=(1-e.ys)*(e.lt/2)}
+   if(e.timer>=35){e.vy-=1;e.ys+=.1;e.a-=.1;if(e.a<=0)e.dead=true}
+   e.y+=e.vy;
+  },draw(g,e){
+   const G=drg();
+   if(G)G.draw(g,'spr_battlemsg',12,x0+83*e.xs/2,e.y,e.xs,e.ys,0,e.a);
+   else{g.save();g.globalAlpha=Math.max(0,e.a);g.translate(x0,e.y);g.scale(e.xs,e.ys);NB.drawText(g,'FROZEN',-48,0,'#4ba8ff');g.restore()}
+  },...r});
+  if(m.def.onKill)m.def.onKill(m,api);
  }
 
  // ---- spell effects ----
@@ -30387,6 +30425,8 @@ const NB=(()=>{
   const x=m.x+m.w/2,y=m.y+m.h/2,pts=[[x-25,y-20],[x+25,y-20],[x,y+20]];
   const fx={t:0,step(e){e.t++;if(e.t===10)onHit();if(e.t>=27)e.dead=true},draw(g,e){
    for(let k=0;k<3;k++)if(e.t>=1+k*3&&e.t<10)partyFlake(g,pts[k][0],pts[k][1],1.2,1);
+   // obj_icespell Draw: three white rings closing in on the target, radius 60..62 - timer*6.
+   if(e.t>=10&&e.t<=22){g.save();g.globalAlpha=Math.min(1,2.2-e.t/10);g.strokeStyle='#ffffff';g.lineWidth=1;for(let i=0;i<3;i++){g.beginPath();g.arc(x,y,Math.max(.5,Math.abs(60+i-e.t*6)),0,7);g.stroke()}g.restore()}
    if(e.t>=10){
     const q=Math.sin(Math.min(1,(e.t-10)/15)*Math.PI/2),r=15+25*q,a=Math.max(0,Math.min(1,1-(e.t-18)/9));
     for(const [px,py] of pts)for(let j=0;j<6;j++){const an=(e.t*12+j*60)*Math.PI/180;partyFlake(g,px+Math.cos(an)*r,py+Math.sin(an)*r,.4,a)}
@@ -30394,27 +30434,39 @@ const NB=(()=>{
   }};
   S.fx.push(fx);return fx;
  }
- // RudeBusterEffect: the bolt flies from Susie to the target; Z while it flies is the bonus.
+ // RudeBusterEffect (Z while it flies is the bonus) drawn as DELTARUNE's obj_rudebuster_bolt:
+ // spr_rudebuster_beam at 2x, launched 20 degrees off at speed 24 (friction -1.5) and
+ // homing a quarter of the way each step; a trail of afterimages; within 40px it bursts
+ // into eight afterimages flying out diagonally.
  function partyFxRudeBuster(p,m){
-  const sx=partyPanelX(p),sy=392,tx=m.x+m.w/2,ty=m.y+m.h/2;
-  const fx={t:0,x:sx,y:sy,dir:90,bonus:false,hit:false,burst:0,after:[],top:true,step(e){
-   e.t++;if(e.t===1)dsnd('rbswing','hit');
+  const tx=m.x+m.w/2,ty=m.y+m.h/2;
+  const pd=(x0,y0,x1,y1)=>Math.atan2(-(y1-y0),x1-x0)*180/Math.PI;
+  const adiff=(a,b)=>((a-b)%360+540)%360-180;
+  const fx={t:0,x:partyPanelX(p)+40,y:392,a:0,sp:24,dir:0,frame:0,bonus:false,hit:false,boom:0,aft:[],burst:[],top:true,step(e){
+   e.t++;
+   if(e.t===1){dsnd('rbswing','hit');e.dir=pd(e.x,e.y,tx,ty)-20}
+   e.a=Math.min(1,e.a+.25);
+   for(const a of e.aft){a.ys-=.1;a.alpha-=.04;if(e.hit){a.alpha-=.07;a.ys*=.9}}
+   e.aft=e.aft.filter(a=>a.ys>.1&&a.alpha>0);
+   for(const b of e.burst){b.x+=dcos(b.ang)*b.sp;b.y-=dsin(b.ang)*b.sp;b.sp*=b.k;b.xs*=.8;b.alpha-=.04;b.frame+=.5}
    if(!e.hit){
     if(S.zTap&&e.t>1&&!e.bonus){e.bonus=true;dsnd('boost')}
-    const k=Math.min(1,e.t/18),ox=e.x,oy=e.y;
-    e.x=sx+(tx-sx)*k;e.y=sy+(ty-sy)*k-Math.sin(k*Math.PI)*60;
-    e.dir=Math.atan2(-(e.y-oy),e.x-ox)*180/Math.PI;
-    e.after.push({x:e.x,y:e.y,dir:e.dir,a:.8});
-    if(k>=1){e.hit=true;dsnd('rbhit','damage');partyHit(m,partyRudeDamage(p,m,e.bonus))}
-   }else if(++e.burst>14)e.dead=true;
-   for(const a of e.after)a.a-=.08;e.after=e.after.filter(a=>a.a>0);
+    if(e.t>1)e.dir+=adiff(pd(e.x,e.y,tx,ty),e.dir)/4;
+    e.aft.push({x:e.x,y:e.y,dir:e.dir,ys:1.8,alpha:e.a-.2});
+    e.sp+=1.5;e.x+=dcos(e.dir)*e.sp;e.y-=dsin(e.dir)*e.sp;e.frame++;
+    if(Math.hypot(tx-e.x,ty-e.y)<=40||e.t>40){
+     e.hit=true;dsnd('rbhit','damage');
+     for(let i=0;i<8;i++)e.burst.push({x:tx,y:ty,ang:45+i*90,sp:25,k:i<4?.75:.8,xs:2,frame:e.frame,alpha:1});
+     partyHit(m,partyRudeDamage(p,m,e.bonus));
+    }
+   }else if(++e.boom>=18)e.dead=true;
   },draw(g,e){
    const G=drg();
    g.save();
-   for(const a of e.after){if(G)G.draw(g,'spr_rudebuster_beam',4,a.x,a.y,1.5,1.2,a.dir,Math.max(0,a.a*.7));else{g.globalAlpha=Math.max(0,a.a*.6);g.fillStyle='#ff00ff';g.beginPath();g.arc(a.x,a.y,8,0,7);g.fill()}}
+   for(const a of e.aft){if(G)G.draw(g,'spr_rudebuster_beam',4,a.x,a.y,2,a.ys,a.dir,Math.max(0,a.alpha));else{g.globalAlpha=Math.max(0,a.alpha*.6);g.fillStyle='#ff00ff';g.beginPath();g.arc(a.x,a.y,10*a.ys,0,7);g.fill()}}
    g.globalAlpha=1;
-   if(!e.hit){if(G)G.draw(g,'spr_rudebuster_beam',e.t/2,e.x,e.y,1.5,1.5,e.dir,1);else{g.fillStyle='#ffffff';g.beginPath();g.arc(e.x,e.y,9,0,7);g.fill();g.fillStyle='#ff00ff';g.beginPath();g.arc(e.x,e.y,6,0,7);g.fill()}}
-   else{g.globalAlpha=Math.max(0,1-e.burst/14);g.strokeStyle=e.bonus?'#ffffff':'#ff00ff';g.lineWidth=4;g.beginPath();g.arc(tx,ty,10+e.burst*5,0,7);g.stroke()}
+   if(!e.hit){if(G)G.draw(g,'spr_rudebuster_beam',e.frame,e.x,e.y,2,2,e.dir,e.a);else{g.fillStyle='#ffffff';g.beginPath();g.arc(e.x,e.y,14,0,7);g.fill();g.fillStyle='#ff00ff';g.beginPath();g.arc(e.x,e.y,9,0,7);g.fill()}}
+   for(const b of e.burst){if(G)G.draw(g,'spr_rudebuster_beam',b.frame,b.x,b.y,b.xs,2,b.ang,Math.max(0,b.alpha));else{g.globalAlpha=Math.max(0,b.alpha);g.fillStyle=e.bonus?'#ffffff':'#ff00ff';g.fillRect(b.x-6*b.xs,b.y-6,12*b.xs,12)}}
    g.restore();
   }};
   S.fx.push(fx);return fx;
