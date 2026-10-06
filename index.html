@@ -736,6 +736,17 @@ const SFX={
  shySingF:RAW+'sound/audio/mus_singF.ogg',shySingG:RAW+'sound/audio/mus_singG.ogg',
  sansText:RAW+'sound/audio/snd_txtsans.wav',
  asgoreText:RAW+'sound/audio/snd_txtasg.wav',
+ asgCut:RAW+'sound/audio/mus_sfx_cinematiccut.ogg',
+ asgSwipe:RAW+'sound/audio/mus_sfx_swipe.ogg',
+ asgEyeflash:RAW+'sound/audio/mus_sfx_eyeflash.ogg',
+ asgNoise:RAW+'sound/audio/snd_noise.wav',
+ asgCredit:RAW+'sound/audio/snd_credit_s.wav',
+ chug:RAW+'sound/audio/snd_chug.wav',
+ squeak:RAW+'sound/audio/snd_squeak.wav',
+ cymbal:RAW+'sound/audio/mus_cymbal.ogg',
+ floweyLaugh:RAW+'sound/audio/snd_floweylaugh.wav',
+ floweyTalk1:RAW+'sound/audio/snd_floweytalk1.wav',
+ floweyTalk2:RAW+'sound/audio/snd_floweytalk2.wav',
  // Canonical DELTARUNE dialogue voices. Speaker-tagged battle text such as
  // "* SUSIE:" / "* NOELLE:" routes to these instead of UNDERTALE's generic bleep.
  susieText:DMK_RAW+'sounds/snd_txtsus/snd_txtsus.wav',
@@ -790,6 +801,10 @@ const MUSIC={
  napstablook:RAW+'sound/audio/mus_ghostbattle.ogg',
  maddummy:RAW+'sound/audio/mus_dummybattle.ogg',
  papyrusIntro:RAW+'sound/audio/mus_papyrus.ogg',
+ asgoreIntro:RAW+'sound/audio/mus_bergentruckung.ogg',
+ asgore:RAW+'sound/audio/mus_vsasgore.ogg',
+ asgoreChoke:RAW+'sound/audio/mus_chokedup.ogg',
+ asgoreBox:RAW+'sound/audio/mus_musicbox.ogg',
  papyrus:RAW+'sound/audio/mus_papyrusboss.ogg',
  undyne:RAW+'sound/audio/mus_undyneboss.ogg',
  // Battle Against a True Hero (scr_battlegroup case 25: music/x_undyne.ogg).
@@ -1087,6 +1102,7 @@ const VANILLA_REWARDS={
  migosp:{exp:5,killGold:2,spareGold:2},
  mettaton:{exp:0,killGold:0,spareGold:0},
  jayzee:{exp:60,killGold:40,spareGold:30},
+ asgore:{exp:0,killGold:0,spareGold:0},
  custom:{exp:0,killGold:0,spareGold:0}
 };
 const SHOP_ITEM_ENTRIES=[
@@ -2362,6 +2378,10 @@ const MUSIC_LOADERS={
  napstablook:()=>loadAudioAsset(MUSIC.napstablook,.50,true),
  maddummy:()=>loadAudioAsset(MUSIC.maddummy,.50,true),
  papyrusIntro:()=>loadAudioAsset(MUSIC.papyrusIntro,.50,true),
+ asgoreIntro:()=>loadAudioAsset(MUSIC.asgoreIntro,.48,true),
+ asgore:()=>loadAudioAsset(MUSIC.asgore,.48,true),
+ asgoreChoke:()=>loadAudioAsset(MUSIC.asgoreChoke,.48,true),
+ asgoreBox:()=>loadAudioAsset(MUSIC.asgoreBox,.48,true),
  papyrus:()=>loadAudioAsset(MUSIC.papyrus,.50,true),
  mettatonEx:()=>loadAudioAsset(MUSIC.mettatonEx,.50,true),
  mettatonPre:()=>loadAudioAsset(MUSIC.mettatonPre,.50,true),
@@ -2402,6 +2422,7 @@ function battleMusicKey(){
  if(currentBoss==='undyne')return undyneDying?(undyneDeathTrackPhase>=2?'undyneEnding2':'undyneEnding1'):'undyne';
  if(currentBoss==='mettaton')return 'mettatonQuiz';
  if(currentBoss==='jayzee')return 'papyrus';
+ if(currentBoss==='asgore')return asgoreMusic;
  return 'battle';
 }
 function inBattleScreen(){return screen==='battle'||screen==='nb'}
@@ -2423,6 +2444,20 @@ function startBattleMusic(){
 }
 
 
+// Asgore's fight changes track several times (Bergentruckung, ASGORE, Choked Up, the
+// music box, silence); his NB script calls this with the key, or null for silence.
+let asgoreMusic='asgoreIntro';
+function setAsgoreMusic(key){
+ asgoreMusic=key;
+ if(currentBoss!=='asgore')return;
+ for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}
+ wantedBattleMusic=key;
+ if(!key)return;
+ ensureMusicTrack(key).then(a=>{
+   if(!a||asgoreMusic!==key||currentBoss!=='asgore'||!inBattleScreen())return;
+   a.currentTime=0;playMusicElement(a);
+ });
+}
 function switchPapyrusBlueMusic(){
  if(currentBoss!=='papyrus')return;
  if(music.papyrusIntro){music.papyrusIntro.pause();music.papyrusIntro.currentTime=0}
@@ -2882,6 +2917,7 @@ const BOSS_OPTIONS=[
  {id:'mettatonneo',label:'METTATON NEO',area:'CORE // THE REAL SHOW',hp:30000,atk:10,def:9,encounter:'* Mettaton NEO blocks the way!',noelleEncounter:'* Mettaton NEO blocks the way!'},
  {id:'mettatonex',label:'METTATON EX',area:'CORE // THE PREMIERE',hp:1600,atk:8,def:1,encounter:'* Mettaton EX makes his premiere!',noelleEncounter:'* Mettaton EX makes his premiere!'},
  {id:'mettaton',label:'METTATON',area:'HOTLAND QUIZ SHOW',hp:9999,atk:30,def:255,encounter:'* Mettaton attacks!',noelleEncounter:'* Mettaton attacks!'},
+ {id:'asgore',label:'ASGORE',area:'NEW HOME // THRONE ROOM',hp:3500,atk:10,def:-30,encounter:'* ASGORE attacks!',noelleEncounter:'* ASGORE attacks!'},
  {id:'jayzee',label:'JAYZEE',area:'FANMADE',hp:420,atk:7,def:2,encounter:'* Jayzee bounces in!',noelleEncounter:'* Jayzee bounces in!'},
  {id:'custom',label:'CUSTOM',area:'CREATOR',hp:120,atk:8,def:2,encounter:'* A custom monster appeared!',noelleEncounter:'* Noelle encountered a custom monster.'}
 ];
@@ -5233,6 +5269,7 @@ function bossImage(b,now=performance.now()){
  if(['snowdrake','loox','moldsmal','migosp','aaron','vulkin','moldbygg','temmie','lesserdog','greaterdog','dogi','woshua','pyrope','madjick','knightknight','astigmatism','muffet','undyneex','mettatonex','mettatonneo'].includes(b.id))return addedEnemyIdleImage(b.id,now,false);
  if(b.id==='whimsun')return whimsunDrawImage(now,false);
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
+ if(b.id==='asgore')return images.asgPrebrandish||images.dummy;
  if(b.id==='jayzee')return (jayzeeGenocideMode()?images.jayzeeSad:images.jayzee)||images.jayzee||images.dummy;
  return images.dummy;
 }
@@ -8285,7 +8322,7 @@ const NB=(()=>{
  };
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  const dcos=d=>Math.cos(d*Math.PI/180),dsin=d=>Math.sin(d*Math.PI/180);
- function snd(name){try{play(name)}catch(_){}}
+ function snd(name,rate){try{play(name,rate)}catch(_){}}
  function img(k,i){const v=images[k];return Array.isArray(v)?(v[i|0]||v[0]):v}
 
  // ---------------------------------------------------------------- border ---
@@ -8669,12 +8706,14 @@ const NB=(()=>{
   write(S.flavor);
  }
 
+ // S.noMercy (Asgore): the cursor skips the broken MERCY button
+ function nextButton(c,right){let n=c;do{n=(n+(right?1:3))%4}while(S.noMercy&&n===3);return n}
  function menuStep(){
   const h=S.heart;
   if(S.bmenuno===0){
    const b=NB.BUTTONS[S.coord[0]];
    h.x=b.x+8;h.y=432+14;
-   if(P.left||P.right){S.coord[0]=(S.coord[0]+(P.right?1:3))%4;snd('move')}
+   if(P.left||P.right){S.coord[0]=nextButton(S.coord[0],P.right);snd('move')}
    if(P.confirm){
     NB.clearPressed('confirm');
     const c=S.coord[0];
@@ -9345,7 +9384,7 @@ const NB=(()=>{
   const pm=S.pm;h.visible=true;
   if(pm.kind==='main'){
    const b=NB.BUTTONS[S.coord[0]];h.x=b.x+8;h.y=432+14;
-   if(P.left||P.right){S.coord[0]=(S.coord[0]+(P.right?1:3))%4;snd('move')}
+   if(P.left||P.right){S.coord[0]=nextButton(S.coord[0],P.right);snd('move')}
    if(P.confirm){
     NB.clearPressed('confirm');const c=S.coord[0];
     if(c===2&&!partyBag().length)return;
@@ -9834,7 +9873,10 @@ const NB=(()=>{
    amt=Math.max(clamp(Math.round(base),5,10),Math.round(base*scale-Math.round(S.df/5)));
   }else{amt=Math.round(dmg-S.df/5);if(amt<1)amt=1}
   if(opt.min&&amt<opt.min)amt=opt.min;if(opt.max&&amt>opt.max)amt=opt.max;
+  const before=S.hp;
   S.hp=Math.max(0,S.hp-amt);snd('hurt');
+  // keep1: obj_asgorebulparent - a hit only kills you if you were already down to 1 HP
+  if(opt.keep1&&before>1&&S.hp<1)S.hp=1;
   S.shake={h:2,v:2,speed:2,t:0};
   S.invc=Math.round(S.inv*(opt.inv||1));
   if(S.hp<=0){if(S.mp)mpDown(S.mp.cur);else gameOver()}
@@ -10366,6 +10408,7 @@ const NB=(()=>{
  function drawButtons(g,S){
   for(let i=0;i<4;i++){
    const b=NB.BUTTONS[i];
+   if(i===3&&S.noMercy)continue; // Asgore broke it
    // obj_fightbt etc: yellow frame when highlighted and it's the player's menu.
    const lit=S.coord[0]===i&&S.myfight===0&&S.mnfight===0&&!S.won;
    // DELTATRAVELER's ACT button turns into MAGIC on Susie's and Noelle's turns.
@@ -10544,6 +10587,747 @@ const NB=(()=>{
  };
 })();
 
+/* ---- NB content: ASGORE (obj_asgore_finalintro, obj_asgoreb + obj_asgoreb_body + obj_asgorespear,
+   his eight attack generators, obj_asgore_lastcutscene). He breaks the MERCY button first. ---- */
+(()=>{
+ const {rnd,snd,dcos,dsin}=NB,R=Math.round,P=NB.pressed,H=NB.held;
+ const tick=(o,k)=>o[k]>0&&--o[k]===0;
+ const choose=(...a)=>a[Math.floor(rnd(a.length))];
+ // image_blend colours (GameMaker BGR): 16754964 light blue, 4235519 orange, 255 red
+ const BLUE='#14a8ff',ORANGE='#ffa040',RED='#ff0000';
+ const BODY_X=208,BODY_Y=8,SPEAR_X=284,SPEAR_Y=108;
+ // sprite origins (xorig, yorigin) from the .sprite.gmx files
+ const ORG={asgBallarm:[0,15],asgSpear:[60,31],asgHandR:[10,7],asgHandL:[10,7],asgSwipe:[98,17],asgSwipeSpear:[98,17],
+  asgEye:[6,6],asgEyeS:[6,6],asgFire:[8,8],asgParticle:[5,5],asgFloweyRise:[0,5]};
+
+ // Text: SCR_TEXTTYPE 61 (the narration), 62-64 (Asgore), 66-67 (Flowey).
+ const T=NB.TYPERS,plain={font:'plain',color:'#000000',dx:0,dy:0,wrap:x=>x+200,spacing:9,vspacing:20};
+ T[61]={font:'main',color:'#ffffff',dx:20,dy:20,wrap:x=>x+99999,speed:2,sound:'text',spacing:16,vspacing:32};
+ T[62]={...plain,speed:2,sound:'asgoreText'};
+ T[63]={...plain,speed:1,sound:'asgoreText'};
+ T[64]={...plain,speed:2,sound:'asgoreText',shake:1};
+ T[66]={...plain,speed:1,sound:'floweyTalk1'};
+ T[67]={font:'main',color:'#ffffff',dx:20,dy:20,wrap:x=>x+999,speed:4,sound:'floweyTalk2',spacing:16,vspacing:32,shake:2};
+
+ function frameOf(k,f){const v=images[k];if(!Array.isArray(v))return v;const n=v.length;return v[((Math.floor(f)%n)+n)%n]}
+ // draw_sprite_ext: scale and rotation (degrees, counter-clockwise) around the origin
+ function spr(g,k,f,x,y,o={}){
+  let im=frameOf(k,f);if(!im)return;
+  if(o.tint)im=NB.multiplied(im,o.tint);
+  const [ox,oy]=ORG[k]||[0,0];
+  g.save();if(o.a!=null)g.globalAlpha*=Math.max(0,Math.min(1,o.a));
+  g.translate(x,y);if(o.ang)g.rotate(-o.ang*Math.PI/180);
+  g.scale(o.xs??2,o.ys??2);g.drawImage(im,-ox,-oy);g.restore();
+ }
+ // GameMaker motion: friction toward 0 (negative speeds it up), gravity, then move
+ function gmMove(o){
+  if(o.fr){const sp=Math.hypot(o.hs,o.vs);if(sp>0){let ns=sp-o.fr;if(o.fr>0&&ns<0)ns=0;o.hs*=ns/sp;o.vs*=ns/sp}}
+  if(o.g){o.hs+=dcos(o.gd??270)*o.g;o.vs-=dsin(o.gd??270)*o.g}
+  o.x+=o.hs;o.y+=o.vs;
+ }
+ const toward=(o,x,y,sp)=>{const d=Math.atan2(y-o.y,x-o.x);o.hs=Math.cos(d)*sp;o.vs=Math.sin(d)*sp};
+ const pdir=(x1,y1,x2,y2)=>Math.atan2(-(y2-y1),x2-x1)*180/Math.PI;
+
+ // ------------------------------------------------ obj_asgoreb_body + spear --
+ function newBody(){
+  return {partx:[-48,32,54,50,168,16,0,68],party:[62,210,156,130,70,70,28,0],siner:0,anim:0,visible:true,
+   spear:{x:SPEAR_X,y:SPEAR_Y,angle:-25,siner:0,color:RED,armtest:true,visible:true}};
+ }
+ // part[0..7]: cape, feet, legs, dress, right arm, left arm, armor, head (drawn in that order)
+ const PARTS=['asgCape','asgFeet','asgLegs','asgDress','asgArmR','asgArmL','asgArmor','asgHead'];
+ function bodyStep(b){
+  b.siner++;b.anim+=.1;
+  const s=Math.sin(b.siner/15),c=Math.cos(b.siner/15);
+  b.party[7]+=s*.3;b.party[6]+=s*.2;b.party[5]+=c*.1;b.party[4]+=c*.1;b.party[3]+=s*.1;b.party[0]+=s*.05;
+  const sp=b.spear;sp.siner++;sp.y+=Math.sin(sp.siner/15)*.3;sp.angle+=Math.sin(sp.siner/15)*.02;
+ }
+ function bodyDraw(g,b,x0=BODY_X,y0=BODY_Y){
+  if(b.visible)for(let i=0;i<8;i++)spr(g,PARTS[i],b.anim,x0+b.partx[i],y0+b.party[i]);
+  const sp=b.spear;if(!sp.visible)return;
+  const xh=55*dcos(sp.angle),yh=-55*dsin(sp.angle);
+  let rx=sp.x+xh*2,ry=sp.y+yh*2;
+  if(sp.armtest&&b.visible){
+   // two stretchy ball arms from the shoulders to the hands on the trident
+   let px=x0+b.partx[5]+14,py=y0+b.party[5]+64;
+   let len=Math.hypot(sp.x-xh-px,sp.y-yh-py),ang=pdir(px,py,sp.x-xh,sp.y-yh),size=len/40;
+   if(size<.35)size=0;
+   if(size)spr(g,'asgBallarm',0,px,py,{xs:size*2,ang});
+   px=x0+b.partx[4]+34;py=y0+b.party[4]+64;
+   len=Math.hypot(rx-px,ry-py);
+   if(len>100){const off=(len-100)/2;rx=sp.x+(55-off)*dcos(sp.angle)*2;ry=sp.y-(55-off)*dsin(sp.angle)*2;len=Math.hypot(rx-px,ry-py)}
+   ang=pdir(px,py,rx,ry);if(ang>100)py-=12;
+   size=len/40;if(size<.6)size=0;
+   if(size)spr(g,'asgBallarm',0,px,py,{xs:size*2,ang});
+  }
+  spr(g,'asgSpear',0,sp.x,sp.y,{ang:sp.angle,tint:sp.color});
+  spr(g,'asgHandR',0,rx,ry,{ang:sp.angle});
+  spr(g,'asgHandL',0,sp.x-xh,sp.y-yh,{ang:sp.angle});
+ }
+
+ // ------------------------- obj_purplegradienter + obj_orangeparticle(gen) --
+ function bgStep(api,v){
+  const bg=v.bg;bg.siner++;
+  if(bg.fade){bg.amt-=.03;if(bg.amt<.05)bg.amt=0}
+  if(bg.particles)bg.parts.push({x:-100+rnd(840),y:490,size:.4+rnd(.8),goal:.2+rnd(1.4),a:.9,g:-.1+rnd(.1),hs:2-rnd(4),vs:-1,siner:rnd(360),
+   rr:rnd(.5)-.25,vv:rnd(.5)-.25,gg:2+rnd(4),f:rnd(8)});
+  for(const p of bg.parts){
+   if(p.goal>p.size+.1)p.size+=.03;if(p.goal<p.size-.1)p.size-=.03;
+   p.a-=.01;p.siner++;p.vs+=p.g;p.x+=p.hs+Math.sin(p.siner/p.gg)*p.rr;p.y+=p.vs+Math.cos(p.siner/p.gg)*p.vv;p.f+=.25;
+  }
+  bg.parts=bg.parts.filter(p=>p.a>=.01);
+ }
+ function bgDraw(g,v){
+  const bg=v.bg;if(!bg.on)return;
+  for(const p of bg.parts)spr(g,'asgParticle',p.f,p.x,p.y,{xs:p.size,ys:p.size,a:p.a});
+  if(bg.amt>0){
+   const ac=1.5+Math.sin(bg.siner/20);
+   g.save();g.fillStyle='#800080';
+   for(let i=0;i<10;i++){
+    g.globalAlpha=Math.max(0,(.8-i/16)*bg.amt);
+    const y1=480-i*i*ac,y2=480-(i+1)*(i+1)*ac;
+    g.fillRect(-10,Math.min(y1,y2),660,Math.abs(y1-y2));
+   }
+   g.restore();
+  }
+ }
+
+ // ------------------------------------------------------------- bullets --
+ // obj_asgorebulparent: damage is ASGORE's current ATK, and a hit can't take your
+ // last HP unless you were already at 1.
+ const hitPlayer=(b,api)=>api.damageStd((b.owner||{}).atk??10,{keep1:true});
+ // a fire (spr_firebullet_center_generous: a tiny 3x4 hitbox around the centre)
+ function fire(api,x,y,o={}){
+  const s=o.scale||1;
+  return api.spawn({x,y,hs:o.hs||0,vs:o.vs||0,fr:o.fr||0,g:0,manual:true,wallKill:false,kill:false,clip:!!o.clip,
+   box:[-s,-s,3*s,4*s],scale:s,onHit:hitPlayer,move:o.move,generic:!!o.generic,
+   step(b){
+    if(b.move)b.move(b);else gmMove(b);
+    if(b.generic&&(b.x<-40||b.x>680||b.y<-40||b.y>520))b.alive=false; // Other 0: outside room
+   },
+   draw(g,b){spr(g,'asgFire',b.t,b.x,b.y,{xs:b.scale,ys:b.scale})}});
+ }
+ // obj_handbullet_new: a hand crosses the screen dropping a fire every 4 steps; once it's
+ // past the box every fire it dropped flies at the SOUL.
+ const HAND={1:['asgHandU',8,3,.1],2:['asgHandD',-8,-3,-.1],3:['asgHandRt',0,6,0],4:['asgHandLt',0,-6,0],5:['asgHandU',8,0,0]};
+ function hand(api,x,y,type){
+  const [k,hs,vs,gr]=HAND[type];
+  return api.spawn({x,y,hs:0,vs:0,g:0,gd:90,k,type,a:0,a0:5,a1:1,fires:[],moved:false,manual:true,wallKill:false,kill:false,box:[0,0,0,0],onHit:()=>false,
+   step(b){
+    const [L,Rr,Tt,B]=api.S.ideal;
+    if(tick(b,'a1')){b.hs=hs;b.vs=vs;b.g=gr}
+    if(tick(b,'a0')&&!b.moved){if(b.a>=.999)b.fires.push(fire(api,b.x+30,b.y+30,{scale:2,generic:true}));b.a0=4}
+    gmMove(b);
+    if(!b.moved&&((b.hs>0&&b.x>Rr+20)||(b.hs<0&&b.x<L-100)||(b.vs<0&&b.y<Tt-100)||(b.vs>0&&b.y>B+20))){
+     b.moved=true;
+     const h=api.heart;for(const f of b.fires)if(f.alive){toward(f,h.x+6,h.y+6,2);f.fr=-.2}
+    }
+    if(b.moved){b.a-=.2;if(b.a<-.4)b.alive=false}else if(b.a<1)b.a+=.2;
+   },
+   draw(g,b){spr(g,b.k,0,b.x,b.y,{a:b.a})}});
+ }
+ // obj_helixfiregen: drops a pair of mirrored sine fires every 2 steps, 16 times
+ function helixGen(api,x,y,o){
+  const g={x,y,vs:o.vs||0,mys:o.mys||0,mysv:o.mysv||4,mysf:o.mysf||4,self1:rnd(1.5),count:0,a0:1};
+  g.self2=g.self1-.1+rnd(.1);
+  g.step=()=>{
+   g.y+=g.vs;
+   if(!tick(g,'a0'))return true;
+   g.mys+=.1;
+   for(const [sv,ex] of [[g.mysv,g.self1],[-g.mysv,g.self2]])sineFire(api,g.x,g.y,{s:g.mys,sf:g.mysf,sv,vs:5.5+ex});
+   g.a0=2;
+   return ++g.count<=15;
+  };
+  return g;
+ }
+ // obj_sinefire_asghelix: falls while swinging sideways (x += sin(s/sv)*sf)
+ function sineFire(api,x,y,o){
+  const b=fire(api,x,y,{vs:o.vs,move(b){b.s++;b.x+=Math.sin(b.s/b.sv)*b.sf;b.y+=b.vs;if(b.y>580)b.alive=false}});
+  return Object.assign(b,{s:o.s,sf:o.sf,sv:o.sv});
+ }
+ // obj_sinefiregen_asg_lv2_usethis / _asglv3: a sine-fire stream from the top of the box,
+ // plus a flashing strip on your side of the box that bursts into fire (obj_sidedam).
+ function sineGen(api,lv){
+  const hard=lv===3;
+  const g={a0:1,a1:30,s:rnd(360),side:0,off:0};
+  g.step=()=>{
+   const [L,Rr]=api.S.ideal;
+   if(tick(g,'a1')){sideDam(api,api.heart.x+6<320?0:1,hard?60:75,hard?25:35);g.a1=hard?40:50}
+   if(tick(g,'a0')){
+    g.s+=hard?2:1.5;
+    let sv=0;g.side++;if(g.side>=4)g.side=choose(-2,-1);
+    if(g.side<=1)sv=hard?9:10;if(g.side>=1)sv=hard?-9:-10;
+    g.off++;
+    sineFire(api,L+(Rr-L)/2+Math.cos((g.off-1)/6)*20,130+Math.sin((g.off-1)/5)*24,{s:g.s,sf:hard?5:3.5,sv,vs:(hard?5:4)+Math.sin(g.off/6)*.2});
+    g.a0=hard?6:5;
+   }
+   return true;
+  };
+  return g;
+ }
+ // obj_sidedam: a red strip and "!" blink on one side (snd_credit_s), then snd_break2 and
+ // fire shoots up and down through it for 14 steps (obj_sided_fire).
+ function sideDam(api,side,len,wait){
+  return api.spawn({x:0,y:0,side,len,wait,con:1,a4:wait,eo:0,manual:true,wallKill:false,kill:false,box:[0,0,0,0],onHit:()=>false,
+   step(b){
+    const [L,Rr]=api.S.ideal;
+    if(b.con<2){b.eo=(b.eo+1)%3;if(b.eo===1)snd('asgCredit')}
+    if(tick(b,'a4')){b.con++;if(b.con===2){b.con=3;snd('break2');b.a4=14}else if(b.con>=4){b.alive=false;return}}
+    if(b.con===3)for(let i=0;i<4;i++)sidedFire(api,b.side===0?L+rnd(b.len-6)-6:Rr-rnd(b.len+6)-8);
+   },
+   draw(g,b){
+    if(b.con>=2)return;
+    const [L,Rr,Tt,B]=api.S.ideal,col=b.side===0?RED:['#ff0000','#ffff00','#000000'][b.eo];
+    const x0=b.side===0?L+5:Rr-b.len,x1=b.side===0?L+b.len:Rr-5;
+    g.save();g.strokeStyle=col;g.lineWidth=2;g.strokeRect(x0+1,Tt+6,x1-x0-1,B-Tt-11);g.restore();
+    const ex=images.mexExcl;const im=Array.isArray(ex)?ex[b.eo%ex.length]:ex;
+    if(im)g.drawImage(im,b.side===0?L+12:Rr-38,Tt+40);
+   }});
+ }
+ function sidedFire(api,x){
+  const [,,Tt,B]=api.S.ideal,down=rnd(2)<1;
+  return api.spawn({x,y:down?Tt-21:B+5,hs:rnd(.5)*choose(1,-1),vs:down?9+rnd(.5):-9-rnd(.5),manual:true,wallKill:false,kill:false,clip:true,
+   box:[5,6,6,6],onHit:hitPlayer,
+   step(b){b.x+=b.hs;b.y+=b.vs;if((b.vs>0&&b.y>B)||(b.vs<0&&b.y<Tt-16))b.alive=false},
+   draw(g,b){spr(g,'asgFireNoc',b.t,b.x,b.y,{xs:1,ys:1})}});
+ }
+
+ // obj_cfiregen: a ring of fire (with one 72-degree gap) closes in on the box's centre
+ const CFIRE=[d=>[0,4,36,35],d=>[-2+rnd(4),6,36,30],d=>[-4+rnd(8),4,36,30],d=>[-6+rnd(12),6,33,25]];
+ function cfireGen(api,diff){
+  const g={a0:10};
+  g.step=()=>{
+   if(!tick(g,'a0'))return true;
+   const ang0=rnd(360),[asp,rsp,n,next]=CFIRE[diff]();
+   const [L,Rr,Tt,B]=api.S.ideal,cx=L+(Rr-L)/2,cy=Tt+(B-Tt)/2;
+   for(let i=0;i<n;i++){
+    const a=ang0+i*8;
+    const b=fire(api,cx+dcos(a)*300,cy-dsin(a)*300,{move(b){b.r-=b.rsp;b.ang+=b.asp;if(b.r<=.5){b.alive=false;return}b.x=cx+dcos(b.ang)*b.r;b.y=cy-dsin(b.ang)*b.r}});
+    Object.assign(b,{r:300,ang:a,rsp,asp});
+   }
+   g.a0=next;return true;
+  };
+  return g;
+ }
+ // obj_firestormgen: sweeps along the top of the screen bursting rings of fire while the
+ // room goes dark
+ function stormGen(api,lv){
+  const g={x:0,y:0,hs:[0,5,6,8][lv],amount:0,a0:1,base:rnd(100)};
+  api.spawn({x:0,y:0,dr:0,manual:true,wallKill:false,kill:false,box:[0,0,0,0],onHit:()=>false,
+   step(b){if(b.dr<.5)b.dr+=.1;if(api.S.turntimer<6)b.dr-=.2},
+   draw(g2,b){if(b.dr<=0)return;g2.save();g2.globalAlpha=Math.min(1,b.dr);g2.fillStyle='#000';g2.fillRect(-10,-10,680,520);g2.restore()}});
+  g.step=()=>{
+   g.x+=g.hs;
+   if(!tick(g,'a0'))return true;
+   const [amt,sp,fr,next,inc,turn]=lv===1?[20,3,-.15,8,1,0]:lv===2?[22,3.5,-.17,7,1.2,1.5]:[22,12,.06,6,1.2,2];
+   g.amount+=inc;g.base+=turn;
+   for(let i=0;i<amt;i++){const d=i*360/amt+g.base;fire(api,g.x,g.y,{scale:2,generic:true,hs:dcos(d)*sp,vs:-dsin(d)*sp,fr})}
+   if(g.amount<=12)g.a0=next;
+   return true;
+  };
+  return g;
+ }
+ // obj_handbulletgen (turn 1) and obj_randomhandgen
+ function handsGen(api){
+  const g={a0:1};
+  g.step=()=>{if(tick(g,'a0')){hand(api,440,352,2);hand(api,104,176,1)}return true};
+  return g;
+ }
+ function randomHands(api,factor){
+  const g={a0:1};
+  g.step=()=>{
+   if(!tick(g,'a0'))return true;
+   g.a0=factor;
+   const [L,Rr,Tt,B]=api.S.ideal,tt=choose(1,2,3,4);
+   if(tt===1)hand(api,104,146,1);
+   if(tt===2)hand(api,440,382,2);
+   if(tt===3)hand(api,Rr-50,Tt-90,3);
+   if(tt===4)hand(api,L-10,B+10,4);
+   return true;
+  };
+  return g;
+ }
+ // obj_asgoreattackgen: two rows of four helix-fire droppers above the box
+ function helixAttack(api,m,t){
+  const [L,Rr,Tt]=api.S.ideal,w=Rr-L;
+  for(let i=0;i<2;i++)for(let j=0;j<4;j++){
+   const x=L+j*w/4+20-rnd(10)+10*j,y=Tt-80-(t===1?360:340)*i-rnd(90);
+   m.v.gens.push(t===1?helixGen(api,x,y,{vs:rnd(.25)-rnd(.25)}):helixGen(api,x,y,{mysf:5.5,mysv:3.5,mys:rnd(2),vs:rnd(2)-rnd(2)}));
+  }
+ }
+
+ // ------------------------- obj_asgore_spearswipegen + obj_asgore_spearswipe --
+ // His eyes flash blue (stay still) or orange (move) once per coming swipe, then the
+ // trident sweeps the box: one check per swipe, on its 6th frame, when the box lights up.
+ const SWIPE_DIFF=[{flash:12,amt:1,sw:{amt:1,cut:.5,wait:2,init:5}},{flash:9,amt:2,sw:{amt:2,cut:.5,wait:0,init:8}},
+  {flash:7,amt:2,sw:{amt:2,cut:1,wait:3,init:4}},{flash:7,amt:3,sw:{amt:3,cut:1,wait:3,init:3}}];
+ const typeCol=t=>t===1?BLUE:t===2?ORANGE:RED;
+ function swipeGen(api,m,diff){
+  const v=m.v,b=v.body;
+  b.visible=false;b.spear.visible=false;b.spear.armtest=false;
+  snd('asgNoise');screenFlash(api);
+  const s=v.swipe={phase:'eyes',x:BODY_X-50,y:BODY_Y,diff,a3:30,on:0,typeno:0,typeamt:2,flash:7,types:[1,1,1,1,1,1,1],eyes:[]};
+  return {step:()=>swipeStep(api,m,s)};
+ }
+ function swipeStep(api,m,s){
+  for(const e of s.eyes)e.f+=e.serious?.5:1;
+  s.eyes=s.eyes.filter(e=>e.f<6);
+  if(s.phase==='eyes'){
+   if(tick(s,'a3')){
+    for(let i=0;i<6;i++)s.types[i]=choose(1,2);
+    const d=SWIPE_DIFF[s.diff];s.flash=d.flash;s.typeamt=d.amt;s.a1=1;s.typeno=0;
+   }
+   if(tick(s,'a1')){
+    const t=s.types[s.typeno],serious=s.typeno>=s.typeamt;
+    s.eyes.push({x:s.x+(s.on===0?146:172),y:s.y+56,col:typeCol(t),serious,f:0});
+    s.on^=1;
+    if(s.typeno<s.typeamt){s.a1=s.flash;snd('asgEyeflash',1.05)}
+    else{snd('asgEyeflash',.8);s.a2=s.flash+15}
+    s.typeno++;
+   }
+   if(tick(s,'a2')){
+    const d=SWIPE_DIFF[s.diff].sw;
+    Object.assign(s,{phase:'swipe',sx:s.x+180,sy:s.y,amt:d.amt,cut:d.cut,wait:d.wait,init:d.init,xs:2,idx:0,con:0,timer:0,cur:0,hitted:0,cutsdone:0});
+   }
+   return true;
+  }
+  // the swipe itself (Step 0)
+  if(s.con===0){if(++s.timer>s.init)s.con=1}
+  if(s.con===2){s.xs=-s.xs;s.con=3;s.hitted=0;s.idx=0;s.timer=0;s.cur++}
+  if(s.con===3){
+   if(s.cur>s.amt){s.con=99;s.a9=45}
+   else{s.timer++;s.idx=0;if(s.timer>s.wait)s.con=1}
+  }
+  if(s.con===1){s.idx+=s.cut;if(s.idx>=6){s.con=2;s.timer=0}}
+  // Step 2: the cut lands
+  if(s.idx>=5&&s.idx<6){
+   if(!s.cutsdone){snd('asgCut');s.cutsdone=1}
+   const t=s.types[s.cur],h=api.heart,moved=Math.abs(h.x-h.xprev)>=.1;
+   if(s.hitted===0){
+    const keys=H.left||H.right||H.up||H.down,pressed=P.left||P.right||P.up||P.down;
+    if(t===1&&moved&&keys)api.damageStd(m.atk,{keep1:true});
+    if(t===2&&!moved&&!pressed)api.damageStd(m.atk,{keep1:true});
+   }
+   s.hitted=2;
+  }else s.cutsdone=0;
+  if(s.con===99&&tick(s,'a9')){
+   const b=m.v.body;b.visible=true;b.spear.visible=true;b.spear.color=RED;b.spear.armtest=true;
+   m.v.swipe=null;api.endTurn();return false;
+  }
+  return true;
+ }
+ function swipeDraw(g,s){
+  if(s.phase==='eyes'){spr(g,'asgSilhouette',0,s.x,s.y)}
+  else{
+   spr(g,'asgSwipe',s.idx,s.sx,s.sy,{xs:s.xs});
+   spr(g,'asgSwipeSpear',s.idx,s.sx,s.sy,{xs:s.xs,tint:typeCol(s.types[s.cur])});
+  }
+  for(const e of s.eyes)spr(g,e.serious?'asgEyeS':'asgEye',e.f,e.x,e.y,{tint:e.col});
+ }
+ // the box lights up in the swipe's colour on the frame that checks you
+ function swipeFlashDraw(g,api,s){
+  if(s.phase!=='swipe'||!(s.idx>=5&&s.idx<6))return;
+  const [L,Rr,Tt,B]=api.S.ideal;
+  g.save();g.fillStyle=typeCol(s.types[s.cur]);g.globalAlpha=.85;g.fillRect(L,Tt,Rr-L,B-Tt);g.restore();
+ }
+ // obj_flasher: a quick white flash
+ function screenFlash(api){
+  api.S.fx.push({top:true,a:1,step(e){e.a-=.1;if(e.a<=0)e.dead=true},
+   draw(g,e){g.save();g.globalAlpha=Math.max(0,e.a);g.fillStyle='#fff';g.fillRect(-10,-10,680,520);g.restore()}});
+ }
+
+ // ------------------------------------------------------------ turn plan --
+ // obj_asgoreb Step: turn -> generator and its turntimer. Turns 21/22 pick at random and
+ // lower his DEF; 23 swipes and loops back to 20.
+ const TURNS={1:['hands',110],2:['helix',160,1],3:['sine',180,2],4:['swipe',9999,0],5:['rhands',175,40],6:['cfire',190,0],
+  7:['storm',160,1],8:['swipe',9999,1],9:['helix',145,2],10:['rhands',190,35],11:['cfire',180,1],12:['swipe',9999,1],
+  13:['storm',140,2],14:['sine',190,3],15:['cfire',175,2],16:['swipe',9999,2],17:['rhands',173,30],18:['cfire',188,3],
+  19:['storm',130,3],20:['swipe',9999,3],23:['swipe',9999,3]};
+ const LATE=[['cfire',188,3],['storm',130,3],['rhands',173,30],['sine',190,3],['helix',145,2]];
+ function startAttack(api,m){
+  const v=m.v;let plan=TURNS[v.turns];
+  if(v.turns===21||v.turns===22){if(m.df>-90)m.df-=5;plan=LATE[Math.floor(rnd(5))]}
+  if(v.turns>=20&&m.df>-120)m.df-=10;
+  if(v.turns===23)v.turns=20;
+  if(!plan)plan=TURNS[20];
+  const [kind,len,arg]=plan;
+  api.turntimer(len);
+  if(kind!=='swipe')api.border(30);
+  v.gens=[];
+  if(kind==='hands')v.gens.push(handsGen(api));
+  if(kind==='helix')helixAttack(api,m,arg);
+  if(kind==='sine')v.gens.push(sineGen(api,arg));
+  if(kind==='swipe')v.gens.push(swipeGen(api,m,arg));
+  if(kind==='rhands')v.gens.push(randomHands(api,arg));
+  if(kind==='cfire')v.gens.push(cfireGen(api,arg));
+  if(kind==='storm')v.gens.push(stormGen(api,arg));
+ }
+
+ // -------------------------------------------------------- speech bubbles --
+ // scr_blcon_x: the bubble at (x,y), its writer at (x+30,y+10). Small = spr_blconsm.
+ function say(api,m,pages,o,then){
+  // obj_blconwideslave's own sprite is spr_blconwdshrt
+  const b={m,x:o.x,y:o.y,wide:!o.small,img:o.small?images.torielBubbleSmall:images.nbBlconWdShrt,
+   w:new NB.Writer(pages,{typer:o.typer||63,x:o.x+(o.tx??30),y:o.y+10})};
+  b.w.onFace=d=>{if(o.face!==false)m.v.face=d};
+  api.S.bubbles.push(b);m.v.say={b,then};
+ }
+ function sayStep(api,m){
+  const v=m.v;if(!v.say)return;
+  v.say.b.w.step();
+  if(v.say.b.w.done){const s=v.say;v.say=null;api.S.bubbles=api.S.bubbles.filter(b=>b!==s.b);if(s.then)s.then()}
+ }
+
+ // --------------------------------------------- obj_asgore_finalintro --
+ const IX=138,IY=20;
+ const NARRATION=['* (A strange light fills the&  room.^4) %','* (Twilight is shining through&  the barrier.^4) %',
+  '* (It seems your journey is&  finally over.^4) %','     * (You\'re filled with&          DETERMINATION.^5) %%'];
+ const SEEN='utbg.asgoreSeen';
+ function introStart(api,m){
+  const st=api.S,v=m.v,seen=NB.store.get(SEEN)==='1';
+  // a rematch skips the narration and goodbye, like global.tempvalue[10]
+  v.intro={con:seen?2:-10,a4:seen?15:0,x:IX,y:IY,spr:'pre',idx:0,hs:0,after:[],skip:seen,white:false,wout:0,bout:0,won:0,shards:[],mercy:true};
+  v.face=0;st.myfight=99;st.mnfight=99;st.heart.visible=false;st.writer=null;
+  if(seen)setAsgoreMusic(null);
+ }
+ function afterimage(I,o){I.after.push({...o,a:.9})}
+ function introStep(api,m){
+  const st=api.S,v=m.v,I=v.intro;
+  st.myfight=99;st.mnfight=99;st.heart.visible=false;
+  if(st.writer&&!st.writer.done)st.writer.step();
+  sayStep(api,m);
+  for(const a of I.after)a.a-=.1;I.after=I.after.filter(a=>a.a>0);
+  for(const p of I.shards){p.vs+=1;p.hs*=.9;p.x+=p.hs;p.y+=p.vs;p.ang+=p.aa}
+  I.shards=I.shards.filter(p=>p.y<560);
+  if(tick(I,'a4'))I.con=I.con===6.1?7.1:I.con+1;
+  if(I.con===-10){st.writer=new NB.Writer(NARRATION,{typer:61});I.con=-9}
+  if(I.con===-9&&st.writer&&st.writer.done){st.writer=null;I.con=-8;I.a4=30}
+  if(I.con===-7){I.con=-6;say(api,m,['Human.../','\\E1It was&nice to&meet&you./','\\E0Goodbye./%%'],{x:500,y:120,small:true,tx:25,typer:62},()=>{I.con=3})}
+  if(I.con===3){snd('undyneSpearAppear');I.spr='brandish';I.idx=0;I.hs=-20;I.con=6.1;I.a4=5}
+  if(I.con===6.1)afterimage(I,{x:I.x,y:I.y,spr:I.spr,idx:I.idx});
+  if(I.con===7.1){I.hs=0;I.con=7;I.a4=20}
+  if(I.con===8){
+   const was=I.idx;I.idx+=.5;
+   if(was<2&&I.idx>=2)snd('asgCut');
+   if(was<4&&I.idx>=4)st.shake={h:6,v:3,speed:2,t:0};
+   if(I.idx>=13){I.idx=13;I.con=9;I.a4=20}
+  }
+  if(I.con===10){
+   I.white=true;st.cinematic=true;I.idx=0;
+   I.spear={x:268,y:140,ang:0,hs:0,vs:0};I.vvv=2.5;
+   snd('undyneSpearAppear');I.con=12;I.a4=20;
+  }
+  const g=I.spear;
+  if(I.con===12){
+   g.hs=14.3;g.vs=-13;g.ang-=4.5;I.hs=(500-I.x)/20;
+   afterimage(I,{x:I.x,y:I.y,spr:I.spr,idx:0,black:true});afterimage(I,{spear:true,x:g.x,y:g.y,ang:g.ang});
+  }
+  if(I.con===13){if(I.vvv>0)I.vvv-=.1;g.hs=0;g.vs=I.vvv;I.hs=0;I.con=18;I.a4=30}
+  if(I.con===18){if(I.vvv>0)I.vvv-=.1;g.hs=0;g.vs=-I.vvv}
+  if(I.con===19){setAsgoreMusic(null);snd('asgSwipe');g.x=555;g.vs=100;I.con=20}
+  if(I.con===20){
+   afterimage(I,{spear:true,x:g.x,y:g.y,ang:g.ang});
+   if(I.mercy&&g.y>=420){
+    // obj_mercybutton_shatter: two bursts of 11 pieces flying left and right
+    I.mercy=false;snd('impact');snd('break2');st.shake={h:6,v:6,speed:2,t:0};
+    for(let r=0;r<2;r++){
+     for(let i=0;i<6;i++)I.shards.push({x:555,y:453,f:i,hs:-14-rnd(26),vs:-10-rnd(6),ang:0,aa:7+rnd(4)});
+     for(let i=6;i<11;i++)I.shards.push({x:555,y:453,f:i,hs:10+rnd(30),vs:-10-rnd(6),ang:0,aa:-8-rnd(4)});
+    }
+    I.con=40;
+   }
+  }
+  if(g){g.x+=g.hs;g.y+=g.vs}
+  I.x+=I.hs;
+  if(I.con===40){
+   if(!I.won){I.wout+=.08;if(I.wout>=1.8)I.won=1}
+   else{
+    const was=I.bout;I.bout+=I.skip?.1:.05;
+    if(was<5.5&&I.bout>=5.5)setAsgoreMusic('asgore');
+    if(I.bout>=7)introEnd(api,m);
+   }
+  }
+ }
+ function introEnd(api,m){
+  const st=api.S,v=m.v;
+  v.intro=null;st.cinematic=false;st.noMercy=true;st.overlay=null;st.bubbles=[];v.say=null;
+  if(asgoreMusic!=='asgore')setAsgoreMusic('asgore');
+  v.bg.on=true;v.bg.particles=true;
+  NB.store.set(SEEN,'1');
+  st.writer=null;st.myfight=0;st.mnfight=3;st.bmenuno=0;st.coord[0]=0;
+  st.nextFlavor='* ASGORE attacks!';
+ }
+ function introDraw(g,m){
+  const I=m.v.intro;
+  if(I.white){g.save();g.fillStyle='#fff';g.fillRect(-10,-10,680,520);g.restore()}
+  for(const a of I.after){
+   if(a.spear)spr(g,'asgSpear',0,a.x,a.y,{ang:a.ang,tint:RED,a:a.a});
+   else spr(g,a.spr==='pre'?'asgPrebrandish':'asgBrandish',a.idx,a.x,a.y,{a:a.a,tint:a.black?'#000000':null});
+  }
+  spr(g,I.spr==='pre'?'asgPrebrandish':'asgBrandish',I.idx,I.x,I.y,{tint:I.white?'#000000':null});
+  if(I.con<3)spr(g,'asgBface',m.v.face,I.x+138,I.y-12);
+  if(I.spear)spr(g,'asgSpear',0,I.spear.x,I.spear.y,{ang:I.spear.ang,tint:RED});
+ }
+ // over everything: the brandish flash, the black buttons on white, and the fade out
+ function introOver(g,api,m){
+  const I=m.v.intro;
+  if(I.con===8&&I.idx>=2&&I.idx<4){g.save();g.globalAlpha=I.idx>=3?1:.5;g.fillStyle='#fff';g.fillRect(-10,-10,680,520);g.restore()}
+  if(I.white){
+   // obj_fightbt/talkbt/itembt: the hollow buttons, blended black
+   for(let i=0;i<3;i++){const im=images.asgHollow?.[i];if(im)g.drawImage(NB.multiplied(im,'#000000'),NB.BUTTONS[i].x,432,110,42)}
+   if(I.mercy&&images.asgMercyBt)g.drawImage(NB.multiplied(images.asgMercyBt,'#000000'),500,432,110,42);
+   for(const p of I.shards){const im=frameOf('asgMercyShard',p.f);if(!im)continue;g.save();g.translate(p.x,p.y);g.rotate(-p.ang*Math.PI/180);g.drawImage(NB.multiplied(im,'#000000'),-im.width/2,-im.height/2);g.restore()}
+  }
+  if(I.con===40){
+   g.save();g.fillStyle='#fff';g.globalAlpha=Math.min(1,I.wout);g.fillRect(-10,-10,680,520);
+   g.fillStyle='#000';g.globalAlpha=Math.min(1,I.bout);g.fillRect(-10,-10,680,520);g.restore();
+  }
+ }
+ // obj_asgore_lastcutscene dialogue, lifted from the source
+ const TXT={"ah": ["Ah.../", ".../", "So that&is how&it is./", ".../%%"], "talk1": ["I remember the day&after my son&died./", "The entire underground&was devoid of hope./", "The future had once&again been taken&from us by the&humans./", "In a fit of anger,&I declared war./", "I said that I would&destroy any human&that came here./", "I would use their&souls to become&godlike.../", "... and free us from&this terrible prison./", "Then, I would destroy&humanity.../", "And let monsters rule&the surface, in peace./", "Soon, the people's&hopes returned./", "My wife, however,&became disgusted with&my actions./", "She left this place,&never to be seen&again./%%"], "talk2": ["Truthfully.../", "I do not want power./", "I do not want to&hurt anyone./", "I just wanted everyone&to have hope.../", "But.../", "I cannot take this&any longer./", "I just want to&see my wife./", "I just want to&see my child./", "Please..^1.&Young one.../", "This war has gone&on long enough./", "You have the power.../", "Take my soul, and&leave this cursed&place./%%"], "stay1": [".../", "\\E0After everything I&have done to&hurt you.../", "\\E7You would rather&stay down here&and suffer.../", "\\E9Than live happily&on the surface?/", "\\E6.../%%"], "stay2": ["\\E1Human.../", "\\E7I promise you.../", "\\E7For as long as&you remain here.../", "\\E1My wife and I will&take care of you&as best we can./", "\\E2We can sit in&the living room^1,&telling stories.../", "\\E1Eating butterscotch&pie.../", "\\E2We could be&like.../", "\\E8Like a family.../%%"], "fl1": ["You&IDIOT./", "You&haven't&learned&a thing./%%"], "fl0": ["Hee&hee&hee./", "So you&finally&get it./%%"], "world": ["In&this&world.../%%"], "last": ["It's KILL or BE killed^4.%%"]};
+
+ // ------------------------------------------- obj_asgore_lastcutscene --
+ // con numbers follow the source; alarm[4] steps con by one.
+ const LX=128,LY=46;
+ function lastStart(api,m){
+  const st=api.S,v=m.v;
+  st.myfight=99;st.mnfight=99;st.bullets=[];st.bubbles=[];st.heart.visible=false;st.writer=null;v.say=null;
+  v.gens=[];v.swipe=null;v.body=null;v.bg.fade=true;v.bg.particles=false;
+  setAsgoreMusic(null);
+  v.last={con:0,x:LX,xs:LX,y:LY,sh:18,a0:1,asg:true,hearts:0,ui:0,box:1,choice:null,pellets:[],souls:[],soul:null,
+   flowey:0,fimg:0,fimg2:0,rowdy:0,wht:0,spec:null};
+  v.face=9;
+ }
+ function lastStep(api,m){
+  const st=api.S,v=m.v,L=v.last;
+  st.myfight=99;st.mnfight=99;
+  if(st.writer&&!st.writer.done)st.writer.step();
+  sayStep(api,m);
+  if(tick(L,'a4'))L.con++;
+  // alarm[0]: the kneel shudder
+  if(tick(L,'a0')){L.x=L.xs+L.sh;L.sh=-L.sh;if(L.sh>0)L.sh-=3;L.a0=8;if(Math.abs(L.sh)<1){L.sh=0;L.con=2;L.a0=0}}
+  // alarm[2]: the hit shudder, then he turns to dust
+  if(tick(L,'a2')){L.x=L.xs+L.sh;L.sh=-L.sh;if(L.sh>0)L.sh-=2;L.a2=2;if(Math.abs(L.sh)<2){L.sh=0;L.x=L.xs;L.con=L.hearts?30:58;L.a2=0}}
+  if(L.con>=4)L.ui=Math.min(1,L.ui+.02);
+  if(L.con>=12)L.box=Math.max(0,L.box-.02);
+  st.boxAlpha=L.box;
+  if(L.con===2){api.border(0);st.dmgw=[];L.con=3;L.a4=50}
+  if(L.con===4){L.con=5;say(api,m,TXT.ah,{x:L.x+300,y:L.y+20,small:true},()=>{L.con=6;L.a4=45})}
+  if(L.con===7){L.con=8;setAsgoreMusic('asgoreChoke');say(api,m,TXT.talk1,{x:L.x+270,y:L.y+20,face:false},()=>{L.con=9})}
+  if(L.con===9){L.con=10.5;say(api,m,TXT.talk2,{x:L.x+270,y:L.y+20,face:false},()=>{L.con=10})}
+  if(L.con===10){
+   const [x0,x1,y0]=st.ideal;
+   L.choice={hx:320,hy:y0+60,bts:[{x:x0+50,y:y0+50,k:'asgFightBt',on:0},{x:x1-150,y:y0+50,k:'asgSpareBt',on:0}]};
+   L.con=11;
+  }
+  if(L.con===11)choiceStep(api,m,L);
+  // MERCY: he offers you a home, then the pellets come
+  if(L.con===15){setAsgoreMusic(null);L.con=16;L.a4=30}
+  if(L.con===17){L.con=17.5;say(api,m,TXT.stay1,{x:L.x+270,y:L.y+20},()=>{L.con=18})}
+  if(L.con===18){L.con=18.2;setAsgoreMusic('asgoreBox');say(api,m,TXT.stay2,{x:L.x+270,y:L.y+20},()=>{L.con=18.5;L.a4=50})}
+  if(L.con===19.5)L.con=20;
+  if(L.con===20){v.face=5;setAsgoreMusic(null);spinGen(L,L.x+190,L.y-30,27);L.con=21;L.a4=70}
+  if(L.con===22){
+   for(const p of L.pellets){if(p===L.spec)continue;toward(p,L.x+190,L.y+110,2);p.fr=-.5}
+   L.con=23;L.a4=20;
+  }
+  if(L.con===24){L.a2=1;snd('damage');L.sh=16;v.face=4;L.pellets=L.spec?[L.spec]:[];L.con=25}
+  // FIGHT: the last strike
+  if(L.con===45){setAsgoreMusic(null);L.con=46;L.a4=20}
+  if(L.con===47){
+   const s=1.5;st.fx.push({kind:'slice',x:L.x+195-5,y:L.y+150-50,cx:L.x+195+5,cy:L.y+150,sc:s*2-.5,isp:Math.max(.1,.5-s/4),frame:0,t:0});
+   snd('laz');L.con=49;L.a4=24;
+  }
+  if(L.con===50){L.a2=1;snd('damage');L.sh=16;v.face=6;L.con=51}
+  lastFinale(api,m,L);
+  for(const p of L.pellets){p.f+=.5;gmMove(p)}
+ }
+ // obj_anybt + obj_fakeheart: steer the SOUL onto FIGHT or MERCY and press Z
+ function choiceStep(api,m,L){
+  const st=api.S,c=L.choice,[x0,x1,y0,y1]=st.ideal,sp=st.sp||4;
+  if(H.left)c.hx-=sp;if(H.right)c.hx+=sp;if(H.up)c.hy-=sp;if(H.down)c.hy+=sp;
+  c.hx=Math.max(x0+5,Math.min(x1-16,c.hx));c.hy=Math.max(y0+5,Math.min(y1-16,c.hy));
+  c.bts.forEach((b,i)=>{
+   const over=c.hx+16>b.x&&c.hx<b.x+110&&c.hy+16>b.y&&c.hy<b.y+42;
+   if(over){if(b.on<=0)snd('squeak');b.on=2}else b.on--;
+   if(b.on>0&&P.confirm){
+    NB.clearPressed('confirm');snd('select');L.choice=null;
+    if(i===0){L.hearts=0;L.con=45}else{L.hearts=1;L.con=15}
+   }
+  });
+ }
+
+ // obj_spinbullet_lastgen: circles at speed 27 (or 20), turning 10 degrees a step and
+ // leaving a pellet behind every step for 37 steps
+ function spinGen(L,x,y,speed){L.spin={x,y,dir:0,speed,t:0}}
+ function spinStep(L){
+  const g=L.spin;if(!g)return;
+  const p={x:g.x,y:g.y,hs:0,vs:0,f:0};L.pellets.push(p);if(g.t===0)L.spec=p;
+  g.t++;g.dir-=10;snd('chug');
+  g.x+=dcos(g.dir)*g.speed;g.y-=dsin(g.dir)*g.speed;
+  if(g.t>=37)L.spin=null;
+ }
+ const SOULS=['asgSoulYellow','asgSoulOrange','asgSoulPurple','asgSoulBlue','asgSoulAqua','asgSoulGreen'];
+ function lastFinale(api,m,L){
+  const st=api.S,v=m.v;
+  spinStep(L);
+  if(L.soul){
+   const s=L.soul;s.a=Math.min(1,s.a+.025);
+   s.x=s.xs+rnd(s.shake)-rnd(s.shake);s.y=s.ys+rnd(s.shake)-rnd(s.shake);
+   if(tick(s,'a1')){snd('break2');s.vis=false;
+    for(const [dx,dy] of [[-2,0],[0,3],[2,6],[8,0],[10,3],[12,6]]){const d=rnd(360);s.shards.push({x:s.x+dx,y:s.y+dy,hs:dcos(d)*7,vs:-dsin(d)*7,f:0})}}
+   for(const p of s.shards){p.vs+=.2;p.x+=p.hs;p.y+=p.vs;p.f+=.25}
+  }
+  // he turns to dust (slowed to a third of the speed for a moment)
+  if(L.con===30||L.con===58){
+   const im=images.asgKneelDeath,x=L.x,y=L.y;
+   st.fx.push({kind:'vapor',m:{x,y,w:366,h:196,def:{draw:(g,mm)=>{if(im)g.drawImage(im,mm.x,mm.y)}}},line:0,parts:[]});
+   snd('vaporized');L.asg=false;st.speedMul=1/3;
+   L.con=L.con===30?31:59;L.a4=40;
+  }
+  const soulAt=(x,y)=>{st.speedMul=1;L.soul={x,y,xs:x,ys:y,a:0,shake:3,vis:true,brk:false,shards:[]}};
+  if(L.con===32){soulAt(L.x+190,L.y+110);L.con=33;L.a4=40}
+  if(L.con===34){if(L.spec)toward(L.spec,L.soul.xs,L.soul.ys,4);L.con=35;L.a4=35}
+  if(L.con===60){soulAt(L.x+180,L.y+100);L.con=62;L.a4=90}
+  if(L.con===63){L.soul.shake=0;spinGen(L,L.x+190,L.y-15,20);L.con=64;L.a4=50}
+  if(L.con===65){for(const p of L.pellets){toward(p,L.soul.xs+2,L.soul.ys+2,2);p.fr=-.5}L.con=66;L.a4=18}
+  if(L.con===67)L.con=36;
+  if(L.con===36){
+   L.pellets=[];L.spec=null;
+   const s=L.soul;s.brk=true;s.xs-=2;s.shake=0;s.a1=40;snd('break1');
+   L.con=37;L.a4=110;
+  }
+  if(L.con===38){v.face=0;L.flowey=1;L.fimg=0;L.con=95;L.a4=60}
+  if(L.con===96){L.con=96.5;say(api,m,L.hearts?TXT.fl1:TXT.fl0,{x:360,y:140,small:true,typer:66,face:false},()=>{L.con=97})}
+  if(L.con===97){
+   L.con=99.5;
+   say(api,m,TXT.world,{x:360,y:140,small:true,typer:66,face:false},()=>{L.con=101});
+   // the six human SOULs swing in around him
+   L.rowdy=1;L.radius=400;L.angle=0;L.souls=SOULS.map((k,i)=>({k,ang:i*60,x:0,y:0}));
+  }
+  if(L.con===101){L.con=101.5;L.flowey=3;L.fimg2=0;st.writer=new NB.Writer(TXT.last,{typer:67,x:120,y:350});st.cinematic=false}
+  if(L.con===101.5&&st.writer&&st.writer.done){st.writer=null;snd('cymbal');snd('floweyLaugh');L.flowey=4;L.con=103;L.a4=2}
+  if(L.con===104){L.rowdy=2;L.whiteout=true;L.con=105;L.a4=160}
+  if(L.con===106){L.con=107;m.alive=false;if(L.hearts)m.spared=true;else m.killed=true;api.end('win')}
+  if(L.flowey===1&&L.fimg<8)L.fimg+=.5;
+  if(L.flowey===3&&L.fimg2<4)L.fimg2+=.04;
+  if(L.flowey===4)L.fimg2+=.5;
+  if(L.rowdy===1){L.angle+=4;if(L.radius>180)L.radius-=5;L.radius+=Math.sin(L.angle/16)*2}
+  if(L.rowdy===2){L.angle++;if(L.radius>0)L.radius-=1.5}
+  if(L.rowdy)for(const s of L.souls){const a=s.ang+L.angle;s.x=320+dcos(a)*L.radius;s.y=170-dsin(a)*L.radius}
+  if(L.whiteout)L.wht+=.01;
+ }
+ function lastDraw(g,m){
+  const L=m.v.last;
+  if(L.asg){spr(g,'asgKneel',0,L.x,L.y);spr(g,'asgLastface',m.v.face,L.x+136,L.y-8)}
+  const s=L.soul;
+  if(s){
+   if(s.vis){const im=s.brk?images.monsterSoulBreak:images.monsterSoul;if(im){g.save();g.globalAlpha=s.a;g.drawImage(im,R(s.x),R(s.y));g.restore()}}
+   const fr=images.monsterSoulShards||[];
+   for(const p of s.shards){const im=fr[fr.length-1-(Math.floor(p.f)%Math.max(1,fr.length))];if(im)g.drawImage(im,R(p.x),R(p.y))}
+  }
+  for(const p of L.pellets)spr(g,'asgPellet',p.f,p.x,p.y,{xs:1,ys:1});
+  if(L.flowey===1)spr(g,'asgFloweyRise',L.fimg,285,150);
+  if(L.flowey===3)spr(g,'asgFloweySkull',L.fimg2,285,150);
+  if(L.flowey===4)spr(g,'asgFloweyLaugh',L.fimg2,285,150);
+  for(const o of L.souls)spr(g,o.k,0,o.x,o.y,{xs:1,ys:1});
+ }
+ function lastOver(g,api,m){
+  const L=m.v.last,c=L.choice;
+  if(c){
+   for(const b of c.bts)spr(g,b.k,b.on>0?1:0,b.x,b.y,{xs:1,ys:1});
+   const h=images.nbHeart?.[0];if(h)g.drawImage(h,R(c.hx),R(c.hy));
+  }
+  // the buttons fade from con 4, the HP line and box from con 12
+  if(L.ui>0){g.save();g.globalAlpha=L.ui;g.fillStyle='#000';g.fillRect(0,428,640,52);g.globalAlpha=1-L.box;g.fillRect(0,398,640,30);g.restore()}
+  if(L.wht>0){g.save();g.globalAlpha=Math.min(1,L.wht);g.fillStyle='#fff';g.fillRect(-10,-10,680,520);g.restore()}
+ }
+
+ // ------------------------------------------------------------- obj_asgoreb --
+ function talkText(m,api){
+  const v=m.v,n=v.talk++;
+  if(n===0)return '* You quietly tell ASGORE&  you don\'t want to fight&  him./* His hands tremble for a&  moment./';
+  if(n===1)return '* You tell ASGORE that you&  don\'t want to fight him./* His breathing gets funny&  for a moment./';
+  if(n===2){m.atk--;m.df-=10;return '* You firmly tell ASGORE to&  STOP fighting./* Recollection flashes in his&  eyes.../* ASGORE\'s ATTACK dropped^1!&* ASGORE\'s DEFENSE dropped!/'}
+  if(n===8)return '* All you can do is FIGHT./';
+  return '* Seems talking won\'t do any&  more good./';
+ }
+ function dmgWriter(st,m,dmg){
+  const y=m.y+150;
+  st.dmgw.push({x:m.x,y,ystart:y,vy:dmg!==0?-4:0,dmg,m,maxhp:m.maxhp,apparent:m.hp,actual:m.hp,life:-1,tick:0});
+ }
+ NB.defs.set('asgore',{
+  name:'Asgore',hp:3500,atk:10,def:-30,xp:0,gold:0,wd:300,
+  encounter:'* ASGORE attacks!',
+  size:()=>({w:300,h:240}),pos:()=>({x:168,y:8}),
+  dmgPos:m=>({x:m.x,y:m.y+150}),
+  bgFrame:99, // obj_battlebg is destroyed: no grid, just his purple glow
+  noFlee:()=>true,
+  setup(m){
+   asgoreMusic='asgoreIntro';
+   Object.assign(m.v,{turns:0,talk:0,gens:[],swipe:null,body:newBody(),face:0,started:false,pend:0,intro:null,last:null,
+    bg:{on:false,particles:false,parts:[],siner:0,amt:1,fade:false}});
+  },
+  acts:['Check','Talk'],
+  check:()=>'* ASGORE 80 ATK 80 DEF/',
+  act(m,i,name,api){return name==='Talk'?talkText(m,api):'* ...'},
+  spareable:()=>false,
+  speech(m,api){
+   // Alarm 6: no words, a short pause, and the turn count goes up
+   m.v.turns++;api.S.talkLenExact=10;return null;
+  },
+  border:()=>29,
+  attack(m,api){
+   const v=m.v;if(v.intro||v.last)return null;
+   startAttack(api,m);
+   return m.hp<=m.maxhp/4?'* Asgore has low HP.':'* ...';
+  },
+  attackStep(m,api){const v=m.v;v.gens=v.gens.filter(g=>g.step()!==false)},
+  endAttack(m){
+   const v=m.v;v.gens=[];
+   if(v.swipe&&v.body){const b=v.body;b.visible=true;b.spear.visible=true;b.spear.color=RED;b.spear.armtest=true}
+   v.swipe=null;
+  },
+  onHitCalc(m,dmg){m.v.pend+=dmg;return dmg},
+  // FIGHT (Alarm 3): the hit shows, the HP drops after the shudder; a hit that would
+  // leave him at 500 or less ends the battle (obj_asgore_lastcutscene).
+  hurt(m,api){
+   const v=m.v,st=api.S;
+   if(v.intro||v.last){api.endPlayerTurn();return}
+   const dmg=Math.max(0,Math.round(st.party?v.pend:(m.takedamage??v.pend)));v.pend=0;
+   const limit=m.maxhp>500?500:Math.floor(m.maxhp*.15);
+   snd('damage');
+   if(m.hp-dmg<=limit){
+    dmgWriter(st,m,Math.max(1,m.hp-30));m.hp=Math.min(m.hp,30);
+    lastStart(api,m);st.overlay=g=>lastOver(g,api,m);
+    return;
+   }
+   dmgWriter(st,m,dmg);v.hurtT=34;v.hurtDmg=dmg;
+  },
+  step(m,api){
+   const v=m.v,st=api.S;
+   if(!v.started){v.started=true;introStart(api,m);st.overlay=g=>{if(v.intro)introOver(g,api,m)}}
+   bgStep(api,v);
+   if(v.intro){introStep(api,m);return}
+   if(v.last){lastStep(api,m);return}
+   if(v.body)bodyStep(v.body);
+   if(tick(v,'hurtT')){
+    m.hp-=v.hurtDmg+v.pend;v.pend=0;
+    for(const w of st.dmgw)if(w.m===m&&w.life<0)w.life=15;
+    api.endPlayerTurn();
+   }
+  },
+  draw(g,m){
+   const v=m.v;
+   bgDraw(g,v);
+   if(v.intro){introDraw(g,m);return}
+   if(v.last){lastDraw(g,m);return}
+   if(v.swipe)swipeDraw(g,v.swipe);
+   if(v.body)bodyDraw(g,v.body);
+  },
+  drawOver(g,m,api){if(m.v.swipe)swipeFlashDraw(g,api,m.v.swipe)},
+  flavor:m=>m.hp<=m.maxhp/4?'* Asgore has low HP.':'* ...'
+ });
+})();
 /* ---- NB content: JAYZEE (fanmade OC, by a friend of the dev). Plays FAIR. Bouncing balls,
    crushing balls, and a dribble drill; pass the ball back three times and he'll shake on it. ---- */
 (()=>{
@@ -20995,6 +21779,52 @@ const NB_ASSETS={
  // Two-frame exports come out swapped (_1 is image_index 0), like the SOUL.
  nbPapBoss:[1,0].map(i=>RAW+`sprites/images/spr_papyrusboss_${i}.png`),
  nbPapAnim:RAW+'sprites/images/spr_papyrusboss_anim_0.png',
+ // ASGORE (multi-frame exports are stored in reverse: file _k is image_index N-1-k)
+ asgCape:[1,0].map(i=>RAW+`sprites/images/spr_asgoreb_cape_${i}.png`),
+ asgArmL:RAW+'sprites/images/spr_asgoreb_arml_0.png',
+ asgArmR:RAW+'sprites/images/spr_asgoreb_armr_0.png',
+ asgHead:RAW+'sprites/images/spr_asgoreb_head1_0.png',
+ asgArmor:RAW+'sprites/images/spr_asgoreb_armor_0.png',
+ asgDress:RAW+'sprites/images/spr_asgoreb_dress_0.png',
+ asgLegs:RAW+'sprites/images/spr_asgoreb_legs_0.png',
+ asgFeet:RAW+'sprites/images/spr_asgoreb_feet_0.png',
+ asgBallarm:RAW+'sprites/images/spr_asgoreb_ballarm_0.png',
+ asgSpear:RAW+'sprites/images/spr_asgorespear_0.png',
+ asgHandR:RAW+'sprites/images/spr_spearhandr_0.png',
+ asgHandL:RAW+'sprites/images/spr_spearhandl_0.png',
+ asgPrebrandish:RAW+'sprites/images/spr_asgore_prebrandish_0.png',
+ asgBface:[4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_bface_${i}.png`),
+ asgBrandish:[13,12,11,10,9,8,7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_brandish_${i}.png`),
+ asgMercyBt:RAW+'sprites/images/spr_mercybutton_normal_0.png',
+ asgMercyShard:[10,9,8,7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_mercybutton_shatter_${i}.png`),
+ asgHandU:RAW+'sprites/images/spr_handbullet_old_u_0.png',
+ asgHandD:RAW+'sprites/images/spr_handbullet_old_d_0.png',
+ asgHandLt:RAW+'sprites/images/spr_handbullet_old_l_0.png',
+ asgHandRt:RAW+'sprites/images/spr_handbullet_old_r_0.png',
+ asgFire:[1,0].map(i=>RAW+`sprites/images/spr_firebullet_center_generous_${i}.png`),
+ asgFireNoc:[1,0].map(i=>RAW+`sprites/images/spr_firebullet_noc_${i}.png`),
+ asgSilhouette:RAW+'sprites/images/spr_asgore_flashsilhouette_0.png',
+ asgEye:[5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_eyeflash_${i}.png`),
+ asgEyeS:[5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_eyeflash_serious_${i}.png`),
+ asgSwipe:[6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_swipe_nospear_${i}.png`),
+ asgSwipeSpear:[6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_swipe_spear_${i}.png`),
+ asgParticle:[7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_orangeparticle_${i}.png`),
+ asgKneel:RAW+'sprites/images/spr_asgore_kneel_0.png',
+ asgLastface:[9,8,7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_asgore_lastface_${i}.png`),
+ asgKneelDeath:RAW+'sprites/images/spr_asgore_kneeldeath_0.png',
+ asgPellet:[1,0].map(i=>RAW+`sprites/images/spr_spinbullet_outline_${i}.png`),
+ asgFloweyRise:[8,7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_flowey_riseanim_${i}.png`),
+ asgFloweySkull:[4,3,2,1,0].map(i=>RAW+`sprites/images/spr_flowey_toskull_${i}.png`),
+ asgFloweyLaugh:[1,0].map(i=>RAW+`sprites/images/spr_flowey_skulllaugh_${i}.png`),
+ asgSoulYellow:[1,0].map(i=>RAW+`sprites/images/spr_heartyellow_${i}.png`),
+ asgSoulOrange:[1,0].map(i=>RAW+`sprites/images/spr_heartorange_${i}.png`),
+ asgSoulPurple:[1,0].map(i=>RAW+`sprites/images/spr_heartpurple_${i}.png`),
+ asgSoulBlue:[1,0].map(i=>RAW+`sprites/images/spr_heartblue_${i}.png`),
+ asgSoulAqua:[1,0].map(i=>RAW+`sprites/images/spr_heartaqua_${i}.png`),
+ asgSoulGreen:[1,0].map(i=>RAW+`sprites/images/spr_heartgreen_${i}.png`),
+ asgFightBt:[1,0].map(i=>RAW+`sprites/images/spr_fightbt_${i}.png`),
+ asgHollow:['fightbt','talkbt','itembt'].map(n=>RAW+`sprites/images/spr_${n}_hollow_1.png`), // 2-frame exports are swapped
+ asgSpareBt:[1,0].map(i=>RAW+`sprites/images/spr_sparebt_bandage_${i}.png`),
  nbPapHead:RAW+'sprites/images/spr_papyrusboss_head_0.png',
  nbPapBody:RAW+'sprites/images/spr_papyrusboss_body_0.png',
  nbBoneTop:[1,0].map(i=>RAW+`sprites/images/spr_bonetop_${i}.png`),
