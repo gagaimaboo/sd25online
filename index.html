@@ -1695,8 +1695,8 @@ const ITEM_OPTIONS=[
 ];
 
 const SANDBOX_ROLE_IDS=['classic','kris','susie','noelle'];
-// The party leader is CHARA or Kris; Susie and Noelle only join a party.
-const LEADER_ROLE_IDS=['classic','kris'],MEMBER_ROLE_IDS=['susie','noelle'];
+// Anyone can lead (or go solo); Susie and Noelle can also join the party.
+const LEADER_ROLE_IDS=['classic','kris','susie','noelle'],MEMBER_ROLE_IDS=['susie','noelle'];
 const SANDBOX_PARTY_MAX=3;
 function normalizeSandboxPartySlots(raw,fallbackRole='classic'){
  const src=Array.isArray(raw)?raw.slice(0,SANDBOX_PARTY_MAX):[];
@@ -8455,7 +8455,7 @@ const NB=(()=>{
   };
   NB.S=S;
   if(opt.mp)mpSetup(opt.mp);
-  if(opt.party&&opt.party.length>1)partySetup(opt);
+  if(opt.party&&opt.party.length)partySetup(opt);
   // opt.stats[k]: the CUSTOM HUB numbers for opt.monsters[k] (null when nothing was edited).
   const roster=opt.monsters.flatMap((id,k)=>{
    const c=opt.custom&&opt.stats?.[k]||null,g=NB.groups[id];
@@ -20481,10 +20481,12 @@ function nbCustomStats(id,support){
  out.atkScale=out.atk!=null?out.atk/Math.max(1,Number(base.atk)||4):1;
  return out;
 }
+// CUSTOM rules run the DELTATRAVELER party battle for any party, and for Kris, Susie or
+// Noelle alone (a party of one); only CHARA alone plays plain UNDERTALE.
 function nbPartyEligible(){
  if(vanillaMode)return false;
  const slots=sandboxPartySlots(),rest=slots.slice(1).filter(v=>v&&v!=='off');
- return rest.length>0&&['classic','kris'].includes(slots[0])&&rest.every(r=>r==='susie'||r==='noelle');
+ return (rest.length>0||slots[0]!=='classic')&&LEADER_ROLE_IDS.includes(slots[0])&&rest.every(r=>MEMBER_ROLE_IDS.includes(r));
 }
 // DELTATRAVELER's GameManager stats for the party at the current LV. The leader keeps the
 // CUSTOM HUB player stats (UNDERTALE's chart); Susie and Noelle use DELTATRAVELER's
@@ -20496,7 +20498,8 @@ function nbBuildParty(){
   if(!role||role==='off')return;
   const load=partyLoadoutForSlot(slot),w=weaponById(load.weapon||'stick'),a=sandboxArmorData(slot);
   const eqAtk=(+w.atk||0)+(+a.atk||0),eqDef=(+w.def||0)+(+a.def||0),eqMag=(+w.magic||0)+(+a.magic||0);
-  if(slot===0){
+  // CHARA or Kris in front: the player (ACT). Susie or Noelle in front: herself (MAGIC).
+  if(slot===0&&(role==='classic'||role==='kris')){
    const st=effectivePlayerStats(),wp=activeWeaponData();
    out.push({role,slot,leader:true,hud:role==='kris'?'KRIS':roleDisplayName(role),list:role==='kris'?'Kris':roleDisplayName(role),say:'You',
     maxhp:st.hp,at:Math.max(0,(+st.displayAtk||0)+(+wp.atk||0)),df:Math.max(0,+st.displayDef||0),mag:0,magRaw:0,noWeapon:false});
