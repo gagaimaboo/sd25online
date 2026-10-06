@@ -878,7 +878,7 @@ const SFX={
  power:RAW+'sound/audio/snd_power.wav',
  torielText:RAW+'sound/audio/snd_txttor.wav',
  papyrusText:RAW+'sound/audio/snd_txtpap.wav',
- mdBell:RAW+'sound/audio/snd_bell.wav',hlDumbVictory:RAW+'sound/audio/snd_dumbvictory.wav',mdSlide:RAW+'sound/audio/snd_slidewhist.wav',
+ mdBell:RAW+'sound/audio/snd_bell.wav',hlDumbVictory:RAW+'sound/audio/snd_dumbvictory.wav',hlWrongVictory:RAW+'sound/audio/snd_wrongvictory.wav',mdSlide:RAW+'sound/audio/snd_slidewhist.wav',
  // Shyren's notes (obj_shyren caster_load music/shyren/*).
  shyNote1:RAW+'sound/audio/mus_note1.ogg',shyNote2:RAW+'sound/audio/mus_note2.ogg',shyNote3:RAW+'sound/audio/mus_note3.ogg',
  shyNote4:RAW+'sound/audio/mus_note4.ogg',shyNote5:RAW+'sound/audio/mus_note5.ogg',shyNote6:RAW+'sound/audio/mus_note6.ogg',
@@ -29270,7 +29270,9 @@ const NB=(()=>{
   1:{font:'main',color:'#ffffff',dx:20,dy:20,wrap:(x)=>x+602-55,speed:1,sound:'text',spacing:16,vspacing:32},
   2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:2,sound:'txt2',spacing:9,vspacing:20},
   33:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:1,sound:'txt2',spacing:9,vspacing:20},
-  22:{font:'papyrus',color:'#000000',dx:10,dy:0,wrap:(x)=>x+200,speed:1,sound:'papyrusText',spacing:11,vspacing:20}
+  22:{font:'papyrus',color:'#000000',dx:10,dy:0,wrap:(x)=>x+200,speed:1,sound:'papyrusText',spacing:11,vspacing:20},
+  51:{font:'plain',color:'#000000',dx:20,dy:16,wrap:(x)=>x+999,speed:3,sound:['mtt1','mtt2','mtt3','mtt4','mtt5','mtt6','mtt7','mtt8','mtt9'],spacing:8,vspacing:18},
+  52:{font:'plain',color:'#000000',dx:20,dy:20,wrap:(x)=>x+999,speed:1,sound:'txtAl',spacing:8,vspacing:18}
  };
  // Content written for the old engine uses "\n" and relies on word wrap. UNDERTALE
  // text uses "&" line breaks, "/" wait-for-Z and "%" message ends. Normalise to UT
@@ -29320,7 +29322,7 @@ const NB=(()=>{
     if(c==='^'&&n&&n!=='0'){this.wait=(+n||0)*10;this.pos++;return}
     if(c==='&')return;
     if(c==='\\'){if(n==='E'){const d=+this.str[this.pos+1];this.pos+=2;if(this.onFace)this.onFace(d);return}this.pos++;return}
-    if(this.sound&&c!==' '&&c!=='/'&&c!=='%')snd(this.sound);
+    if(this.sound&&c!==' '&&c!=='/'&&c!=='%')snd(Array.isArray(this.sound)?this.sound[Math.floor(Math.random()*this.sound.length)]:this.sound);
    }
    if(this.pos>=this.str.length){
     const end=this.str.trimEnd().replace(/%%$/,'%');
@@ -37226,8 +37228,352 @@ if(c.lesson > 20) {
   }
  });
 })();
+/* ---- NB content: Mettaton's quiz show (obj_mettatonb_quiz + obj_mettatonb_body, obj_questionasker
+        with Alphys, obj_answernodule, obj_shockermaker, obj_flyjar/obj_jarfly, obj_zoomaton,
+        obj_mettatonnn_writer, obj_confetti, obj_unfader) ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB;
+ const {dse,tick,fr}=NB.hl;
+ const S=()=>NB.S;
+ const R=Math.round;
+ // Several of these sprites are exported trimmed to their bounding box; [x,y] is where
+ // each frame starts inside GameMaker's frame (per frame when they differ).
+ const AH_TRIM={helper:[1,3],confused:[1,3],shock:[1,3],shock2:[1,3],thumbsup:[1,3],embarrass:[1,3],shockembarrass:[1,3],excited2:[1,0],shakehead:[[1,2],[1,3]]};
+ function ahDraw(g,v,x,y){
+  const k=v.ah,frames=images['nbAH_'+k];if(!frames)return;
+  const f=Math.round(v.ahFrame)%frames.length,im=frames[f],t=AH_TRIM[k],tr=Array.isArray(t?.[0])?t[f]:t||[0,0];
+  dse(g,im,x-v.shake+rnd(v.shake*2),y-v.shake+rnd(v.shake*2),2,2,0,1,-tr[0],-tr[1]);
+ }
+ // spr_mettatonb* (origins 52/54/55/56,66), [trim x, trim y] per frame
+ const MT={body:{im:'mettaton',o:[52,66],t:[26,4]},arms1:{im:'nbMttArms1',o:[52,66],t:[8,14]},arms2:{im:'nbMttArms2',o:[52,66],t:[15,19]},
+  arms3:{im:'nbMttArms3',o:[52,66],t:[1,1]},arms4:{im:'nbMttArms4',o:[52,66],t:[0,14]},armsin:{im:'nbMttArmsIn',o:[56,66],center:[53.5,89]},
+  rocketoff:{im:'nbMttRocket',o:[56,66],t:[[26,28],[26,30]]}};
+ function mtDraw(g,key,frame,x,y,ang){
+  const d=MT[key];if(!d)return;
+  const fs=images[d.im],im=Array.isArray(fs)?fs[((Math.floor(frame)%fs.length)+fs.length)%fs.length]:fs;if(!im)return;
+  let tx,ty;
+  if(d.center){const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;tx=d.center[0]-w/2;ty=d.center[1]-h}
+  else{const t=Array.isArray(d.t[0])?d.t[Math.floor(frame)%d.t.length]:d.t;tx=t[0];ty=t[1]}
+  dse(g,im,x,y,2,2,ang,1,d.o[0]-tx,d.o[1]-ty);
+ }
+ // Bubbles (scr_blcon): 1 = spr_blconwdshrt_l, 2 = spr_blconabove (Alphys), 3 / x = spr_blconwdshrt.
+ function bubble(api,pages,type,x,y,typer){
+  const st=api.S;if(st.bubbles.some(b=>b.w.done))st.bubbles=st.bubbles.filter(b=>!b.w.done);
+  let wx=x+30,wy=y+10,img=images.nbBlconWdShrt,ix=x,iy=y-2;
+  if(type===1){img=images.nbBlconWdShrtL;ix=x+18;iy=y-2}
+  if(type===2){img=images.nbBlconAbove;ix=x+18;iy=y;wx-=20;wy-=20}
+  if(type===3)wy-=20;
+  const b={m:null,x:ix,y:iy,wide:true,img,w:new NB.Writer(pages,{typer,x:wx,y:wy})};
+  st.bubbles.push(b);return b;
+ }
+ const MTT=v=>({x:v.body.x,y:v.body.y});
+ // obj_questionasker event_user(0): the next question.
+ const Q={
+  1:{t:80,q:'What\'s the prize#for answering#correctly?',a:['Money','Mercy','New car','More questions'],c:3},
+  2:{t:60,q:'What\'s the king\'s#full name?',a:['Lord Fluffybuns','Fuzzy Pushover','Asgore Dreemurr','Dr. Friendship'],c:2},
+  3:{t:60,q:'What are robots#made of?',a:['Hopes&Dreams','Metal&Magic','Snips&Snails','Sugar&Spice'],c:1},
+  4:{t:90,q:'Two trains, Train A and Train B,#simultaneously depart Station A#and Station B.#Station A and Station B are 252.5 miles#apart from each other.#Train A is moving at 124.7mph towards#Station B, and Train B is moving at#253.5mph towards station A.#If both trains departed at 10:00AM and it#is now 10:08, how much longer until#both trains pass each other?',a:['31.054 minutes','16.232 minutes','32.049 minutes','32.058 minutes'],c:3},
+  5:{t:60,q:'How many flies are#in this jar?',a:['54','53','55','52'],c:0},
+  6:{t:60,q:'What monster is this?',a:['Froggit','Whimsun','Moldsmal','Mettaton'],c:3},
+  7:{t:30,q:'Would you smooch#a ghost?',a:['Heck Yeah','Heck Yeah','Heck Yeah','Heck Yeah'],c:5},
+  8:{t:45,q:'How many letters in#the name Mettaton',a:['special1','special1','special1','special1'],c:2},
+  9:{t:200,q:'In the dating#simulation video game#"Mew Mew Kissy Cutie"#what is Mew Mew\'s#favorite food?',a:['Froggit','Whimsun','Moldsmal','Mettaton'],c:5,noNodes:true},
+  10:{t:70,q:'Who does Dr. Alphys#have a crush on?',a:['Undyne','Asgore','The human','Don\'t know'],c:6}
+ };
+ const NODE_POS=[[240,260],[360,260],[240,340],[360,340]];
+ const NODE_IMG=['a','b','c','d'];
+ function ask(m,api){
+  const v=m.v;
+  v.q++;v.quiztimer=300;v.phase=1;v.answer=-1;
+  const d=Q[v.q]||Q[10];
+  v.a4=d.t;v.qtext=d.q;v.ans=d.a;v.correct=d.c;
+  api.heart.mode='still'; // obj_heart.movement = 99 until the answers appear
+  if(!d.noNodes)v.nodes=d.a.map((t,i)=>({qno:i,atext:t,answered:0,visible:0,a0:v.a4,ano:i,x:NODE_POS[i][0],y:NODE_POS[i][1]}));
+  if(v.q===5)v.jar={x:280,y:120,alpha:0,a0:30,off:0,flies:[]};
+  if(v.q===6)v.zoom={x:250,y:120,s:4,l:33,t:51,w:20,h:15,on:0,alpha:0};
+ }
+ const RESULT={wrong:{1:'HAHAHA, YOU WISH!&WRONG!',2:'WRONG! IF ONLY ALPHYS&COULD HELP!',3:'NOPE! TOO BAD ALPHYS&CAN\'T HELP!',4:'WRONG!!! WRONG!!!&WROOOOOOOONG!!',5:'COMPLETELY UTTERLY&WRONG!!!!!!',6:'BOY, THAT\'S&EMBARRASSING, HUH?',7:'TIME\'S UP!&GUESS THAT\'S A NO?? ',8:'NO NO NO!&CAN\'T YOU READ!?'},
+  right:{1:'RIGHT! SOUNDS LIKE&YOU GET IT!',2:'CORRECT! WHAT A&TERRIFIC ANSWER!',3:'TOO EASY FOR&YOU, HUH??????????',4:'WONDERFUL! I\'M&ASTOUNDED, FOLKS!',5:'CORRECT! YOU\'RE SO&LUCKY TODAY!!!',6:'I\'M SO FLATTERED YOU&REMEMBERED!',7:'GREAT ANSWER!&I LOVE IT!!!!!!!',8:'OF COURSE THAT&WAS EASY FOR YOU!'}};
+ const CRUSH={
+  0:['SEE, ALPHYS?&I TOLD YOU IT&WAS OBVIOUS./','EVEN THE HUMAN&FIGURED IT OUT./','YES, SHE SCRAWLS&HER NAME IN THE&MARGINS OF HER&NOTES./','SHE NAMES PROGRAMMING&VARIABLES AFTER&HER./','SHE EVEN WRITES&STORIES OF THEM&TOGETHER.../','SHARING A DOMESTIC&LIFE./','PROBABILITY OF&CRUSH:&101 PERCENT./','MARGIN OF ERROR.&ONE PERCENT./%%'],
+  1:['WHY WOULD SOMEONE&OUTFIT AN&AMUSEMENT ROBOT.../','WITH BRUTAL COMBAT&CAPABILITIES?/','SIMPLE./','TO IMPRESS MR.&ASGORE DREEMURR,&OF COURSE!/','OR AS ALPHYS&CALLS HIM.../','"MR. DREAMY."/','THOSE STRONG ARMS.../','THAT LUSTROUS&BEARD.../','LIKE ALL THOSE WHO&CREATE WEAPONS./','SHE CRAVES THE&TENDER EMBRACE OF&A BURLY MAN./','CAN SHE TRULY&BE BLAMED?/%%'],
+  2:['... SERIOUSLY?/','MY MY..^1.&HOW CONCEITED CAN&YOU GET...?/','I LOVE IT!/','AND WHILE YOU ARE&COMPLETELY WRONG^1,&YOU DESERVE SOME&CREDIT./','I\'VE SEEN HER WATCH&YOU ON HER COMPUTER&SCREEN./','SMILING WHEN YOU&SUCCEED./','SHRIEKING WHEN YOU&FAIL./','AND ALWAYS, ALWAYS,&WHISPERING.../','"NO! WRONG!&YOU HAVE TO&GO THAT WAY!"/','IN ITS OWN WAY^1,&IS THIS NOT&LOVE??/%%'],
+  3:['CORRECT./','DR. ALPHYS HAS&A CRUSH ON.../','THE UNKNOWABLE./','YOU SEE, ALPHYS&BELIEVES THERE IS&SOMEONE OUT THERE./','SOMEONE WATCHING HER./','SOMEONE SHE THINKS&IS "CUTE" AND&"INTERESTING."/','HELLO, THEORETICAL&PERSON./','DR. ALPHYS LIKES&YOU./','TOO BAD YOU&ARE NOT REAL./','*DERISIVE&LAUGHTRACK*/%%']
+ };
+ const ALPHYS_ALPHYS=['ALPHYS^1,&ALPHYS^1,&ALPHYS./','YOU AREN\'T HELPING&OUR CONTESTANT,&ARE YOU?/','OOOOOOH!!!&YOU SHOULD HAVE&TOLD ME./','I\'LL ASK A&QUESTION.../','YOU\'LL BE SURE&TO KNOW THE&ANSWER TO!/%%'];
+ const pageOf=b=>b&&!b.w.done?b.w.no:-1;
+ const writerGone=b=>!b||b.w.done;
+ function pauseMusic(v){try{v.paused=battleMusicTracks().filter(a=>a&&!a.paused);for(const a of v.paused)a.pause()}catch(_){v.paused=[]}}
+ function resumeMusic(v){try{for(const a of v.paused||[])playMusicElement(a)}catch(_){}v.paused=null}
+
+ // obj_mettatonb_body: slides away for each question (lefter 0..3) and back (4..5);
+ // tilts with its speed, sways when still; at the end the arms fold in and he rockets off.
+ function bodyStep(b){
+  if(tick(b,'a0'))b.lefter=2;
+  if(tick(b,'a1'))b.lefter=5;
+  if(b.lefter===1||b.lefter===0){if(b.vx>-20)b.vx-=3;else b.vx-=.4}
+  if(b.lefter===2){b.vx+=2;if(b.vx>1){b.vx=0;b.lefter=3}}
+  if(b.lefter===4){if(b.vx<20)b.vx+=4;else b.vx+=.5}
+  if(b.lefter===5){b.vx-=2;if(b.x<b.remx&&b.vx<3)b.vx=3;if(b.vx<-1||b.x>=b.remx){b.x=b.remx;b.vx=0;b.lefter=16}}
+  b.pspeed[0]=b.vx;for(let i=4;i>0;i--)b.pspeed[i]=b.pspeed[i-1];
+  b.ang=b.pspeed[1]*2;
+  if(b.grav){b.vy+=b.grav}
+  b.x+=b.vx;b.y+=b.vy;
+  b.frame+=b.isp;
+  if(b.sineron)b.siner++;
+ }
+ function bodyDraw(g,b){
+  let sv=0;if(b.vx===0)sv=Math.sin(b.siner/3)*2;
+  const ang=b.ang+sv,sh=b.shaker;
+  mtDraw(g,b.spr,b.frame,b.x+sv+rnd(sh*2)-sh,b.y+rnd(sh*2)-sh,ang);
+  if(b.arms)mtDraw(g,b.arms,b.siner/6,b.x+sv,b.y-Math.sin(b.siner/4)*5,ang);
+ }
+ // obj_questionasker's Draw event: Alphys's reactions and the long scenes after question 9.
+ function askerStep(m,api){
+  const v=m.v,st=api.S,b=v.body;
+  if(tick(v,'a4'))v.phase++;
+  if(tick(v,'a7'))v.con++;
+  if(tick(v,'a5')){
+   // the shock lands: half your HP (never below 1; at 1 HP the quiz skips ahead)
+   const n=Math.ceil(st.hp/2);st.hp=Math.max(1,st.hp-n);if(st.hp<=1){st.hp=1;v.q=8}
+   snd('hurt');st.shake={h:2,v:2,speed:2,t:0};st.invc=20;
+  }
+  if(tick(v,'a6')){
+   // the verdict
+   let t;
+   if(v.correct!==v.answer){
+    v.right=1;v.shock={x:b.x+94,y:b.y-60};snd('shock');api.heart.mode='still';v.a5=40;
+    t=RESULT.wrong[v.q];
+   }else t=RESULT.right[v.q];
+   if(t)v.bub=bubble(api,[t+'/%%'],0,b.x+95,b.y-(v.q===6?170:100),51);
+   st.nextFlavor='* The quiz show continues.';
+  }
+  if(tick(v,'a9')){api.end('win');return}
+  // which Alphys is showing
+  if(v.phase===-1)v.ah='helper';
+  if(v.phase>0&&v.con===0)v.ah='lookup';
+  if(v.phase===2&&v.quiztimer<280){if(v.correct>=0&&v.correct<=3)v.ah='abcd'[v.correct];if(v.q===7)v.ah='confused'}
+  if(v.phase===2&&v.quiztimer>320)v.ah='confused';
+  if(v.phase>2&&v.q<10){v.ah='shock';b.arms='arms4';if(v.correct===v.answer){b.arms='arms3';v.ah=v.q===7?'confused':'thumbsup'}}
+  if(v.q===8&&v.quiztimer<300){if(v.quiztimer%2===0)v.mettamt++;if(v.phase===2)v.nnn=true}
+  // question 9: Alphys can't help herself
+  if(v.q===9&&v.a4<140&&v.con===0){
+   v.ah='tooexcited';v.a4=-2;v.ahSpeed=.3;
+   v.bub=bubble(api,['OH^1! OH^1! I KNOW&THIS ONE!!!&IT\'S SNAIL ICE&CREAM!!!!!!!^1!%','IN THE FOURTH&CHAPTER EVERYONE&GOES TO THE&BEACH!!!%','AND SHE BUYS&ICE CREAM FOR&ALL OF HER&FRIENDS!!!!%','BUT IT\'S SNAIL&FLAVOR AND SHE\'S&THE ONLY ONE&WHO WANTS IT!!!!!!%','IT\'S ONE OF MY&FAVORITE PARTS&OF THE GAME&BECAUSE%','IT\'S ACTUALLY A&VERY POWERFUL&message abou^1t&friendshi^1p and..^2.%%'],2,412-10,126-120,52);
+   v.con=1;
+  }
+  if(v.con===1&&(writerGone(v.bub)||pageOf(v.bub)===5)){v.ahSpeed-=.004;if(v.ahSpeed<=0){v.ahSpeed=0;v.con=2;v.a7=60;v.ah='excited2'}}
+  if(v.con===3){v.phase=-2;v.con=4;v.ah='excited2';v.bub=bubble(api,ALPHYS_ALPHYS,3,b.x+95,b.y-100,51)}
+  if(v.con===4&&writerGone(v.bub)){v.ahSpeed=.2;v.ah='shock2';v.con=5;ask(m,api)}
+  if(v.con===4){const p=pageOf(v.bub);if(p===1)v.ah='shakehead';if(p===3)v.ah='embarrass';v.ahSpeed=.1;if(p===4)v.ah='shock'}
+  if(v.con===7){
+   v.ah='shockembarrass';v.phase=-2;v.con=30;
+   let pages=ALPHYS_ALPHYS;
+   if(v.answer>=0&&v.answer<=3)pages=CRUSH[v.answer];
+   if(v.answer===2){v.ah='confused';v.shake=0}
+   if(v.answer===3){v.ah='thumbsup';v.ahSpeed=.2;v.con=20}
+   if(v.con!==20)v.shake=1;
+   v.bub=bubble(api,pages,3,b.x+95,b.y-100,51);
+  }
+  if(v.con===20){const p=pageOf(v.bub);if(p===2)v.ah='confused';if(p===4)v.ah='embarrass';if(p===8)v.ah='confused'}
+  if(v.con===20&&writerGone(v.bub)){v.con=21;v.ah='helper';v.bub=bubble(api,['H-hey^1, I\'ve done&research about this!/','There are alternate&universes out there!/','S-someday^1, maybe^1, I&could meet them.../%%'],2,412-10,126-120,52)}
+  if(v.con===21&&writerGone(v.bub)){v.ah='embarrass';v.phase=-2;v.con=22;v.bub=bubble(api,['YOU SAID THE&EXACT SAME THING&ABOUT "MEW MEW&KISSY CUTIE."/','BUT I\'LL GIVE YOU&THE BENEFIT OF&THE DOUBT./','PERSON^1, IF YOU\'RE&OUT THERE.../','HOW ABOUT GIVING US&A SIGN^1, RIGHT NOW?/%%'],3,b.x+95,b.y-100,51)}
+  if(v.con===22&&writerGone(v.bub)){v.ah='helper';pauseMusic(v);v.con=23;v.a7=150}
+  if(v.con===24){v.ah='embarrass';resumeMusic(v);v.con=30;v.bub=bubble(api,['THAT SETTLES&THAT, DOESN\'T IT?/%%'],3,b.x+95,b.y-100,51)}
+  if(v.con===30&&writerGone(v.bub)){b.lefter=4;b.a1=9;v.a7=20;v.con=31}
+  if(v.con===32&&writerGone(v.bub)){
+   v.shake=0;b.arms='arms2';v.ah='helper';v.phase=-2;v.nodes=[];
+   v.bub=bubble(api,['WELL WELL WELL./','WITH DR. ALPHYS&HELPING YOU.../','THE SHOW HAS NO&DRAMATIC TENSION!/','WE CAN\'T GO ON&LIKE THIS!!/','BUT./','BUT!!!/','THIS WAS JUST THE&PILOT EPISODE!!/','NEXT UP, MORE&DRAMA!/','MORE ROMANCE!!!/','MORE BLOODSHED!!!/','UNTIL NEXT TIME,&DARLINGS...!!!/%%'],1,b.x-320,b.y-120,51);
+   v.con=34;
+  }
+  if(v.con===34&&writerGone(v.bub)){b.arms=null;v.con=35;b.siner=0;b.sineron=0;b.spr='armsin';b.frame=0;b.isp=.25}
+  if(v.con===35&&b.frame>=5){v.con=36;v.a7=10;b.isp=0;b.frame=5}
+  if(v.con===37){b.shaker=2;v.con=38;v.a7=25}
+  if(v.con===39){b.isp=.334;b.spr='rocketoff';b.frame=0;b.grav=-.4;v.con=40;v.a7=20}
+  if(v.con===41){v.con=42;v.a7=40;v.ah='lookup'}
+  if(v.con===43){v.unfade=0;v.a9=12;v.con=44}
+  if(v.unfade!=null)v.unfade+=.08;
+  // the question on screen, its timer and the answer
+  if(v.phase>=1&&v.phase<3)b.arms='arms1';
+  if(v.phase===2){
+   if(v.q!==10&&v.q!==9)v.quiztimer--;
+   if(v.q===7)v.quiztimer+=2;
+   if(Math.ceil(v.quiztimer/10)<=0)v.phase=3;
+  }
+  if(v.phase===3){
+   if(v.q!==10){
+    v.nnn=false;if(v.zoom)v.zoom.on=1;
+    v.a6=4;
+    if(v.correct===v.answer&&v.q!==7){snd('hlDumbVictory');for(let i=0;i<60;i++)v.confetti.push({x:rnd(640),y:-10,vx:rnd(6)-3,vy:2+rnd(3),siner:0,f:0,timer:100,alpha:1,col:`hsl(${R(rnd(360))},100%,50%)`})}
+    if(v.q===7)snd('hlWrongVictory');
+    v.phase=4;v.a4=70;
+   }else{v.correct=v.answer;v.phase=4;v.con=6;snd('mdBell');v.a7=30}
+  }
+  if(v.phase===5){
+   if(st.bubbles.length)st.bubbles=[];
+   v.shock=null;st.nextFlavor=st.nextFlavor||'* The quiz show continues.';
+   v.phase=-1;b.arms='arms2';b.lefter=4;b.a1=9;v.nodes=[];
+   api.heart.mode='red';
+   api.endTurn();
+  }
+  v.ahFrame+=v.ahSpeed;
+  // obj_answernodule: appear when the timer starts, then wait for the SOUL
+  const h=api.heart;
+  for(const n of v.nodes){
+   if(tick(n,'a0')){n.visible=1;if(v.correct===5)n.ano=5;h.mode='red'}
+   if(n.visible&&v.phase===2&&!n.answered&&h.x+14>n.x&&h.x+2<n.x+40&&h.y+14>n.y&&h.y+2<n.y+40){v.phase=3;v.answer=n.ano;n.answered=1}
+   if(v.phase>2&&v.answer===-1)n.visible=0;
+  }
+  if(v.shock){h.x+=rnd(2)-1;h.y+=rnd(2)-1}
+  // obj_flyjar + 54 obj_jarfly
+  const j=v.jar;
+  if(j){
+   if(tick(j,'a0')){j.off=1;for(let i=0;i<54;i++)j.flies.push({x:j.x+30,y:j.y+30,vx:1-rnd(2),vy:1-rnd(2),siner:rnd(12)})}
+   if(j.off===1&&j.alpha<1)j.alpha+=.02;
+   if(v.phase>2||v.phase<1)j.off=2;
+   if(j.off===2&&j.alpha>0){j.alpha-=.05;if(j.alpha<=.05)v.jar=null}
+   const L=j.x+6*3,Rr=j.x+21*3,T=j.y+12*3,B=j.y+28*3;
+   for(const f of j.flies){f.x+=Math.sin(f.siner/4)/2;f.y+=Math.cos(f.siner/4)/2;f.siner++;
+    if(f.x>Rr){f.x-=4;if(f.vx>0)f.vx=-f.vx}if(f.x<L){f.x+=4;if(f.vx<0)f.vx=-f.vx}if(f.y<T){f.y+=4;if(f.vy<0)f.vy=-f.vy}if(f.y>B){f.y-=4;if(f.vy>0)f.vy=-f.vy}
+    f.x+=f.vx;f.y+=f.vy}
+  }
+  // obj_zoomaton: a close-up of his shirt that zooms out on the answer
+  const z=v.zoom;
+  if(z){
+   if(z.on===0&&z.alpha<1)z.alpha+=.03;
+   if(z.on===1){z.l-=1.65;z.t-=2.55;z.h+=(85-15)/20;z.w+=(103-20)/20;z.s-=.15;if(z.l<=0)z.on=2}
+   if(z.on>1)z.on++;
+   if(z.on>60){z.alpha-=.05;if(z.alpha<.05)v.zoom=null}
+  }
+  for(const c of v.confetti){c.siner++;c.x+=Math.sin(c.siner/3)*2+c.vx;c.y+=c.vy;c.f+=.2;c.timer--;if(c.timer<20)c.alpha-=.05}
+  v.confetti=v.confetti.filter(c=>c.alpha>.05);
+ }
+ function txt(g,s,x,y,color,sx=1){
+  if(sx===1){NB.drawText(g,s,R(x),R(y),color);return}
+  g.save();g.translate(R(x),R(y));g.scale(sx,1);NB.drawText(g,s,0,0,color);g.restore();
+ }
+
+ NB.defs.set('mettaton',{
+  name:'Mettaton',hp:9999,atk:10,def:999,xp:0,gold:0,mercymod:-99999,wd:200,
+  encounter:'* Mettaton attacks!',
+  size:()=>({w:200,h:200}),
+  pos:()=>({x:216,y:90}),
+  bgFrame:-1, // the quiz set replaces obj_battlebg
+  setup(m){Object.assign(m.v,{q:0,phase:-1,quiztimer:0,correct:-1,answer:-1,con:0,mettamt:0,shake:0,a4:-1,a5:-1,a6:-1,a7:-1,a9:-1,am7:-1,
+   ah:'helper',ahFrame:0,ahSpeed:.08,nodes:[],confetti:[],jar:null,zoom:null,shock:null,bub:null,nnn:false,unfade:null,qtext:'',ans:[],
+   body:{x:316,y:190,remx:316,vx:0,vy:0,grav:0,lefter:-1,a0:-1,a1:-1,pspeed:[0,0,0,0,0],ang:0,siner:0,sineron:1,shaker:0,arms:'arms2',spr:'body',frame:0,isp:0}})},
+  step(m,api){
+   const v=m.v;
+   bodyStep(v.body);
+   if(tick(v,'am7'))askerStart(m,api);
+   if(api.S.mnfight===2)askerStep(m,api);
+   else v.ahFrame+=v.ahSpeed;
+  },
+  draw(g,m){
+   const v=m.v,z=v.zoom;
+   if(z&&images.mettatonShirt){
+    // draw_sprite_part of spr_mettatonb_shirt (exported trimmed at 3,4)
+    const im=images.mettatonShirt;g.save();g.globalAlpha*=Math.max(0,z.alpha);g.imageSmoothingEnabled=false;
+    const sx=Math.max(0,z.l-3),sy=Math.max(0,z.t-4);g.drawImage(im,sx,sy,Math.max(1,z.w),Math.max(1,z.h),R(z.x),R(z.y),z.w*z.s,z.h*z.s);g.restore();
+   }
+   bodyDraw(g,v.body);
+   ahDraw(g,v,412,126);
+   // the question (obj_questionasker Draw, phases 1-2)
+   if(v.phase>=1&&v.phase<3){
+    const col=v.q===10?'#525252':'#ffffff',lines=v.qtext.split('#');
+    if(v.q===4){g.save();g.translate(170,20);g.rotate(-6*Math.PI/180);g.scale(.5,.5);lines.forEach((l,i)=>txt(g,l,rnd(1),i*32+rnd(1),col));g.restore()}
+    else lines.forEach((l,i)=>txt(g,l,205+rnd(1),50+i*32+rnd(1),col));
+   }
+   const j=v.jar;
+   if(j){dse(g,images.mettatonFlyJar,j.x,j.y,3,3,0,j.alpha,0,-4);for(const f of j.flies)dse(g,images.mettatonJarFly,f.x,f.y,2,2,0,j.alpha,2,2)}
+  },
+  drawOver(g,m,api){
+   const v=m.v,h=api.heart;
+   // answers
+   for(const n of v.nodes){
+    if(!n.visible)continue;
+    let col='#ffffff';
+    if(v.phase>2)col='#ffff00';
+    if(n.answered)col=v.correct===n.ano?'#008000':'#ff0000';
+    let t=n.atext;
+    if(t==='special1')t=String(v.mettamt+[11,6,8,10][n.qno]);
+    const sx=t.length>11?11/t.length:1,w=t.length*16*sx;
+    if(n.qno===0||n.qno===2)txt(g,t,n.x-20-w+rnd(2),n.y+rnd(2),col,sx);
+    else txt(g,t,n.x+60+rnd(2),n.y+rnd(2),col,sx);
+    if(!n.answered&&v.phase===2)dse(g,images['nbMttBtn'+NODE_IMG[n.qno].toUpperCase()],n.x,n.y);
+   }
+   if(v.phase===2){const d=Math.ceil(v.quiztimer/10);if(d>0)txt(g,String(d),300,260,'#ff0000')}
+   // obj_mettatonnn_writer: "Mettatonnnnnn..." running around the screen
+   if(v.nnn){
+    const mx=v.mettamt,a=Math.min(13,mx),bb=Math.min(20,mx-13),c=mx-32;
+    for(let i=0;i<a;i++)txt(g,'n',431+rnd(1)+i*14,82+rnd(1),'#ffffff');
+    for(let i=0;i<bb;i++){g.save();g.translate(634+rnd(1),116+i*16);g.rotate(Math.PI/2);txt(g,'n',0,0,'#ffffff');g.restore()}
+    for(let i=0;i<c;i++){g.save();g.translate(600+rnd(1)-i*16,460);g.rotate(Math.PI);txt(g,'n',0,0,'#ffffff');g.restore()}
+   }
+   // obj_shockermaker: lightning from his hand to the SOUL
+   const s=v.shock;
+   if(s){
+    const tx=h.x+5,ty=h.y+5,dir=Math.atan2(-(ty-s.y),tx-s.x)*180/Math.PI,dist=Math.hypot(tx-s.x,ty-s.y);
+    for(let i=0;i<20;i++)dse(g,fr(images.nbMttShockPart,rnd(3)),s.x+dcos(dir)*dist*i/20+rnd(12),s.y-dsin(dir)*dist*i/20+rnd(12),1,1,dir,1,15,15);
+    const fi=Math.floor(rnd(2)),fim=images.nbMttShockFinal?.[fi];dse(g,fim,h.x-5,h.y-5,1,1,0,1,fi?0:-5,fi?-1:-6);
+   }
+   for(const c of v.confetti){const im=fr(images.nbMttConfetti,c.f);if(im){g.save();g.globalAlpha=Math.max(0,c.alpha);g.drawImage(NB.multiplied(im,c.col),R(c.x),R(c.y));g.restore()}}
+   if(v.unfade!=null){g.save();g.globalAlpha=Math.min(1,v.unfade);g.fillStyle='#000';g.fillRect(-40,-40,720,560);g.restore()}
+  },
+  acts:['Check'],
+  check:()=>'* METTATON - ATK 30 DEF 255&* His metal body renders him&  invulnerable to attack./',
+  speech(m,api){
+   const v=m.v,q=v.q;
+   const L=['LET\'S START WITH&AN EASY ONE!!/%%','HERE\'S YOUR TERRIFIC&PRIZE!/%%','ENOUGH ABOUT YOU.&LET\'S TALK ABOUT ME!/%%','HERE\'S ANOTHER EASY&ONE FOR YOU!/%%','DON\'T \'COUNT\'&ON YOUR VICTORY.../%%','LET\'S PLAY MEMORY&GAME./%%','BUT CAN YOU GET&THIS ONE???/%%','HERE\'S A SIMPLE&ONE./%%','TIME TO BREAK OUT&THE BIG GUNS!!/%%'];
+   if(!L[q])return null;
+   const sxx=Math.max(0,v.body.x-320);
+   return {pages:[L[q]],pos:{x:sxx+18,y:v.body.y-120-2},img:images.nbBlconWdShrtL,tx:12,typer:51,hold:true};
+  },
+  border:()=>0,
+  attack(m,api){
+   const v=m.v,b=v.body;
+   // obj_mettatonb_body event_user(0) and the question 20 steps later
+   b.lefter=0;b.a0=9;api.heart.mode='still';
+   v.am7=20;
+   api.turntimer(99999);
+   return '* Mettaton.';
+  },
+  endAttack(m,api){const v=m.v;v.shock=null;api.heart.mode='red'},
+  spareable:()=>false
+ });
+ function askerStart(m,api){if(api.S.mnfight===2)ask(m,api)}
+})();
 const NB_ASSETS={
  nbBattleBg:[0,1].map(i=>RAW+`sprites/images/spr_battlebg_${i}.png`),
+ // Mettaton's quiz show
+ nbAH_helper:[0].map(i=>RAW+`sprites/images/spr_alphyshelper_${i}.png`),
+ nbAH_lookup:[0].map(i=>RAW+`sprites/images/spr_alphyshelper_lookup_${i}.png`),
+ nbAH_a:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_a_${i}.png`),
+ nbAH_b:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_b_${i}.png`),
+ nbAH_c:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_c_${i}.png`),
+ nbAH_d:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_d_${i}.png`),
+ nbAH_confused:[0].map(i=>RAW+`sprites/images/spr_alphyshelper_confused_${i}.png`),
+ nbAH_shock:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_shock_${i}.png`),
+ nbAH_shock2:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_shock2_${i}.png`),
+ nbAH_thumbsup:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_thumbsup_${i}.png`),
+ nbAH_tooexcited:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_tooexcited_${i}.png`),
+ nbAH_excited2:[0].map(i=>RAW+`sprites/images/spr_alphyshelper_excited2_${i}.png`),
+ nbAH_embarrass:[0].map(i=>RAW+`sprites/images/spr_alphyshelper_embarrass_${i}.png`),
+ nbAH_shakehead:[0,1].map(i=>RAW+`sprites/images/spr_alphyshelper_shakehead_${i}.png`),
+ nbAH_shockembarrass:[0].map(i=>RAW+`sprites/images/spr_alphyshelper_shockembarrass_${i}.png`),
+ nbMttArms1:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_arms1_${i}.png`),
+ nbMttArms2:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_arms2_${i}.png`),
+ nbMttArms3:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_arms3_${i}.png`),
+ nbMttArms4:RAW+'sprites/images/spr_mettatonb_arms4_0.png',
+ nbMttArmsIn:[0,1,2,3,4,5].map(i=>RAW+`sprites/images/spr_mettatonb_armsin_${i}.png`),
+ nbMttRocket:[0,1].map(i=>RAW+`sprites/images/spr_mettatonb_rocketoff_${i}.png`),
+ nbMttBtnA:RAW+'sprites/images/spr_abutton_0.png',nbMttBtnB:RAW+'sprites/images/spr_bbutton_0.png',
+ nbMttBtnC:RAW+'sprites/images/spr_cbutton_0.png',nbMttBtnD:RAW+'sprites/images/spr_dbutton_0.png',
+ nbMttShockPart:[0,1,2].map(i=>RAW+`sprites/images/spr_shockpart_${i}.png`),
+ nbMttShockFinal:[0,1].map(i=>RAW+`sprites/images/spr_shockfinal_${i}.png`),
+ nbMttConfetti:[0,1,2,3].map(i=>RAW+`sprites/images/spr_confetti_${i}.png`),
+ nbBlconWdShrtL:RAW+'sprites/images/spr_blconwdshrt_l_0.png',
+ nbBlconAbove:RAW+'sprites/images/spr_blconabove_0.png',
  // Muffet
  nbSpiderEyeBigHurt:RAW+'sprites/images/spr_spiderb_eyebig_hurt_0.png',
  nbSpiderEyeMedHurt:RAW+'sprites/images/spr_spiderb_eyemed_hurt_0.png',
