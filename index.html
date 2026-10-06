@@ -38650,7 +38650,7 @@ if(c.lesson > 20) {
    dmg=hp>=30?10:hp>=20?9:hp>=5?8:6;
   }else if(core.n!==4)dmg=hp>=24?9:hp>=16?8:hp>=8?7:hp>=3?6:5;
   else dmg=hp>=30?9:hp>=20?8:hp>=12?7:hp>=4?6:5;
-  if(isNeo())dmg+=3; // Mettaton NEO hits harder (90 ATK in his CHECK)
+  if(isNeo())dmg+=5; // Mettaton NEO hits harder (90 ATK in his CHECK)
   NB.api.damageStd(dmg);
  }
 
@@ -39648,7 +39648,7 @@ if(c.lesson > 20) {
  const mk=api=>{K=api.S.mx;X.setK(K);N=K.neoState;return K};
  const NX=m=>m.x0+104,NY=m=>m.y+50; // obj_mneo_body at (x+104, y+50)
  const phase=m=>{const r=m.hp/Math.max(1,m.maxhp);return r<.25?3:(r<.6?2:1)};
- const speed=m=>[1,1,1.18,1.35][phase(m)];
+ const speed=m=>[1,1.2,1.4,1.6][phase(m)];
  const L=(t,e)=>[t,e];
  const pagesOf=lines=>lines.map(([t,e])=>(e!=null?'\\E'+e:'')+t.replace(/\n/g,'&')+'/');
  function neoState(){return {twistDone:false,shield:0,shieldMax:100,shieldFlash:0,broken:false,turn:0,face:0,siner:0,pause:0,shakeX:0,shakeY:0,dying:false,sparks:[],phaseSaid:{},barrierFx:0,al:null,bub:null,iceRoll:null,hidden:false,plan:null}}
@@ -39730,9 +39730,10 @@ if(c.lesson > 20) {
   if(g.kind==='cannon')api.turntimer(250);
   if(g.kind==='grid'){
    api.turntimer(230);
-   for(let j=0;j<8;j++){
+   // rows come faster and closer together than EX's
+   for(let j=0;j<10;j++){
     const bm1=choose(0,1,2,3);let bm2=choose(0,1,2,3);if(bm2===bm1)bm2=(bm2+1)%4;
-    for(let i=0;i<4;i++){const x=gil+i*25,y=-60-j*190;if(bm1===i||bm2===i||j%4===i)X.bomb(x,y,4+2*sp);else X.box(x,y,4+2*sp)}
+    for(let i=0;i<4;i++){const x=gil+i*25,y=-60-j*160;if(bm1===i||bm2===i||j%4===i)X.bomb(x,y,5+2.5*sp);else X.box(x,y,5+2.5*sp)}
    }
    X.obj('rew',0,0,{rew:0,rewed:0,maxrw:ph>=2?12:10,img:0});
   }
@@ -39743,15 +39744,15 @@ if(c.lesson > 20) {
   }
   if(g.kind==='spot'){
    api.turntimer(220);
-   const d=X.obj('disco',308,B[2]-10,{diff:ph>=2?2:1,dtype:0,swap:0,snd:0,rottimer:0,laserno:0});
+   const d=X.obj('disco',308,B[2]-10,{diff:2,dtype:0,swap:0,snd:0,rottimer:0,laserno:0});
    X.discoInit(d);
   }
   if(g.kind==='legs')api.turntimer(240);
   if(g.kind==='storm'){
    api.turntimer(230);
-   X.hand('l',gil,-25,{sf:30,sp:8,vs:3.5*sp,yseg:999,ysegi:50});
-   X.hand('r',gir,-205,{sf:30,sp:8,vs:3.5*sp,yseg:999,ysegi:50});
-   for(let i=0;i<6;i++)X.fodder(gil+10+rand(130),-80-i*60,{vs:4*sp,type:2,early:60});
+   X.hand('l',gil,-25,{sf:30,sp:8,vs:4.2*sp,yseg:999,ysegi:50});
+   X.hand('r',gir,-185,{sf:30,sp:8,vs:4.2*sp,yseg:999,ysegi:50});
+   for(let i=0;i<9;i++)X.fodder(gil+10+rand(130),-80-i*45,{vs:4.6*sp,type:2,early:60});
   }
  }
  // Per-step choreography the spawners above don't cover.
@@ -39761,23 +39762,28 @@ if(c.lesson > 20) {
   g.t=(g.t||0)+1;
   const st=api.S,B=st.ideal,gil=B[0],gir=B[1],sp=speed(m),ph=phase(m),H=X.heartXY();
   // Arm cannon: aimed bolt bursts from his right arm
+  // a burst of eight aimed bolts; the back half fans out to both sides of the aim
   const cannon=rate=>{
    if(g.t%rate===20){g.aimX=H.x+10;g.aimY=H.y+10;g.chch=choose(-1,1)}
    const k=g.t%rate-20;
    if(k>=0&&k<=14&&k%2===0){
     const ox=NX(m)+100,oy=NY(m)+48,aim=Math.atan2(-(g.aimY-oy),g.aimX-ox)*180/Math.PI;
-    const lt=X.light(ox,oy);lt.fric=-.1;X.setDir(lt,7*sp,aim+(k>=8?g.chch*12:0));sfx('mexShoot',.8);
+    const shoot=a=>{const lt=X.light(ox,oy);lt.fric=-.12;X.setDir(lt,7.5*sp,a)};
+    shoot(aim+(k>=8?g.chch*12:0));
+    if(k>=8&&k%4===0){shoot(aim-24);shoot(aim+24)}
+    sfx('mexShoot',.8);
    }
   };
-  if(g.kind==='cannon'){cannon(ph===3?40:52);if(g.t%45===0)X.box(gil+25*Math.floor(rand(6)),-30,3*sp,{sf:20,sp:12})}
-  if(g.kind==='spot'&&g.t%24===0){const k=X.kiss(gil+rand(gir-gil),B[2]-40,null,0);k.vs=3*sp;k.hs=rand(2)-1}
+  if(g.kind==='cannon'){cannon(ph===3?30:ph===2?38:44);if(g.t%30===0)X.box(gil+25*Math.floor(rand(6)),-30,3.5*sp,{sf:20,sp:12})}
+  if(g.kind==='spot'&&g.t%14===0){const k=X.kiss(gil+rand(gir-gil),B[2]-40,null,0);k.vs=3.6*sp;k.hs=rand(3)-1.5}
   if(g.kind==='legs'){
-   if(g.t%60===5)X.legline((g.t/60|0)%2?'r':'l');
-   if(ph>=2&&g.t%60===35)X.legline((g.t/60|0)%2?'l':'r');
-   if(g.t%40===0)X.fodder(gil+10+rand(130),-40,{vs:4*sp,type:2,early:40});
+   if(g.t%48===5)X.legline((g.t/48|0)%2?'r':'l');
+   if(g.t%48===29)X.legline((g.t/48|0)%2?'l':'r');
+   if(g.t%26===0)X.fodder(gil+10+rand(130),-40,{vs:4.6*sp,type:2,early:40});
   }
-  if(g.kind==='storm'&&ph>=2)cannon(70);
-  if(g.kind==='core'&&ph===3&&g.t%50===0)for(let i=0;i<10;i++){const lt=X.light(320,170);lt.fric=-.09;X.setDir(lt,2,i*36+g.t)}
+  if(g.kind==='storm')cannon(ph>=2?44:60);
+  if(g.kind==='grid'&&ph===3)cannon(60);
+  if(g.kind==='core'&&ph>=2&&g.t%(ph===3?34:50)===0)for(let i=0;i<10;i++){const lt=X.light(320,170);lt.fric=-.09;X.setDir(lt,2.2,i*36+g.t)}
  }
  // ------------------------------------------------------------------------------- scenes
  function scene(api){
