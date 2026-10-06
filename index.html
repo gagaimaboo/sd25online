@@ -33456,6 +33456,12 @@ const NB=(()=>{
  function nhbPlan(m){const n=m.v.nhb;if(!n.finalDone&&(m.hp<=m.maxhp*.35||n.turn>NHB_ORDER.length+2))return 'final';return NHB_ORDER[(n.turn-1)%NHB_ORDER.length]}
  function toMenuN(api,flavor){const st=api.S;st.nextFlavor=flavor;st.myfight=0;st.mnfight=3;api.border(0)}
  const NHB_ENC="* Papyrus blocks the way.&* He isn't holding back.";
+ // One of Papyrus's bone patterns for the CUSTOM monster: same bones, plain damage instead of a capture.
+ NB.papPattern=(api,m,f)=>{
+  const before=api.S.bullets.length,tt=PAT[f](api,m,{xfight:0});
+  for(const b of api.S.bullets.slice(before))if(b.pap)b.onHit=bb=>{if(bb.active!==1)return false;if(bb.blue&&!api.moving())return false;if(api.S.invc>=1)return false;api.damage(bb.dmg);return true};
+  return tt;
+ };
  NB.defs.set('papyrus_nhb',{
   name:'Papyrus',hp:1300,atk:20,def:10,xp:0,gold:0,wd:148,voice:'papyrusText',typer:22,mercymod:-99999,
   encounter:NHB_ENC,
@@ -36828,6 +36834,215 @@ if(c.lesson > 20) {
    sayStep(api,m);
   },
   flavor:()=>TX.wind
+ });
+})();
+/* ---- NB content: the CUSTOM monster from the Character Creator. Its patterns run the real
+   new-engine attacks of the bosses they name: each layer drives a hidden "ghost" copy of that
+   boss (or Papyrus's own bone patterns), and every bullet it fires picks up the creator's
+   speed, damage, spread, curve, gravity, size and sprite settings. ---- */
+(()=>{
+ const {rnd,dcos,dsin}=NB,R=Math.round;
+ const cfg=()=>sandboxConfig.customCharacter||defaultCustomCharacter();
+ const toNB=t=>String(t||'').replace(/\r/g,'').replace(/\n/g,'&');
+ // What the source boss's talk phase would have rolled (m.v.cmd) for this preset's attack.
+ const CMD={froggit_flies:80,froggit_leap:0,toriel_helix:10,toriel_mini:30,toriel_float:50,toriel_doublehand:70,toriel_hand:90,
+  vegetoid_bounce:80,vegetoid_rain:10,napsta_curve:10,napsta_wiggle:80,snowdrake_arc:80,snowdrake_rows:10,
+  loox_orbs:80,loox_worms:10,vulkin_fire:0,vulkin_thunder:0,moldsmal_pellets:10,moldsmal_seeds:80,
+  whimsun_circle:10,whimsun_columns:80,aaron_arms:10,aaron_sweat:80};
+ function ghost(api,m,boss){
+  const v=m.v;if(v.ghosts[boss])return v.ghosts[boss];
+  const st=api.S,keep={bgFrame:st.bgFrame,overlay:st.overlay,border:st.border};
+  let g=null;
+  try{g=api.addMonster(boss,m.x,m.y);st.mons=st.mons.filter(x=>x!==g)}catch(_){g=null}
+  st.bgFrame=keep.bgFrame;st.overlay=keep.overlay;
+  // stands (invisibly) where the custom monster is, so attacks that start at the body start there
+  if(g){g.ghost=true;g.alive=true;g.atk=m.atk;g.x=g.x0=R(m.x+(m.w-g.w)/2);g.y=R(m.y+m.h-g.h);v.ghosts[boss]=g}
+  return g;
+ }
+ // tagCreatorSourceBullet: the creator's modifiers on a bullet a source attack just fired.
+ function tag(api,m,b,layer){
+  if(b._cr)return;b._cr=1;
+  const pd=creatorPresetData(layer.preset);
+  const sp=Math.max(.1,(Number(layer.speed)||100)/100),sz=Math.max(.25,(Number(layer.size)||100)/100);
+  b.owner=m;
+  if(Number.isFinite(b.dmg))b.dmg=Math.max(0,b.dmg*Math.max(0,Number(layer.damage))/4);
+  for(const k of ['vx','vy','ax','ay','hs','vs','sp','speed'])if(Number.isFinite(b[k]))b[k]*=sp;
+  const spread=(Number(layer.spread)||0)*Math.PI/180;
+  if(spread&&(b.vx||b.vy)){const a=(rnd(2)-1)*spread,c=Math.cos(a),s=Math.sin(a),vx=b.vx*c-b.vy*s,vy=b.vx*s+b.vy*c;b.vx=vx;b.vy=vy}
+  const curve=(Number(layer.curve)||0)/30*Math.PI/180,grav=(Number(layer.gravity)||0)/900;
+  // Bullets a bullet fires (Toriel's hands dropping fire) belong to the same layer.
+  const st0=b.step;
+  b.step=(bb,a2)=>{
+   const n=api.S.bullets.length;
+   if(st0)st0(bb,a2);
+   if(curve&&(bb.vx||bb.vy)){const c=Math.cos(curve),s=Math.sin(curve),vx=bb.vx*c-bb.vy*s;bb.vy=bb.vx*s+bb.vy*c;bb.vx=vx}
+   if(grav)bb.vy+=grav;
+   for(const c of api.S.bullets.slice(n))tag(api,m,c,layer);
+  };
+  // the creator's turn length rules, not the source bullet's (blt_leapfrog ends its turn on death)
+  if(b.onDie){const d0=b.onDie;b.onDie=(...a)=>{const t=api.turntimer,e=api.endTurn;api.turntimer=api.endTurn=()=>{};try{return d0(...a)}finally{api.turntimer=t;api.endTurn=e}}}
+  const slot=creatorLayerVisualSlot(layer,0),style=slot.style||'source';
+  if(style!=='source'){
+   const im=creatorBulletImage(style,0,slot.data||'');
+   if(im){
+    b.img=im;b.ox=(im.naturalWidth||im.width)/2;b.oy=(im.naturalHeight||im.height)/2;b.angle=0;
+    if(b.draw){const d0=b.draw;b.draw=(g,bb)=>{if(bb.hidden)return;g.save();g.globalAlpha=bb.alpha??1;const w=(im.naturalWidth||im.width)*sz,h=(im.naturalHeight||im.height)*sz;g.drawImage(im,R(bb.x-w/2),R(bb.y-h/2),w,h);g.restore()};b._d0=d0}
+   }
+  }
+  if(sz!==1){
+   if(Array.isArray(b.box))b.box=b.box.map(n=>n*sz);
+   if(!b.draw){const im0=Array.isArray(b.img)?b.img[0]:b.img;if(im0){b.dw=(im0.naturalWidth||im0.width)*sz;b.dh=(im0.naturalHeight||im0.height)*sz;b.ox=(b.ox||0)*sz;b.oy=(b.oy||0)*sz}}
+   else if(style==='source'){const d0=b.draw;b.draw=(g,bb,a2)=>{g.save();g.translate(bb.x,bb.y);g.scale(sz,sz);g.translate(-bb.x,-bb.y);d0(g,bb,a2);g.restore()}}
+  }
+ }
+ // Flowey has no new-engine port: his two friendliness-pellet attacks, as the old engine had them.
+ function pellet(api,m,x,y,vx,vy,home){
+  return api.spawn({x,y,vx,vy,box:[-4,-4,8,8],dmg:4,home,wallKill:false,
+   step(b){
+    if(b.home){const h=api.heart,a=Math.atan2(h.y+8-b.y,h.x+8-b.x),cur=Math.atan2(b.vy,b.vx),sp=Math.hypot(b.vx,b.vy);let d=a-cur;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const n=cur+Math.max(-.014,Math.min(.014,d));b.vx=Math.cos(n)*sp;b.vy=Math.sin(n)*sp}
+    if(b.x<-40||b.x>680||b.y<-40||b.y>520)b.alive=false;
+   },
+   draw(g,b){g.save();g.fillStyle='#fff';g.beginPath();g.arc(b.x,b.y,4.2,0,7);g.fill();g.restore()}});
+ }
+ function floweyStep(api,m,f){
+  if(f.left<=0||--f.t>0)return;
+  f.t=f.gap;f.left--;
+  const [L,Rr,T]=api.S.ideal,before=api.S.bullets.length;
+  if(f.wave===0){
+   const x=(L+Rr)/2,y=T+4,h=api.heart,base=Math.atan2(h.y+8-y,h.x+8-x);
+   for(let i=-2;i<=2;i++){const a=base+i*.11;pellet(api,m,x,y,Math.cos(a)*3.07,Math.sin(a)*3.07,true)}
+  }else{
+   const n=f.count-f.left,fromLeft=n%2===1,x=fromLeft?L-8:Rr+8,off=(n%2)*8;
+   for(let i=0;i<6;i++)pellet(api,m,x,T+18+i*19+off,(fromLeft?1:-1)*2.87,0,false);
+  }
+  for(const b of api.S.bullets.slice(before))tag(api,m,b,f.layer);
+ }
+ function patternLayers(m){
+  const c=cfg(),pats=creatorPatternList(c),usable=creatorUsablePatternIndices(c);
+  const idx=usable[Math.floor(rnd(usable.length))]??0;
+  return ((pats[idx]||pats[0]).layers||[]).filter(l=>l&&l.enabled);
+ }
+ const actsOf=()=>creatorActList(cfg());
+ function actsDone(m){
+  const acts=actsOf(),req=acts.map((a,i)=>i).filter(i=>acts[i].required);
+  const done=i=>(m.v.prog[i]||0)>=Math.max(1,Number(acts[i].usesRequired)||1);
+  return req.length?req.every(done):acts.some((a,i)=>done(i));
+ }
+ function actText(raw,act,i,m){
+  const count=m.v.prog[i]||0,needed=Math.max(1,Number(act?.usesRequired)||1);
+  return String(raw||'').replaceAll('{name}',String(cfg().name||'the custom monster')).replaceAll('{act}',String(act?.name||'ACT'))
+   .replaceAll('{count}',String(count)).replaceAll('{needed}',String(needed)).replaceAll('{remaining}',String(Math.max(0,needed-count)));
+ }
+ function img(hurt){try{return creatorEnemyImage(hurt)}catch(_){return images.dummy||null}}
+ function dims(){
+  const im=img(false),sc=Math.max(.25,(Number(cfg().spriteScale)||100)/100);
+  let w=(im?.naturalWidth||im?.width||98)*sc,h=(im?.naturalHeight||im?.height||106)*sc;
+  const k=Math.min(1,300/w,220/h);return {w:R(w*k),h:R(h*k)};
+ }
+
+ NB.defs.set('custom',{
+  name:'CUSTOM',hp:120,atk:8,def:2,xp:0,gold:0,mercymod:-99999,wd:120,
+  get encounter(){return toNB(BOSS_OPTIONS.find(v=>v.id==='custom')?.encounter||'* A custom monster appeared!')},
+  size:()=>dims(),
+  pos:(i,n,cx)=>{const d=dims();return {x:R((n===1?320:cx)-d.w/2),y:Math.max(4,246-d.h)}},
+  setup(m,api){
+   const c=cfg();
+   m.name=String(c.name||'CUSTOM').slice(0,18);
+   m.maxhp=m.hp=Math.max(1,Number(c.hp)||120);m.atk=Math.max(0,Number(c.atk)||0);m.df=Number(c.def)||0;
+   Object.assign(m.v,{ghosts:{},active:[],flowey:[],prog:[],introDone:false,say:null});
+  },
+  draw(g,m){
+   const im=img(!!(m.hurt||!m.alive));if(!im)return;
+   g.save();g.imageSmoothingEnabled=false;g.globalAlpha=m.alpha??1;g.drawImage(im,R(m.x),R(m.y),m.w,m.h);g.restore();
+  },
+  acts:()=>['Check',...actsOf().map(a=>String(a.name||'ACT').slice(0,18))],
+  check(m){
+   const c=cfg(),req=actsOf().filter(a=>a.required);
+   const cond=req.length?`* Spare condition: complete ${req.length}&  required ACT${req.length===1?'':'s'}.`:'* Spare condition: complete any&  ACT.';
+   return `* ${String(c.name||'CUSTOM').toUpperCase()} - ATK ${m.atk} DEF ${m.df}&* ${toNB(c.checkText||'A custom monster.')}/${cond}/`;
+  },
+  act(m,i,name){
+   const acts=actsOf(),ai=Math.max(0,Math.min(acts.length-1,acts.findIndex(a=>String(a.name||'ACT').slice(0,18)===name))),act=acts[ai];
+   const was=actsDone(m),needed=Math.max(1,Number(act.usesRequired)||1);
+   m.v.prog[ai]=Math.min(99,(m.v.prog[ai]||0)+1);
+   const complete=m.v.prog[ai]>=needed,unlocked=actsDone(m);
+   if(unlocked)m.mercymod=99999;
+   let text=actText(complete&&act.completeText?act.completeText:act.progressText,act,ai,m);
+   if(unlocked&&!was)text+=`|* ${cfg().name||'The monster'} can now be SPARED.`;
+   return toNB(text).split('|').map(s=>s.trim()).filter(Boolean).join('/');
+  },
+  speech:()=>null,
+  border:()=>0,
+  attack(m,api){
+   const st=api.S,v=m.v;v.active=[];v.flowey=[];
+   const layers=patternLayers(m);
+   let border=null,blue=false,ms=3000;
+   for(const layer of layers){
+    const pd=creatorPresetData(layer.preset);
+    const count=Math.max(1,Math.min(60,Number(layer.count)||pd.count||1)),gap=Math.max(60,Number(layer.interval)||pd.interval||400);
+    ms=Math.max(ms,900+(count-1)*gap+1800);
+    const before=st.bullets.length;
+    if(pd.boss==='papyrus'){
+     blue=true;api.border(5);border=border??5;
+     try{NB.papPattern(api,m,pd.wave||0)}catch(_){}
+    }else if(pd.boss==='flowey'){
+     v.flowey.push({wave:pd.wave||0,t:2,gap:Math.max(2,R(gap*.03)),left:count,count,layer});
+    }else{
+     const g=ghost(api,m,pd.boss);if(!g)continue;
+     const keepHp=st.hp,keepTurn=st.turn;
+     g.v.cmd=CMD[pd.id]??50;g.v.conv=0;g.v.criticize=0;g.heardName=pd.id==='vulkin_fire'?'Encourage':null;
+     if(pd.id==='vulkin_thunder')st.hp=st.maxhp;
+     if(pd.boss==='napstablook'){st.turn=Math.max(2,st.turn||0);g.mercymod=-100+1}
+     st.curMon=g;
+     try{g.def.attack(g,api)}catch(_){}
+     st.curMon=null;st.hp=keepHp;st.turn=keepTurn;
+     if(g.v.gen&&Number.isFinite(g.v.gen.rate)&&pd.interval)g.v.gen.rate=Math.max(1,R(g.v.gen.rate*gap/pd.interval));
+     if(border==null)border=st.border;
+     v.active.push({g,layer});
+    }
+    for(const b of st.bullets.slice(before))tag(api,m,b,layer);
+   }
+   if(border!=null)api.border(border);else api.border(0);
+   api.soul(blue?'blue':'red');
+   if(blue){const h=api.heart;h.vspeed=-1;h.jumpstage=2}
+   api.turntimer(Math.max(60,Math.min(360,R(ms*.03))));
+   return `* ${cfg().name||'Custom'} watches your SOUL.`;
+  },
+  attackStep(m,api){
+   const st=api.S,v=m.v;
+   for(const a of v.active){
+    if(!a.g.def.attackStep)continue;
+    const before=st.bullets.length;st.curMon=a.g;
+    try{a.g.def.attackStep(a.g,api)}catch(_){}
+    st.curMon=m;
+    for(const b of st.bullets.slice(before))tag(api,m,b,a.layer);
+   }
+   for(const f of v.flowey)floweyStep(api,m,f);
+  },
+  endAttack(m,api){
+   for(const a of m.v.active)try{a.g.def.endAttack&&a.g.def.endAttack(a.g,api)}catch(_){}
+   m.v.active=[];m.v.flowey=[];
+  },
+  step(m,api){
+   const v=m.v,st=api.S;
+   // the creator's intro line for the player's role, before the first menu
+   if(!v.introDone){
+    v.introDone=true;
+    const intro=creatorDialogueForRole(practiceMode);
+    const pages=intro?intro.split('|').map(s=>s.trim()).filter(Boolean).slice(0,6):[];
+    if(pages.length){
+     st.myfight=99;st.mnfight=99;
+     const x=m.x+m.w+8,y=Math.max(10,m.y);
+     const w=new NB.Writer(pages.map(p=>toNB(p)+'/'),{typer:2,x:x+36,y:y+10});
+     v.say={m,x,y,wide:true,img:null,w};st.bubbles.push(v.say);
+    }
+   }
+   if(v.say){
+    v.say.w.step();
+    if(v.say.w.done){st.bubbles=st.bubbles.filter(b=>b!==v.say);v.say=null;st.nextFlavor=toNB(BOSS_OPTIONS.find(o=>o.id==='custom')?.encounter||'* A custom monster appeared!');st.myfight=0;st.mnfight=3;api.border(0)}
+   }
+  },
+  flavor:m=>`* ${cfg().name||'Custom'} watches your SOUL.`
  });
 })();
 /* ---- NB content: Hotland I (obj_vulkin + obj_vulkinbody, obj_tsunderplane + obj_tsunderplane_body,
