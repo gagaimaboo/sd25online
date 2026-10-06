@@ -29232,6 +29232,7 @@ const NB=(()=>{
   if(S.invc>0)S.invc--;
   h.frame=S.invc>0?(h.frame+.5)%2:0;
   if(S.mnfight!==2||!h.visible)return;
+  if(h.mode==='purple')return; // obj_purpleheart: its owner moves it along the strings
   const sp=S.sp,slow=held.cancel?sp/2:0;
   if(h.mode==='red'){
    if(held.up)h.y-=sp-slow;
@@ -29732,6 +29733,7 @@ const NB=(()=>{
   const got=S.hp>=S.maxhp?'&* Your HP was maxed out.':`&* You recovered ${S.hp-before} HP!`;
   snd('heal');
   if(it.onUse)it.onUse(api);
+  for(const m of alive())if(m.def.onItem)m.def.onItem(m,it,api);
   write(it.useText||`* You ate the ${it.name}.${got}`,{end:'/',onEnd:()=>endPlayerTurn()});
  }
  // ------------------------------------------------------------ MERCY ------
@@ -30209,6 +30211,7 @@ const NB=(()=>{
   S.talked=91;
   const k=S.bag.indexOf(it);if(k>=0)S.bag.splice(k,1);
   if(it.onUse)it.onUse(api);
+  for(const m of alive())if(m.def.onItem)m.def.onItem(m,it,api);
   let text=from===to?`* ${partyWho(from)} ate the ${it.name}.`
    :`* ${partyWho(from)} gave the ${it.name}\n  to ${to.leader?'you':to.say} and ${to.leader?'you':'she'} ate it.`;
   if(it.healsParty){const n=partyItemHeal(it,to);text+=`\n* Everyone recovered ${n} HP!`;for(const p of S.party)partyHeal(p,n)}
@@ -30849,6 +30852,7 @@ const NB=(()=>{
   let im=frames[Math.floor(h.frame)%frames.length]||images.heart;
   if(h.gtfo&&images.nbHeartGtfo)im=images.nbHeartGtfo[Math.floor(S.t/2)%2]||im;
   if(h.mode==='blue'&&images.nbHeartBlue)im=images.nbHeartBlue;
+  if(h.mode==='purple'&&images.purpleHeart)im=images.purpleHeart[Math.floor(h.frame)%2]||images.purpleHeart[0]||im;
   // spr_heartgreen (exports reversed: _1 is image_index 0).
   if(h.mode==='green'&&images.nbHeartGreen)im=images.nbHeartGreen[1-(Math.floor(h.frame)%2)]||im;
   if(im)g.drawImage(im,Math.round(h.x),Math.round(h.y),16,16);
@@ -36173,12 +36177,13 @@ if(c.lesson > 20) {
   },
   draw(g,m){
    const s=m.v.siner,x=m.x,y=m.y;
-   dse(g,images.vulkinFeetBack,x+2+Math.cos(s/6)*2,y+102+Math.sin(s/6)*2,2,2);
+   // the feet are exported trimmed: they start 13px and 5px into their frames
+   dse(g,images.vulkinFeetBack,x+2+Math.cos(s/6)*2,y+102+Math.sin(s/6)*2,2,2,0,1,-13,0);
    dse(g,images.vulkinBody,x,y,2,2);
    dse(g,fr(images.vulkinLava,s/8),x+42,y+10,2,2);
    const face=m.hurt||(!m.alive&&!m.spared)?images.nbVulkinFace2:vulkinFace(m);
    dse(g,fr(face,s/15),x+44+Math.sin(s/12)*7,y+50,2-Math.abs(Math.sin(s/12))*.2,2,0,1,13,0);
-   dse(g,images.vulkinFeetFront,x+2+Math.sin(s/6)*2,y+102+Math.cos(s/6)*2,2,2);
+   dse(g,images.vulkinFeetFront,x+2+Math.sin(s/6)*2,y+102+Math.cos(s/6)*2,2,2,0,1,-5,0);
   },
   bubblePos:m=>({x:m.x+100,y:m.y}),
   acts:['Check','Criticize','Encourage','Hug'],
@@ -36661,9 +36666,573 @@ if(c.lesson > 20) {
    onHit:b=>api.damageStd(b.dmg),
    step(b){b.size+=.1;if(b.size>b.max)b.alpha-=.2;b.xs=b.ys=b.size;if(b.alpha<.06){b.alive=false;return}b.x=b.x0+3-rnd(6);b.y=b.y0+3-rnd(6)}});
  }
+ // shared with the other Hotland ports
+ NB.hl={dse,pixHit,sprite,sprBullet,move,tick,fr,choose,talkLen};
+})();
+/* ---- NB content: Muffet (obj_spiderb + obj_spiderb_body, obj_purpleheart, obj_spiderbulletgen with
+        obj_spiderbullet/obj_donutbullet/obj_croissant/obj_vertspider, obj_fakeborderdraw + the pet
+        (obj_grosscupcake2, obj_hideouscupcake), obj_spiderpour, obj_signspider, obj_telegramspider,
+        obj_sadspider) ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB;
+ const {dse,sprBullet,tick,fr,choose,talkLen}=NB.hl;
+ const S=()=>NB.S;
+ const R=Math.round;
+ const PURPLE='#800080'; // draw_set_color(8388736)
+ // obj_spiderbulletgen event_user(3): scr_sp(btype, speed, choice, side, time) lists, the
+ // firing rate between entries and the turn-length adjustment, per attack.
+ const SPIDER_SCRIPTS={
+  0:{rate:10,tt:-30,list:[[0,8,1,1,0],[0,8,1,1,20],[0,8,3,1,0],[0,8,3,1,20],[0,8,2,0,0],[0,8,2,0,20],[0,8,3,0,0],[0,8,1,0,0]]},
+  1:{rate:8,tt:0,list:[[0,8,2,1,0],[0,8,3,1,16],[0,8,1,1,0],[0,8,2,1,16],[0,8,2,0,0],[0,8,1,0,16],[0,8,2,0,0],[0,8,3,0,16],[0,8,2,1,0],[0,8,3,1,16],[0,8,1,1,0],[0,8,2,1,16]]},
+  2:{rate:12,tt:0,list:[[3,9,3,1,0],[0,9,1,1,16],[3,9,1,1,0],[0,9,3,1,16],[0,9,2,0,16],[3,9,2,0,16],[0,9,2,1,16],[3,9,2,1,16]]},
+  3:{rate:14,tt:10,list:[[0,9,1,1,8],[0,9,3,1,8],[0,9,2,1,16],[3,9,1,0,13],[3,9,3,0,13],[3,9,2,0,20],[1,8,1,0,20],[1,8,3,0,20],[1,8,1,0,20]]},
+  4:{rate:14,tt:0,list:[[3,8,2,1,18],[0,8,2,1,18],[3,9,2,1,15],[0,9,2,1,15],[3,9.5,2,1,14],[0,9.5,2,1,14],[3,10,2,1,13],[0,10,2,1,13],[3,10.5,2,1,12],[0,10.5,2,1,12],[3,11,2,1,11],[0,11,2,1,11],[3,12,2,1,10],[0,12,2,1,10],[3,13,2,1,9],[0,13,2,1,9],[3,13,2,1,9],[0,13,2,1,9]]},
+  5:{rate:15,tt:-10,list:[[3,10,2,1,0],[1,5,1,1,1],[1,5,2,1,20],[3,10,0,0,0],[1,5,1,0,1],[1,5,2,0,20],[3,10,3,1,0],[1,5,1,1,1],[1,5,2,1,20],[3,10,2,0,0]]},
+  6:{rate:10,tt:-10,list:[[0,11,1,1,0],[0,11,0,0,0],[0,11,2,1,0],[0,11,0,0,0],[0,11,3,1,0],[0,11,0,0,0],[0,11,2,1,0],[0,11,0,0,0],[0,11,1,1,0],[0,11,0,0,0],[0,11,2,1,0],[0,11,0,0,0]]},
+  7:{rate:14,tt:40,list:[[1,6,1,1,1],[1,6,3,1,1],[1,6,1,0,1],[1,6,3,0,20],[0,12,1,1,0],[0,12,1,0,8],[0,12,3,1,0],[0,12,3,0,8],[0,12,2,1,0],[0,12,2,0,20],[2,13,2,0,0]]},
+  8:{rate:20,tt:10,list:[[2,13,1,0,1],[2,13,3,0,30],[2,13,2,0,0],[2,13,1,1,1],[2,13,3,1,30],[2,13,2,1,30]]},
+  9:{rate:14,tt:0,list:[[0,9,3,1,10],[3,9,1,1,15],[0,9.5,1,1,10],[3,9.5,3,1,14],[0,10,3,1,9],[3,10,1,1,13],[0,11,1,1,9],[3,11,3,1,12],[0,12,3,1,8],[3,12,1,1,11],[0,13,1,1,8],[3,13,3,1,18],[0,13,2,1,8],[3,13,2,1,9],[0,13,2,1,8],[3,13,2,1,9]]},
+  10:{rate:9,tt:0,list:[[0,12,3,1,0],[0,12,0,0,0],[0,12,1,1,0],[0,12,0,0,0],[0,12,2,1,0],[0,12,0,0,0],[0,12,3,1,0],[0,12,0,0,0],[0,12,1,1,0],[0,12,0,0,0],[0,12,2,1,0],[0,12,0,0,18],[3,12,2,1,1],[3,12,2,0,0]]},
+  11:{rate:20,tt:0,list:[[1,8,1,0,1],[1,8,2,0,0],[1,8,1,1,1],[1,8,2,1,0],[1,8,3,0,1],[1,8,2,0,0],[1,8,3,1,1],[1,8,2,1,30],[1,8,1,0,1],[1,8,3,0,0],[1,8,3,1,1],[1,8,1,1,0]]},
+  12:{rate:18,tt:90,list:[[2,13,1,0,0],[2,13,3,0,0],[2,13,2,0,0],[2,13,1,1,0],[2,13,3,1,0],[2,13,2,1,0],[2,13,1,0,0],[2,13,3,0,0],[2,13,2,0,0]]},
+  13:{rate:14,tt:30,list:[[3,5,2,1,0],[0,8,2,0,10],[3,5,2,1,0],[0,8,2,0,10],[3,5,2,1,0],[0,8,2,0,10],[3,5,2,1,0],[0,8,2,0,10],[3,5,2,1,0],[0,8,2,0,10]]},
+  14:{rate:14,tt:50,list:[[1,6,1,0,1],[1,6,2,0,1],[1,6,3,1,1],[1,6,2,1,38],[3,9,2,1,1],[3,9,2,0,8],[3,9,2,1,40],[2,13,1,0,4],[2,13,3,1,4],[2,13,3,0,4],[2,13,1,1,25],[0,8,2,1,1],[0,8,2,0,15]]},
+  15:{rate:9,tt:0,list:[[3,10,1,1,0],[3,10,2,1,0],[3,10,3,1,0],[3,10,2,1,0],[3,10.5,1,1,0],[3,10.5,2,1,0],[3,10.5,3,1,0],[3,10.5,2,1,0],[3,11,1,1,0],[3,11,2,1,0],[3,11,3,1,0],[3,11,2,1,0],[3,11.5,1,1,0],[3,11.5,2,1,0],[3,12,3,1,0],[3,12,2,1,0],[3,12,1,1,0],[3,12,2,1,0],[3,12,3,1,0]]}
+ };
+ // GameMaker compares reals with an epsilon (rotfactor counts down in 0.1 steps).
+ const near0=v=>Math.abs(v)<1e-5;
+
+ // ------------------------------------------------------------------ body
+ // obj_spiderb_body at obj_spiderb + (62,-2). Several part sprites are exported trimmed to
+ // their bounding box, so their origins are shifted by the trim.
+ const EYES=[['spiderEyeBig','nbSpiderEyeBigHurt',24,42,2],['spiderEyeMed','nbSpiderEyeMedHurt',30,32,2],['spiderEyeCen','nbSpiderEyeCenHurt',42,26,2],['spiderEyeMed','nbSpiderEyeMedHurt',62,32,-2],['spiderEyeBig','nbSpiderEyeBigHurt',68,42,-2]];
+ function bodyStep(m){
+  const b=m.v.body;
+  if(m.hurt){b.siner=0;b.eye=[0,0,0,0,0]}
+  const a=b.anim;
+  for(let i=0;i<5;i++){
+   if(a>i*5&&a<7+i*5)b.eye[i]+=.5;
+   if(a>12+i*5&&a<16+i*5)b.eye[i]--;
+   if(a>70&&a<77)b.eye[i]+=.5;
+   if(a>88&&a<95)b.eye[i]-=.5;
+  }
+  if(!m.hurt)b.siner++;
+  b.anim++;if(b.anim>110)b.anim=0;
+ }
+ function bodyDraw(g,m){
+  const b=m.v.body,st=S(),s=b.siner,hurt=m.hurt||(!m.alive&&!m.spared);
+  const x=m.x+62,y0=m.y-2,y=st&&st.edge.T<240?y0-4-240-st.edge.T:y0; // lifted away while the board rises for the pet
+  const heady=y+Math.sin(s/5)*4,hair=Math.sin(s/5)*25,S5=Math.sin(s/5),C5=Math.cos(s/5);
+  dse(g,images.spiderUpperArm,x+14,y+86+26+C5,-2,2,-S5*6,1,0,18);
+  dse(g,images.spiderShoulder,x+42,y+86+C5,-2,2);
+  dse(g,images.spiderUpperArm,x+78,y+86+26+C5,2,2,S5*6,1,0,18);
+  dse(g,images.spiderShoulder,x+50,y+86+C5,2,2);
+  dse(g,images.spiderHair,x+80,heady*1.02+18,2,2,hair,1,0,5);
+  dse(g,images.spiderHair,x+12,heady*1.02+18,-2,2,-hair,1,0,5);
+  dse(g,images.spiderHead,x,heady,2,2,0,1,0,-1);
+  dse(g,images.spiderLegs,x+30,y+162,2,2);
+  const arm=S5<0?1:0,la=images.spiderLowArm?.[arm],lox=arm?8:13;
+  dse(g,la,x+26,y+130+S5,2,2,S5*8-8,1,lox,0);
+  dse(g,la,x+64,y+130+S5,-2,2,-(S5*8)+8,1,lox,0);
+  const pour=b.mode===1,t=pour?b.sinert:s,ST=Math.sin(t/5),CT=Math.cos(t/5),tilt=pour?36:24;
+  dse(g,images.spiderTeapot,x-22,y+104+CT*2,2,2,-ST*tilt,1,19,5);
+  dse(g,images.spiderMidArm,x+12,y+116+CT*2,2,2);
+  dse(g,images.spiderMidArm2,x+12,y+130+CT*2,2,2,ST*3,1,15,14);
+  dse(g,images.spiderTeapot,x+114,y+104+CT*2,-2,2,pour?ST*36:-ST*24,1,19,5);
+  dse(g,images.spiderMidArm,x+80,y+116+CT*2,-2,2);
+  dse(g,images.spiderMidArm2,x+80,y+130+CT*2,-2,2,ST*3,1,15,14);
+  dse(g,images.spiderPants,x+20,y+114+S5,2,2);
+  dse(g,images.spiderShirt,x+28,y+92+S5*2,2,2);
+  EYES.forEach(([k,kh,ex,ey,xs],i)=>dse(g,hurt?images[kh]:fr(images[k],Math.max(0,Math.min(3,Math.floor(b.eye[i])))),x+ex,heady+ey,xs,2));
+ }
+
+ // ----------------------------------------------------------- purple SOUL
+ // obj_purpleheart: three strings 40px apart; LEFT/RIGHT slide along a string, UP/DOWN hop
+ // to the next one over 3 steps. ttype 3 raises the board for the pet (more strings appear
+ // below), ttype 1 scrolls the strings down; falling off the last one is a 6 damage bite.
+ function makeHeart(m,api){
+  const [L,Rr,T]=api.S.ideal,xmid=(L+Rr)/2;
+  m.v.ph={type:0,ttype:0,yadd:0,yadd2:3,yz2:0,xmid,xlen:100,yamt:3,yspace:40,yno:2,yzero:T+30,moving:0,space:0,yoff:0,x:xmid,y:T+30+40};
+  api.soul('purple');
+  // the strings are drawn under the bullets, like obj_purpleheart (depth 0) under them (-1)
+  api.spawn({x:0,y:0,box:[0,0,0,0],manual:true,wallKill:false,kill:false,mask:()=>false,
+   draw(g){const ph=m.v.ph;if(!ph)return;g.fillStyle=PURPLE;for(let i=0;i<ph.yamt;i++)g.fillRect(R(ph.xmid-ph.xlen),R(ph.yzero+ph.yspace*i+ph.yoff),ph.xlen*2+1,1)}});
+ }
+ function heartStep(m,api){
+  const ph=m.v.ph;if(!ph)return;
+  const H=NB.held,P=NB.pressed;
+  if(ph.type!==1){
+   if(H.left&&ph.x>ph.xmid-ph.xlen)ph.x-=4;
+   if(H.right&&ph.x<ph.xmid+ph.xlen)ph.x+=4;
+   if(P.up&&ph.moving===0&&ph.yno>1)ph.moving=1;
+   if(ph.moving===1){ph.space+=ph.yspace/3;ph.y=ph.yzero+(ph.yno-1)*ph.yspace-ph.space+ph.yoff;if(ph.space>=ph.yspace){ph.yno--;ph.space=0;ph.moving=0}}
+   if(P.down&&ph.moving===0&&ph.yno<ph.yamt)ph.moving=2;
+   if(ph.moving===2){ph.space+=ph.yspace/3;ph.y=ph.yzero+(ph.yno-1)*ph.yspace+ph.space+ph.yoff;if(ph.space>=ph.yspace){ph.yno++;ph.space=0;ph.moving=0}}
+  }
+  if(ph.ttype===1){
+   ph.yoff+=ph.yadd;ph.y+=ph.yadd;
+   if(ph.yoff>ph.yspace){
+    ph.yno++;
+    if(ph.yno>ph.yamt){ph.yno=ph.yamt;api.damageStd(6)}
+    ph.yoff=0;
+    if(ph.moving===0)ph.y=ph.yzero+(ph.yno-1)*ph.yspace+ph.space+ph.yoff;
+   }
+  }
+  if(ph.ttype===3){
+   const v=m.v;
+   if(!v.hideous)v.hideous={x:ph.xmid-ph.xlen,y:460,vy:0,siner:0,siner2:0,alpha:0,f:0};
+   if(v.hideous.y>320)v.hideous.y-=4;
+   if(ph.yzero>100)ph.yzero-=4;
+   ph.y-=4;ph.yz2+=4;
+   if(ph.yz2>ph.yspace){ph.yz2-=ph.yspace;ph.yamt++}
+   if(ph.yzero<=100){ph.yzero=100;ph.ttype=1;ph.yadd=ph.yadd2}
+  }
+  const h=api.heart;h.x=ph.x-8;h.y=ph.y-8;
+ }
+
+ // -------------------------------------------------------------- bullets
+ // obj_spiderbullet & co. appear one step after they're made, on their string, outside
+ // the strings' ends, and pass on through (a hit doesn't remove them).
+ function pastry(m,api,kind,choice,side,speed,dmg){
+  const im=kind===1?images.donutBullet:kind===2?images.croissantR:images.spiderBullet;
+  sprBullet(api,{x:-100,y:-100,im,ox:12,oy:12,hidden:true,a0:1,kind,choice,side,speed,dmg,kill:false,
+   onHit:b=>api.damageStd(b.dmg),
+   step(b){
+    const ph=m.v.ph;if(!ph){b.alive=false;return}
+    if(tick(b,'a0')){
+     b.y=ph.yzero+(b.choice-1)*ph.yspace;
+     const far=b.kind===1?ph.xlen*2:ph.xlen*2+40;
+     if(b.side===0){b.x=ph.xmid-far;b.vx=b.speed}else{b.x=ph.xmid+far;b.vx=-b.speed}
+     if(b.kind===1){if(b.choice===1)b.vy=Math.abs(b.vx)/2;if(b.choice===3)b.vy=-Math.abs(b.vx)/2}
+     b.hidden=false;
+    }
+    if(b.hidden)return;
+    if(b.kind===2){
+     // obj_croissant: slows, turns and flies back (a boomerang)
+     if(b.side===0){b.vx-=.25;b.rot+=8}else{b.vx+=.25;b.rot-=8}
+     if(b.vx>0&&b.x>ph.xmid+ph.xlen*5){b.alive=false;return}
+     if(b.vx<0&&b.x<ph.xmid-ph.xlen*5){b.alive=false;return}
+    }else{
+     if(b.vx>0&&b.x>ph.xmid+ph.xlen*2){b.alive=false;return}
+     if(b.vx<0&&b.x<ph.xmid-ph.xlen*2){b.alive=false;return}
+    }
+    if(b.kind===1){
+     // obj_donutbullet: bounces between the outer strings, squashing on each bounce
+     if(b.ys<1)b.ys+=.1;
+     if(b.vy>0&&b.y>ph.yzero+(ph.yamt-1)*ph.yspace+10){b.y-=b.vy;b.vy=-b.vy;b.ys=.6}
+     if(b.vy<0&&b.y<ph.yzero-10){b.y-=b.vy;b.vy=-b.vy;b.ys=.6}
+    }
+    b.x+=b.vx;b.y+=b.vy||0;
+   }});
+ }
+ // obj_vertspider: rides the scrolling strings down, bouncing between the walls.
+ function vertSpider(m,api,dmg){
+  const ph=m.v.ph;if(!ph)return;
+  const y=ph.yzero-ph.yspace*2+ph.yoff;
+  sprBullet(api,{x:ph.xmid-ph.xlen+Math.floor(rnd(ph.xlen/10))*22,y,fakey:y,fakeyoff:0,fakeyamt:0,a0:2,im:images.spiderBullet,ox:12,oy:12,dmg,kill:false,vx:0,vert:true,
+   onHit:b=>api.damageStd(b.dmg),
+   step(b){
+    const ph=m.v.ph;if(!ph){b.alive=false;return}
+    if(tick(b,'a0')){const t=m.v.turnamt;b.vx=(t===10||t===16)?choose(-1.5,1.5):choose(-1,1)}
+    b.fakeyoff+=ph.yadd;if(b.fakeyoff>ph.yspace){b.fakeyoff=0;b.fakeyamt++}
+    b.y=b.fakey+b.fakeyoff+b.fakeyamt*ph.yspace;
+    if(b.y>400){b.alive=false;return}
+    b.x+=b.vx;
+    const e=api.S.edge;
+    if(b.vx>0&&b.x>e.R-6){b.x-=b.vx;b.vx=-b.vx}
+    if(b.vx<0&&b.x<e.L+6){b.x-=b.vx;b.vx=-b.vx}
+   }});
+ }
+ function genStep(m,api,gen){
+  const v=m.v,late=v.turnamt>=15;
+  if(tick(gen,'a2')&&gen.bno<gen.list.length){
+   // alarm[2]: the next scripted entry
+   const [bt,sp,ch,sd,time]=gen.list[gen.bno];
+   const side=()=>sd===2?choose(0,1):sd;
+   const dmg=gen.dmg-(late?1:0);
+   if(bt<3)pastry(m,api,bt,ch===0?choose(1,2,3):ch,side(),sp,dmg);
+   else{
+    const pair={1:[1,2],2:[1,3],3:[2,3]}[ch]||[1+Math.floor(rnd(v.ph?.yamt||3)),1+Math.floor(rnd(v.ph?.yamt||3))],s2=side();
+    pastry(m,api,0,pair[0],s2,sp,dmg);pastry(m,api,0,pair[1],s2,sp,dmg);
+   }
+   gen.a2=time||gen.rate;gen.bno++;
+   if(gen.bno>=gen.list.length)gen.a2=-1;
+  }
+  if(tick(gen,'a0')){
+   // alarm[0] for the pet's turns: three spiders riding the strings down
+   const t=gen.type,dmg=t===16?gen.dmg-1:gen.dmg;
+   for(let i=0;i<3;i++)vertSpider(m,api,dmg);
+   gen.a0=t===13?22:t===14?18:16;
+   for(const b of api.S.bullets)if(b.dmg!=null&&b.vert)b.dmg=gen.dmg-(late?1:0);
+  }
+ }
+
+ // ------------------------------------------------- the pet (obj_fakeborderdraw)
+ // The box (captured from the screen, bullets and SOUL included) slides away to the left,
+ // floats back in, the box widens and the pet peeks in (obj_grosscupcake2), then the board
+ // rises over a cupcake mouth (obj_hideouscupcake) and the strings start scrolling down.
+ function fakeStep(m,api){
+  const f=m.v.fake;if(!f)return;
+  const st=api.S,v=m.v,ph=v.ph;
+  if(!f.moved){f.xx=st.ideal[0]-60;f.moved=1}
+  f.yy=st.edge.T;
+  if(tick(f,'a4'))f.con++;
+  if(f.con===0){f.siner=0;f.factor=20}
+  if(f.xx>=-60&&f.con===0)f.xx-=10;
+  if(f.xx<=-60&&f.con===0)f.con=1;
+  if(f.con===2){f.border=23;f.a4=60;v.gross={x:st.edge.R+10,y:st.edge.B-122,a0:200,a1:30,f:0};f.con=3}
+  if(f.con===3)f.siner=0;
+  if(f.con===4){
+   f.border=22;if(ph)ph.ttype=3;f.con=5;
+   const t=v.turnamt===5?13:v.turnamt===10?14:v.turnamt===16?16:13;
+   if(ph&&t===14)ph.yadd2=4;if(ph&&t===16)ph.yadd2=5;
+   v.gens.push({type:t,dmg:f.dmg,list:[],bno:0,a2:-1,a0:60,rate:10});
+   f.siner=0;f.rotfactor=5;
+  }
+  if(f.con===5){
+   if(ph&&ph.yadd<5)ph.yadd+=.01;
+   f.siner++;
+   if(st.turntimer<80&&f.rotfactor>0){
+    f.rotfactor-=.1;
+    if(near0(f.rotfactor)&&v.turnamt===16){f.rotfactor=0;st.turntimer=370;f.con=6;v.gens=[]}
+   }
+  }
+  if(f.con===6){
+   f.border=21;
+   if(ph){api.heart.x=ph.x-8;api.heart.y=ph.y-8}
+   v.ph=null;api.soul('red');
+   if(v.hideous)v.hideous.vy=4;
+   for(const b of st.bullets)if(b.vert)b.alive=false;
+   f.con=7;f.a4=40;
+  }
+  if((f.con===7||f.con===8)&&api.heart.y<st.edge.T+20)api.heart.y=st.edge.T+20;
+  if(f.con===8){v.hideous=null;v.con=50;st.turntimer=99999;v.fake=null;return}
+  if(f.con===1){
+   f.xx++;f.siner++;
+   if(f.xx>=160){f.xx=160;f.factor-=2;if(f.factor<=1){f.factor=0;f.con=2}}
+  }
+  // SCR_BORDERSETUP 21/22/23: 22 and 23 keep the top of the box 10px above the strings.
+  const off=ph?Math.min(250,ph.yzero):0,T=off?off-10:250;
+  if(f.border===22)api.borderRect(197,437,T,385);
+  else if(f.border===23)api.borderRect(197,537,T,385);
+  else if(f.border===21)api.borderRect(197,437,250,385);
+ }
+ function fakeDraw(g,st,m){
+  const f=m.v.fake;if(!f||st.mnfight!==2)return;
+  const e=st.edge,x0=e.L-100,y0=e.T,W=e.R-e.L+200,H=e.B-e.T+8;
+  const t=g.getTransform(),dx=t.a*x0+t.e,dy=t.d*y0+t.f,sw=Math.round(W*t.a),sh=Math.round(H*t.d);
+  if(sw<=0||sh<=0)return;
+  const c=f.c||(f.c=document.createElement('canvas'));if(c.width!==sw||c.height!==sh){c.width=sw;c.height=sh}
+  const cg=c.getContext('2d');cg.clearRect(0,0,sw,sh);cg.drawImage(g.canvas,dx,dy,sw,sh,0,0,sw,sh);
+  g.save();g.fillStyle='#000';
+  if(f.con<6){g.fillRect(e.L-200,e.T,e.R+280-(e.L-200),e.B+8-e.T);g.fillRect(0,st.ideal[2],640,st.ideal[3]+5-st.ideal[2])}
+  const put=(yy,rot)=>{g.save();g.imageSmoothingEnabled=false;g.translate(f.xx+W/2,yy+H/2);if(rot)g.rotate(-rot*Math.PI/180);g.drawImage(c,-W/2,-H/2,W,H);g.restore()};
+  if(f.con===0||f.con===3)put(f.yy,0);
+  else if(f.con===1)put(f.yy+Math.sin(f.siner/6)*f.factor,0);
+  else if(f.con===5)put(f.yy,Math.sin(f.siner/10)*f.rotfactor);
+  g.restore();
+ }
+ // The pet and the pours, clipped to the box like draw_self_border_e.
+ function clipBox(g,st,fn){const e=st.edge;g.save();g.beginPath();g.rect(e.L+1,st.ideal[2]+1,e.R-e.L,st.ideal[3]-st.ideal[2]);g.clip();fn();g.restore()}
+
+ // ----------------------------------------------------------- tiny spiders
+ // spr_tinyspider (origin 5,5) is exported trimmed: frame 0 sits 2px left of the origin,
+ // frame 1 3px. spr_tinyspider_sign's frames are trimmed and in reverse order.
+ function tiny(g,f,x,y){const im=fr(images.tinySpider,f),k=Math.floor(f)%2;dse(g,im,x,y,2,2,0,1,k?3:2,0)}
+ function sign(g,i,x,y){
+  const k=Math.max(0,Math.min(4,Math.floor(i))),im=images.tinySign?.[4-k];if(!im)return;
+  const w=im.naturalWidth||im.width;dse(g,im,x,y,2,2,0,1,w/2+.5,55);
+ }
+ const SIGN_ICONS={0:[['spiderBullet',0]],1:[['spiderBullet',0]],6:[['spiderBullet',0]],10:[['spiderBullet',0]],8:[['croissantL',0]],12:[['croissantL',-15],['croissantL',5]],
+  2:[['spiderBullet',-15],['spiderBullet',15]],13:[['spiderBullet',-15],['spiderBullet',15]],11:[['donutBullet',-15],['donutBullet',15]],
+  3:[['spiderBullet',-15],['donutBullet',5]],5:[['spiderBullet',-15],['donutBullet',5]],7:[['spiderBullet',-15],['donutBullet',5]],
+  4:[['cupcakeBullet',0]],9:[['cupcakeBullet',0]],15:[['cupcakeBullet',0]],14:[['spiderBullet',-25],['donutBullet',0],['croissantL',25]]};
+ // obj_signspider: walks in after each attack with what comes next ("Up Next").
+ function signSpider(signno){
+  return {x:650,y:230,vx:-10,con:0,signimg:0,buffer:15,signno,f:0,isp:.5,muffetSign:true,
+   step(e){
+    const st=S();
+    if(e.x<580&&e.con===0)e.vx++;
+    if(e.x<580&&e.vx===0&&e.con===0)e.con=1;
+    if(e.con===1){e.f=1;e.isp=0;if(e.signimg<4)e.signimg+=.5}
+    e.buffer--;
+    if((st.myfight>0||st.mnfight>0)&&e.con<2&&e.buffer<1)e.con=2;
+    if(e.con===2){e.signimg-=.5;if(e.signimg<1)e.con=3}
+    if(e.con===3){e.isp=.5;if(e.vx<10)e.vx++;if(e.x>650)e.dead=true}
+    e.f+=e.isp;e.x+=e.vx;
+   },
+   draw(g,e){
+    tiny(g,e.f,e.x,e.y);
+    if(e.con===1||e.con===2)sign(g,e.signimg,e.x,e.y);
+    if(e.con===1&&e.signimg>=4){
+     if(typeof ui6T==='function')ui6T('Up Next',e.x-20,e.y-100,{f:'text',s:1,c:'#ffffff'});
+     for(const [k,dx] of SIGN_ICONS[e.signno]||[])dse(g,images[k],e.x+dx,e.y-70,1,1,0,1,12,12);
+    }
+   }};
+ }
+ // obj_telegramspider: brings the telegram from the RUINS spiders.
+ function telegramSpider(){
+  return {x:670,y:230,vx:-6,con:0,siner:0,f:0,
+   step(e){e.siner++;e.f+=.25;if(e.con===0&&e.x<570){e.vx+=.2;if(e.vx>=0){e.vx=0;e.con=1}}if(e.con===2){e.vx++;if(e.x>700)e.dead=true}e.x+=e.vx},
+   draw(g,e){tiny(g,e.f,e.x,e.y);dse(g,images.spiderTelegram,e.x-4,e.y-2,2,2,Math.sin(e.siner/10)*10,1,20,20)}};
+ }
+ // obj_sadspider: after Muffet dies, a little spider walks up, leaves, comes back with a
+ // flower, sets it down and goes. Then the battle ends.
+ function sadSpider(api){
+  return {x:730,y:230,vx:-3,con:0,isp:.2,f:0,a4:-1,flower:null,
+   step(e){
+    if(tick(e,'a4'))e.con++;
+    if(e.con===0&&e.x<400){e.vx-=.2;if(e.vx<=0){e.isp=0;e.vx=0;e.con=1}}
+    if(e.con===1){e.a4=90;e.con=2}
+    if(e.con===2){e.isp=.1;e.vx=-1;e.con=3;e.a4=30}
+    if(e.con===4){e.isp=0;e.vx=0;e.con=5;e.a4=90}
+    if(e.con===6){e.vx=6;e.isp=.25;e.con=7}
+    if(e.con===7&&e.x>800){e.con=8;e.flower={x:e.x,y:e.y-8};e.vx=-3}
+    if(e.con>7&&e.con<10&&e.flower){e.flower.x=e.x-20;e.flower.y=e.y-20}
+    if(e.con===8&&e.x<380){e.vx+=.1;if(e.vx>=0){e.isp=0;e.vx=0;e.con=9;e.a4=50}}
+    if(e.con===10){e.flower.x-=.5;e.flower.y+=.25;if(e.flower.y>e.y-6){e.con=11;e.a4=90}}
+    if(e.con===12){e.vx=2;e.isp=.25;e.con=13;e.a4=20}
+    if(e.con===14){e.vx=0;e.isp=0;e.con=15;e.a4=60}
+    if(e.con===16){e.vx=8;e.isp=.5;e.con=17;api.win()}
+    e.f+=e.isp;e.x+=e.vx;
+   },
+   draw(g,e){if(e.flower)dse(g,images.nbTinyFlower,e.flower.x,e.flower.y,2,2);tiny(g,e.f,e.x,e.y)}};
+ }
+
+ // ------------------------------------------------------------------ talk
+ const BUBBLE={x:214+110+60,y:37-10};
+ function wideBubble(m,api,pages){
+  const b={m,x:BUBBLE.x,y:BUBBLE.y,wide:true,img:images.nbBlconWdShrt,w:new NB.Writer(pages,{typer:33,x:BUBBLE.x+25,y:BUBBLE.y+10})};
+  api.S.bubbles.push(b);return b;
+ }
+ const bubbleDone=(api,b)=>!b||b.w.done||!api.S.bubbles.includes(b);
+ function speechLines(m){
+  const v=m.v,n=v.turnamt;
+  let p=['What is it,&deary?/%%'];
+  if(v.talktime>0){
+   const t=v.talktime;
+   if(t>=9)p=['.../%%'];
+   if(t===8)p=['No, no, it\'s&time to go~/%%'];
+   if(t===7)p=['...&well... maybe&ONE little&nibble~~/%%'];
+   if(t===6)p=['Just kidding,&of course~/%%'];
+   if(t===5)p=['If you don\'t mind&being gobbled up~&Ahuhuhu~/%%'];
+   if(t===4)p=['Ahuhuhuhu~&Well, I don\'t&mind keeping&you here~/%%'];
+   if(t===3)p=['Feeling comfortable&trapped in that&web?/%%'];
+   if(t===2)p=['It\'s time to go~/%%'];
+   if(t===1)p=['Ahuhuhu~&What are you&doing~/%%'];
+   v.talktime++;
+  }
+  const L={
+   0:['Why so pale?&You should be proud~/%%'],
+   1:['Proud that you\'re&going to make a&delicious cake~&Ahuhuhu~/%%'],
+   2:['Let you go^1?&Don\'t be silly~/%%'],
+   3:['Your SOUL is going&to make every spider&very happy~~~/%%'],
+   4:['Oh, how rude of me!&I almost forgot&to introduce you&to my pet~/','It\'s breakfast time,&isn\'t it?&Have fun, you two~ /%%'],
+   5:['The person who warned&us about you.../%%'],
+   6:['Offered us a LOT of&money for your SOUL./%%'],
+   7:['They had such a sweet&smile~ and... ahuhu~/%%'],
+   8:['It\'s strange, but&I swore I saw them&in the shadows...&Changing shape...?/%%'],
+   9:['Oh, it\'s lunch time,&isn\'t it?&And I forgot to&feed my pet~/%%'],
+   10:['With that money,&the spider clans&can finally be&reunited~/%%'],
+   11:['You haven\'t heard?&Spiders have been&trapped in the RUINS&for generations!/%%'],
+   12:['Even if they go&under the door,&Snowdin\'s fatal cold&is impassable alone./%%'],
+   13:['But with the money&from your SOUL, we\'ll&be able to rent&them a heated limo~/%%'],
+   14:['And with all of&the leftovers...^1?&We could have a&nice vacation~/','Or even build a&spider baseball&field~/%%'],
+   15:['But enough of that...&It\'s time for&dinner, isn\'t it?&Ahuhuhu~/%%']
+  };
+  if(L[n])p=L[n];
+  if(v.con===0)p=['Don\'t look so&blue^1, my deary~/%%'];
+  return p;
+ }
+ function telegramLines(m){
+  const p=['Huh?&A telegram from&the spiders in&the RUINS?/','What?&They\'re saying&that they saw&you, and.../',
+   '... even if you&are stingy, you&never hurt a&single spider!/'];
+  if(m.v.kills>0)p[2]='... even if you&hurt others, you&never hurt a&single spider!/';
+  return p.concat(['Oh my, this has&all been a big&misunderstanding~/','I thought you&were someone that&hated spiders~/','The person who&asked for that SOUL.../',
+   'They must have&meant a DIFFERENT&human in a&striped shirt~/','Sorry for all the&trouble~&Ahuhuhu~/','I\'ll make it up&to you~/',
+   'You can come back&here any time...&And, for no charge&at all.../','I\'ll wrap you&up and let you&play with my pet&again!/','Ahuhuhuhuhuhu~&Just kidding~/','I\'ll SPARE you&now~/%%']);
+ }
+ // The money you can pay her: your real G in VANILLA, unlimited on CUSTOM rules.
+ const wallet=api=>api.S.custom?Infinity:Math.max(0,Math.floor(Number(progression?.gold)||0));
+ function spend(api,n){if(!api.S.custom){progression.gold=Math.max(0,(progression.gold||0)-n);try{saveProgression()}catch(_){}}}
+
+ NB.defs.set('muffet',{
+  name:'Muffet',hp:1250,atk:8,def:0,xp:300,gold:105,mercymod:-960,wd:216,
+  encounter:'* Muffet traps you!',
+  size:()=>({w:216,h:208}),
+  pos:(i,n,cx)=>n===1?{x:214,y:37}:{x:R(cx-108),y:37},
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{con:0,turnamt:0,purpletime:0,struggle:0,price:10,bribes:0,atkdown:0,paid:0,itemuse:0,talktime:0,a4:-1,
+   body:{siner:0,sinert:0,anim:0,eye:[0,0,0,0,0],mode:0,purple:0,pour:0,a5:-1,purpletime:0},ph:null,gens:[],pours:[],fake:null,bub:null,kills:0})},
+  step(m,api){bodyStep(m)},
+  draw:bodyDraw,
+  dmgPos:m=>({x:m.x,y:m.y+208-60}),
+  acts:['Check','Struggle','Pay'],
+  actText(m,api){
+   const w=wallet(api);
+   return '\\W   * Check         * Struggle&   * Pay '+m.v.price+'G'+(w===Infinity?'':'&         \\YYour Money: '+w+'G \\W ');
+  },
+  check:()=>'* MUFFET - ATK 38.8 DEF 18.8&* If she invites you to her&  parlor^1, excuse yourself./',
+  act(m,i,name,api){
+   const v=m.v;
+   if(name==='Struggle'){
+    let t='* You struggle to escape the web^1.&* Nothing happened.';
+    if(v.struggle===0)t='* You struggle to escape the web^1.&* Muffet covers her mouth&  and giggles at you.';
+    if(v.struggle===1)t='* You struggle to escape the web^1.&* Muffet laughs and claps&  her hands.';
+    if(v.struggle===2){
+     t='* You struggle to escape the web./* Muffet is so amused by your&  antics that she gives you a&  discount!';
+     const w=wallet(api);v.price=v.price<=w?Math.ceil(v.price/2):w;if(v.price<=1)v.price=1;
+    }
+    if(v.con>50)t='* You struggle to escape the web^1.&* Nothing happened.';
+    v.struggle++;return t;
+   }
+   // Pay
+   if(v.con>=50)return '* Muffet refuses your money.';
+   const w=wallet(api);let t;
+   if(w>=v.price){
+    t='* You pay '+v.price+'G^1.&* Muffet reduces her ATTACK&  for this turn!';
+    spend(api,v.price);v.paid+=v.price;v.bribes++;
+    v.price+=[0,30,40,70,50][v.bribes]??300;
+    v.atkdown=2;
+   }else{
+    t='* You empty your pockets^1, but you&  don\'t have enough money.&* Muffet lowers the price.';
+    v.price=Math.max(1,Math.ceil((v.price-5)/10));
+   }
+   const left=wallet(api);
+   if(v.bribes>0&&left===0)t='* You\'re out of money^1.&* Muffet shakes her head.';
+   if(left===0&&v.bribes===0){t='* You empty your pockets..^1.&* But you don\'t have any&  money at all!/* Muffet takes pity on you&  and reduces her ATTACK for&  this turn.';v.price=10;v.bribes=1;v.atkdown=2}
+   return t;
+  },
+  // Eating something from the Spider Bake Sale in front of her (scr_itemuseb).
+  onItem(m,it){if(/^Spider (Donut|Cider)$/.test(it?.name||'')&&m.v.itemuse===0&&m.v.con<50)m.v.itemuse=1},
+  speech(m,api){
+   const v=m.v;
+   v.cmd=Math.round(rnd(100));
+   if(v.itemuse===1){v.itemuse=2;v.con=50;api.S.talkLenExact=1;return null}
+   const pages=speechLines(m);
+   if(v.purpletime===1)makeHeart(m,api);
+   return {pages,wide:true,pos:BUBBLE,img:images.nbBlconWdShrt,tx:25,typer:33,hold:true};
+  },
+  border:()=>21,
+  attack(m,api){
+   const v=m.v,c=v.cmd??0;
+   api.S.overlay=(g,st)=>fakeDraw(g,st,m);
+   if(v.con>=50){api.turntimer(99999);api.heart.visible=false;v.cutHidden=true}
+   else if(v.con>0&&v.turnamt<20){
+    api.turntimer(180);
+    const sc=SPIDER_SCRIPTS[v.turnamt]||SPIDER_SCRIPTS[0],dmg=m.atk-v.atkdown;
+    const gen={type:v.turnamt,dmg,list:sc.list,bno:0,a2:10,a0:-1,rate:sc.rate};
+    api.S.turntimer+=sc.tt;
+    if(v.turnamt===4||v.turnamt===9||v.turnamt===15){
+     api.turntimer(v.turnamt===4?620:v.turnamt===15?700:660);
+     v.fake={con:0,moved:0,xx:0,yy:0,siner:0,factor:0,rotfactor:5,a4:-1,dmg,border:0};
+     gen.a2=30;
+    }
+    v.gens=[gen];
+    v.turnamt++;
+   }else if(v.turnamt<20){v.body.mode=1;v.body.sinert=71;v.con=1;api.turntimer(99999)}
+   else api.endTurn();
+   v.atkdown=0;
+   let f='* Muffet pours you a cup of&  spiders.';
+   if(c>=25)f='* All the spiders clap along to&  the music.';
+   if(c>=50)f='* Muffet does a synchronized&  dance with the other spiders.';
+   if(c>=75)f='* Muffet tidies up the web&  around you.';
+   if(c>=90)f='* Smells like freshly baked&  cobwebs.';
+   return f;
+  },
+  attackStep(m,api){
+   const v=m.v,b=v.body,st=api.S;
+   // obj_blconwideslave goes away with its writer
+   if(st.bubbles.some(q=>q.w.done))st.bubbles=st.bubbles.filter(q=>!q.w.done);
+   heartStep(m,api);
+   for(const g of v.gens)genStep(m,api,g);
+   fakeStep(m,api);
+   // the pet's Draw-event motion: obj_grosscupcake2 random-walks, obj_hideouscupcake bobs in
+   const gr=v.gross;
+   if(gr){gr.x+=rnd(2)-1;gr.y+=rnd(2)-1;if(tick(gr,'a1'))gr.f=1;if(tick(gr,'a0'))v.gross=null}
+   const hd=v.hideous;
+   if(hd){hd.siner++;hd.siner2++;if(hd.alpha<1)hd.alpha+=.05;hd.x+=Math.sin(hd.siner2/6);hd.y+=Math.sin(hd.siner/8)*3+hd.vy;hd.f+=.125;if(st.turntimer<2)v.hideous=null}
+   if(tick(v,'a4'))v.con++;
+   // obj_spiderb_body pouring (event_user(0)): the teapots tip, then alarm[5] pours a pair
+   // of spiders every 4 steps; each one that lands fills the box a little more.
+   if(b.mode===1){if(b.sinert<55){if(b.pour===0)b.a5=1;b.pour=1}else b.sinert--}
+   if(tick(b,'a5')&&b.mode===1){
+    const bx=m.x+62,by=m.y-2+130+Math.cos(b.sinert/5)*2,hide=b.purple>80;
+    v.pours.push({x:bx-50,y:by,vx:-1,vy:3,gdir:320,sc:.2,hide},{x:bx+140,y:by,vx:1,vy:3,gdir:220,sc:.2,hide});
+    b.a5=4;
+   }
+   for(const p of v.pours){
+    if(p.sc<1)p.sc+=.05;
+    p.vx+=dcos(p.gdir)*.2;p.vy-=dsin(p.gdir)*.2;p.x+=p.vx;p.y+=p.vy;
+    if(p.y>st.edge.B-15){p.dead=true;b.purple+=4}
+   }
+   v.pours=v.pours.filter(p=>!p.dead);
+   if(b.purple>0){
+    if(b.purple>st.edge.B-st.edge.T&&b.purpletime===0){makeHeart(m,api);v.purpletime=1;b.purpletime=1;v.a4=60}
+    if(b.purple>125&&b.mode===1)b.mode=0;
+    if(b.purple>210)b.purple=0;
+   }
+   // "... I think purple is a better look on you!"
+   if(v.con===2){v.purpletime=1;v.bub=wideBubble(m,api,['... I think purple is&a better look on&you! Ahuhuhu~/%%']);v.con=3}
+   if(v.con===3)st.turntimer=10;
+   if(v.con===3&&bubbleDone(api,v.bub)){st.nextFlavor='* You\'re trapped in a strange&  purple web!';api.endTurn();v.con=4}
+   // The telegram (after dessert, or right away if you ate her pastries).
+   if(v.con===50){
+    st.turntimer=99999;
+    v.bub=wideBubble(m,api,v.itemuse>0?['Huh^1?&Where did you get&that...?/','Did you steal it?/','Oh^1, my pet^1~&It\'s time to show&them what we do&with thieves~/%%']:['You\'re still alive^1?&Ahuhuhu~/','Oh, my pet~&Looks like it\'s&time for dessert~/%%']);
+    v.con=51;
+   }
+   if(v.con===51&&bubbleDone(api,v.bub)){v.tele=telegramSpider();st.fx.push(v.tele);v.con=52;v.a4=30}
+   if(v.con===53){v.bub=wideBubble(m,api,telegramLines(m));v.talktime=1;v.con=54}
+   if(v.con===54&&bubbleDone(api,v.bub)){
+    st.nextFlavor='* Muffet is sparing you.';
+    if(v.tele)v.tele.con=2;
+    v.turnamt=20;m.mercymod=9999;m.df=-9999;v.con=55;
+    api.endTurn();
+   }
+  },
+  drawOver(g,m,api){
+   const v=m.v,st=api.S,b=v.body;
+   // obj_spiderpour (depth 0), then the purple fill drawn by the body (depth -5)
+   for(const p of v.pours)if(!p.hide)dse(g,images.spiderPour,p.x,p.y,p.sc,p.sc,Math.atan2(-p.vy,p.vx)*180/Math.PI+90,1,7,0);
+   if(b.purple>0){
+    const e=st.edge,p2=Math.min(b.purple,e.B-e.T);
+    g.save();if(b.purple>160)g.globalAlpha=Math.max(0,1-(b.purple-160)/40);
+    g.fillStyle=PURPLE;g.fillRect(e.L+2,e.B-p2,e.R-e.L,p2+2);g.restore();
+   }
+   // the pet: its face peeking into the widened box, then the cupcake mouth under the board
+   const gr=v.gross,hd=v.hideous;
+   if(gr||hd)clipBox(g,st,()=>{
+    if(gr)dse(g,fr(images.cupcakeMonster,gr.f),gr.x,gr.y);
+    if(hd)dse(g,fr(images.hideousCupcake,hd.f),hd.x,hd.y,1,1,0,hd.alpha);
+   });
+  },
+  endAttack(m,api){
+   const v=m.v;
+   v.ph=null;v.gens=[];v.fake=null;v.gross=null;v.hideous=null;v.pours=[];v.cutHidden=false;
+   api.S.soulMode=null;api.S.overlay=null;
+   if(v.purpletime===1&&!api.S.fx.some(e=>e.muffetSign))api.S.fx.push(signSpider(v.turnamt));
+  },
+  onMercy(m){m.gold=Math.min(999,100+Math.round(m.v.price/2))},
+  // Killed: no more music; she pays out what you paid her (x2); a little spider comes by
+  // with a flower before the battle ends.
+  onLethal(m,api){
+   if(m.v.con>=95)return false;
+   m.gold=Math.min(999,m.v.paid*2);m.v.con=95;
+   try{stopMusic()}catch(_){}
+   api.kill(m);
+   api.S.fx.push(sadSpider(api));
+   return true;
+  }
+ });
 })();
 const NB_ASSETS={
  nbBattleBg:[0,1].map(i=>RAW+`sprites/images/spr_battlebg_${i}.png`),
+ // Muffet
+ nbSpiderEyeBigHurt:RAW+'sprites/images/spr_spiderb_eyebig_hurt_0.png',
+ nbSpiderEyeMedHurt:RAW+'sprites/images/spr_spiderb_eyemed_hurt_0.png',
+ nbSpiderEyeCenHurt:RAW+'sprites/images/spr_spiderb_eyecen_hurt_0.png',
+ nbTinyFlower:RAW+'sprites/images/spr_tinyspider_flower_0.png',
  // Hotland I
  nbVulkinFace2:[0,1].map(i=>RAW+`sprites/images/spr_vulkinface2_${i}.png`),
  nbVulkinFace3:[0,1].map(i=>RAW+`sprites/images/spr_vulkinface3_${i}.png`),
