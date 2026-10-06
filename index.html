@@ -36934,6 +36934,13 @@ if(c.lesson > 20) {
   else if(f.con===5)put(f.yy,Math.sin(f.siner/10)*f.rotfactor);
   g.restore();
  }
+ // The purple fill, drawn by obj_spiderb_body at depth -5: over the box and the SOUL.
+ function purpleDraw(g,st,m){
+  const b=m.v.body;if(!(b.purple>0)||!m.alive)return;
+  const e=st.edge,p2=Math.min(b.purple,e.B-e.T);
+  g.save();if(b.purple>160)g.globalAlpha=Math.max(0,1-(b.purple-160)/40);
+  g.fillStyle=PURPLE;g.fillRect(e.L+2,e.B-p2,e.R-e.L,p2+2);g.restore();
+ }
  // The pet and the pours, clipped to the box like draw_self_border_e.
  function clipBox(g,st,fn){const e=st.edge;g.save();g.beginPath();g.rect(e.L+1,st.ideal[2]+1,e.R-e.L,st.ideal[3]-st.ideal[2]);g.clip();fn();g.restore()}
 
@@ -37118,7 +37125,7 @@ if(c.lesson > 20) {
   border:()=>21,
   attack(m,api){
    const v=m.v,c=v.cmd??0;
-   api.S.overlay=(g,st)=>fakeDraw(g,st,m);
+   api.S.overlay=(g,st)=>{purpleDraw(g,st,m);fakeDraw(g,st,m)};
    if(v.con>=50){api.turntimer(99999);api.heart.visible=false;v.cutHidden=true}
    else if(v.con>0&&v.turnamt<20){
     api.turntimer(180);
@@ -37197,11 +37204,6 @@ if(c.lesson > 20) {
    const v=m.v,st=api.S,b=v.body;
    // obj_spiderpour (depth 0), then the purple fill drawn by the body (depth -5)
    for(const p of v.pours)if(!p.hide)dse(g,images.spiderPour,p.x,p.y,p.sc,p.sc,Math.atan2(-p.vy,p.vx)*180/Math.PI+90,1,7,0);
-   if(b.purple>0){
-    const e=st.edge,p2=Math.min(b.purple,e.B-e.T);
-    g.save();if(b.purple>160)g.globalAlpha=Math.max(0,1-(b.purple-160)/40);
-    g.fillStyle=PURPLE;g.fillRect(e.L+2,e.B-p2,e.R-e.L,p2+2);g.restore();
-   }
    // the pet: its face peeking into the widened box, then the cupcake mouth under the board
    const gr=v.gross,hd=v.hideous;
    if(gr||hd)clipBox(g,st,()=>{
@@ -37466,8 +37468,7 @@ if(c.lesson > 20) {
    const v=m.v;
    bodyStep(v.body);
    if(tick(v,'am7'))askerStart(m,api);
-   if(api.S.mnfight===2)askerStep(m,api);
-   else v.ahFrame+=v.ahSpeed;
+   askerStep(m,api); // obj_questionasker's Draw runs every frame, turn or not
   },
   draw(g,m){
    const v=m.v,z=v.zoom;
@@ -37478,17 +37479,18 @@ if(c.lesson > 20) {
    }
    bodyDraw(g,v.body);
    ahDraw(g,v,412,126);
-   // the question (obj_questionasker Draw, phases 1-2)
-   if(v.phase>=1&&v.phase<3){
-    const col=v.q===10?'#525252':'#ffffff',lines=v.qtext.split('#');
-    if(v.q===4){g.save();g.translate(170,20);g.rotate(-6*Math.PI/180);g.scale(.5,.5);lines.forEach((l,i)=>txt(g,l,rnd(1),i*32+rnd(1),col));g.restore()}
-    else lines.forEach((l,i)=>txt(g,l,205+rnd(1),50+i*32+rnd(1),col));
-   }
    const j=v.jar;
    if(j){dse(g,images.mettatonFlyJar,j.x,j.y,3,3,0,j.alpha,0,-4);for(const f of j.flies)dse(g,images.mettatonJarFly,f.x,f.y,2,2,0,j.alpha,2,2)}
   },
   drawOver(g,m,api){
    const v=m.v,h=api.heart;
+   // the question (obj_questionasker Draw, phases 1-2), over any speech bubble: the
+   // bubbles (obj_blconwideslave, depth 10) sit behind the question asker (depth 0)
+   if(v.phase>=1&&v.phase<3){
+    const col=v.q===10?'#525252':'#ffffff',lines=v.qtext.split('#');
+    if(v.q===4){g.save();g.translate(170,20);g.rotate(-6*Math.PI/180);g.scale(.5,.5);lines.forEach((l,i)=>txt(g,l,rnd(1),i*32+rnd(1),col));g.restore()}
+    else lines.forEach((l,i)=>txt(g,l,205+rnd(1),50+i*32+rnd(1),col));
+   }
    // answers
    for(const n of v.nodes){
     if(!n.visible)continue;
