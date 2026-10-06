@@ -26493,11 +26493,9 @@ const UI6_FONT_META={"maintext":[[79,81,3,16,3,0],[73,81,4,13,6,1],[92,81,5,8,6,
    ========================================================================== */
 const UI6_C={white:'#ffffff',yellow:'#ffff00',gray:'#808080',dim:'#4a4a4a',red:'#ff0000',orange:'#ff7f00',green:'#00c000',blue:'#14a9ff'};
 const ui6Img={};
+// Through the shared loader, so the atlases get the raw GitHub fallback and the mobile asset cache.
 function ui6Load(key,path){
- const im=new Image();im.crossOrigin='anonymous';let tried=false;
- im.onload=()=>{ui6Img[key]=im;ui6TintCache.clear()};
- im.onerror=()=>{if(!tried){tried=true;im.src=RAW_FALLBACK+path}};
- im.src=RAW+path;
+ loadImage(RAW+path).then(im=>{if(im){ui6Img[key]=im;ui6TintCache.clear()}});
 }
 const ui6TintCache=new Map();
 ui6Load('main','fonts/fnt_main.png');
