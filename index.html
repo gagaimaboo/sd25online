@@ -12208,6 +12208,9 @@ function chooseConfirm(){
 }
 function cancel(){
  if(state==='mettatonQuiz')return;
+ // X skips text: a speech bubble or the battle box typewriter fills in at once
+ if(state==='battleSpeech'&&battleSpeech&&battleSpeech.char<battleSpeech.text.length){battleSpeech.char=battleSpeech.text.length;battleSpeech.shown=battleSpeech.text;battleSpeech.timer=0;return}
+ if(typing&&!['menu','fightTarget','actTarget','act','item','itemTarget','mercy','magic','magicTarget','roleSpecial','roleSpecialTarget'].includes(state)){finishText();return}
  if(state==='itemTarget'){state='item';sub=clamp(typeof mpItemPendingIndex==='number'?mpItemPendingIndex:0,0,Math.max(0,inventory.length-1));return}
  if(state==='magicTarget'){state='magic';sub=Math.max(0,activeSpellList().findIndex(s=>s.id===noelleSpellChoice));return}
  if(['fightTarget','actTarget','act','item','mercy','magic','roleSpecial','roleSpecialTarget'].includes(state)){state='menu';sub=0}
@@ -14164,7 +14167,7 @@ function update(dt,now){
      battleSpeech=null;
    }else if(battleSpeech.char<battleSpeech.text.length){
      battleSpeech.timer+=dt;
-     const step=.041;
+     const step=.033;
      while(battleSpeech&&battleSpeech.timer>=step&&battleSpeech.char<battleSpeech.text.length){
        battleSpeech.timer-=step;
        battleSpeech.char++;
@@ -29279,15 +29282,15 @@ const NB=(()=>{
  // typer 2 (monster bubble): fnt_plain, black, 9px spacing, 20px lines, 2 frames/char.
  const TYPERS={
   1:{font:'main',color:'#ffffff',dx:20,dy:20,wrap:(x)=>x+602-55,speed:1,sound:'text',spacing:16,vspacing:32},
-  2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:2,sound:'txt2',spacing:9,vspacing:20},
+  2:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:1,sound:'txt2',spacing:9,vspacing:20},
   33:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:1,sound:'txt2',spacing:9,vspacing:20},
   22:{font:'papyrus',color:'#000000',dx:10,dy:0,wrap:(x)=>x+200,speed:1,sound:'papyrusText',spacing:11,vspacing:20},
-  51:{font:'plain',color:'#000000',dx:20,dy:16,wrap:(x)=>x+999,speed:3,sound:['mtt1','mtt2','mtt3','mtt4','mtt5','mtt6','mtt7','mtt8','mtt9'],spacing:8,vspacing:18},
+  51:{font:'plain',color:'#000000',dx:20,dy:16,wrap:(x)=>x+999,speed:1,sound:['mtt1','mtt2','mtt3','mtt4','mtt5','mtt6','mtt7','mtt8','mtt9'],spacing:8,vspacing:18},
   52:{font:'plain',color:'#000000',dx:20,dy:20,wrap:(x)=>x+999,speed:1,sound:'txtAl',spacing:8,vspacing:18},
   // typer 5: fnt_maintext, white (Knight Knight's "It's OK."); drawn as fnt_main at half size.
   5:{font:'half',color:'#ffffff',dx:20,dy:20,wrap:(x)=>x+999,speed:1,sound:'txt2',spacing:8,vspacing:18},
   // typer 97: Mettaton NEO's last words, shaking
-  97:{font:'plain',color:'#000000',dx:16,dy:0,wrap:(x)=>x+999,speed:3,sound:['mtt1','mtt2','mtt3','mtt4','mtt5','mtt6','mtt7','mtt8','mtt9'],spacing:8,vspacing:18,shake:1}
+  97:{font:'plain',color:'#000000',dx:16,dy:0,wrap:(x)=>x+999,speed:2,sound:['mtt1','mtt2','mtt3','mtt4','mtt5','mtt6','mtt7','mtt8','mtt9'],spacing:8,vspacing:18,shake:1}
  };
  // Content written for the old engine uses "\n" and relies on word wrap. UNDERTALE
  // text uses "&" line breaks, "/" wait-for-Z and "%" message ends. Normalise to UT
@@ -29314,7 +29317,7 @@ const NB=(()=>{
    this.x=opt.x??S.ideal[0];this.y=opt.y??S.ideal[2];
    this.instant=!!opt.instant;
    this.sound=opt.sound===undefined?this.typer.sound:opt.sound;
-   this.no=0;this.halt=0;this.done=false;this.onEnd=opt.onEnd||null;this.endMode=opt.end||'stay';
+   this.no=0;this.halt=0;this.done=false;this.onEnd=opt.onEnd||null;this.endMode=opt.end||'stay';this.noskip=!!opt.noskip;
    this.load();
   }
   load(){this.str=this.msgs[this.no]||'';this.pos=this.instant?this.str.length:0;this.wait=this.typer.speed;this.halt=0}
@@ -29328,8 +29331,16 @@ const NB=(()=>{
     }
     return;
    }
-   // X skips the rest of the typing; once the text is out, cancel belongs to the menu.
-   if(pressed.cancel&&S.mnfight===0&&this.typer===TYPERS[1]&&this.pos<this.str.length){this.pos=this.str.length;clearPressed('cancel')}
+   // Text skipping: X fills in the rest of any page, Z the rest of a page that waits for Z
+   // anyway (never the menu's flavor text, and not mid-attack, where Z is the yellow SOUL's
+   // trigger). One press skips every writer that is typing this step.
+   if(this.pos<this.str.length&&!this.noskip){
+    const z=S.mnfight!==2&&pressed.confirm&&this.waitsForZ();
+    if(pressed.cancel||z||S.skipT===S.t){
+     if(pressed.cancel)clearPressed('cancel');else if(z)clearPressed('confirm');
+     S.skipT=S.t;this.skip();
+    }
+   }
    if(this.pos<this.str.length){
     if(--this.wait>0)return;
     this.pos++;this.wait=this.typer.speed;
@@ -29347,6 +29358,18 @@ const NB=(()=>{
    }
   }
   finish(){this.done=true;if(this.onEnd){const f=this.onEnd;this.onEnd=null;f()}}
+  // the page ends in a halt for Z (not a "%" page that closes on its own)
+  waitsForZ(){
+   const s=this.str.trimEnd();if(/(^|[^\/%])%%?$/.test(s))return false;
+   const end=s.replace(/%%$/,'%');
+   return end.endsWith('/%')||end.endsWith('/^')||end.endsWith('/')||this.no+1<this.msgs.length;
+  }
+  // jump to the end of the page, still applying any face changes typed past
+  skip(){
+   const s=this.str;
+   for(let i=this.pos;i<s.length;i++)if(s[i]==='\\'&&s[i+1]==='E'){if(this.onFace)this.onFace(+s[i+2]);i+=2}
+   this.pos=s.length;this.wait=this.typer.speed;
+  }
   draw(g){
    const t=this.typer;let x=this.x+t.dx,y=this.y+t.dy;const x0=x,wrap=t.wrap(this.x);
    let color=t.color;const s=this.str;
@@ -35399,12 +35422,13 @@ if(c.lesson > 20) {
  // SCR_TEXTSETUP for Undyne's typers: fnt_plain, black, x+16, wrap x+190.
  const T=NB.TYPERS,base={font:'plain',color:'#000000',dx:16,dy:0,wrap:x=>x+190,spacing:9,vspacing:20};
  T[39]={...base,speed:1,sound:'txtUnd'};
- T[40]={...base,speed:2,sound:'txtUnd',shake:1};
+ T[40]={...base,speed:1,sound:'txtUnd',shake:1};
  T[41]={...base,speed:1,sound:'txtUnd'};
- T[42]={...base,speed:4,sound:'txtUnd',shake:2};
- T[43]={...base,speed:4,sound:'txtUnd2',shake:2};
- T[44]={...base,speed:5,sound:'txtUnd3',shake:2};
- T[45]={...base,speed:7,sound:'txtUnd4',shake:2};
+ // her melting speech still slows down line by line, just less painfully
+ T[42]={...base,speed:2,sound:'txtUnd',shake:2};
+ T[43]={...base,speed:2,sound:'txtUnd2',shake:2};
+ T[44]={...base,speed:3,sound:'txtUnd3',shake:2};
+ T[45]={...base,speed:4,sound:'txtUnd4',shake:2};
 
  // ---------------------------------------------------------- obj_undyneb_body --
  // Seven obj_npc_marker parts at 2x; depth = body depth + index (legs at the back).
@@ -39103,7 +39127,7 @@ if(c.lesson > 20) {
  function callerStep(api){
   const c=K.caller;if(!c)return;
   const t=c.lines[c.i]||'';
-  if(c.char<t.length){if(++c.t%2===0){c.char++;const ch=t[c.char-1];if(ch&&ch!==' '&&c.char%2===0)sfx('text')}if(P.confirm){NB.clearPressed('confirm');c.char=t.length}return}
+  if(c.char<t.length){c.char++;const ch=t[c.char-1];if(ch&&ch!==' '&&c.char%2===0)sfx('text');if(P.confirm||P.cancel){NB.clearPressed('confirm');NB.clearPressed('cancel');c.char=t.length}return}
   if(P.confirm){NB.clearPressed('confirm');c.i++;c.char=0;if(c.i>=c.lines.length){K.caller=null;c.done&&c.done()}}
  }
  function drawCaller(g){
