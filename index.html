@@ -28,9 +28,11 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
 #mobileControls button.pressed{background:rgba(255,255,255,.9);color:#000;transform:scale(.94)}
 #mobileControls .cancel{transform:translateY(-18px)}
 #mobileControls .cancel.pressed{transform:translateY(-18px) scale(.94)}
-@media (pointer:coarse),(hover:none),(max-width:760px){
- #mobileControls{display:flex}
-}
+/* Shown only for touch play (see setTouchUI): a phone, or after a touch; a real keyboard hides them. */
+html.touchUI #mobileControls{display:flex}
+#mobileControls .joystickWrap{padding:22px;margin:-22px}
+#mobileJoystick{opacity:.72;transition:opacity .12s}
+#mobileJoystick.active{opacity:1}
 @media (max-height:520px){
  #mobileControls{bottom:max(5px,env(safe-area-inset-bottom));padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
  #mobileJoystick{width:96px;height:96px}
@@ -2188,8 +2190,74 @@ function createSfxVoice(base){
  try{a.load()}catch(_){}
  return a;
 }
+// Sound effects play through Web Audio once decoded. On iPhones every <audio>.play()
+// goes through the media stack and stalls the frame, and the text blip alone fires on
+// every typed letter, so dialogue stuttered. The <audio> pool below stays as the
+// fallback while a sound is still decoding, or if it can't be decoded at all.
+let sfxCtx=null;
+const sfxBuf=new Map(),sfxLive=new Map(),sfxQueue=[];let sfxDecoding=false;
+function sfxContext(){
+ if(sfxCtx)return sfxCtx;
+ const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;
+ // Keep the iPhone silent switch acting like it does for the <audio> music.
+ try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(_){}
+ try{sfxCtx=new C()}catch(_){sfxCtx=null}
+ return sfxCtx;
+}
+// Must run inside a tap/key: iOS only starts (or restarts) an AudioContext there.
+function sfxWake(){
+ const c=sfxContext();if(!c)return;
+ if(c.state!=='running'){try{c.resume()}catch(_){}}
+ if(!c._primed){c._primed=true;try{const s=c.createBufferSource();s.buffer=c.createBuffer(1,1,22050);s.connect(c.destination);s.start(0)}catch(_){}}
+ if(!c._warmed){c._warmed=true;for(const n of Object.keys(sounds))sfxDecode(n,/text|txt/i.test(n))}
+}
+function sfxDecode(name,urgent){
+ if(sfxBuf.has(name)||!sounds[name]||!sfxCtx)return;
+ sfxBuf.set(name,null); // queued
+ if(urgent)sfxQueue.unshift(name);else sfxQueue.push(name);
+ sfxPump();
+}
+// One at a time, so decoding a hundred sounds never lands on a single frame.
+async function sfxPump(){
+ if(sfxDecoding)return;sfxDecoding=true;
+ try{
+  while(sfxQueue.length){
+   const name=sfxQueue.shift(),base=sounds[name];let buf=false;
+   const urls=base?._assetCandidates?.length?base._assetCandidates:[base?.src].filter(Boolean);
+   for(const u of urls){
+    try{
+     const r=await fetch(u);if(!r.ok)continue;
+     const ab=await r.arrayBuffer();
+     buf=await new Promise((res,rej)=>{const q=sfxCtx.decodeAudioData(ab,res,rej);if(q&&q.then)q.then(res,rej)});
+     break;
+    }catch(_){buf=false}
+   }
+   sfxBuf.set(name,buf||false);
+  }
+ }finally{sfxDecoding=false}
+}
+function sfxPlayBuffer(name,buf,base,rate){
+ const c=sfxCtx;
+ const src=c.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;
+ const g=c.createGain();g.gain.value=base.volume;
+ src.connect(g);g.connect(c.destination);
+ let live=sfxLive.get(name);if(!live){live=[];sfxLive.set(name,live)}
+ // same voice cap as the <audio> pool: the oldest copy stops
+ while(live.length>=sfxPoolSize(name)){const o=live.shift();try{o.stop()}catch(_){}}
+ live.push(src);
+ src.onended=()=>{const i=live.indexOf(src);if(i>=0)live.splice(i,1)};
+ src.start();
+}
+function stopSoundEffect(name){
+ for(const s of (sfxLive.get(name)||[])){try{s.stop()}catch(_){}}
+ sfxLive.set(name,[]);
+ for(const a of (sfxPools.get(name)||[])){try{a.pause();a.currentTime=0}catch(_){}}
+}
 function play(name,rate=1){
  const base=sounds[name];if(!base||!audioUnlocked)return;
+ const buf=sfxBuf.get(name);
+ if(buf&&sfxCtx&&sfxCtx.state==='running'){try{sfxPlayBuffer(name,buf,base,rate);return}catch(_){}}
+ if(buf===undefined)sfxDecode(name,true);
  try{
    let pool=sfxPools.get(name);
    if(!pool){pool=[];sfxPools.set(name,pool)}
@@ -2263,6 +2331,8 @@ function startMenuMusic(){
  }catch(_){}
 }
 function unlockAudio(){
+ // iOS can suspend the effects context (calls, lock screen); any gesture restarts it.
+ sfxWake();
  // User gestures call this constantly (every menu key/click). Only perform the
  // music bootstrap on the FIRST unlock; otherwise startBattleMusic() would
  // rewind the active battle theme on every navigation input.
@@ -6941,9 +7011,14 @@ function drawTutorial(){
  ui6T(tutorialChar<step.text.length?'Z  FINISH LINE':'Z  NEXT      X  LEAVE TUTORIAL',W/2,24,{f:'small',s:3,c:UI6_C.gray,a:'center'});
 }
 
+let nbDrawnS=null,nbDrawnT=-1;
 function render(now){
+ // A battle only changes when it steps (30 times a second on the default setting), so
+ // a frame in between would just redraw the same picture: leave the last one up.
+ // (Online battles always draw: the WAITING FOR HOST notice runs on the wall clock.)
+ if(screen==='nb'&&NB.S&&!NB.S.mp&&newEngineFps!==60&&NB.S===nbDrawnS&&NB.S.t===nbDrawnT)return;
  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
- if(screen==='nb'){NB.draw(now);return}
+ if(screen==='nb'){NB.draw(now);nbDrawnS=NB.S;nbDrawnT=NB.S?NB.S.t:-1;return}
  if(screen==='dr'){DR.render();return}
  uiTrackScreen(now);
 
@@ -7003,8 +7078,10 @@ function setupTestControls(){
  const joy=document.getElementById('mobileJoystick');
  const joyKnob=document.getElementById('mobileJoystickKnob');
  let joyPointer=null;
- let joyHeld=new Set();
+ let joyHeld=new Set(),joyDir=-1;
  const JOY_KEYS=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+ // clockwise from right (screen y points down)
+ const JOY_SECTORS=[['ArrowRight'],['ArrowRight','ArrowDown'],['ArrowDown'],['ArrowDown','ArrowLeft'],['ArrowLeft'],['ArrowLeft','ArrowUp'],['ArrowUp'],['ArrowUp','ArrowRight']];
  const setJoyKeys=next=>{
    const wanted=new Set(next);
    for(const k of JOY_KEYS){
@@ -7022,7 +7099,7 @@ function setupTestControls(){
    joyHeld=wanted;
  };
  const centerJoystick=()=>{
-   setJoyKeys([]);
+   setJoyKeys([]);joyDir=-1;
    joy?.classList.remove('active');
    if(joyKnob)joyKnob.style.transform='translate(-50%,-50%)';
  };
@@ -7038,27 +7115,29 @@ function setupTestControls(){
    joyKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 
    const nx=dx/max,ny=dy/max,mag=Math.hypot(nx,ny);
-   if(mag<0.23){setJoyKeys([]);return}
-   // 0.34 gives useful diagonals without making every tiny slant diagonal.
-   const dirs=[];
-   if(nx<-0.34)dirs.push('ArrowLeft');
-   else if(nx>0.34)dirs.push('ArrowRight');
-   if(ny<-0.34)dirs.push('ArrowUp');
-   else if(ny>0.34)dirs.push('ArrowDown');
-   // Near an axis but outside the deadzone: always choose the strongest axis.
-   if(!dirs.length){
-     if(Math.abs(nx)>Math.abs(ny))dirs.push(nx<0?'ArrowLeft':'ArrowRight');
-     else dirs.push(ny<0?'ArrowUp':'ArrowDown');
-   }
-   setJoyKeys(dirs);
+   // Deadzone with a little hysteresis: it takes .28 to start moving, .18 to stop.
+   if(mag<(joyDir<0?0.28:0.18)){joyDir=-1;setJoyKeys([]);return}
+   // 8 directions. Straight ones get the wider slice (50deg vs 40deg) so menus don't
+   // catch stray diagonals, and the current direction holds 8deg past its edge so the
+   // SOUL doesn't flicker between straight and diagonal on a borderline thumb.
+   const ang=(Math.atan2(ny,nx)*180/Math.PI+360)%360;
+   const off=(a,i)=>{const d=Math.abs(a-i*45)%360;return Math.min(d,360-d)};
+   const half=i=>i%2?20:25;
+   let dir=-1;
+   if(joyDir>=0&&off(ang,joyDir)<=half(joyDir)+8)dir=joyDir;
+   else for(let i=0;i<8;i++)if(off(ang,i)<=half(i)){dir=i;break}
+   joyDir=dir;
+   setJoyKeys(JOY_SECTORS[dir]||[]);
  };
- joy?.addEventListener('pointerdown',e=>{
+ // The grab area is a bit bigger than the drawn stick (padding on its wrapper).
+ const joyZone=joy?.parentElement||joy;
+ joyZone?.addEventListener('pointerdown',e=>{
    e.preventDefault();e.stopPropagation();unlockAudio();
-   joyPointer=e.pointerId;joy.classList.add('active');
-   try{joy.setPointerCapture?.(e.pointerId)}catch(_){}
+   joyPointer=e.pointerId;joy.classList.add('active');joyDir=-1;
+   try{joyZone.setPointerCapture?.(e.pointerId)}catch(_){}
    updateJoystick(e);
  });
- joy?.addEventListener('pointermove',e=>{
+ joyZone?.addEventListener('pointermove',e=>{
    if(e.pointerId!==joyPointer)return;
    e.preventDefault();e.stopPropagation();updateJoystick(e);
  });
@@ -7066,9 +7145,22 @@ function setupTestControls(){
    if(joyPointer!==null&&e?.pointerId!==undefined&&e.pointerId!==joyPointer)return;
    joyPointer=null;centerJoystick();
  };
- joy?.addEventListener('pointerup',releaseJoystick);
- joy?.addEventListener('pointercancel',releaseJoystick);
- joy?.addEventListener('lostpointercapture',releaseJoystick);
+ joyZone?.addEventListener('pointerup',releaseJoystick);
+ joyZone?.addEventListener('pointercancel',releaseJoystick);
+ joyZone?.addEventListener('lostpointercapture',releaseJoystick);
+
+ // Touch controls are for touch play only: on a phone/tablet from the start, or after
+ // any touch; a real keyboard key hides them again (PC players never see them).
+ const root=document.documentElement;
+ const mq=q=>{try{return matchMedia(q).matches}catch(_){return false}};
+ const setTouchUI=on=>{
+   if(root.classList.contains('touchUI')===on)return;
+   root.classList.toggle('touchUI',on);
+   if(!on){joyPointer=null;centerJoystick();releaseAllMobile()}
+ };
+ setTouchUI(mq('(pointer:coarse)'));
+ window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')setTouchUI(true)},{capture:true,passive:true});
+ window.addEventListener('keydown',e=>{if(e.isTrusted&&!e.repeat)setTouchUI(false)},{capture:true});
 
  // If the OS steals a gesture/app focus, never leave the SOUL drifting forever.
  window.addEventListener('blur',centerJoystick);
@@ -13586,7 +13678,7 @@ const NB=(()=>{
  const bat=()=>{try{return music[battleMusicKey()]||null}catch(_){return null}};
  const musPause=()=>{const a=bat();if(a&&!a.paused){try{a.pause()}catch(_){}}};
  const musResume=()=>{const a=bat();if(a&&a.paused&&NB.S&&!NB.S.won){try{playMusicElement(a)}catch(_){try{a.play()}catch(__){}}}};
- const stopSfx=n=>{try{for(const a of (sfxPools.get(n)||[])){a.pause();a.currentTime=0}}catch(_){}};
+ const stopSfx=n=>{try{stopSoundEffect(n)}catch(_){}};
 
  // ----------------------------------------------------------------- Shyren --
  function musbul(m,api,x,y){
