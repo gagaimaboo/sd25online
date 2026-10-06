@@ -39900,7 +39900,7 @@ if(c.lesson > 20) {
   if(A.phase==='cast'&&A.t>=24){
    alPhase('shout');X.musStop();st.writer=null;
    // offstage: the bubble's tail pokes in from the left edge
-   bub(api,['W-WAIT!!!^4%'],2,96,()=>{alPhase('dash');sfx('weaponSwipe')});
+   bub(api,['Oh my GOD, STOP.^4%'],2,96,()=>{alPhase('dash');sfx('weaponSwipe')});
   }
   if(A.phase==='dash'){
    const p=A.t/13;A.x=-150+(AL_STOP+150)*ease(p);A.lean=.12*(1-ease(p));
@@ -39909,7 +39909,8 @@ if(c.lesson > 20) {
     A.x=AL_STOP;A.lean=0;A.sq=1;sfx('impact');st.shake={h:2,v:0,speed:2,t:0};
     puff(A.dust,A.x+aw*.5,AL_FEET-2,8,{w:aw*.8,flat:true,sp:3});
     alPhase('plead');N.face=6;
-    bub(api,["STOP!!! PLEASE,&STOP!!!/","M-Mettaton didn't&do anything wrong!!&It's all MY fault!!/","I-I'm finally going&to take responsib-%"],A.x+aw-8,AL_FEET-ah-18,()=>{
+    // fed up, not scared: she has had it with all of this
+    bub(api,["Can everyone quit&blasting each other&for ONE second?!/","He didn't do&anything, okay?!&This is MY mess./","I'm SO done running&from it. So I'm&taking responsib-%"],A.x+aw-8,AL_FEET-ah-18,()=>{
      alPhase('release');A.tx=A.x+aw*.5;A.ty=AL_FEET-ah*.5;
     });
    }
@@ -39978,9 +39979,8 @@ if(c.lesson > 20) {
     g.globalCompositeOperation='lighter';part(F.mul,0,0,.4);g.globalCompositeOperation='source-over';g.globalAlpha=1;
    }
   }else if(im&&A.phase!=='cast'&&A.phase!=='shout'){
-   const tremble=A.phase==='plead'?(A.t%6<3?1:-1):0;
    const sx=1+A.sq*.1,sy=1-A.sq*.12;
-   g.translate(A.x+aw/2+tremble,AL_FEET);g.rotate(A.lean);g.scale(sx,sy);
+   g.translate(A.x+aw/2,AL_FEET);g.rotate(A.lean);g.scale(sx,sy);
    g.drawImage(im,-aw/2-RIM,-ah-RIM);
   }
   g.restore();
