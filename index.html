@@ -29234,7 +29234,15 @@ const NB=(()=>{
   if(S.mnfight!==2||!h.visible)return;
   if(h.mode==='purple')return; // obj_purpleheart: its owner moves it along the strings
   const sp=S.sp,slow=held.cancel?sp/2:0;
-  if(h.mode==='red'){
+  if(h.mode==='red'&&h.confuse){
+   // obj_heart confuse==1 (Madjick's gibberish): every direction reversed. The source's
+   // LEFT adds the X/shift half-speed instead of taking it off, so that one gets faster.
+   h.cang=(h.cang||0)+6;
+   if(held.up)h.y+=sp-slow;
+   if(held.down)h.y-=sp-slow;
+   if(held.left)h.x+=sp+slow;
+   if(held.right)h.x-=sp-slow;
+  }else if(h.mode==='red'){
    if(held.up)h.y-=sp-slow;
    if(held.down)h.y+=sp-slow;
    if(held.left)h.x-=sp-slow;
@@ -29272,7 +29280,9 @@ const NB=(()=>{
   33:{font:'plain',color:'#000000',dx:0,dy:0,wrap:(x)=>x+190,speed:1,sound:'txt2',spacing:9,vspacing:20},
   22:{font:'papyrus',color:'#000000',dx:10,dy:0,wrap:(x)=>x+200,speed:1,sound:'papyrusText',spacing:11,vspacing:20},
   51:{font:'plain',color:'#000000',dx:20,dy:16,wrap:(x)=>x+999,speed:3,sound:['mtt1','mtt2','mtt3','mtt4','mtt5','mtt6','mtt7','mtt8','mtt9'],spacing:8,vspacing:18},
-  52:{font:'plain',color:'#000000',dx:20,dy:20,wrap:(x)=>x+999,speed:1,sound:'txtAl',spacing:8,vspacing:18}
+  52:{font:'plain',color:'#000000',dx:20,dy:20,wrap:(x)=>x+999,speed:1,sound:'txtAl',spacing:8,vspacing:18},
+  // typer 5: fnt_maintext, white (Knight Knight's "It's OK."); drawn as fnt_main at half size.
+  5:{font:'half',color:'#ffffff',dx:20,dy:20,wrap:(x)=>x+999,speed:1,sound:'txt2',spacing:8,vspacing:18}
  };
  // Content written for the old engine uses "\n" and relies on word wrap. UNDERTALE
  // text uses "&" line breaks, "/" wait-for-Z and "%" message ends. Normalise to UT
@@ -29372,8 +29382,8 @@ const NB=(()=>{
    return;
   }
   const at=images.fntMainAtlas;if(!at)return;
-  const [sx,sy,sw,sh,,off]=utMainGlyph(ch);
-  if(sw>0&&sh>0)g.drawImage(tinted(at,color),sx,sy,sw,sh,Math.round(x+off),Math.round(y),sw,sh);
+  const [sx,sy,sw,sh,,off]=utMainGlyph(ch),k=font==='half'?.5:1;
+  if(sw>0&&sh>0)g.drawImage(tinted(at,color),sx,sy,sw,sh,Math.round(x+off*k),Math.round(y),sw*k,sh*k);
  }
  // draw_sprite_ext colour blending is a multiply (keeps black outlines black).
  const mulCache=new Map();
@@ -29786,16 +29796,17 @@ const NB=(()=>{
    let border=null;
    for(const m of alive()){
     const sp=m.def.speech?m.def.speech(m,api):null;
-    // A plain string, or {text|pages, wide, pos, img, tx, voice, hold, onFace}.
+    // A plain string, or {text|pages, wide, pos, img, tx, voice, hold, onFace, typer, instant}.
+    // img:false draws no bubble at all; instant shows the whole message at once (OBJ_INSTAWRITER).
     // hold: the talk phase waits until that bubble has been read through.
     const o=sp&&typeof sp==='object'?sp:(sp?{text:sp}:null);
     if(o){
      const wide=o.wide??(m.def.bubble==='wide');
      const pos=o.pos||(m.def.bubblePos?m.def.bubblePos(m):{x:m.x+m.w,y:m.y});
      const pages=(o.pages||[o.text]).map(t=>String(t).replace(/\n/g,'&'));
-     const w=new NB.Writer(pages,{typer:o.typer||m.def.typer||2,x:pos.x+(o.tx??(wide?20:15)),y:pos.y+10,sound:o.voice||m.def.voice||undefined});
+     const w=new NB.Writer(pages,{typer:o.typer||m.def.typer||2,x:pos.x+(o.tx??(wide?20:15)),y:pos.y+10,sound:o.voice||m.def.voice||undefined,instant:!!o.instant});
      if(o.onFace)w.onFace=o.onFace;
-     S.bubbles.push({m,x:pos.x,y:pos.y,wide,img:o.img||(m.def.bubbleImg?m.def.bubbleImg(m):null),hold:!!o.hold,w});
+     S.bubbles.push({m,x:pos.x,y:pos.y,wide,img:o.img===false?false:o.img||(m.def.bubbleImg?m.def.bubbleImg(m):null),hold:!!o.hold,w});
     }
     const b=m.def.border?m.def.border(m,api):null;if(b!=null&&border==null)border=b;
    }
@@ -30857,7 +30868,11 @@ const NB=(()=>{
   if(h.mode==='purple'&&images.purpleHeart)im=images.purpleHeart[Math.floor(h.frame)%2]||images.purpleHeart[0]||im;
   // spr_heartgreen (exports reversed: _1 is image_index 0).
   if(h.mode==='green'&&images.nbHeartGreen)im=images.nbHeartGreen[1-(Math.floor(h.frame)%2)]||im;
-  if(im)g.drawImage(im,Math.round(h.x),Math.round(h.y),16,16);
+  if(h.confuse&&h.mode==='red'&&S.mnfight===2&&images.confuseHeart?.length){
+   // spr_confuseheart (origin 8,8) spins about the SOUL's centre
+   const c=images.confuseHeart[Math.floor(h.frame)%2]||images.confuseHeart[0];
+   g.save();g.translate(Math.round(h.x)+8,Math.round(h.y)+8);g.rotate(-(h.cang||0)*Math.PI/180);g.drawImage(c,-8,-8,16,16);g.restore();
+  }else if(im)g.drawImage(im,Math.round(h.x),Math.round(h.y),16,16);
   // SOULGraze: the ring flashes when a bullet comes close.
   if(S.party&&S.grazeFx>0&&S.mnfight===2){g.save();g.globalAlpha=S.grazeFx/6;g.strokeStyle='#ffffff';g.lineWidth=2;g.beginPath();g.arc(h.x+8,h.y+8,21,0,Math.PI*2);g.stroke();g.restore()}
  }
@@ -30914,7 +30929,7 @@ const NB=(()=>{
   }
  }
  function drawBubble(g,b){
-  const im=b.img||(b.wide?images.torielBubbleWide:images.torielBubbleSmall);
+  const im=b.img===false?null:b.img||(b.wide?images.torielBubbleWide:images.torielBubbleSmall);
   if(im)g.drawImage(im,Math.round(b.x),Math.round(b.y));
   b.w.draw(g);
  }
@@ -30979,7 +30994,8 @@ const NB=(()=>{
   for(const m of S.mons)if(m.alive&&m.def.drawOver)m.def.drawOver(ctx,m,NB.api);
   if(!S.cinematic){drawHud(ctx,S);drawButtons(ctx,S);drawHeart(ctx,S)}
   if(S.overlay)S.overlay(ctx,S);
-  if(S.party){for(const e of S.fx)if(e.top&&e.draw)e.draw(ctx,e);drawPartyNums(ctx,S)}
+  for(const e of S.fx)if(e.top&&e.draw)e.draw(ctx,e); // over the HUD (party spells, obj_flasher)
+  if(S.party)drawPartyNums(ctx,S);
   if(S.fade>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,S.fade)+')';ctx.fillRect(-40,-40,720,560)}
   for(const w of S.dmgw)drawDmg(ctx,w);
   ctx.restore();
@@ -37543,6 +37559,823 @@ if(c.lesson > 20) {
  });
  function askerStart(m,api){if(api.S.mnfight===2)ask(m,api)}
 })();
+/* ---- NB content: Core I (obj_finalfroggit, obj_whimsalot, obj_astigmatism, obj_wizard = Madjick,
+        obj_finalknight = Knight Knight, with their bodies; obj_megaflybulletgen, obj_frogbullet_gen,
+        obj_butterflybullet_gen/_gen_2, obj_astigmatismgen, obj_stromboligen, obj_wizardorb_chaser,
+        obj_wizardorb_wall, obj_crosszap, obj_hammergen, obj_skyorb and their bullets) ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB;
+ const {dse,sprBullet,move,tick,fr,choose,talkLen}=NB.hl;
+ const R=Math.round;
+ const pop=()=>NB.S.mons.filter(m=>m.alive).length; // scr_monstersum
+ const ptDir=(x0,y0,x1,y1)=>Math.atan2(-(y1-y0),x1-x0)*180/Math.PI;
+ const dirOf=b=>Math.atan2(-b.vy,b.vx)*180/Math.PI;
+ const setDir=(b,d)=>{const s=Math.hypot(b.vx,b.vy);b.vx=dcos(d)*s;b.vy=-dsin(d)*s};
+ // move_towards_point
+ function toward(b,x,y,sp){const d=ptDir(b.x,b.y,x,y);b.vx=dcos(d)*sp;b.vy=-dsin(d)*sp}
+ function capSpeed(b,mx){const s=Math.hypot(b.vx,b.vy);if(s>mx){b.vx*=mx/s;b.vy*=mx/s}}
+ const hurtPose=m=>m.hurt||(!m.alive&&!m.spared);
+ // scr_battlegroup: these ~100px monsters stand at 218 alone, 106/416 in pairs, 16/218/420 in threes.
+ function slotX(i,n,cx,half){
+  if(n===1)return 218;if(n===2)return [106,416][i];if(n===3)return [16,218,420][i];
+  return R(cx-half);
+ }
+ // Destroy event: spared (or otherwise gone) untouched and won over pays a bonus.
+ const goldOnSpare=n=>(m,api)=>{if(m.mercymod>10&&m.hp===m.maxhp)api.S.goldTotal+=n};
+ // obj_flasher: white over everything, full two frames in, then fading 0.1 a step.
+ function flash(api){
+  api.S.fx.push({t:0,top:true,step(e){if(++e.t>13)e.dead=true},
+   draw(g,e){const a=e.t<2?0:1-(e.t-2)*.1;if(a<=.02)return;g.save();g.globalAlpha=a;g.fillStyle='#fff';g.fillRect(-40,-40,720,560);g.restore()}});
+ }
+ const bat=()=>{try{return music[battleMusicKey()]||null}catch(_){return null}};
+ const musPause=()=>{const a=bat();if(a&&!a.paused){try{a.pause()}catch(_){}}};
+ const musResume=()=>{const a=bat();if(a&&a.paused&&NB.S&&!NB.S.won){try{playMusicElement(a)}catch(_){try{a.play()}catch(__){}}}};
+
+ // ----------------------------------------------------------- Final Froggit
+ // obj_finalfroggit_body (at +0,+24): a squashing body and a head that sways and tilts.
+ NB.defs.set('finalfroggit',{
+  name:'Final Froggit',hp:100,atk:8,def:0,xp:120,gold:80,mercymod:15,wd:100,
+  encounter:'* Final Froggit was already there^1,&  waiting for you',
+  size:()=>({w:100,h:126}),
+  pos:(i,n,cx)=>({x:slotX(i,n,cx,50),y:110}),
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{siner:0,impress:0})},
+  step(m){if(m.hurt)m.v.siner=0;else m.v.siner++},
+  draw(g,m){
+   const s=m.v.siner,x=m.x+60,y=m.y+24+20;
+   // trimmed exports: the body starts 4px in, the head 1px down
+   dse(g,images.finalFroggitBody,x,y+90,2,2-Math.sin(s/3)*.15,0,1,21,25);
+   dse(g,hurtPose(m)?images.finalFroggitHeadHurt:images.finalFroggitHead,x+Math.sin(s/6)*10,y+Math.sin(s/3)*4,2,2,-Math.sin(s/6)*2,1,25,18);
+  },
+  vaporDraw(g,m){dse(g,images.finalFroggitHurt,0,0)},
+  bubblePos:m=>({x:m.x+100,y:m.y+20}),
+  acts:['Check','Compliment','Threaten','Mystify'],
+  check:()=>'* FINAL FROGGIT - ATK 30 DEF 24&* Its future looks brighter and&  brighter./',
+  act(m,i,name){
+   if(name==='Compliment'){m.atk-=2;m.mercymod+=40;return '* You compliment Final Froggit^1.&* It understood you perfectly^1.&* Its ATTACK dropped.'}
+   if(name==='Threaten'){m.df-=20;m.mercymod+=40;return '* You threaten Final Froggit^1.&* It understood you perfectly^1.&* Its DEFENSE dropped.'}
+   if(m.mercymod<200){m.mercymod=200;return '* You did something mysterious./* Final Froggit recognizes it&  has more to learn from&  this world.'}
+   return '* You did something mysterious^1.&* But nothing happened.';
+  },
+  speech(m){
+   const v=m.v,c=v.cmd=Math.round(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t=c<30?'Robbit,&robbit.':c<50?'Creak,&creak.':c<80?'Skip,&jump.':'Woof.';
+   if(h==='Threaten')t='Shudder,&shudder.';
+   if(h==='Compliment')t='Nod,&nod.';
+   if(h==='Mystify')t='(Thought&-ful&croak)';
+   if(v.impress)t='(Impress&-ed&ribbit)';
+   v.impress=0;
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0;m.heardName=null;
+   api.turntimer(150);
+   let rate=10;if(api.alive().some(o=>o.id==='astigmatism'))rate+=5;
+   if(p===3)rate*=2.8;if(p===2)rate*=1.8;
+   if(c>=50&&p===1)frogBullet(api,m.atk);
+   else v.gen={kind:'megafly',a0:2,rate,dmg:m.atk};
+   let f='* Final Froggit knows exactly&  why it\'s here.';
+   if(c>=30)f='* Final Froggit jumps ominously&  up and down.';
+   if(c>=60)f='* The battlefield is filled&  with the smell of mustard&  seed.';
+   if(c>=80)f='* You are intimidated by&  Final Froggit\'s strength^4.&* Truly.';
+   if(m.mercymod>100)f='* Final Froggit seems reluctant&  to fight you.';
+   if(api.srcHp(m)<100/4)f='* Final Froggit stands its&  ground.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||g.kind!=='megafly'||!tick(g,'a0'))return;
+   // obj_megaflybulletgen: a fly drops in above the box while fewer than ten are out
+   if(api.S.bullets.filter(b=>b.megafly&&b.alive).length<10){const [L,Rr,T]=api.S.ideal;megaFly(api,L+10+rnd(Rr-L-20),T-10,g.dmg)}
+   g.a0=g.rate;
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare:goldOnSpare(50)
+ });
+ // obj_megaflybullet: flies at the SOUL, stops, wobbles, then darts again every 90 steps.
+ function megaFly(api,x,y,dmg){
+  const h=api.heart;
+  const b=sprBullet(api,{x,y,im:images.finalFroggitMegaFly,anim:.2,megafly:1,dmg,kill:false,clip:true,siner:0,sineron:1,a0:8,a1:24,a2:80,
+   onHit:b=>api.damageStd(b.dmg,{min:3}),
+   step(b){
+    if(tick(b,'a0')){b.vx=0;b.vy=0}
+    if(tick(b,'a1')){toward(b,h.x-4,h.y-4,5);b.a1=90;b.sineron=0}
+    if(tick(b,'a2')){b.alive=false;return}
+    if(b.sineron){b.siner++;b.x+=Math.sin(b.siner/4);b.y+=Math.cos(b.siner/2)/2}
+    b.x+=b.vx;b.y+=b.vy;
+   }});
+  toward(b,h.x-2,h.y-2,3);
+ }
+ // obj_frogbullet_ex: a frog sits on a wall, then leaps at the SOUL under gravity pulling it
+ // back, and lands on whichever wall it reaches (turning to stand on it).
+ function frogBullet(api,dmg){
+  const [L,Rr,,B]=api.S.ideal;
+  sprBullet(api,{x:L+(Rr-L)/2,y:B-20,im:images.finalFroggitFrogStop,ox:20,oy:20,side:0,active:0,lazy:0,a0:20,dmg,kill:false,
+   onHit:b=>api.damageStd(b.dmg,{min:3}),
+   step(b){
+    const h=api.heart,[L,Rr,T,B]=api.S.ideal;
+    if(tick(b,'a0')){
+     if(!b.active){
+      const k=[[36,0,180],[15,36,90],[-26,10,0],[0,-26,270]][b.side];
+      toward(b,h.x+k[0],h.y+k[1],6);b.grav=.16;b.gdir=k[2];b.im=images.finalFroggitFrogGo;
+     }
+     b.active=1;
+    }
+    if(b.active){
+     const land=(side,rot)=>{b.active=0;b.side=side;b.grav=0;b.vx=0;b.vy=0;b.im=images.finalFroggitFrogStop;b.rot=rot;b.a0=b.lazy?20:8};
+     if(b.x<L+15){land(1,-90);b.x=L+20}
+     if(b.y<T+15){land(2,180);b.y=T+20}
+     if(b.x>Rr-15){land(3,90);b.x=Rr-20}
+     if(b.y>B-15){land(0,0);b.y=B-20}
+    }
+    move(b);
+   }});
+ }
+
+ // --------------------------------------------------------------- Whimsalot
+ // obj_whimsalot_body (at +21,+0): two flapping wings, body and head bobbing on sin(siner/5).
+ NB.defs.set('whimsalot',{
+  name:'Whimsalot',hp:95,atk:8,def:-3,xp:110,gold:80,mercymod:10,wd:116,
+  encounter:'* Whimsalot rushed in!',
+  size:()=>({w:116,h:95}),
+  pos:(i,n,cx)=>({x:slotX(i,n,cx,58),y:110}),
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{siner:0,greentime:0,impress:0})},
+  step(m){if(m.hurt)m.v.siner=0;else m.v.siner++},
+  draw(g,m){
+   const s=m.v.siner,x=m.x+21,y=m.y,goof=Math.sin(s/5),w=fr(images.whimsalotWing,s/15);
+   // wing and head frames are exported trimmed 1px in
+   dse(g,w,x+60,y+40-goof*2,2,2,Math.sin(s/2.5)*30-15,1,-1,14);
+   dse(g,w,x+14,y+40-goof*2,-2,2,-Math.sin(s/2.5)*30+15,1,-1,14);
+   dse(g,fr(images.whimsalotBody,s/18),x,y+50+goof*6,2,2);
+   if(hurtPose(m))dse(g,images.nbWhimsalotHeadHurt,x+6,y+goof*8,2,2);
+   else dse(g,fr(images.whimsalotHead,s/10),x+6,y+goof*8,2,2,0,1,-1,-1);
+  },
+  vaporDraw(g,m){dse(g,images.whimsalotHurt,0,0)},
+  bubblePos:m=>({x:m.x+100,y:m.y}),
+  acts:['Check','Console','Terrorize','Pray'],
+  check:()=>'* WHIMSALOT - ATK 34 DEF 12&* It finally stopped worrying./',
+  act(m,i,name){
+   if(name==='Console'){m.mercymod+=30;return '* You reassure Whimsalot that&  what it\'s doing is&  alright.'}
+   if(name==='Terrorize')return '* You leap at Whimsalot in a&  threatening manner.';
+   m.mercymod+=50;m.v.greentime=1;
+   return '* You kneel and pray for safety^1.&* Whimsalot remembers its&  conscience.';
+  },
+  speech(m){
+   const v=m.v,c=v.cmd=Math.round(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t=c<30?'No&regrets.':c<50?'I\'ve&made my&choice.':c<80?'Not this&time.':'*Shine&shine*';
+   if(h==='Terrorize')t='I\'m not&afraid&of you.';
+   if(h==='Console')t='I\'ve&made&my&peace.';
+   if(h==='Pray')t=c<50?'Don\'t&give&up!':'There\'s&still&hope.';
+   if(v.impress)t='Courage&...';
+   v.impress=0;
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0;m.heardName=null;
+   api.turntimer(150);
+   let rate=22;if(p===3)rate*=2.7;if(p===2)rate*=1.8;
+   // obj_butterflybullet_gen_2 (moths rising past the SOUL) or obj_butterflybullet_gen (a ring);
+   // after a prayer two of the ring's moths are green.
+   if((c>=50||p===1)&&!v.greentime)v.gen={kind:'rise',a0:1,rate,dmg:m.atk};
+   else v.gen={kind:'ring',a0:1,dmg:m.atk,green:v.greentime===1};
+   let f='* Whimsalot locks eyes with you.';
+   if(c>=25)f='* Whimsalot flutters silently.';
+   if(c>=50)f='* Whimsalot shakes its head&  dismissively.';
+   if(c>=75)f='* Whimsalot spins its weapon&  around.';
+   if(c>=90)f='* Smells like nightshade and&  bleach.';
+   if(m.mercymod>80)f='* Whimsalot doesn\'t want to&  fight anymore.';
+   if(api.srcHp(m)<=95/4)f='* Whimsalot\'s flying stutters.';
+   v.greentime=0;
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||!tick(g,'a0'))return;
+   if(g.kind==='ring'){whimRing(api,g.dmg,g.green);return}
+   const h=api.heart,B=api.S.ideal[3];
+   for(const dx of [-50,10,70])whimRise(api,h.x+dx,B+20,g.dmg);
+   g.a0=g.rate;
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare:goldOnSpare(50)
+ });
+ // obj_butterflybullet: eighteen moths circling the middle of the box, the circle breathing
+ // in and out while it drifts round; the gen nudges every moth already out (all instances).
+ function whimRing(api,dmg,green){
+  const [L,Rr,T,B]=api.S.ideal,cx=L+(Rr-L)/2,cy=T+(B-T)/2-(green?20:0),p=pop();
+  const j=green?Math.floor(rnd(16)):-9;
+  for(let i=0;i<18;i++){
+   const g=green&&(i===j||i===j+1);
+   sprBullet(api,{x:cx,y:cy,ix:cx,iy:cy,im:g?images.butterflyBulletGreen:images.butterflyBullet,frame:i*.2,anim:.2,ox:11,oy:11,
+    siner:i*20,siner2:0,sf:64,s2f:1,sadd:4,ring:1,green:g,dmg,kill:false,
+    onHit(b){if(!b.green)return api.damageStd(b.dmg,{min:3});greenMoth(api,b);return true},
+    step(b){
+     b.siner+=b.sadd;b.siner2+=b.s2f;
+     b.x=b.ix+Math.sin(b.siner*Math.PI/180)*b.sf;b.y=b.iy+Math.cos(b.siner*Math.PI/180)*b.sf;
+     b.rot=b.siner;b.sf-=Math.sin(b.siner2/6)*1.2;
+     b.x+=Math.sin(b.siner2/12)*14;b.y+=Math.cos(b.siner2/12)*14;
+    }});
+  }
+  const all=api.S.bullets.filter(b=>b.ring&&b.alive);
+  if(green)for(const b of all){b.s2f=0;b.sadd=p>2?3:p>1?4:6;if(p>2)b.sf+=2}
+  else{
+   for(const b of all)b.sf+=8;
+   if(p<3&&api.alive().some(o=>o.v.gen?.kind==='megafly'))for(const b of all)b.sf-=8;
+   if(p>2)for(const b of all)b.sf+=8;
+  }
+ }
+ // A green moth heals 1 HP and wins every Whimsalot over a little more.
+ function greenMoth(api,b){
+  const ws=api.alive().filter(o=>o.id==='whimsalot');
+  if(ws.length){api.S.nextFlavor='* Whimsalot doesn\'t want to&  fight anymore.';for(const o of ws)o.mercymod+=40}
+  api.heal(1);snd('power');b.alive=false;
+  if(pop()===1)api.S.turntimer=20;
+ }
+ // obj_butterflybullet_2: rises from under the box, slowing, its wings beating with its speed.
+ function whimRise(api,x,y,dmg){
+  const sp=pop()>1?3:5,d=90+rnd(20)-10;
+  sprBullet(api,{x,y,im:images.butterflyBullet,ox:11,oy:11,rot:d,vx:dcos(d)*sp,vy:-dsin(d)*sp,dmg,kill:false,off:0,
+   onHit:b=>api.damageStd(b.dmg,{min:3}),
+   step(b){
+    if(b.vy<-1.5)b.vy+=.15;
+    b.frame+=b.vy/8;
+    if(b.y<api.S.ideal[2]-20)b.off=1;
+    if(b.off){b.alpha-=.05;if(b.alpha<.1){b.alive=false;return}}
+    b.x+=b.vx;b.y+=b.vy;
+   }});
+ }
+
+ // ------------------------------------------------------------- Astigmatism
+ // obj_astigmatism_body (at +6,+10): every so often the eye squints shut (anim2), and while
+ // it holds, the arms and legs start to pump.
+ function astigStep(v,hurt){
+  if(hurt){v.anim=0;v.anim2=0;v.sfactor=0;v.siner=0}
+  v.anim++;
+  if(v.anim>250){if(v.sfactor<1)v.sfactor+=.05;v.siner++}
+  if(v.anim>140&&v.anim<180){v.anim2++;if(v.anim2>18)v.anim=200}
+  if(v.anim>220&&v.anim<280){v.anim2++;if(v.anim2>=33)v.anim=300}
+  if(v.anim>480){if(v.sfactor>0)v.sfactor-=.07;v.anim2--;if(v.anim2<=0){v.sfactor=0;v.anim2=0;v.anim=0}}
+ }
+ NB.defs.set('astigmatism',{
+  name:'Astigmatism',hp:120,atk:8,def:-2,xp:130,gold:85,mercymod:10,wd:100,
+  encounter:'* Astigmatism drew near.',
+  size:()=>({w:96,h:116}),
+  pos:(i,n,cx)=>({x:slotX(i,n,cx,48),y:110}),
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{anim:0,anim2:0,sfactor:0,siner:0,turnt:0,impress:0,pickon:choose(0,1)})},
+  step(m){astigStep(m.v,m.hurt)},
+  draw(g,m){
+   const v=m.v,x=m.x+6,y=m.y+10,s=v.siner,k=v.sfactor,sn=Math.sin(s/6),cs=Math.cos(s/6);
+   // spr_astigmatism_handl is exported trimmed 1px in
+   dse(g,images.astigHand,x+8+sn*2*k,y+64+cs*2*k,2,1.8+cs*.2*k,0,1,-1,0);
+   dse(g,images.astigLeg,x+30+cs*2*k,y+84+sn*2*k,2,1.8+sn*.2*k);
+   dse(g,images.astigHand,x+92-sn*2*k,y+64-cs*2*k,-2,1.9-cs*.2*k,0,1,-1,0);
+   dse(g,images.astigLeg,x+70-cs*2*k,y+84-sn*2*k,-2,1.8-sn*.2*k);
+   dse(g,fr(images.astigAnim2,v.anim2/3),x,y,2,2);
+  },
+  vaporDraw(g,m){dse(g,images.astigHurt,0,0)},
+  bubblePos:m=>({x:m.x+100,y:m.y+20}),
+  acts:['Check','Pick On','Don\'t Pick On','Challenge'],
+  actText:()=>'   * Check         * Pick On&   * Don\'t Pick    * Challenge&     On',
+  check:()=>'* ASTIGMATISM - ATK 32 DEF 26&* This relentless bully ALWAYS&  gets its way./',
+  act(m,i,name,api){
+   const v=m.v;
+   // It tells you on its first turn which of the two it wants.
+   if(name==='Pick On'){m.mercymod=v.pickon===0?-120:120;return '* You pick on Astigmatism.'}
+   if(name==='Don\'t Pick On'){m.mercymod=v.pickon===1?-120:120;return '* You don\'t pick on Astigmatism.'}
+   // Challenge: every monster (obj_monsterparent) is impressed enough to be spared - but not it.
+   const one=pop()===1;
+   for(const o of api.S.mons)if(o.alive){o.mercymod=150;o.v.impress=1}
+   v.impress=0;m.mercymod=0;
+   return one?'* You stand up to Astigmatism.':'* You stand up to Astigmatism^1.&* The other monsters are&  impressed.';
+  },
+  speech(m){
+   const v=m.v,c=v.cmd=Math.round(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t='...&...';
+   if(c<75)t='You\'ve&seen&enough.';
+   if(c<50)t='Take&your&last&look.';
+   if(c<25)t='...';
+   if(h==='Don\'t Pick On'){if(m.mercymod<0)t='What are&you so&afraid&of?';if(m.mercymod>80)t='Finally,&someone&gets it.'}
+   if(h==='Pick On'){if(m.mercymod<0)t='How&dare&you.';if(m.mercymod>80)t='That\'s&right!'}
+   if(h==='Challenge'){if(m.mercymod<1)t='You&dare&defy me?';if(m.mercymod>80)t='You\'ve&pushed&your&luck.'}
+   if(v.impress)t='That&takes&guts.';
+   v.impress=0;
+   if(v.turnt===0){t=v.pickon===0?'...&Don\'t&pick on&me.':'...&Pick on&me.';v.turnt=1}
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0;m.heardName=null;
+   api.turntimer(150);
+   let rate=17;if(p===3)rate*=2.8;if(p===2)rate*=1.8;
+   if(c>=50)v.gen={kind:'eye',a0:1,rate,dmg:m.atk};
+   else v.gen={kind:'strom',a0:1,rate:rate+(p===1?1:0),dmg:m.atk,spd:p>1?1.5:2};
+   let f='* Astigmatism gazes through&  your soul.';
+   if(c>=30)f='* Astigmatism gives you a&  hypnotizing glare.';
+   if(c>=70)f='* Astigmatism clicks its teeth.';
+   if(c>=90)f='* Smells like glasses.';
+   if(m.mercymod<-100)f='* Astigmatism has gone&  bloodshot.';
+   if(m.mercymod>100)f='* Astigmatism doesn\'t care&  about fighting anymore.';
+   if(api.srcHp(m)<120/3)f='* Astigmatism is watering.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||!tick(g,'a0'))return;
+   g.a0=g.rate;
+   const [L,Rr,T,B]=api.S.ideal;
+   if(g.kind==='eye')astigEye(api,Rr+90,T+rnd(B-T+10)-20,g.dmg);
+   else stromboli(api,g.dmg,g.spd);
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare:goldOnSpare(50)
+ });
+ // Bullets that fade in, then fade out once they're well past the left wall.
+ function fadeStep(b,api){
+  if(b.alpha<1&&!b.off)b.alpha+=.1;
+  if(b.x<api.S.ideal[0]-30)b.off=1;
+  if(b.off)b.alpha-=.05;
+  if(b.alpha<.1&&b.off){b.alive=false;return true}
+  return false;
+ }
+ // obj_sonbullet
+ function son(api,x,y,im){
+  return sprBullet(api,{x,y,im,alpha:0,off:0,dmg:8,kill:false,
+   onHit:b=>b.alpha>=1?api.damageStd(b.dmg,{min:3}):false,
+   step(b){fadeStep(b,api)}});
+ }
+ // obj_astigmatism_bullet: a big eyeball crossing right to left on a wavy line, two smaller
+ // ones orbiting it.
+ function astigEye(api,x,y,dmg){
+  const p=pop(),[,,T,B]=api.S.ideal;
+  let vy=-1+rnd(2);
+  if(y>B-50&&vy>0){vy*=-1;if(Math.abs(vy)<.3)vy*=2}
+  if(y<T+50&&vy<0){vy*=-1;if(Math.abs(vy)<.3)vy*=2}
+  let vx=-3-rnd(1),av=(.7+rnd(.5))*choose(1,-1),f1=22,f2=40;
+  if(p>1){f1=18;f2=36;av=(.7+rnd(.5))*choose(1,-1)}
+  if(p>2){vx=-2.5-rnd(1);f1=16;f2=32;av=(.6+rnd(.5))*choose(1,-1)}
+  const as=rnd(300);
+  const kid=son(api,x+Math.sin(as/16)*14,y+Math.cos(as/16)*14,images.circleBulMed);
+  const kid2=son(api,x+Math.sin(as/16)*28,y+Math.cos(as/16)*28,images.circleBulSm);
+  sprBullet(api,{x,y,im:images.circleBulLarge,vx,vy,alpha:0,off:0,siner:0,as,av,f1,f2,dmg,kill:false,
+   onHit:b=>b.alpha>=1?api.damageStd(b.dmg,{min:3}):false,
+   onDie(){kid.alive=false;kid2.alive=false},
+   step(b){
+    b.siner++;b.y+=Math.cos(b.siner/3)*.6;b.as+=b.av;
+    if(kid.alive){kid.x=-2+b.x+Math.sin(b.as/16)*b.f1;kid.y=b.y+Math.cos(b.as/16)*b.f1}
+    if(kid2.alive){kid2.x=b.x+Math.sin(b.as/16)*b.f2;kid2.y=b.y+Math.cos(b.as/16)*b.f2}
+    if(b.x<0){b.alive=false;return}
+    if(fadeStep(b,api))return;
+    b.x+=b.vx;b.y+=b.vy;
+   }});
+ }
+ // obj_stromboli: comes in diagonally from a corner, speeding up, turns once at the first
+ // wall it reaches and fades a second later.
+ function stromboli(api,dmg,spd){
+  const [L,Rr,T,B]=api.S.ideal,vs=choose(0,1),hs=choose(0,1);
+  let x,y,vx,vy;
+  if(vs===0){y=T-60;vy=spd}else{y=B+40;vy=-spd}
+  if(hs===0){x=L-40;vx=spd}else{x=Rr+40;vx=-spd}
+  if(hs===1)x+=rnd(Rr-L-20)-100;else x-=rnd(Rr-L-20)-100;
+  sprBullet(api,{x,y,vx,vy,fric:-.05,im:images.circleBulMed,alpha:0,off:0,active:1,a3:-1,dmg,kill:false,
+   onHit:b=>b.alpha>=1?api.damageStd(b.dmg,{min:3}):false,
+   step(b){
+    if(tick(b,'a3'))b.off=1;
+    const [L,Rr,T,B]=api.S.ideal;
+    if(b.active===1){
+     const turn=(vx,vy)=>{b.active=2;b.a3=60;b.vx=vx;b.vy=vy};
+     if(b.vx>0&&b.x>Rr-22)turn(-2,0);
+     if(b.vx<0&&b.x<L-2)turn(2,0);
+     if(b.vy>0&&b.y>B-22)turn(0,-2);
+     if(b.vy<0&&b.y<T-2)turn(0,2);
+    }
+    if(b.alpha<1&&!b.off)b.alpha+=.1;
+    if(b.off)b.alpha-=.05;
+    if(b.alpha<.1&&b.off){b.alive=false;return}
+    move(b);
+   }});
+ }
+
+ // ----------------------------------------------------------------- Madjick
+ // obj_wizardbody (at +2,+46, drawn 70px right): boots, lapels, dress, head and hat swaying,
+ // two orbs either side shedding sparkles. A glared-at orb goes still and dull.
+ NB.defs.set('madjick',{
+  name:'Madjick',hp:190,atk:8,def:-1,xp:150,gold:120,mercymod:20,wd:143,
+  encounter:'* Madjick pops out of its hat!',
+  size:()=>({w:143,h:157}),
+  pos:(i,n,cx)=>n===1?{x:244,y:50}:{x:R(cx-72),y:50},
+  shudder:[8,1],shudderAbs:true,
+  dmgPos:m=>({x:m.x,y:m.y-24}),
+  setup(m){Object.assign(m.v,{siner:0,exist:0,a0:4,stare1:0,stare2:0,stare1a:0,stare2a:0,confuse:0,clear:0,choice:null})},
+  step(m,api){
+   const v=m.v,st=api.S;
+   v.exist++;
+   if(m.hurt){v.siner=0;if(v.a0>0)v.a0++}else v.siner++;
+   if(tick(v,'a0')){
+    // obj_orbsprinkle from each orb (none from an orb that's been glared at)
+    v.a0=5;
+    const X=m.x+72,Y=m.y+46,som=Math.sin(v.siner/2.5);
+    if(v.exist<10||v.stare2===0)sprinkle(st,X+46+rnd(18),Y-10+som*4-rnd(6));
+    if(v.exist<10||v.stare1===0)sprinkle(st,X-66+rnd(18),Y+som*4-rnd(6));
+   }
+   // STARE's choice: "Chaser Orb" / "Corner Orb" (obj_choicer, bmenuno 6)
+   if(v.choice){
+    const h=st.heart,P=NB.pressed;h.visible=true;
+    if(P.left||P.right){v.choice.c=1-v.choice.c;snd('move')}
+    h.x=st.ideal[0]+32+v.choice.c*252;h.y=st.ideal[2]+92;
+    if(P.confirm){
+     NB.clearPressed('confirm');snd('select');
+     const chaser=v.choice.c===0;v.choice=null;h.visible=false;st.myfight=2;
+     let t;
+     if(chaser){
+      v.stare1++;v.stare1a=1;
+      t=v.stare1>1?'* The destitute "Chaser Orb" was&  weakened further by your glare.':'* The unrelenting "Chaser Orb"&  was weakened by your glare.';
+     }else{
+      v.stare2++;v.stare2a=1;
+      t=v.stare2>1?'* The homely "Corner Orb" was&  weakened further by your glare.':'* The intimidating "Corner Orb"&  was weakened by your glare.';
+     }
+     if(m.mercymod<200)m.mercymod+=100;
+     api.write(t,{end:'/',onEnd:()=>{if(!st.exited&&!st.won&&st.myfight===2)api.endPlayerTurn()}});
+    }
+   }
+  },
+  draw(g,m){
+   const v=m.v,s=v.siner,X=m.x+72,Y=m.y+46,sam=Math.sin(s/5),sim=Math.cos(s/5),som=Math.sin(s/2.5),hurt=hurtPose(m);
+   // boots, dress, head and hat are exported trimmed (origins shifted to match)
+   dse(g,images.wizardBoot,X-23-sam*5,Y+80-sam*6,2,2,-40-sam*10,1,13,-1);
+   dse(g,images.wizardBoot,X+19+sam*5,Y+80-sam*6,-2,2,40+sam*10,1,13,-1);
+   dse(g,images.wizardLapel,X-2,Y+52+sam,2,2,-sam*10,1,0,12);
+   dse(g,images.wizardLapel,X-2,Y+52+sam,-2,2,sam*10,1,0,12);
+   dse(g,images.wizardDress,X-34,Y+52+sam,2,1.8-sam*.2,0,1,-1,0);
+   dse(g,hurt?images.nbWizardHeadHurt:images.wizardHead,X-6+sam,Y+2+sam*8,2,2,0,1,9,5);
+   dse(g,images.wizardHat,X+2+sim,Y+4+sam*10,2,2,0,1,17,24);
+   const e=Math.max(1,v.exist),still1=v.exist>=10&&v.stare1>0,still2=v.exist>=10&&v.stare2>0;
+   const orb=k=>hurt?images.nbWizardOrbHurt:fr(images.wizardOrb,k?s/e:s/3);
+   dse(g,orb(still1),X-44,Y+16+(still1?som*2/e:som*2),-2,-2);
+   dse(g,orb(still2),X+70,Y+6+(still2?som*5/e:som*5),-2,-2);
+  },
+  vaporDraw(g,m){dse(g,images.wizardHurt,0,0)},
+  bubblePos:m=>({x:m.x+125,y:m.y}),
+  acts:['Check','Talk','Stare','Clear Mind'],
+  check:()=>'* MADJICK - ATK 29 DEF 24 &* This magical mercenary only&  says magic words./',
+  act(m,i,name,api){
+   const v=m.v,st=api.S;
+   if(name==='Talk'){
+    let t;
+    if(v.confuse>0&&!v.clear){t='* You can\'t get a word&  in edgewise^1.&* Its words dizzy you...';st.heart.confuse=true;v.confuse=1}
+    else if(!v.clear){t='* Madjick interrupts you by&  chattering to it/* Its gibberish dizzies you...&* Your DEFENSE drops by 1.';v.confuse++;st.heart.confuse=true;st.df--}
+    else t='* Magick interrupts you by&  chattering to itself^1.&* It seems satisfied.';
+    m.mercymod=190;
+    return t;
+   }
+   if(name==='Stare'){
+    v.choice={c:0};st.myfight=3;
+    st.writer=new NB.Writer(['* Where to stare?             &                            &   Chaser Orb      Corner Orb'],{instant:true});
+    return {custom:true};
+   }
+   // Clear Mind
+   v.clear=1;
+   if(v.confuse===0){st.df+=5;return '* You ignore Madjick and think&  of pollen and sunshine^1.&* Your DEFENSE increased by 1.'}
+   st.df+=10;st.heart.confuse=false;v.confuse=0;
+   return '* You think of pollen and&  sunshine./* Your confusion abates^1.&* Your DEFENSE increased by 2.';
+  },
+  speech(m){
+   const v=m.v,c=v.cmd=Math.round(rnd(100));
+   talkLen(110);
+   let t='Abra&cadabra.';
+   if(c>=20)t='Alakazam&!!';
+   if(c>=40)t='Tinkle&tinkle&hoy.';
+   if(c>=60)t='Hocus&pocus.';
+   if(c>=80)t='Please&and&thank&you.';
+   if(m.mercymod===300){m.mercymod=299;t='Ah^1!&A fellow&wizard!'}
+   return t;
+  },
+  border:()=>17,
+  attack(m,api){
+   const v=m.v,p=pop(),st=api.S;m.heardName=null;
+   api.border(18);api.turntimer(160);
+   let c=v.cmd??0;
+   // a glared-at orb is the one that attacks next
+   if(v.stare1a)c=v.cmd=rnd(50)+50;
+   if(v.stare2a)c=v.cmd=rnd(49);
+   if(c<50)cornerOrb(api,v.stare2>0?8-v.stare2*2:8,v.stare2>0);
+   else{
+    const orb=chaser(api,{zap:1,king:1});
+    if(v.stare1>0&&p===1){
+     // three slower orbs that don't zap
+     orb.dirr=rnd(100);
+     const o2=chaser(api,{dirr:orb.dirr+40+rnd(80)});
+     chaser(api,{dirr:o2.dirr+40+rnd(70)});
+     for(const b of st.bullets)if(b.chaser){b.dmg-=v.stare1*2;b.zap=0}
+    }
+   }
+   v.stare1a=0;v.stare2a=0;
+   if(v.confuse>0)st.heart.confuse=true;
+   let f='* Madjick does a mysterious jig.';
+   if(c>=25)f='* Madjick flaunts its orbs&  in a menacing manner.';
+   if(c>=50)f='* Madjick whispers arcane&  swear words.';
+   if(c>=75)f='* Madjick peers at you with&  strange eyes.';
+   if(c>=90)f='* Smells like magic.';
+   if(m.mercymod===140)f='* Madjick is distracted by its&  own voice.';
+   if(v.confuse>0)f='* You still feel confused.';
+   if(v.confuse>0&&m.mercymod===140)f='* Madjick is distracted.&* You still feel confused.';
+   if(v.stare1>0&&v.stare2>0)f='* Madjick\'s orbs are&  incapacitated.';
+   if(m.mercymod>280)f='* Madjick believes you are&  a fellow wizard.';
+   return f;
+  },
+  endAttack(){musResume()},
+  onKill(m,api){api.S.heart.confuse=false},
+  onSpare(m,api){api.S.heart.confuse=false;goldOnSpare(60)(m,api)}
+ });
+ // obj_orbsprinkle: a sparkle that floats up faster and faster, flickering as it fades.
+ function sprinkle(st,x,y){
+  st.fx.push({x,y,vy:-1,alpha:1,sprank:0,sprink:0,ia:.8,
+   step(e){
+    e.sprank++;if(e.sprank>14)e.alpha-=.08;
+    e.ia=e.sprink?e.alpha:e.alpha*.8;e.sprink=1-e.sprink;
+    if(e.alpha<.05){e.dead=true;return}
+    e.vy-=.2;e.y+=e.vy;
+   },
+   draw(g,e){dse(g,images.nbWizardSprinkle,e.x,e.y,1,1,0,e.ia)}});
+ }
+ // obj_crosszap: fired at the SOUL; friction brings it to a stop and it fades out.
+ function crossZap(api,x,y,dmg,o){
+  const h=api.heart,d0=ptDir(x,y,h.x+10,h.y+10),d=d0+(o.dd||0),sp=o.sp;
+  sprBullet(api,{x,y,im:images.crossZap,ox:10,oy:5,rot:d0-90,vx:dcos(d)*sp,vy:-dsin(d)*sp,fric:o.fric??.1,exist:o.exist??75,dmg,kill:true,wallKill:true,
+   onHit:b=>{api.damageStd(b.dmg,{min:2});return true},
+   step(b){b.exist--;if(b.exist<10)b.alpha-=.1;if(b.exist<0){b.alive=false;return}move(b)}});
+ }
+ // obj_wizardorb_wall ("Corner Orb"): sits in a corner of the box and jumps to whichever
+ // corner the arrow keys point at, firing cross zaps.
+ function cornerOrb(api,dmg,alt){
+  const [L,Rr,T,B]=api.S.ideal;
+  sprBullet(api,{x:L+5,y:T+5,wl:L+5,wr:Rr-30,wu:T+5,wd:B-30,im:images.wizardOrb2,a0:10,dmg,alt,kill:false,
+   onHit:b=>api.damageStd(b.dmg,{min:3}),
+   step(b){
+    if(tick(b,'a0')){
+     b.a0=8;
+     const h=api.heart,p=pop();
+     // distance_to_point measures from the orb's bounding box (8..18, 8..17)
+     const dx=Math.max(b.x+8-h.x,0,h.x-(b.x+18)),dy=Math.max(b.y+8-h.y,0,h.y-(b.y+17));
+     const o={sp:Math.hypot(dx,dy)>190?5.5:3.5,dd:15-rnd(30),fric:.015,exist:200};
+     if(p>1){o.dd+=10-rnd(20);b.a0=15;o.sp=2.8}
+     if(b.alt){o.fric=.01;o.sp=3}
+     crossZap(api,b.x+10,b.y+10,b.dmg,o);
+    }
+    const H=NB.held;
+    if(H.left)b.x=b.wl;
+    if(H.right)b.x=b.wr;
+    if(H.up)b.y=b.wu;
+    if(H.down)b.y=b.wd;
+   }});
+ }
+ // obj_wizardorb_chaser ("Chaser Orb"): appears off to one side and homes in, wrapping around
+ // the box, leaving cross zaps behind. Glared at, three come that don't zap - and if the
+ // SOUL holds perfectly still long enough, the first one turns into a healing orb.
+ function chaser(api,o){
+  const h=api.heart;
+  const b=sprBullet(api,Object.assign({x:h.x,y:h.y,im:images.wizardOrb2,hidden:1,clip:true,kill:false,chaser:1,
+   first:30,col:0,zap:1,a0:20,a1:1,dirr:rnd(360),dmg:8,active:0,king:0,time:0,heal:0,
+   onHit(b){
+    if(b.heal){orbHeal(api,6);return true}
+    if(b.active)return api.damageStd(b.dmg,{min:3});
+    return false;
+   },
+   step(b){
+    const st=api.S,h=api.heart,[L,Rr,T,B]=st.ideal,p=pop();
+    if(tick(b,'a0')){
+     b.a0=12;
+     if(b.zap===1&&b.x>L&&b.y>T&&b.x<Rr-28&&b.y<B-26){crossZap(api,b.x+12,b.y+12,b.dmg,{sp:1});b.a0=20}
+    }
+    if(tick(b,'a1')){b.x+=dcos(b.dirr)*140;b.y-=dsin(b.dirr)*70;b.hidden=0;b.active=1}
+    b.col--;b.first--;
+    let ta=.2;if(b.first<0){ta=.3;if(b.zap===1)ta=p>1?.5:.6}
+    const nd=ptDir(b.x,b.y,h.x,h.y);b.vx+=dcos(nd)*ta;b.vy-=dsin(nd)*ta;
+    if(b.zap===0)capSpeed(b,6);
+    if(b.zap===1)capSpeed(b,p>1?6:7);
+    if(b.x>Rr+6)b.x=L-15;
+    if(b.x<L-20)b.x=Rr+2;
+    if(b.y>B+6)b.y=T-15;
+    if(b.y<T-20)b.y=B+2;
+    if(b.king&&b.zap===0){
+     if(h.x===h.xprev&&h.y===h.yprev){
+      st.turntimer++;b.time++;
+      if(b.time>450&&!b.heal){
+       for(const m of st.mons)if(m.alive)m.mercymod=400;
+       snd('select');
+       for(const c of st.bullets)if(c.chaser){c.im=images.wizardOrb3;c.heal=1}
+       musPause();
+      }
+     }else if(b.heal){orbHeal(api,1);return}
+    }
+    b.x+=b.vx;b.y+=b.vy;
+    // Collision with another chaser: both bounce back
+    if(b.col<0)for(const c of st.bullets){
+     if(c===b||!c.chaser||!c.alive||Math.abs(c.x-b.x)>=11||Math.abs(c.y-b.y)>=10)continue;
+     b.x-=rnd(2);c.x+=rnd(2);b.y-=rnd(2);c.y+=rnd(2);
+     b.vx=-b.vx;c.vx=-c.vx;b.vy=-b.vy;c.vy=-c.vy;b.col=3;c.col=3;break;
+    }
+   }},o));
+  return b;
+ }
+ function orbHeal(api,n){
+  const st=api.S;
+  snd('power');api.heal(n);musResume();
+  for(const c of st.bullets)if(c.chaser)c.alive=false;
+  api.endTurn();
+ }
+
+ // ----------------------------------------------------------- Knight Knight
+ // obj_finalknight_body: eyes, armour, helmet, the dragon mouth and fur, and the arm with the
+ // morningstar lifting and dropping. Singing makes the eyes and mouth drowsy, then asleep.
+ function knightStep(v,hurt){
+  v.siner++;if(hurt)v.siner=0;
+  v.ae++;if(v.ae>30&&v.ae<60)v.ae2++;if(v.ae>180){v.ae2=0;v.ae=0}
+  v.al++;
+  if(v.al>=60&&v.al<120)v.al2-=.5;
+  if(v.al>=150&&v.al<300){v.al2+=6;if(v.al2>=0){v.al2=0;v.al=300}}
+  if(v.al>=300){if(v.al2===0){v.al3=0;v.al2=-3}else{v.al2=0;if(v.al3===0)v.al3=choose(-1,1)}}
+  if(v.al>310){v.al3=0;v.al2=0;v.al=0}
+  v.ah++;if(v.ah>50&&v.ah<75)v.ah2++;if(v.ah>100)v.ah=0;
+  v.am++;if(v.am>150&&v.am<180)v.am2++;if(v.am>240&&v.am<270)v.am2++;if(v.am>300){v.am=0;v.am2=0}
+ }
+ NB.defs.set('knightknight',{
+  name:'Knight Knight',hp:230,atk:8,def:2,xp:180,gold:150,mercymod:25,wd:222,
+  encounter:'* Knight Knight blocks the way!',
+  size:()=>({w:222,h:201}),
+  pos:(i,n,cx)=>n===1?{x:56,y:40}:n===2&&i===0?{x:16,y:50}:{x:R(cx-111),y:50},
+  shudder:[8,1],shudderAbs:true,
+  dmgPos:m=>({x:m.x,y:m.y+160}),
+  setup(m){Object.assign(m.v,{siner:0,ae:0,ae2:0,al:0,al2:0,al3:0,ah:0,ah2:0,am:0,am2:0,look:0,sleepy:0,asleep:0,talk:0})},
+  step(m){
+   const v=m.v;
+   // damage wakes her up
+   if(m.hurt){v.asleep=0;v.look=0}
+   knightStep(v,m.hurt);
+  },
+  draw(g,m){
+   const v=m.v,x=m.x,y=m.y,s=v.siner,hurt=hurtPose(m);
+   // body, helmet, mouth and arm are exported trimmed: their origins carry the offsets
+   if(!hurt){
+    const eyes=v.look===0?fr(images.knightEyes,v.ae2/3):v.look===1?fr(images.knightEyesTired,v.ae2/3):images.knightEyesAsleep;
+    dse(g,eyes,x+94+Math.sin(s/10)*6,y+70,2,2);
+   }
+   dse(g,images.knightBody,x,y,2,2,0,1,-25,-17);
+   dse(g,hurt?images.nbKnightHelmetHurt:fr(images.knightHelmet,v.look===2?0:v.ah2/4),x+70,y+2,2,2,0,1,-2,-2);
+   const mouth=hurt?images.nbKnightMouthHurt:fr(v.look===0?images.knightMouth:v.look===1?images.knightMouthTired:images.knightMouthAsleep,v.am2/6);
+   dse(g,mouth,x+98,y+84,2,2,0,1,0,-3);
+   dse(g,fr(images.knightFur,s/5),x+64,y+96,2,2);
+   dse(g,images.knightArm,x+v.al3,y+v.al2,2,2,0,1,0,-1);
+  },
+  vaporDraw(g,m){dse(g,images.knightHurt,0,0)},
+  acts:['Check','Talk','Sing'],
+  check:()=>'* KNIGHT KNIGHT - ATK 36 DEF 36&* This megaton mercenary wields&  the Good Morningstar./',
+  act(m,i,name){
+   const v=m.v;
+   if(name==='Talk'){
+    v.talk++;
+    let t='* You ask Knight Knight about&  her day^1.&* There\'s no response.';
+    if(v.talk===3)t='* You ask Knight Knight about&  her day.';
+    if(v.asleep===1){t='* You talk to Knight Knight^1.&* She hums something in&  her sleep...';v.talk=0}
+    return t;
+   }
+   // Sing: drowsy, drowsier, asleep (DEF -30, spareable).
+   m.mercymod+=20;
+   let t='* You sing an old lullaby^1.&* Knight Knight starts to look&  sleepy...';
+   if(v.sleepy===1)t='* You keep singing^1.&* Knight Knight closes its&  eyes a bit...';
+   if(v.asleep===1)t='* You keep singing^1.&* Nothing happened.';
+   if(v.sleepy>1&&v.asleep===0){t='* You keep singing^1.&* Knight Knight falls asleep.';m.mercymod=200;v.asleep=1;m.df=-30}
+   v.sleepy++;
+   if(v.sleepy>0)v.look=1;
+   if(v.asleep===1)v.look=2;
+   return t;
+  },
+  // Her words aren't in a bubble: they appear all at once beside her (OBJ_INSTAWRITER, typer 1).
+  // The third time you ask about her day she answers in a small voice.
+  speech(m){
+   const v=m.v,c=v.cmd=Math.round(rnd(100));
+   talkLen(110);
+   let t='Good&knight.',typer=1;
+   if(c>=20)t='Fare&well.';
+   if(c>=40)t='Adieu.';
+   if(c>=60)t='Close&your&eyes...';
+   if(c>=80)t='Goodbye.';
+   if(v.asleep>0)t='Zzzz...';
+   if(v.talk===3){t=' ......& ......& ......& ......& ......& ......& ......& ......& It\'s OK.';typer=5;v.talk=0}
+   return {text:t,img:false,instant:true,typer,pos:{x:m.x+210,y:m.y-30},tx:0};
+  },
+  border:m=>m.v.asleep===0?17:null,
+  attack(m,api){
+   const v=m.v,p=pop(),c=v.cmd??0;m.heardName=null;
+   api.turntimer(150);
+   if(v.asleep===0){
+    api.border(18);
+    if(c>75&&p===1)v.gen={kind:'hammer',a0:1,odd:0};
+    else{const [L,Rr,T]=api.S.ideal;skyOrb(api,L+(Rr-L)/2-20,T-40)}
+   }
+   let f='* Knight Knight smashes her&  morningstar.';
+   if(c>=25)f='* Knight Knight breathes deeply.';
+   if(c>=50)f='* Knight Knight watches quietly.';
+   if(c>=75)f='* Knight Knight\'s armor emits&  a dark sheen.';
+   if(c>=90)f='* Smells like stardust.';
+   if(v.asleep>0)f='* Knight Knight is snoring.';
+   if(v.asleep===1&&p===1)api.endTurn();
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||g.kind!=='hammer'||!tick(g,'a0'))return;
+   // obj_hammergen: five hammers a volley on the 22px columns, two from the top and three
+   // from the floor; every other volley one comes down right over the SOUL.
+   const st=api.S,L=st.ideal[0],hnum=Math.ceil((st.edge.R-st.edge.L)/22)-1,col=()=>L+Math.floor(rnd(hnum))*22;
+   if(g.odd===1){hammer(api,api.heart.x-12,0);g.odd=0}else{hammer(api,col(),0);g.odd=1}
+   const b=hammer(api,col(),1),c=hammer(api,col(),1);
+   if(c.x===b.x)b.x+=22;
+   const d=hammer(api,col(),0);if(d.x===b.x||d.x===c.x)d.x+=22;
+   const e=hammer(api,col(),1);if(e.x===b.x||e.x===c.x||e.x===d.x)e.x+=22;
+   g.a0=33;
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare:goldOnSpare(70)
+ });
+ // obj_knighthammer: inches into the box as a warning, pauses, then slams across it, shakes
+ // on impact and pulls back out.
+ function hammer(api,x,side){
+  return sprBullet(api,{x,y:0,im:images.knightHammer,frame:side,hidden:1,side,go:0,a1:1,a2:-1,a3:-1,a4:-1,dmg:10,clip:true,kill:false,
+   onHit:b=>api.damageStd(b.dmg,{min:4}),
+   step(b){
+    if(tick(b,'a1')){b.hidden=0;if(b.side===0){b.y=235-196;b.vy=2}else{b.y=375;b.vy=-2}b.a2=12}
+    if(tick(b,'a2')){b.vy/=30;b.a3=15}
+    if(tick(b,'a3')){b.vy*=240;b.go=1}
+    if(tick(b,'a4')){b.go=3;b.vy=b.side===0?-10:10}
+    if(b.go===1&&((b.side===0&&b.y+196>400)||(b.side===1&&b.y<250))){
+     if(!api.S.shake){snd('impact');api.S.shake={h:2,v:2,speed:2,t:0}}
+     b.nx=b.x;b.ny=b.y;b.go=2;b.vy=0;b.a4=5;
+    }
+    if(b.go===2){b.x=b.nx-2+rnd(4);b.y=b.ny-2+rnd(4)}
+    if(b.go===3&&((b.side===0&&b.y+196<250)||(b.side===1&&b.y>400))){b.alive=false;return}
+    b.y+=b.vy;
+   }});
+ }
+ // obj_skyorb: drops into the top of the box and bursts (with a flash) into a moon that
+ // rains meteors or a sun that spins out sparks.
+ const skyHit=api=>b=>api.damageStd(b.dmg,{min:2,inv:90/20});
+ function skyOrb(api,x,y){
+  sprBullet(api,{x,y,im:images.skyOrb,vy:4,a11:15,dmg:5,clip:true,kill:false,onHit:skyHit(api),
+   step(b){
+    if(tick(b,'a11')){
+     snd('break2');flash(api);
+     if(choose(0,1)===0)skyMoon(api,b.x,b.y);else sunMoon(api,b.x,b.y);
+     b.alive=false;return;
+    }
+    b.y+=b.vy;
+   }});
+ }
+ // obj_skymoon: a meteor every 3 steps (6 with company) from the left or from above; alone,
+ // an aimed one every second.
+ function skyMoon(api,x,y){
+  sprBullet(api,{x,y,im:images.skyMoon,a2:1,a3:20,dmg:5,kill:false,sum:1,onHit:skyHit(api),
+   step(b){
+    if(tick(b,'a2')){
+     const [L,Rr,T]=api.S.ideal;
+     if(choose(0,1)===0)meteor(api,L-rnd(L-50)-50,250-rnd(200));
+     else meteor(api,L+rnd(Rr-L-150)-60,T-200-rnd(50));
+     b.sum=pop();b.a2=b.sum>1?6:3;
+    }
+    if(tick(b,'a3')&&b.sum===1){const h=api.heart,mx=200-rnd(200),my=200-rnd(200);meteor(api,mx,my,ptDir(mx,my,h.x,h.y));b.a3=30}
+   }});
+ }
+ // obj_meteorbullet (+ obj_meteorshine where it appears): falls diagonally down-right.
+ function meteor(api,x,y,aim){
+  const d=aim??(315-15+rnd(30)),sp=Math.hypot(5,5);
+  api.S.fx.push({x:x+5,y:y+5,f:0,step(e){if(++e.f>=6)e.dead=true},draw(g,e){dse(g,fr(images.meteorShine,e.f),e.x,e.y)}});
+  sprBullet(api,{x,y,im:images.moonMeteor,anim:1,vx:dcos(d)*sp,vy:-dsin(d)*sp,alpha:.1,dmg:8,kill:true,
+   onHit:b=>{api.damageStd(b.dmg,{min:3});return true},
+   step(b){if(b.x>650||b.y>490){b.alive=false;return}if(b.alpha<1)b.alpha+=.2;b.x+=b.vx;b.y+=b.vy}});
+ }
+ // obj_sunmoon: throws a spark every step (every 3 with company); alone, an aimed one too.
+ function sunMoon(api,x,y){
+  sprBullet(api,{x,y,im:images.sunMoon,ox:6,oy:6,anim:.1,a2:1,a3:20,dmg:5,kill:false,sum:1,onHit:skyHit(api),
+   step(b){
+    if(tick(b,'a2')){sunBullet(api,b.x+14,b.y+14);b.sum=pop();b.a2=b.sum>1?3:1}
+    if(tick(b,'a3')&&b.sum===1){const s=sunBullet(api,b.x+14,b.y+14),h=api.heart;setDir(s,ptDir(s.x,s.y,h.x,h.y));b.a3=30}
+   }});
+ }
+ // obj_sunbullet: drifts out curling clockwise, growing and speeding up, for three seconds.
+ function sunBullet(api,x,y){
+  const d=rnd(360),sp=pop()>1?.7:.9;
+  return sprBullet(api,{x,y,im:images.sunBullet,vx:dcos(d)*sp,vy:-dsin(d)*sp,fric:-.1,a0:90,size:.25,xs:.25,ys:.25,dmg:8,kill:true,
+   onHit:b=>{api.damageStd(b.dmg,{min:3});return true},
+   step(b){
+    if(tick(b,'a0')){b.alive=false;return}
+    setDir(b,dirOf(b)-2);
+    b.size+=.025;b.xs=b.ys=b.size;
+    move(b);
+   }});
+ }
+})();
 const NB_ASSETS={
  nbBattleBg:[0,1].map(i=>RAW+`sprites/images/spr_battlebg_${i}.png`),
  // Mettaton's quiz show
@@ -37575,6 +38408,13 @@ const NB_ASSETS={
  nbMttConfetti:[0,1,2,3].map(i=>RAW+`sprites/images/spr_confetti_${i}.png`),
  nbBlconWdShrtL:RAW+'sprites/images/spr_blconwdshrt_l_0.png',
  nbBlconAbove:RAW+'sprites/images/spr_blconabove_0.png',
+ // Core I
+ nbWhimsalotHeadHurt:RAW+'sprites/images/spr_whimsalot_head_hurt_0.png',
+ nbWizardHeadHurt:RAW+'sprites/images/spr_wizard_headhurt_0.png',
+ nbWizardOrbHurt:RAW+'sprites/images/spr_wizard_orbhurt_0.png',
+ nbWizardSprinkle:RAW+'sprites/images/spr_wizard_orbsprinkle_0.png',
+ nbKnightHelmetHurt:RAW+'sprites/images/spr_finalknight_helmethurt_0.png',
+ nbKnightMouthHurt:RAW+'sprites/images/spr_finalknight_dragonmouth_hurt_0.png',
  // Muffet
  nbSpiderEyeBigHurt:RAW+'sprites/images/spr_spiderb_eyebig_hurt_0.png',
  nbSpiderEyeMedHurt:RAW+'sprites/images/spr_spiderb_eyemed_hurt_0.png',
