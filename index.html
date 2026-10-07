@@ -9947,17 +9947,24 @@ const NB=(()=>{
     if(e.wait>0){e.wait--}else{e.x+=dcos(e.dir)*e.sp;e.y-=dsin(e.dir)*e.sp;e.sp=Math.max(0,e.sp-.8)}
     e.alpha-=.03;e.frame+=.25;if(e.frame>=3||e.alpha<=0)e.dead=true;
    }else if(e.kind==='vapor'){
-    // obj_vaporized: the sprite dissolves from the top, 8px of rows per frame,
-    // each opaque pixel becoming a white dust particle that drifts up and fades.
+    // obj_vaporized_new: the sprite is read in 2px lines, four lines (8px) a step, and is
+    // drawn from the current line down. Each run of pixels on a line turns into
+    // obj_whtpxlgrav dust: one streak per run on monsters wider than 120px, otherwise a
+    // 2x2 speck per pixel. A speck drifts sideways at random(4)-2, falls upward with
+    // gravity random(.5)+.2, and lives 12 steps (spr_pixwht: white, then greying out).
     const m=e.m;
-    if(!e.rows)e.rows=vaporRows(m);
-    if(e.line<m.h){
-     for(let r=0;r<8;r++){const row=e.rows[e.line+r];if(row)for(const px of row)if(rnd(1)<.5)e.parts.push({x:m.x+px,y:m.y+e.line+r,vx:(rnd(2)-1)*.6,vy:-(rnd(1.5)+.5),a:1})}
-     e.line+=8;
+    if(!e.lines)e.lines=vaporLines(m);
+    const wide=m.w>120;
+    for(let r=0;r<4&&e.line<e.lines.length;r++,e.line++){
+     const y=m.y+e.line*2;
+     for(const [x0,n] of e.lines[e.line]){
+      if(wide)e.parts.push({x:m.x+x0,y,w:n*2,hs:rnd(4)-2,vs:0,g:rnd(.5)+.2,t:0});
+      else for(let k=0;k<n;k++)e.parts.push({x:m.x+x0+k*2,y:y+2,w:2,hs:rnd(4)-2,vs:0,g:rnd(.5)+.2,t:0});
+     }
     }
-    for(const p of e.parts){p.x+=p.vx;p.y+=p.vy;p.a-=.03}
-    e.parts=e.parts.filter(p=>p.a>0);
-    if(e.line>=m.h&&!e.parts.length)e.dead=true;
+    for(const p of e.parts){p.vs-=p.g;p.x+=p.hs;p.y+=p.vs;p.t++}
+    e.parts=e.parts.filter(p=>p.t<12&&p.y>-20);
+    if(e.line>=e.lines.length&&!e.parts.length)e.dead=true;
    }
   }
   S.fx=S.fx.filter(e=>!e.dead);
@@ -9977,14 +9984,28 @@ const NB=(()=>{
   }
  }
  const vaporCache=new Map();
- function vaporRows(m){
+ // The sprite as obj_vaporized_new's data: per 2px line, the runs of 2px cells that
+ // have anything in them, as [x, cells].
+ function vaporLines(m){
   const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(m.w));c.height=Math.max(1,Math.ceil(m.h));
   const g=c.getContext('2d',{willReadFrequently:true});
   try{(m.def.vaporDraw||m.def.draw)(g,{...m,x:0,y:0,alpha:1,hurt:true},api);const d=g.getImageData(0,0,c.width,c.height).data;
-   const rows=[];for(let y=0;y<c.height;y++){const r=[];for(let x=0;x<c.width;x+=2)if(d[(y*c.width+x)*4+3]>0)r.push(x);rows.push(r)}
-   m.vaporCanvas=c;return rows;
+   // only lit pixels turn to dust (the data's runs are the white parts; black is skipped)
+   const on=(x,y)=>{if(x>=c.width||y>=c.height)return false;const i=(y*c.width+x)*4;return d[i+3]>0&&d[i]+d[i+1]+d[i+2]>120};
+   const lines=[];
+   for(let y=0;y<c.height;y+=2){
+    const runs=[];let start=-1;
+    for(let x=0;x<=c.width;x+=2){
+     const hit=x<c.width&&(on(x,y)||on(x+1,y)||on(x,y+1)||on(x+1,y+1));
+     if(hit&&start<0)start=x;
+     if(!hit&&start>=0){runs.push([start,(x-start)/2]);start=-1}
+    }
+    lines.push(runs);
+   }
+   m.vaporCanvas=c;return lines;
   }catch(_){return []}
  }
+
 
  // ------------------------------------------------------------- ONLINE ----
  // Every peer runs this same battle, stepped by the host's input frames (each player's
@@ -10484,6 +10505,8 @@ const NB=(()=>{
    }
   }else if(images.dmgMiss){g.drawImage(NB.multiplied(images.dmgMiss,'#c0c0c0'),w.x-10,w.y-16)}
  }
+ // spr_pixwht's 12 frames: white, then greying out
+ const VAPOR_GREY=[255,251,251,251,251,251,251,219,182,146,109,73].map(v=>`rgb(${v},${v},${v})`);
  function drawFx(g,S){
   for(const e of S.fx){
    if(e.draw){if(!e.top)e.draw(g,e);continue}
@@ -10504,11 +10527,9 @@ const NB=(()=>{
     const im=images.dustCloud?.[Math.min(2,Math.floor(e.frame))];if(!im)continue;
     g.save();g.globalAlpha=Math.max(0,e.alpha);g.drawImage(im,e.x,e.y,16*e.sc,16*e.sc);g.restore();
    }else if(e.kind==='vapor'){
-    const m=e.m,c=m.vaporCanvas;
-    if(c&&e.line<m.h)g.drawImage(c,0,e.line,c.width,c.height-e.line,m.x,m.y+e.line,c.width,c.height-e.line);
-    g.fillStyle='#fff';
-    for(const p of e.parts){g.globalAlpha=Math.max(0,p.a);g.fillRect(Math.round(p.x),Math.round(p.y),2,2)}
-    g.globalAlpha=1;
+    const m=e.m,c=m.vaporCanvas,top=e.line*2;
+    if(c&&top<c.height)g.drawImage(c,0,top,c.width,c.height-top,m.x,m.y+top,c.width,c.height-top);
+    for(const p of e.parts){g.fillStyle=VAPOR_GREY[p.t]||VAPOR_GREY[11];g.fillRect(Math.round(p.x),Math.round(p.y),p.w,2)}
    }
   }
  }
