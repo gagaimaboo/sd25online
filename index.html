@@ -1387,8 +1387,8 @@ function buyOrEquipShopArmor(id){
  else{shopNotice=`BOUGHT ${row.label.toUpperCase()} // EQUIP REQUIRES LV ${cap} OR LOWER`;play('item')}
  saveProgression();shopNoticeUntil=performance.now()+2300;return true;
 }
-function consumeVanillaInventoryItem(id){
- if(!vanillaMode||!id||!progression.itemStock)return;
+function consumeVanillaInventoryItem(id,fromStock=false){
+ if((!vanillaMode&&!fromStock)||!id||!progression.itemStock)return;
  const n=ownedItemCount(id);if(n<=0)return;
  if(n===1)delete progression.itemStock[id];else progression.itemStock[id]=n-1;
  saveProgression();
@@ -2003,7 +2003,12 @@ function itemBaseHealForRole(it,role=practiceMode){
 }
 
 function buildBattleInventory(){
- if(vanillaMode){
+ if(vanillaMode)return stockBattleItems();
+ return buildSandboxInventoryForSlot(activePartyRuntimeSlot||0);
+}
+// What you bought in the shop, most recent first, up to the 8-item limit.
+function stockBattleItems(){
+ {
    // the 8 slots fill with the most recently bought items first
    const out=[],order=[...(progression.itemOrder||[]),...SHOP_ITEM_ENTRIES.map(r=>r.id)].filter((v,i,a)=>a.indexOf(v)===i);
    for(const rid of order){
@@ -2013,10 +2018,9 @@ function buildBattleInventory(){
        healsParty:!!it.healsParty,tpGain:Number(it.tpGain)||0,healByRole:it.healByRole?{...it.healByRole}:null,unused:!!it.unused
      });
    }
+   for(const v of out)v.fromStock=true;
    return out;
  }
-
- return buildSandboxInventoryForSlot(activePartyRuntimeSlot||0);
 }
 
 
@@ -23344,7 +23348,9 @@ function nbBattleOpts(online=false){
  // hub LOADOUT (party slot 1's items). Without it the fight got the last fight's bag.
  if(vanillaMode)inventory=buildBattleInventory();else{resetPartyRuntimeItems();activatePartyRuntimeSlot(0)}
  // A party shares one bag: every member's PARTY loadout items.
- const bag=partyOn?sandboxPartySlots().flatMap((r,i)=>r&&r!=='off'?(partyRuntimeItems?.[i]||[]):[]):(inventory||[]);
+ let bag=partyOn?sandboxPartySlots().flatMap((r,i)=>r&&r!=='off'?(partyRuntimeItems?.[i]||[]):[]):(inventory||[]);
+ // Shop purchases come along on CUSTOM rules too, ahead of the loadout items.
+ if(!vanillaMode){const st=stockBattleItems();if(st.length)bag=[...st,...bag].slice(0,Math.max(8,bag.length))}
  if(partyOn&&typeof DR!=='undefined')DR.load(); // head icons, press lanes, spell sprites and sounds
  const ids=nbBattleIds(),custom=!vanillaMode;
  return {
@@ -23355,7 +23361,7 @@ function nbBattleOpts(online=false){
   name:(typeof playerDisplayName==='function'?playerDisplayName():roleDisplayName(practiceMode)),
   // battleItemHealing: role, Burnt Pan and armour multipliers. Using one spends the
   // VANILLA shop stock (a no-op on CUSTOM rules), like the old engine's ITEM menu.
-  items:bag.map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id)})),
+  items:bag.map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id,v.fromStock)})),
   mods:MOD_DEFS.filter(m=>modEnabled(m.id)).map(m=>m.id),
   weapon:activeWeaponData()?.id||'stick'
  };
