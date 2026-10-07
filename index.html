@@ -1130,6 +1130,16 @@ const SHOP_ITEM_ENTRIES=[
  {id:'astronaut_food',price:90},
  {id:'butterscotch_pie',price:300},
  {id:'snowman_piece',price:150},
+ {id:'croissant',price:15},
+ {id:'snail_pie',price:350},
+ {id:'unisicle',price:30},
+ {id:'dog_salad',price:40},
+ {id:'puppydough_icecream',price:35},
+ {id:'pumpkin_rings',price:12},
+ {id:'croquet_roll',price:15},
+ {id:'ghost_fruit',price:20},
+ {id:'stoic_onion',price:10},
+ {id:'rock_candy',price:2},
  {id:'instant_noodles',price:60},
  {id:'legendary_hero',price:300},
  {id:'steak',price:500},
@@ -1230,7 +1240,7 @@ function loadProgression(){
    for(const row of SHOP_ARMOR_ENTRIES){if(p.armors?.[row.id])armors[row.id]=true}
    const equipped=(p.equippedWeapon==='stick'||SHOP_WEAPON_ENTRIES.some(v=>v.id===p.equippedWeapon&&weapons[v.id]&&!v.partyOnly))?p.equippedWeapon:'stick';
    const equippedArmor=SHOP_ARMOR_ENTRIES.some(v=>v.id===p.equippedArmor&&armors[v.id]&&!v.partyOnly)?p.equippedArmor:'bandage';
-   return {overLv:Math.max(0,Math.min(30,Math.floor(Number(p.overLv)||0))),exp:Math.max(0,Math.floor(Number(p.exp)||0)),gold:Math.max(0,Math.floor(Number(p.gold)||0)),itemStock:stock,weapons,equippedWeapon:equipped,armors,equippedArmor};
+   return {overLv:Math.max(0,Math.min(30,Math.floor(Number(p.overLv)||0))),exp:Math.max(0,Math.floor(Number(p.exp)||0)),gold:Math.max(0,Math.floor(Number(p.gold)||0)),itemStock:stock,itemOrder:Array.isArray(p.itemOrder)?p.itemOrder.filter(id=>stock[id]):[],weapons,equippedWeapon:equipped,armors,equippedArmor};
  }catch(_){return emptyProgression()}
 }
 let progression=loadProgression();
@@ -1338,9 +1348,9 @@ function activeWeaponData(){
 }
 function buyShopItem(id){
  const row=SHOP_ITEM_ENTRIES.find(v=>v.id===id);if(!row)return false;
- if(progressionInventoryCount()>=MAX_ITEMS){shopNotice='INVENTORY FULL // 8 ITEM LIMIT';shopNoticeUntil=performance.now()+1800;play('move');return false}
  if(progression.gold<row.price){shopNotice=`NOT ENOUGH G // NEED ${row.price-progression.gold} MORE`;shopNoticeUntil=performance.now()+1800;play('move');return false}
- progression.gold-=row.price;progression.itemStock[id]=ownedItemCount(id)+1;saveProgression();
+ progression.gold-=row.price;progression.itemStock[id]=ownedItemCount(id)+1;
+ progression.itemOrder=[id,...(progression.itemOrder||[]).filter(v=>v!==id)];saveProgression();
  shopNotice=`BOUGHT ${itemData(id).name.toUpperCase()} // -${row.price} G`;shopNoticeUntil=performance.now()+1800;play('item');return true;
 }
 function buyOrEquipShopWeapon(id){
@@ -1714,6 +1724,16 @@ const ITEM_OPTIONS=[
  {id:'astronaut_food',name:'Astronaut Food',heal:21},
  {id:'butterscotch_pie',name:'Butterscotch Pie',heal:999},
  {id:'snowman_piece',name:'Snowman Piece',heal:45},
+ {id:'croissant',name:'Croissant',heal:15},
+ {id:'snail_pie',name:'Snail Pie',heal:999},
+ {id:'unisicle',name:'Unisicle',heal:11},
+ {id:'dog_salad',name:'Dog Salad',heal:30},
+ {id:'puppydough_icecream',name:'Puppydough Icecream',heal:28},
+ {id:'pumpkin_rings',name:'Pumpkin Rings',heal:8},
+ {id:'croquet_roll',name:'Croquet Roll',heal:15},
+ {id:'ghost_fruit',name:'Ghost Fruit',heal:16},
+ {id:'stoic_onion',name:'Stoic Onion',heal:5},
+ {id:'rock_candy',name:'Rock Candy',heal:1},
  {id:'instant_noodles',name:'Instant Noodles',heal:4},
  {id:'legendary_hero',name:'Legendary Hero',heal:40,atkBonus:4},
  {id:'steak',name:'Steak in Shape of Mettaton',heal:60},
@@ -1984,9 +2004,10 @@ function itemBaseHealForRole(it,role=practiceMode){
 
 function buildBattleInventory(){
  if(vanillaMode){
-   const out=[];
-   for(const row of SHOP_ITEM_ENTRIES){
-     const it=itemData(row.id),count=ownedItemCount(row.id);
+   // the 8 slots fill with the most recently bought items first
+   const out=[],order=[...(progression.itemOrder||[]),...SHOP_ITEM_ENTRIES.map(r=>r.id)].filter((v,i,a)=>a.indexOf(v)===i);
+   for(const rid of order){
+     const it=itemData(rid),count=ownedItemCount(rid);
      for(let i=0;i<count&&out.length<MAX_ITEMS;i++)out.push({
        id:it.id,name:it.name,heal:it.heal,lastDream:!!it.lastDream,speedUp:!!it.speedUp,atkBonus:it.atkBonus||0,
        healsParty:!!it.healsParty,tpGain:Number(it.tpGain)||0,healByRole:it.healByRole?{...it.healByRole}:null,unused:!!it.unused
@@ -6960,7 +6981,7 @@ function drawShop(now=performance.now()){
  ui6T(`WEAPON  ${eq.label.toUpperCase()}`,side.x+30,side.y+side.h-178,{f:'small',s:2,c:UI6_C.gray});
  ui6T(`ARMOR  ${ar.label.toUpperCase()}`,side.x+30,side.y+side.h-150,{f:'small',s:2,c:UI6_C.gray});
  ui6T(`${progression.gold}G`,side.x+30,side.y+side.h-108,{s:4,c:UI6_C.yellow});
- ui6T(`${progressionInventoryCount()}/${MAX_ITEMS}`,side.x+side.w-30,side.y+side.h-96,{s:3,a:'right'});
+ ui6T(`${progressionInventoryCount()} OWNED`,side.x+side.w-30,side.y+side.h-96,{s:3,a:'right'});
  const noticeOn=performance.now()<shopNoticeUntil;
  if(noticeOn)ui6T(`* ${shopNotice}`,64,934,{f:'main',s:1,c:UI6_C.yellow});
  ui6Footer(`UP / DOWN  CHOOSE      Z  ${shopCategory==='items'?'BUY':'BUY / EQUIP'}      LEFT / RIGHT  CATEGORY${pages>1?'      PGUP / PGDN  PAGE':''}      X  LEAVE`);
@@ -8738,7 +8759,7 @@ const NB=(()=>{
   return rows.join('&');
  }
  // scr_itemnameb short names (9 characters) for the item menu.
- const SHORT={'Monster Candy':'MnstrCndy','Croissant':'CroqtRoll','Spider Donut':'SpidrDont','Spider Cider':'SpidrCidr','Butterscotch Pie':'ButtsPie','Snail Pie':'SnailPie','Nice Cream':'NiceCream','Bisicle':'Bisicle','Unisicle':'Unisicle','Cinnamon Bunny':'CinnaBun','Legendary Hero':'Leg.Hero','Sea Tea':'SeaTea','Starfait':'Starfait','Glamburger':'GlamBurg','Instant Noodles':'InstaNood','Hot Dog...?':'Hot Dog','Hot Cat':'Hot Cat','Face Steak':'FaceSteak','Popato Chisps':'PT Chisps','Bad Memory':'BadMemory','Last Dream':'LastDream','Steak in the Shape of Mettaton\'s Face':'FaceSteak','Rock Candy':'RockCandy','Bandage':'Bandage','Crab Apple':'CrabApple','Sea Tea':'SeaTea','Abandoned Quiche':'Ab.Quiche','Temmie Flakes':'TemFlakes','Dog Salad':'Dog Salad','Pumpkin Rings':'PunkRings','Stoic Onion':'StocOnoin','Ghost Fruit':'GhostFrut','Astronaut Food':'AstroFood','Junk Food':'JunkFood','Rock Candy':'RockCandy'};
+ const SHORT={'Monster Candy':'MnstrCndy','Croissant':'Croissant','Croquet Roll':'CroqtRoll','Puppydough Icecream':'PDIceCrm','Snail Pie':'SnailPie','Unisicle':'Unisicle','Spider Donut':'SpidrDont','Spider Cider':'SpidrCidr','Butterscotch Pie':'ButtsPie','Snail Pie':'SnailPie','Nice Cream':'NiceCream','Bisicle':'Bisicle','Unisicle':'Unisicle','Cinnamon Bunny':'CinnaBun','Legendary Hero':'Leg.Hero','Sea Tea':'SeaTea','Starfait':'Starfait','Glamburger':'GlamBurg','Instant Noodles':'InstaNood','Hot Dog...?':'Hot Dog','Hot Cat':'Hot Cat','Face Steak':'FaceSteak','Popato Chisps':'PT Chisps','Bad Memory':'BadMemory','Last Dream':'LastDream','Steak in the Shape of Mettaton\'s Face':'FaceSteak','Rock Candy':'RockCandy','Bandage':'Bandage','Crab Apple':'CrabApple','Sea Tea':'SeaTea','Abandoned Quiche':'Ab.Quiche','Temmie Flakes':'TemFlakes','Dog Salad':'Dog Salad','Pumpkin Rings':'PunkRings','Stoic Onion':'StocOnoin','Ghost Fruit':'GhostFrut','Astronaut Food':'AstroFood','Junk Food':'JunkFood','Rock Candy':'RockCandy'};
  const shortName=n=>(SHORT[n]||String(n)).slice(0,9).padEnd(9,' ');
  function itemText(){
   // SCR_TEXT 3003/3002: "   * NAME     * NAME &   * NAME     * NAME &   ...  PAGE n"
@@ -12511,6 +12532,7 @@ const NB=(()=>{
  function sansAttack(m){
   const v=m.v,st=S(),h=st.heart,id=st.ideal;
   if(st.sp<5)st.sp=5;
+  v.face=0;v.torso=0; // Alarm 5: the talk ends, faceemotion and flag[20] reset
   st.turntimer=10;v.timerOn=1;
   // where Alarm 6 put the SOUL
   h.hs=h.vs=0;h.js=1;h.x=R((id[0]+id[1])/2);h.y=R((id[2]+id[3])/2)-8;
@@ -12623,6 +12645,7 @@ const NB=(()=>{
    const v=m.v;
    if(v.timerOn&&v.hitTry>=15&&v.hitTry<23)menuBones(m);
    v.gens=[];v.timerOn=0;
+   if(!v.lac&&v.smasher!==1){v.movearm=0;v.armI=0;v.headx=0;v.heady=0}
   },
   // FIGHT: he's already stepping aside when the swing starts
   onHitCalc(m,dmg){const v=m.v;if(!v.dodge&&!v.deathC)v.dodge=1;return 0},
