@@ -1194,11 +1194,11 @@ const SHOP_ARMOR_ENTRIES=[
  {id:'manlybandanna',label:'Manly Bandanna',price:50,def:7,atk:0,invMs:0,regenEvery:0,lvCap:20,desc:'+7 DF'},
  {id:'oldtutu',label:'Old Tutu',price:80,def:10,atk:0,invMs:0,regenEvery:0,lvCap:20,desc:'+10 DF'},
  {id:'cloudyglasses',label:'Cloudy Glasses',price:30,def:5,atk:0,invMs:1000,regenEvery:0,lvCap:20,desc:'+5 DF // +1.0s INV'},
- {id:'stainedapron',label:'Stained Apron',price:100,def:11,atk:0,invMs:0,regenEvery:2,lvCap:10,desc:'+11 DF // +1 HP every other turn'},
- {id:'cowboyhat',label:'Cowboy Hat',price:350,def:12,atk:5,invMs:0,regenEvery:0,lvCap:10,desc:'+12 DF // +5 AT'},
- {id:'heartlocket',label:'Heart Locket',price:250,def:15,atk:0,invMs:0,regenEvery:0,lvCap:8,desc:'+15 DF'},
- {id:'temmiearmor',label:'Temmie Armor',price:9999,def:20,atk:10,invMs:500,regenEvery:2,lvCap:5,desc:'+20 DF // +10 AT // +0.5s INV // regen'},
- {id:'thelocket',label:'The Locket',price:500,def:99,atk:0,invMs:0,regenEvery:0,lvCap:5,desc:'+99 DF'},
+ {id:'stainedapron',label:'Stained Apron',price:100,def:11,atk:0,invMs:0,regenEvery:2,lvCap:20,desc:'+11 DF // +1 HP every other turn'},
+ {id:'cowboyhat',label:'Cowboy Hat',price:350,def:12,atk:5,invMs:0,regenEvery:0,lvCap:20,desc:'+12 DF // +5 AT'},
+ {id:'heartlocket',label:'Heart Locket',price:250,def:15,atk:0,invMs:0,regenEvery:0,lvCap:20,desc:'+15 DF'},
+ {id:'temmiearmor',label:'Temmie Armor',price:9999,def:20,atk:10,invMs:500,regenEvery:2,lvCap:20,desc:'+20 DF // +10 AT // +0.5s INV // regen'},
+ {id:'thelocket',label:'The Locket',price:500,def:99,atk:0,invMs:0,regenEvery:0,lvCap:20,desc:'+99 DF'},
  // DELTARUNE gear. partyOnly means it is bought here, then assigned from the
  // sandbox PARTY loadout editor rather than replacing Undertale's global armor.
  {id:'ambercard',label:'Amber Card',price:100,def:1,atk:0,magic:0,invMs:0,regenEvery:0,lvCap:20,partyOnly:true,desc:'+1 DF // DELTARUNE'},
@@ -1289,7 +1289,8 @@ function vanillaArmorData(){
  return armorById(id);
 }
 function activeArmorData(){return vanillaMode?vanillaArmorData():sandboxArmorData()}
-function armorLevelCap(){return Math.max(1,Math.min(20,Number(vanillaArmorData().lvCap)||20))}
+// Armor never caps LV any more (the old Stained Apron / Locket limits are gone).
+function armorLevelCap(){return 20}
 function armorMaxExp(cap=armorLevelCap()){
  cap=Math.max(1,Math.min(20,Math.floor(Number(cap)||20)));
  return cap>=20?Number.MAX_SAFE_INTEGER:Math.max(0,LV_TOTAL_EXP[cap]-1);
