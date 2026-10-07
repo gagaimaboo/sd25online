@@ -11110,6 +11110,9 @@ const NB=(()=>{
   if(L.con>=4)L.ui=Math.min(1,L.ui+.02);
   if(L.con>=12)L.box=Math.max(0,L.box-.02);
   st.boxAlpha=L.box;
+  // faded out: stop drawing the box at all - its black inside would cover the scene
+  if(L.box<=0&&!st.cinematic)st.cinematic=true;
+  if(L.remove)L.ry+=2;
   if(L.con===2){api.border(0);st.dmgw=[];L.con=3;L.a4=50}
   if(L.con===4){L.con=5;say(api,m,TXT.ah,{x:L.x+300,y:L.y+20,small:true},()=>{L.con=6;L.a4=45})}
   if(L.con===7){L.con=8;setAsgoreMusic('asgoreChoke');say(api,m,TXT.talk1,{x:L.x+270,y:L.y+20,face:false},()=>{L.con=9})}
@@ -11181,10 +11184,10 @@ const NB=(()=>{
   if(L.con===30||L.con===58){
    const im=images.asgKneelDeath,x=L.x,y=L.y;
    st.fx.push({kind:'vapor',m:{x,y,w:366,h:196,def:{draw:(g,mm)=>{if(im)g.drawImage(im,mm.x,mm.y)}}},line:0,parts:[]});
-   snd('vaporized');L.asg=false;st.speedMul=1/3;
+   snd('vaporized');L.remove=true;L.ry=0;st.speedMul=1/3;
    L.con=L.con===30?31:59;L.a4=40;
   }
-  const soulAt=(x,y)=>{st.speedMul=1;L.soul={x,y,xs:x,ys:y,a:0,shake:3,vis:true,brk:false,shards:[]}};
+  const soulAt=(x,y)=>{st.speedMul=1;L.asg=false;L.remove=false;L.soul={x,y,xs:x,ys:y,a:0,shake:3,vis:true,brk:false,shards:[]}};
   if(L.con===32){soulAt(L.x+190,L.y+110);L.con=33;L.a4=40}
   if(L.con===34){if(L.spec)toward(L.spec,L.soul.xs,L.soul.ys,4);L.con=35;L.a4=35}
   if(L.con===60){soulAt(L.x+180,L.y+100);L.con=62;L.a4=90}
@@ -11204,7 +11207,7 @@ const NB=(()=>{
    // the six human SOULs swing in around him
    L.rowdy=1;L.radius=400;L.angle=0;L.souls=SOULS.map((k,i)=>({k,ang:i*60,x:0,y:0}));
   }
-  if(L.con===101){L.con=101.5;L.flowey=3;L.fimg2=0;st.writer=new NB.Writer(TXT.last,{typer:67,x:120,y:350});st.cinematic=false}
+  if(L.con===101){L.con=101.5;L.flowey=3;L.fimg2=0;st.writer=new NB.Writer(TXT.last,{typer:67,x:120,y:350})}
   if(L.con===101.5&&st.writer&&st.writer.done){st.writer=null;snd('cymbal');snd('floweyLaugh');L.flowey=4;L.con=103;L.a4=2}
   if(L.con===104){L.rowdy=2;L.whiteout=true;L.con=105;L.a4=160}
   if(L.con===106){L.con=107;m.alive=false;if(L.hearts)m.spared=true;else m.killed=true;api.end('win')}
@@ -11218,7 +11221,7 @@ const NB=(()=>{
  }
  function lastDraw(g,m){
   const L=m.v.last;
-  if(L.asg){spr(g,'asgKneel',0,L.x,L.y);spr(g,'asgLastface',m.v.face,L.x+136,L.y-8)}
+  if(L.asg&&!L.remove){spr(g,'asgKneel',0,L.x,L.y);spr(g,'asgLastface',m.v.face,L.x+136,L.y-8)}
   const s=L.soul;
   if(s){
    if(s.vis){const im=s.brk?images.monsterSoulBreak:images.monsterSoul;if(im){g.save();g.globalAlpha=s.a;g.drawImage(im,R(s.x),R(s.y));g.restore()}}
@@ -11231,14 +11234,26 @@ const NB=(()=>{
   if(L.flowey===4)spr(g,'asgFloweyLaugh',L.fimg2,285,150);
   for(const o of L.souls)spr(g,o.k,0,o.x,o.y,{xs:1,ys:1});
  }
+ // draw_sprite_part_ext: the rows from `top` down, drawn `top` rows lower (scale 2)
+ function sprPart(g,k,f,top,x,y){
+  const im=frameOf(k,f);if(!im)return;
+  const w=im.naturalWidth||im.width,h=(im.naturalHeight||im.height)-top;if(h<=0)return;
+  g.drawImage(im,0,top,w,h,R(x),R(y+top*2),w*2,h*2);
+ }
  function lastOver(g,api,m){
-  const L=m.v.last,c=L.choice;
+  const L=m.v.last,c=L.choice,st=api.S;
+  // the kneel melting away sits above the dust, as at depth 30 over obj_vaporized_new's 50
+  if(L.asg&&L.remove){
+   if(L.ry<49)sprPart(g,'asgKneel',0,L.ry*2,L.x,L.y);
+   if(L.ry<27)sprPart(g,'asgLastface',m.v.face,L.ry*2,L.x+136,L.y-8);
+  }
+  if(st.cinematic&&st.writer&&!st.writer.done)st.writer.draw(g);
   if(c){
    for(const b of c.bts)spr(g,b.k,b.on>0?1:0,b.x,b.y,{xs:1,ys:1});
    const h=images.nbHeart?.[0];if(h)g.drawImage(h,R(c.hx),R(c.hy));
   }
   // the buttons fade from con 4, the HP line and box from con 12
-  if(L.ui>0){g.save();g.globalAlpha=L.ui;g.fillStyle='#000';g.fillRect(0,428,640,52);g.globalAlpha=1-L.box;g.fillRect(0,398,640,30);g.restore()}
+  if(L.ui>0&&!st.cinematic){g.save();g.globalAlpha=L.ui;g.fillStyle='#000';g.fillRect(0,428,640,52);g.globalAlpha=1-L.box;g.fillRect(0,398,640,30);g.restore()}
   if(L.wht>0){g.save();g.globalAlpha=Math.min(1,L.wht);g.fillStyle='#fff';g.fillRect(-10,-10,680,520);g.restore()}
  }
 
