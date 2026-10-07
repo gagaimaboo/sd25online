@@ -9674,16 +9674,66 @@ const NB=(()=>{
   let n=(6+p.at)/2*9+p.mag*5-fightDef(m);if(bonus)n+=20;if(p.noWeapon)n*=.6;
   n=Math.round(n);return n<=0?1:n;
  }
+
+ // Party S-Action (Susie) / N-Action (Noelle): what each one does to each enemy, and how much
+ // MERCY it gives. Bosses that can't be talked down get none.
+ const PARTY_ASSIST={
+  dummy:{g:20,s:'* Susie punched the Dummy.\n* It seemed to appreciate\n  the attention.',n:'* Noelle introduced herself\n  to the Dummy.\n* It listened politely.'},
+  froggit:{g:20,s:'* Susie croaked at Froggit.\n* Froggit croaked back,\n  impressed.',n:'* Noelle complimented\n  Froggit\'s posture.\n* Froggit sat up straighter.'},
+  whimsun:{g:25,s:'* Susie tried to look nice.\n* Whimsun still cried, but\n  less.',n:'* Noelle told Whimsun it\'s\n  okay to be nervous.\n* Whimsun related to that.'},
+  moldsmal:{g:20,s:'* Susie wiggled at Moldsmal.\n* It wiggled harder.',n:'* Noelle hummed a little\n  tune.\n* Moldsmal jiggled along.'},
+  migosp:{g:20,s:'* Susie told Migosp to\n  dance like nobody\'s\n  watching.\n* It did.',n:'* Noelle asked Migosp to\n  be her friend.\n* It got shy.'},
+  vegetoid:{g:20,s:'* Susie ate a carrot off\n  Vegetoid.\n* It took that as a\n  compliment.',n:'* Noelle said she eats her\n  vegetables.\n* Vegetoid beamed.'},
+  loox:{g:20,s:'* Susie stared Loox down.\n* Loox blinked first.',n:'* Noelle didn\'t pick on\n  Loox.\n* Loox noticed.'},
+  napstablook:{g:15,s:'* Susie told Napstablook\n  its music slaps.\n* It blushed... sort of.',n:'* Noelle cheered Napstablook\n  up.\n* It said "oh... thanks..."'},
+  snowdrake:{g:20,s:'* Susie laughed at\n  Snowdrake\'s joke.\n* Snowdrake felt seen.',n:'* Noelle told an ice pun.\n* Snowdrake was\n  deeply impressed.'},
+  icecap:{g:20,s:'* Susie said the hat was\n  sick.\n* Ice Cap got cocky.',n:'* Noelle didn\'t look at\n  the hat.\n* Ice Cap respected that.'},
+  doggo:{g:20,s:'* Susie stood perfectly\n  still.\n* Doggo couldn\'t see her.',n:'* Noelle petted Doggo.\n* Doggo is confused, but\n  happy.'},
+  lesserdog:{g:20,s:'* Susie petted Lesser Dog.\n* Its neck got longer.',n:'* Noelle petted Lesser Dog.\n* Its neck got even longer.'},
+  dogamy:{g:15,s:'* Susie rolled in the snow.\n* Dogamy sniffed her.\n* She smells like a dog.',n:'* Noelle rolled in the snow.\n* Dogamy decided she\'s\n  probably a dog.'},
+  dogaressa:{g:15,s:'* Susie rolled in the snow.\n* Dogaressa sniffed her.\n* She passes.',n:'* Noelle petted Dogaressa.\n* "A pup who pets?!"'},
+  greaterdog:{g:15,s:'* Susie played fetch with\n  Greater Dog.\n* It brought back a log.',n:'* Noelle called Greater\n  Dog over.\n* It sat on her.'},
+  jerry:{g:25,s:'* Susie told Jerry to leave.\n* Jerry did not leave.',n:'* Noelle tried to include\n  Jerry.\n* Everyone looked at her.'},
+  toriel:{g:10,s:'* Susie said she doesn\'t\n  need protecting.\n* Toriel looks worried.',n:'* Noelle told Toriel she\n  reminds her of her mom.\n* Toriel softened.'},
+  papyrus:{g:10,s:'* Susie flexed at Papyrus.\n* "NYEH! A WORTHY RIVAL!"',n:'* Noelle asked Papyrus for\n  a puzzle.\n* He is overjoyed.'},
+  aaron:{g:20,s:'* Susie out-flexed Aaron.\n* He winked. Respect.',n:'* Noelle complimented\n  Aaron\'s muscles.\n* He flexed out of view.'},
+  woshua:{g:20,s:'* Susie let Woshua clean\n  her.\n* It was overwhelmed.',n:'* Noelle was already clean.\n* Woshua was thrilled.'},
+  shyren:{g:20,s:'* Susie hummed along,\n  badly.\n* Shyren sang louder to\n  help.',n:'* Noelle sang a carol with\n  Shyren.\n* Shyren found her voice.'},
+  moldbygg:{g:20,s:'* Susie hugged Moldbygg.\n* It squished.',n:'* Noelle snuggled\n  Moldbygg.\n* It jiggled happily.'},
+  temmie:{g:25,s:'* Susie paid for Temmie\'s\n  college.\n* hOI!!!',n:'* Noelle petted Temmie.\n* tem... tem is blushing!!'},
+  undyne:{g:8,s:'* Susie challenged Undyne to\n  an arm-wrestle.\n* Undyne wants that later.',n:'* Noelle said she won\'t\n  give up either.\n* Undyne grinned.'},
+  vulkin:{g:20,s:'* Susie said Vulkin\'s\n  lava is cool.\n* Vulkin got... hotter.',n:'* Noelle hugged Vulkin.\n* It was very warm.'},
+  tsunderplane:{g:20,s:'* Susie ignored\n  Tsunderplane.\n* "I-it\'s not like I care!"',n:'* Noelle got close to\n  Tsunderplane.\n* "B-baka!"'},
+  pyrope:{g:20,s:'* Susie heckled Pyrope\'s\n  rap.\n* It got more fired up.',n:'* Noelle cheered for\n  Pyrope\'s verse.\n* It\'s on fire.'},
+  muffet:{g:10,s:'* Susie said the donuts\n  were mid.\n* Muffet\'s smile twitched.',n:'* Noelle bought a spider\n  donut.\n* "Ahuhuhu~ a customer!"'},
+  finalfroggit:{g:15,s:'* Susie croaked mysteriously.\n* Final Froggit nodded\n  sagely.',n:'* Noelle sat quietly with\n  Final Froggit.\n* It approved of the calm.'},
+  whimsalot:{g:15,s:'* Susie told Whimsalot to\n  chill.\n* It loosened its armor.',n:'* Noelle said she gets\n  scared too.\n* Whimsalot relaxed.'},
+  astigmatism:{g:15,s:'* Susie glared right back.\n* Astigmatism blinked.',n:'* Noelle closed her eyes.\n* Astigmatism appreciated\n  the respect.'},
+  madjick:{g:15,s:'* Susie cast "punch."\n* Madjick was impressed by\n  the magic.',n:'* Noelle showed Madjick a\n  real spell.\n* Madjick took notes.'},
+  knightknight:{g:15,s:'* Susie yawned loudly.\n* Knight Knight yawned too.',n:'* Noelle sang a lullaby.\n* Knight Knight\'s eyes\n  grew heavy.'},
+  custom:{g:20},
+  // the ones that won't be talked down
+  maddummy:{g:0,s:'* Susie punched the dummy.\n* It\'s a ghost. It doesn\'t\n  care.',n:'* Noelle apologized to\n  Mad Dummy.\n* It got MADDER.'},
+  papyrus_nhb:{g:0,s:'* Susie tried to hold\n  Papyrus back.\n* He is NOT holding back.',n:'* Noelle asked Papyrus to\n  stop.\n* He can\'t hear her.'},
+  undyneex:{g:0,s:'* Susie dared Undyne to\n  hit harder.\n* She will.',n:'* Noelle begged Undyne to\n  stop.\n* She won\'t.'},
+  mettatonneo:{g:0,s:'* Susie told NEO his wings\n  look dumb.\n* He\'s deeply offended.',n:'* Noelle stared at the\n  wings.\n* NEO struck a pose.'},
+  asgore:{g:0,s:'* Susie told Asgore to\n  quit it.\n* He doesn\'t answer.',n:'* Noelle tried to talk to\n  Asgore.\n* He can\'t look at her.'},
+  sans:{g:0,s:'* Susie swung at Sans.\n* He was already somewhere\n  else.',n:'* Noelle asked Sans to\n  stop.\n* "heh. nice try, kid."'},
+  sans5000:{g:0,s:'* Susie flexed at SANS\n  SUPER 5000.\n* It does not compute.',n:'* Noelle waved at SANS\n  SUPER 5000.\n* It waved back. Slowly.'},
+  jayzee:{g:10,s:'* Susie threw the ball\n  back.\n* Jayzee liked that.',n:'* Noelle asked Jayzee\n  for coaching.\n* Jayzee is thrilled.'}
+ };
  function partyCast(a){
   const p=a.p,s=a.spell,id=s.id;
   if(id==='saction'||id==='naction'){
    const m=a.m;
-   // EnemyBase.PerformAssistAct: the default S/N-Action is +50% MERCY.
+   // EnemyBase.PerformAssistAct: each enemy has its own S/N-Action (PARTY_ASSIST).
    if(!m.alive){partyWait(`* ${p.say} tried to ACT,\n  but ${m.name} was\n  already spared!`);return}
    // def.assist(m, id, member, api) -> {text, gain} replaces the default +50%
    const own=m.def.assist&&m.def.assist(m,id,p,api);
    if(own){if(own.gain)partyMercy(m,own.gain);partyWait(own.text);return}
-   partyMercy(m,50);partyWait(`* ${p.say} used ${id==='saction'?'S':'N'}-ACTION!\n* ${m.name} liked that!`);
+   const A=PARTY_ASSIST[m.id]||{g:15},gain=A.g??15;
+   const text=(id==='saction'?A.s:A.n)||`* ${p.say} used ${id==='saction'?'S':'N'}-ACTION!\n* ${m.name} liked that!`;
+   if(gain>0)partyMercy(m,gain);partyWait(text);
    return;
   }
   if(id==='ultimateheal'||id==='healprayer'){
