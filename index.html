@@ -11112,6 +11112,8 @@ const NB=(()=>{
  function lastStart(api,m){
   const st=api.S,v=m.v;
   st.myfight=99;st.mnfight=99;st.bullets=[];st.bubbles=[];st.heart.visible=false;st.writer=null;v.say=null;
+  // the last blow can land mid party round: drop its press bars / the FIGHT bar
+  st.fight=null;if(st.party){st.pp=null;st.pf=null;st.pm=null;st.preact=false}
   v.gens=[];v.swipe=null;v.body=null;v.bg.fade=true;v.bg.particles=false;
   setAsgoreMusic(null);
   v.last={con:0,x:LX,xs:LX,y:LY,sh:18,a0:1,asg:true,hearts:0,ui:0,box:1,choice:null,pellets:[],souls:[],soul:null,
@@ -11274,7 +11276,10 @@ const NB=(()=>{
    const h=images.nbHeart?.[0];if(h)g.drawImage(h,R(c.hx),R(c.hy));
   }
   // the buttons fade from con 4, the HP line and box from con 12
-  if(L.ui>0&&!st.cinematic){g.save();g.globalAlpha=L.ui;g.fillStyle='#000';g.fillRect(0,428,640,52);g.globalAlpha=1-L.box;g.fillRect(0,398,640,30);g.restore()}
+  if(L.ui>0&&!st.cinematic){g.save();g.globalAlpha=L.ui;g.fillStyle='#000';g.fillRect(0,428,640,52);
+   // a party's TP bar on the left goes with the buttons
+   if(st.party)g.fillRect(0,150,30,250);
+   g.globalAlpha=1-L.box;g.fillRect(0,390,640,38);g.restore()}
   if(L.wht>0){g.save();g.globalAlpha=Math.min(1,L.wht);g.fillStyle='#fff';g.fillRect(-10,-10,680,520);g.restore()}
  }
 
