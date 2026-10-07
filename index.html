@@ -16,12 +16,12 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
 
 #mobileControls{display:none;position:fixed;z-index:50;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));pointer-events:none;align-items:flex-end;justify-content:space-between;padding:0 max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));user-select:none;-webkit-user-select:none;touch-action:none}
 #mobileControls .cluster{pointer-events:auto;touch-action:none}
-#mobileJoystick{position:relative;width:clamp(104px,23vw,152px);height:clamp(104px,23vw,152px);border:3px solid rgba(255,255,255,.72);border-radius:50%;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 2px rgba(0,0,0,.65);touch-action:none;-webkit-tap-highlight-color:transparent}
-#mobileJoystick::before,#mobileJoystick::after{content:"";position:absolute;left:50%;top:50%;background:rgba(255,255,255,.14);transform:translate(-50%,-50%);pointer-events:none}
-#mobileJoystick::before{width:72%;height:2px}
-#mobileJoystick::after{width:2px;height:72%}
-#mobileJoystickKnob{position:absolute;left:50%;top:50%;width:44%;height:44%;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(255,255,255,.92);background:rgba(15,15,15,.84);box-shadow:0 2px 7px rgba(0,0,0,.7);pointer-events:none;will-change:transform}
-#mobileJoystick.active{border-color:#fff;background:rgba(0,0,0,.48)}
+#mobileJoystick,#mobileJoystick2{position:relative;width:clamp(104px,23vw,152px);height:clamp(104px,23vw,152px);border:3px solid rgba(255,255,255,.72);border-radius:50%;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 2px rgba(0,0,0,.65);touch-action:none;-webkit-tap-highlight-color:transparent}
+#mobileJoystick::before,#mobileJoystick::after,#mobileJoystick2::before,#mobileJoystick2::after{content:"";position:absolute;left:50%;top:50%;background:rgba(255,255,255,.14);transform:translate(-50%,-50%);pointer-events:none}
+#mobileJoystick::before,#mobileJoystick2::before{width:72%;height:2px}
+#mobileJoystick::after,#mobileJoystick2::after{width:2px;height:72%}
+#mobileJoystickKnob,#mobileJoystickKnob2{position:absolute;left:50%;top:50%;width:44%;height:44%;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(255,255,255,.92);background:rgba(15,15,15,.84);box-shadow:0 2px 7px rgba(0,0,0,.7);pointer-events:none;will-change:transform}
+#mobileJoystick.active,#mobileJoystick2.active{border-color:#fff;background:rgba(0,0,0,.48)}
 #mobileControls .actions{display:flex;gap:clamp(11px,3vw,24px);align-items:flex-end;padding-bottom:4px}
 #mobileControls button{position:relative;width:clamp(64px,16vw,92px);height:clamp(64px,16vw,92px);border:3px solid rgba(255,255,255,.9);background:rgba(0,0,0,.58);color:#fff;font:900 clamp(25px,6vw,38px)/1 monospace;border-radius:50%;touch-action:none;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 7px rgba(0,0,0,.65)}
 #mobileControls button .mobileSub{display:block;margin-top:4px;font:700 clamp(7px,1.8vw,10px)/1 monospace;letter-spacing:.5px;opacity:.65}
@@ -31,11 +31,18 @@ canvas{display:block;width:100%;height:100%;outline:0;image-rendering:pixelated;
 /* Shown only for touch play (see setTouchUI): a phone, or after a touch; a real keyboard hides them. */
 html.touchUI #mobileControls{display:flex}
 #mobileControls .joystickWrap{padding:22px;margin:-22px}
-#mobileJoystick{opacity:.72;transition:opacity .12s}
-#mobileJoystick.active{opacity:1}
+#mobileJoystick,#mobileJoystick2{opacity:.72;transition:opacity .12s}
+#mobileJoystick.active,#mobileJoystick2.active{opacity:1}
+/* Mad Mew Mew's split SOUL: while her attacks fly, X/Z give way to a second stick.
+   Left stick = blue half, right stick = red half. */
+#mobileControls .stick2{display:none}
+html.splitSoul #mobileControls .actions button{display:none}
+html.splitSoul #mobileControls .stick2{display:block}
+html.splitSoul #mobileJoystick{border-color:#14a9ff}
+html.splitSoul #mobileJoystick2{border-color:#ff3030}
 @media (max-height:520px){
  #mobileControls{bottom:max(5px,env(safe-area-inset-bottom));padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
- #mobileJoystick{width:96px;height:96px}
+ #mobileJoystick,#mobileJoystick2{width:96px;height:96px}
  #mobileControls button{width:58px;height:58px;font-size:22px}
  #mobileControls .cancel{transform:translateY(-12px)}
  #mobileControls .cancel.pressed{transform:translateY(-12px) scale(.94)}
@@ -62,6 +69,11 @@ html.touchUI #mobileControls{display:flex}
   <div class="cluster actions">
     <button class="cancel" data-vkey="x" aria-label="Cancel / back">X<span class="mobileSub">CANCEL</span></button>
     <button data-vkey="z" aria-label="Confirm / interact">Z<span class="mobileSub">CONFIRM</span></button>
+    <div class="joystickWrap stick2">
+      <div id="mobileJoystick2" role="application" aria-label="Red half joystick">
+        <div id="mobileJoystickKnob2"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -109,6 +121,8 @@ const RAW='https://cdn.jsdelivr.net/gh/fachinformatiker/undertale@master/';
 const RAW_FALLBACK='https://raw.githubusercontent.com/fachinformatiker/undertale/master/';
 const DR_RAW='https://cdn.jsdelivr.net/gh/TeamBlossomDevs/DeltaruneDecomp@chapter2/';
 const DMK_RAW='https://raw.githubusercontent.com/deltamodders/deltamodkit/c61032a2a6370706242f625b992132ed23b9bd7b/';
+// Mad Mew Mew's sprites and sounds (converted from the fangame port), pinned to the commit that added them
+const MMM_RAW='https://cdn.jsdelivr.net/gh/gagaimaboo/undertalebteng@0c86232aa96de4089e475d6685510ab8f01eaa10/assets/mmm/';
 const KRISTAL_RAW='https://raw.githubusercontent.com/KristalTeam/Kristal/cbca0cca0302586887999e7acbca07aaf85e8b18/';
 // V82: actual FIRST-BATTLE armored Undyne frame. The old grinning/helmeted static sprite is no longer used as battle idle.
 const UNDYNE_NORMAL_ARMORED_DATA='data:image/png;base64,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';
@@ -709,6 +723,7 @@ const SFX={
  gbCharge:RAW+'sound/audio/mus_sfx_segapower.ogg',
  gbFire:RAW+'sound/audio/mus_sfx_rainbowbeam_1.ogg',
  sansGiga:RAW+'sound/audio/mus_sfx_a_gigatalk.ogg',
+ mmmVoice:MMM_RAW+'mmm_voice.wav',mmmStaff:MMM_RAW+'mmm_staff.wav',mmmBoom:MMM_RAW+'mmm_boom.ogg',
  sansB:RAW+'sound/audio/snd_b.wav',
  pomBark:RAW+'sound/audio/snd_pombark.wav',
  // UNDERTALE encounter transition flicker sound. The original battle transition
@@ -825,6 +840,7 @@ const MUSIC={
  undyneEnding2:RAW+'sound/audio/endingexcerpt2.ogg',
  sans:RAW+'sound/audio/mus_muscle.ogg',
  megalovania:RAW+'sound/audio/mus_zz_megalovania.ogg',
+ madmewmew:MMM_RAW+'mmm_theme.ogg',
  sansBirds:RAW+'sound/audio/mus_birdnoise.ogg',
  flashback:'https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/flashback_excerpt.ogg',
  gameover:RAW+'sound/audio/mus_gameover.ogg',
@@ -1108,6 +1124,7 @@ const VANILLA_REWARDS={
  jayzee:{exp:60,killGold:40,spareGold:30},
  asgore:{exp:0,killGold:0,spareGold:0},
  sans:{exp:0,killGold:0,spareGold:0},
+ madmewmew:{exp:0,killGold:0,spareGold:0},
  custom:{exp:0,killGold:0,spareGold:0}
 };
 const SHOP_ITEM_ENTRIES=[
@@ -1387,8 +1404,8 @@ function buyOrEquipShopArmor(id){
  else{shopNotice=`BOUGHT ${row.label.toUpperCase()} // EQUIP REQUIRES LV ${cap} OR LOWER`;play('item')}
  saveProgression();shopNoticeUntil=performance.now()+2300;return true;
 }
-function consumeVanillaInventoryItem(id){
- if(!vanillaMode||!id||!progression.itemStock)return;
+function consumeVanillaInventoryItem(id,fromStock=false){
+ if((!vanillaMode&&!fromStock)||!id||!progression.itemStock)return;
  const n=ownedItemCount(id);if(n<=0)return;
  if(n===1)delete progression.itemStock[id];else progression.itemStock[id]=n-1;
  saveProgression();
@@ -2003,7 +2020,12 @@ function itemBaseHealForRole(it,role=practiceMode){
 }
 
 function buildBattleInventory(){
- if(vanillaMode){
+ if(vanillaMode)return stockBattleItems();
+ return buildSandboxInventoryForSlot(activePartyRuntimeSlot||0);
+}
+// What you bought in the shop, most recent first, up to the 8-item limit.
+function stockBattleItems(){
+ {
    // the 8 slots fill with the most recently bought items first
    const out=[],order=[...(progression.itemOrder||[]),...SHOP_ITEM_ENTRIES.map(r=>r.id)].filter((v,i,a)=>a.indexOf(v)===i);
    for(const rid of order){
@@ -2013,10 +2035,9 @@ function buildBattleInventory(){
        healsParty:!!it.healsParty,tpGain:Number(it.tpGain)||0,healByRole:it.healByRole?{...it.healByRole}:null,unused:!!it.unused
      });
    }
+   for(const v of out)v.fromStock=true;
    return out;
  }
-
- return buildSandboxInventoryForSlot(activePartyRuntimeSlot||0);
 }
 
 
@@ -2421,6 +2442,7 @@ const MUSIC_LOADERS={
  undyneEnding2:()=>loadAudioAsset(MUSIC.undyneEnding2,.50,false),
  sans:()=>loadAudioAsset(MUSIC.sans,.44,true),
  megalovania:()=>loadAudioAsset(MUSIC.megalovania,.5,true),
+ madmewmew:()=>loadAudioAsset(MUSIC.madmewmew,.45,true),
  sansBirds:()=>loadAudioAsset(MUSIC.sansBirds,.5,true),
  flashback:()=>loadAudioAsset(MUSIC.flashback,.52,true),
  gameover:()=>loadAudioAsset(MUSIC.gameover,.55,true),
@@ -2453,6 +2475,7 @@ function battleMusicKey(){
  if(currentBoss==='jayzee')return 'papyrus';
  if(currentBoss==='asgore')return asgoreMusic;
  if(currentBoss==='sans')return sansMusic;
+ if(currentBoss==='madmewmew')return mmmMusic;
  return 'battle';
 }
 function inBattleScreen(){return screen==='battle'||screen==='nb'}
@@ -2499,6 +2522,19 @@ function setSansMusic(key){
  ensureMusicTrack(key).then(a=>{
    if(!a||sansMusic!==key||currentBoss!=='sans'||!inBattleScreen())return;
    a.currentTime=0;if(a._sansBase!=null)a.volume=a._sansBase;playMusicElement(a);
+ });
+}
+// Mad Mew Mew: silent through her intro, her theme until "Enough. ENOUGH. ENOUGH!", then silence.
+let mmmMusic=null;
+function setMmmMusic(key){
+ mmmMusic=key;
+ if(currentBoss!=='madmewmew')return;
+ for(const a of battleMusicTracks())if(a){a.pause();a.currentTime=0}
+ wantedBattleMusic=key;
+ if(!key)return;
+ ensureMusicTrack(key).then(a=>{
+   if(!a||mmmMusic!==key||currentBoss!=='madmewmew'||!inBattleScreen())return;
+   a.currentTime=0;playMusicElement(a);
  });
 }
 function sansMusicPause(paused){
@@ -2985,6 +3021,7 @@ const BOSS_OPTIONS=[
  {id:'mettatonex',label:'METTATON EX',area:'CORE // THE PREMIERE',hp:1600,atk:8,def:1,encounter:'* Mettaton EX makes his premiere!',noelleEncounter:'* Mettaton EX makes his premiere!'},
  {id:'mettaton',label:'METTATON',area:'HOTLAND QUIZ SHOW',hp:9999,atk:30,def:255,encounter:'* Mettaton attacks!',noelleEncounter:'* Mettaton attacks!'},
  {id:'asgore',label:'ASGORE',area:'NEW HOME // THRONE ROOM',hp:3500,atk:10,def:-30,encounter:'* ASGORE attacks!',noelleEncounter:'* ASGORE attacks!'},
+ {id:'madmewmew',label:'MAD MEW MEW',area:'SWITCH EXCLUSIVE',hp:500,atk:5,def:999,encounter:'* Mad Mew Mew blocks the way!',noelleEncounter:'* Mad Mew Mew blocks the way!'},
  {id:'jayzee',label:'JAYZEE',area:'FANMADE',hp:420,atk:7,def:2,encounter:'* Jayzee bounces in!',noelleEncounter:'* Jayzee bounces in!'},
  {id:'custom',label:'CUSTOM',area:'CREATOR',hp:120,atk:8,def:2,encounter:'* A custom monster appeared!',noelleEncounter:'* Noelle encountered a custom monster.'}
 ];
@@ -5317,6 +5354,16 @@ function creatorDialogueForRole(role){
 }
 reloadCreatorRuntimeImages();
 
+// Mad Mew Mew's roster picture: her idle body with its face on (they're separate sprites)
+let mmmPortraitCanvas=null;
+function mmmPortrait(){
+ if(mmmPortraitCanvas)return mmmPortraitCanvas;
+ const b=images.mmmBody?.[0],f=images.mmmFace?.[8];
+ if(!b||!f){if(typeof nbLoadAssets==='function')nbLoadAssets();return null}
+ const c=document.createElement('canvas');c.width=194;c.height=184;
+ const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(b,0,0);g.drawImage(f,97-16+2-21,92-60+9-23);
+ return mmmPortraitCanvas=c;
+}
 function bossImage(b,now=performance.now()){
  if(b.id==='custom')return creatorEnemyImage(false,now);
  if(b.id==='jerry')return jerryImage(now,false);
@@ -5339,6 +5386,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='whimsalot')return images.whimsalot||images.whimsalotHurt||images.dummy;
  if(b.id==='asgore')return images.asgPrebrandish||images.dummy;
  if(b.id==='sans')return images.sans||images.dummy;
+ if(b.id==='madmewmew')return mmmPortrait()||images.dummy;
  if(b.id==='jayzee')return (jayzeeGenocideMode()?images.jayzeeSad:images.jayzee)||images.jayzee||images.dummy;
  return images.dummy;
 }
@@ -7155,6 +7203,18 @@ function debugLog(msg){
  const el=document.getElementById('debugLog');
  if(el)el.textContent=debugLastLog;
 }
+// Mad Mew Mew's split SOUL: html.splitSoul swaps the touch X/Z for a second stick while her
+// attacks are up (see the NB module); the main loop keeps it in step with the fight.
+let releaseSplitSticks=null;
+function syncSplitSoul(){
+ const S=typeof NB!=='undefined'?NB.S:null;
+ const on=screen==='nb'&&!!S&&!!S.splitSoul&&S.mnfight===2&&!S.gameover&&!S.won&&!S.exited;
+ const root=document.documentElement;
+ if(root.classList.contains('splitSoul')===on)return;
+ const regrip=releaseSplitSticks?releaseSplitSticks():null;
+ root.classList.toggle('splitSoul',on);
+ if(regrip)regrip();
+}
 function setupTestControls(){
  const releaseAllMobile=()=>{
    for(const k of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','z','x']){
@@ -7186,79 +7246,89 @@ function setupTestControls(){
 
  // V30 mobile thumbstick. The game itself is digital, so the stick converts
  // its angle into held arrow-key states. Diagonals hold two directions at once.
- const joy=document.getElementById('mobileJoystick');
- const joyKnob=document.getElementById('mobileJoystickKnob');
- let joyPointer=null;
- let joyHeld=new Set(),joyDir=-1;
+ // keyOf maps those arrows to the keys actually sent (Mad Mew Mew's split SOUL turns the
+ // left stick into WASD for the blue half; a second stick drives the red half).
  const JOY_KEYS=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
  // clockwise from right (screen y points down)
  const JOY_SECTORS=[['ArrowRight'],['ArrowRight','ArrowDown'],['ArrowDown'],['ArrowDown','ArrowLeft'],['ArrowLeft'],['ArrowLeft','ArrowUp'],['ArrowUp'],['ArrowUp','ArrowRight']];
- const setJoyKeys=next=>{
-   const wanted=new Set(next);
-   for(const k of JOY_KEYS){
-     const was=joyHeld.has(k),now=wanted.has(k);
-     if(was===now)continue;
-     if(now){
-       // A real keydown on direction entry makes menus respond to joystick nudges.
-       window.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true}));
-       key[k]=true;key[k.toLowerCase()]=true;
-     }else{
-       window.dispatchEvent(new KeyboardEvent('keyup',{key:k,bubbles:true,cancelable:true}));
-       key[k]=false;key[k.toLowerCase()]=false;
-     }
-   }
-   joyHeld=wanted;
- };
- const centerJoystick=()=>{
-   setJoyKeys([]);joyDir=-1;
-   joy?.classList.remove('active');
-   if(joyKnob)joyKnob.style.transform='translate(-50%,-50%)';
- };
- const updateJoystick=e=>{
-   if(!joy||!joyKnob)return;
-   const r=joy.getBoundingClientRect();
-   const cx=r.left+r.width/2,cy=r.top+r.height/2;
-   let dx=e.clientX-cx,dy=e.clientY-cy;
-   const knobSize=joyKnob.getBoundingClientRect().width||r.width*.44;
-   const max=Math.max(1,(r.width-knobSize)/2-4);
-   const dist=Math.hypot(dx,dy);
-   if(dist>max){dx=dx/dist*max;dy=dy/dist*max}
-   joyKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+ const sticks=[];
+ function bindStick(joy,joyKnob,keyOf){
+  if(!joy||!joyKnob)return;
+  let joyPointer=null,joyHeld=new Set(),joyDir=-1;
+  const send=(k,down)=>{
+    const n=keyOf(k);
+    // A real keydown on direction entry makes menus respond to joystick nudges.
+    window.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key:n,bubbles:true,cancelable:true}));
+    key[n]=down;key[n.toLowerCase()]=down;
+  };
+  const setJoyKeys=next=>{
+    const wanted=new Set(next);
+    for(const k of JOY_KEYS){
+      const was=joyHeld.has(k),now=wanted.has(k);
+      if(was!==now)send(k,now);
+    }
+    joyHeld=wanted;
+  };
+  const centerJoystick=()=>{
+    setJoyKeys([]);joyDir=-1;
+    joy.classList.remove('active');
+    joyKnob.style.transform='translate(-50%,-50%)';
+  };
+  const updateJoystick=e=>{
+    const r=joy.getBoundingClientRect();
+    const cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let dx=e.clientX-cx,dy=e.clientY-cy;
+    const knobSize=joyKnob.getBoundingClientRect().width||r.width*.44;
+    const max=Math.max(1,(r.width-knobSize)/2-4);
+    const dist=Math.hypot(dx,dy);
+    if(dist>max){dx=dx/dist*max;dy=dy/dist*max}
+    joyKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 
-   const nx=dx/max,ny=dy/max,mag=Math.hypot(nx,ny);
-   // Deadzone with a little hysteresis: it takes .28 to start moving, .18 to stop.
-   if(mag<(joyDir<0?0.28:0.18)){joyDir=-1;setJoyKeys([]);return}
-   // 8 directions. Straight ones get the wider slice (50deg vs 40deg) so menus don't
-   // catch stray diagonals, and the current direction holds 8deg past its edge so the
-   // SOUL doesn't flicker between straight and diagonal on a borderline thumb.
-   const ang=(Math.atan2(ny,nx)*180/Math.PI+360)%360;
-   const off=(a,i)=>{const d=Math.abs(a-i*45)%360;return Math.min(d,360-d)};
-   const half=i=>i%2?20:25;
-   let dir=-1;
-   if(joyDir>=0&&off(ang,joyDir)<=half(joyDir)+8)dir=joyDir;
-   else for(let i=0;i<8;i++)if(off(ang,i)<=half(i)){dir=i;break}
-   joyDir=dir;
-   setJoyKeys(JOY_SECTORS[dir]||[]);
- };
- // The grab area is a bit bigger than the drawn stick (padding on its wrapper).
- const joyZone=joy?.parentElement||joy;
- joyZone?.addEventListener('pointerdown',e=>{
-   e.preventDefault();e.stopPropagation();unlockAudio();
-   joyPointer=e.pointerId;joy.classList.add('active');joyDir=-1;
-   try{joyZone.setPointerCapture?.(e.pointerId)}catch(_){}
-   updateJoystick(e);
- });
- joyZone?.addEventListener('pointermove',e=>{
-   if(e.pointerId!==joyPointer)return;
-   e.preventDefault();e.stopPropagation();updateJoystick(e);
- });
- const releaseJoystick=e=>{
-   if(joyPointer!==null&&e?.pointerId!==undefined&&e.pointerId!==joyPointer)return;
-   joyPointer=null;centerJoystick();
- };
- joyZone?.addEventListener('pointerup',releaseJoystick);
- joyZone?.addEventListener('pointercancel',releaseJoystick);
- joyZone?.addEventListener('lostpointercapture',releaseJoystick);
+    const nx=dx/max,ny=dy/max,mag=Math.hypot(nx,ny);
+    // Deadzone with a little hysteresis: it takes .28 to start moving, .18 to stop.
+    if(mag<(joyDir<0?0.28:0.18)){joyDir=-1;setJoyKeys([]);return}
+    // 8 directions. Straight ones get the wider slice (50deg vs 40deg) so menus don't
+    // catch stray diagonals, and the current direction holds 8deg past its edge so the
+    // SOUL doesn't flicker between straight and diagonal on a borderline thumb.
+    const ang=(Math.atan2(ny,nx)*180/Math.PI+360)%360;
+    const off=(a,i)=>{const d=Math.abs(a-i*45)%360;return Math.min(d,360-d)};
+    const half=i=>i%2?20:25;
+    let dir=-1;
+    if(joyDir>=0&&off(ang,joyDir)<=half(joyDir)+8)dir=joyDir;
+    else for(let i=0;i<8;i++)if(off(ang,i)<=half(i)){dir=i;break}
+    joyDir=dir;
+    setJoyKeys(JOY_SECTORS[dir]||[]);
+  };
+  // The grab area is a bit bigger than the drawn stick (padding on its wrapper).
+  const joyZone=joy.parentElement||joy;
+  joyZone.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();unlockAudio();
+    joyPointer=e.pointerId;joy.classList.add('active');joyDir=-1;
+    try{joyZone.setPointerCapture?.(e.pointerId)}catch(_){}
+    updateJoystick(e);
+  });
+  joyZone.addEventListener('pointermove',e=>{
+    if(e.pointerId!==joyPointer)return;
+    e.preventDefault();e.stopPropagation();updateJoystick(e);
+  });
+  const releaseJoystick=e=>{
+    if(joyPointer!==null&&e?.pointerId!==undefined&&e.pointerId!==joyPointer)return;
+    joyPointer=null;centerJoystick();
+  };
+  joyZone.addEventListener('pointerup',releaseJoystick);
+  joyZone.addEventListener('pointercancel',releaseJoystick);
+  joyZone.addEventListener('lostpointercapture',releaseJoystick);
+  // center: let go entirely; regrip: let go of the keys under the old mapping, then
+  // (once the mapping has changed) hold the same direction again under the new one
+  sticks.push({center:()=>{joyPointer=null;centerJoystick()},regrip:()=>{const k=[...joyHeld];setJoyKeys([]);return ()=>setJoyKeys(k)}});
+ }
+ const WASD={ArrowLeft:'a',ArrowRight:'d',ArrowUp:'w',ArrowDown:'s'};
+ const split=()=>document.documentElement.classList.contains('splitSoul');
+ bindStick(document.getElementById('mobileJoystick'),document.getElementById('mobileJoystickKnob'),k=>split()?WASD[k]:k);
+ bindStick(document.getElementById('mobileJoystick2'),document.getElementById('mobileJoystickKnob2'),k=>k);
+ const centerJoystick=()=>{for(const c of sticks)c.center()};
+ // switching the split on or off re-grips both sticks, so no key stays held under the old mapping
+ releaseSplitSticks=()=>{const again=sticks.map(c=>c.regrip());return ()=>again.forEach(f=>f())};
 
  // Touch controls are for touch play only: on a phone/tablet from the start, or after
  // any touch; a real keyboard key hides them again (PC players never see them).
@@ -7267,7 +7337,7 @@ function setupTestControls(){
  const setTouchUI=on=>{
    if(root.classList.contains('touchUI')===on)return;
    root.classList.toggle('touchUI',on);
-   if(!on){joyPointer=null;centerJoystick();releaseAllMobile()}
+   if(!on){centerJoystick();releaseAllMobile()}
  };
  setTouchUI(mq('(pointer:coarse)'));
  window.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')setTouchUI(true)},{capture:true,passive:true});
@@ -9122,6 +9192,8 @@ const NB=(()=>{
   if(m.def.onKill)m.def.onKill(m,api);
  }
  function spareMonster(m){
+  // a monster that says goodbye first (Mad Mew Mew) holds the spare until its own turn
+  if(m.def.spareHold&&m.def.spareHold(m,api))return;
   m.alive=false;m.spared=true;S.goldTotal+=m.gold+(m.goldBonus||0);m.alpha=.5;
   snd('vaporized');
   for(let n=0;n<14;n++){
@@ -9407,7 +9479,9 @@ const NB=(()=>{
  const partySpareable=m=>m.alive&&(monsterSpareable(m)||(m.mercy||0)>=100);
  // UNDERTALE monsters have no TIRED flag of their own: like most of DELTARUNE's, they
  // tire under half HP (DELTATRAVELER sets it per monster).
- const partyTired=m=>m.alive&&m.hp<m.maxhp/2;
+ // Bosses never get TIRED, so SLEEP MIST only puts regular enemies to sleep.
+ const NEVER_TIRED=new Set(['toriel','napstablook','papyrus','papyrus_nhb','undyne','undyneex','maddummy','muffet','mettaton','mettatonex','mettatonneo','asgore','sans','sans5000','jayzee','madmewmew']);
+ const partyTired=m=>m.alive&&!NEVER_TIRED.has(m.id)&&m.hp<m.maxhp/2;
  NB.partySpareable=partySpareable;NB.partyTired=partyTired;
  const partyChooser=()=>S.party[S.pturn];
  const partyBag=()=>S.bag.filter(it=>!S.party.some(q=>q.act?.item===it));
@@ -9670,16 +9744,67 @@ const NB=(()=>{
   let n=(6+p.at)/2*9+p.mag*5-fightDef(m);if(bonus)n+=20;if(p.noWeapon)n*=.6;
   n=Math.round(n);return n<=0?1:n;
  }
+
+ // Party S-Action (Susie) / N-Action (Noelle): what each one does to each enemy, and how much
+ // MERCY it gives. Bosses that can't be talked down get none.
+ const PARTY_ASSIST={
+  dummy:{g:20,s:'* Susie punched the Dummy.\n* It seemed to appreciate\n  the attention.',n:'* Noelle introduced herself\n  to the Dummy.\n* It listened politely.'},
+  froggit:{g:20,s:'* Susie croaked at Froggit.\n* Froggit croaked back,\n  impressed.',n:'* Noelle complimented\n  Froggit\'s posture.\n* Froggit sat up straighter.'},
+  whimsun:{g:25,s:'* Susie tried to look nice.\n* Whimsun still cried, but\n  less.',n:'* Noelle told Whimsun it\'s\n  okay to be nervous.\n* Whimsun related to that.'},
+  moldsmal:{g:20,s:'* Susie wiggled at Moldsmal.\n* It wiggled harder.',n:'* Noelle hummed a little\n  tune.\n* Moldsmal jiggled along.'},
+  migosp:{g:20,s:'* Susie told Migosp to\n  dance like no one\'s looking.\n* It did.',n:'* Noelle asked Migosp to\n  be her friend.\n* It got shy.'},
+  vegetoid:{g:20,s:'* Susie ate a carrot off\n  Vegetoid.\n* It took it as a compliment.',n:'* Noelle said she eats her\n  vegetables.\n* Vegetoid beamed.'},
+  loox:{g:20,s:'* Susie stared Loox down.\n* Loox blinked first.',n:'* Noelle didn\'t pick on\n  Loox.\n* Loox noticed.'},
+  napstablook:{g:15,s:'* Susie told Napstablook\n  its music slaps.\n* It blushed... sort of.',n:'* Noelle cheered Napstablook\n  up.\n* It said "oh... thanks..."'},
+  snowdrake:{g:20,s:'* Susie laughed at\n  Snowdrake\'s joke.\n* Snowdrake felt seen.',n:'* Noelle told an ice pun.\n* Snowdrake was\n  deeply impressed.'},
+  icecap:{g:20,s:'* Susie said the hat was\n  sick.\n* Ice Cap got cocky.',n:'* Noelle didn\'t look at\n  the hat.\n* Ice Cap respected that.'},
+  doggo:{g:20,s:'* Susie stood perfectly\n  still.\n* Doggo couldn\'t see her.',n:'* Noelle petted Doggo.\n* Doggo is confused, but\n  happy.'},
+  lesserdog:{g:20,s:'* Susie petted Lesser Dog.\n* Its neck got longer.',n:'* Noelle petted Lesser Dog.\n* Its neck got even longer.'},
+  dogamy:{g:15,s:'* Susie rolled in the snow.\n* Dogamy sniffed her.\n* She smells like a dog.',n:'* Noelle rolled in the snow.\n* Dogamy decided she\'s\n  probably a dog.'},
+  dogaressa:{g:15,s:'* Susie rolled in the snow.\n* Dogaressa sniffed her.\n* She passes.',n:'* Noelle petted Dogaressa.\n* "A pup who pets?!"'},
+  greaterdog:{g:15,s:'* Susie played fetch with\n  Greater Dog.\n* It brought back a log.',n:'* Noelle called Greater\n  Dog over.\n* It sat on her.'},
+  jerry:{g:25,s:'* Susie told Jerry to leave.\n* Jerry did not leave.',n:'* Noelle tried to include\n  Jerry.\n* Everyone looked at her.'},
+  toriel:{g:10,s:'* Susie said she doesn\'t\n  need protecting.\n* Toriel looks worried.',n:'* Noelle told Toriel she\n  reminds her of her mom.\n* Toriel softened.'},
+  papyrus:{g:10,s:'* Susie flexed at Papyrus.\n* "NYEH! A WORTHY RIVAL!"',n:'* Noelle asked Papyrus for\n  a puzzle.\n* He is overjoyed.'},
+  aaron:{g:20,s:'* Susie out-flexed Aaron.\n* He winked. Respect.',n:'* Noelle complimented\n  Aaron\'s muscles.\n* He flexed out of view.'},
+  woshua:{g:20,s:'* Susie let Woshua clean\n  her.\n* It was overwhelmed.',n:'* Noelle was already clean.\n* Woshua was thrilled.'},
+  shyren:{g:20,s:'* Susie hummed along, badly.\n* Shyren sang louder to\n  help her out.',n:'* Noelle sang a carol with\n  Shyren.\n* Shyren found her voice.'},
+  moldbygg:{g:20,s:'* Susie hugged Moldbygg.\n* It squished.',n:'* Noelle snuggled\n  Moldbygg.\n* It jiggled happily.'},
+  temmie:{g:25,s:'* Susie paid for Temmie\'s\n  college.\n* hOI!!!',n:'* Noelle petted Temmie.\n* tem... tem is blushing!!'},
+  undyne:{g:8,s:'* Susie challenged Undyne to\n  an arm-wrestle.\n* Undyne wants that later.',n:'* Noelle said she won\'t\n  give up either.\n* Undyne grinned.'},
+  vulkin:{g:20,s:'* Susie said Vulkin\'s\n  lava is cool.\n* Vulkin got... hotter.',n:'* Noelle hugged Vulkin.\n* It was very warm.'},
+  tsunderplane:{g:20,s:'* Susie ignored\n  Tsunderplane.\n* "I-it\'s not like I care!"',n:'* Noelle got close to\n  Tsunderplane.\n* "B-baka!"'},
+  pyrope:{g:20,s:'* Susie heckled Pyrope\'s\n  rap.\n* It got more fired up.',n:'* Noelle cheered for\n  Pyrope\'s verse.\n* It\'s on fire.'},
+  muffet:{g:10,s:'* Susie said the donuts\n  were mid.\n* Muffet\'s smile twitched.',n:'* Noelle bought a spider\n  donut.\n* "Ahuhuhu~ a customer!"'},
+  finalfroggit:{g:15,s:'* Susie croaked mysteriously.\n* Final Froggit nodded\n  sagely.',n:'* Noelle sat quietly with\n  Final Froggit.\n* It approved of the calm.'},
+  whimsalot:{g:15,s:'* Susie told Whimsalot to\n  chill.\n* It loosened its armor.',n:'* Noelle said she gets\n  scared too.\n* Whimsalot relaxed.'},
+  astigmatism:{g:15,s:'* Susie glared right back.\n* Astigmatism blinked.',n:'* Noelle closed her eyes.\n* Astigmatism appreciated\n  the respect.'},
+  madjick:{g:15,s:'* Susie cast "punch."\n* Madjick was impressed by\n  the magic.',n:'* Noelle showed Madjick a\n  real spell.\n* Madjick took notes.'},
+  knightknight:{g:15,s:'* Susie yawned loudly.\n* Knight Knight yawned too.',n:'* Noelle sang a lullaby.\n* Knight Knight\'s eyes\n  grew heavy.'},
+  custom:{g:20},
+  // the ones that won't be talked down
+  maddummy:{g:0,s:'* Susie punched the dummy.\n* It\'s a ghost. It doesn\'t\n  care.',n:'* Noelle apologized to\n  Mad Dummy.\n* It got MADDER.'},
+  papyrus_nhb:{g:0,s:'* Susie tried to hold\n  Papyrus back.\n* He is NOT holding back.',n:'* Noelle asked Papyrus to\n  stop.\n* He can\'t hear her.'},
+  undyneex:{g:0,s:'* Susie dared Undyne to\n  hit harder.\n* She will.',n:'* Noelle begged Undyne to\n  stop.\n* She won\'t.'},
+  mettatonneo:{g:0,s:'* Susie told NEO his wings\n  look dumb.\n* He\'s deeply offended.',n:'* Noelle stared at the\n  wings.\n* NEO struck a pose.'},
+  asgore:{g:0,s:'* Susie told Asgore to\n  quit it.\n* He doesn\'t answer.',n:'* Noelle tried to talk to\n  Asgore.\n* He can\'t look at her.'},
+  sans:{g:0,s:'* Susie swung at Sans.\n* He was already somewhere\n  else.',n:'* Noelle asked Sans to\n  stop.\n* "heh. nice try, kid."'},
+  sans5000:{g:0,s:'* Susie flexed at SANS\n  SUPER 5000.\n* It does not compute.',n:'* Noelle waved at SANS\n  SUPER 5000.\n* It waved back. Slowly.'},
+  madmewmew:{g:0,s:'* Susie flexed at Mad Mew\n  Mew.\n* "STOP BEING SO COOL!!!"',n:'* Noelle said the doll is\n  really cute.\n* "I KNOW, RIGHT!?"'},
+  jayzee:{g:10,s:'* Susie threw the ball\n  back.\n* Jayzee liked that.',n:'* Noelle asked Jayzee\n  for coaching.\n* Jayzee is thrilled.'}
+ };
  function partyCast(a){
   const p=a.p,s=a.spell,id=s.id;
   if(id==='saction'||id==='naction'){
    const m=a.m;
-   // EnemyBase.PerformAssistAct: the default S/N-Action is +50% MERCY.
+   // EnemyBase.PerformAssistAct: each enemy has its own S/N-Action (PARTY_ASSIST).
    if(!m.alive){partyWait(`* ${p.say} tried to ACT,\n  but ${m.name} was\n  already spared!`);return}
    // def.assist(m, id, member, api) -> {text, gain} replaces the default +50%
    const own=m.def.assist&&m.def.assist(m,id,p,api);
    if(own){if(own.gain)partyMercy(m,own.gain);partyWait(own.text);return}
-   partyMercy(m,50);partyWait(`* ${p.say} used ${id==='saction'?'S':'N'}-ACTION!\n* ${m.name} liked that!`);
+   const A=PARTY_ASSIST[m.id]||{g:15},gain=A.g??15;
+   const text=(id==='saction'?A.s:A.n)||`* ${p.say} used ${id==='saction'?'S':'N'}-ACTION!\n* ${m.name} liked that!`;
+   if(gain>0)partyMercy(m,gain);partyWait(text);
    return;
   }
   if(id==='ultimateheal'||id==='healprayer'){
@@ -12652,7 +12777,9 @@ const NB=(()=>{
   hurt(m){
    const v=m.v,st=S();
    st.dmgw.push({x:v.x-20,y:CY-50,ystart:CY-50,vy:0,dmg:0,m,maxhp:m.maxhp,apparent:m.hp,actual:m.hp,life:-1,tick:0});
-   v.hitTry++;v.hurtT=32;
+   // one hit a round (a party can land several), and never past his last attack at 23
+   if(v.hitTurn!==st.turn&&v.hitTry<23){v.hitTry++;v.hitTurn=st.turn}
+   v.hurtT=32;
   },
   onSpell(m,id,dmg,p){if(id!=='iceshock')return false;iceEnding(m,p);return true},
   step(m){
@@ -12691,6 +12818,485 @@ const NB=(()=>{
   drawOver(g,m){overDraw(g,m)},
   vaporDraw(g,m){const v=m.v,c={...m,v:{...v,x:m.x+m.w/2,y:m.y+30}};bodyDraw(g,c)},
   flavor:m=>flavorFor(m)||'* ...'
+ });
+})();
+/* ---- NB content: MAD MEW MEW (UNDERTALE's Switch-exclusive fight), rebuilt from Dead0Duck's
+   fangame port (Godot 3: its Battle, Body, Border, HP, HalfBullet and CatBullet scripts, lines and
+   sprites). Her SOUL splits in two on a plus-shaped board: the blue half on WASD (left stick), the
+   red half on the arrows / IJKL (right stick). FIGHT only knocks her head off; after "Show me
+   what LOVE is!!!" it's FIGHT to break the doll or MERCY to spare her. ---- */
+(()=>{
+ // Mad Mew Mew's lines, decoded from the fangame port's dialogues.en.translation (tags stripped,
+ // its typos fixed). "\n" is a forced line break, "^1" a short pause.
+ const MMM_TEXT={"b":{"1":"COMBAT!!\nBLOODLUST!!\nDESTRUCTION!!","2":"It's the perfect emotional cocktail.^1.^1.","3":"To fuse with my new body, mew~","4":"And, with my new special ability.^1.^1.","5":"This battle will be TRULY INTERESTING!!!","6":"FOOL! You think you can hurt ME with that puny weapon!?","7":"As long as my guard's up this body is INVINCIBLE!","8":"(And cute, mew~)","9":"Wondering where I got this body?","10":"WOULDN'T YOU LIKE TO KNOW!?\nHA HA HA HA!!!","11":"Sure, I'll tell you.","12":"WERE YOU LISTENING!?\nYou can't hurt me!!!","13":"Wait.\nWait!\nWAIT!","14":"I get it!!\nYou're trying to bring out my deepest feelings!","15":"Hack away, you despicable fleshling!","16":"I found it in.^1.^1.\nA strange place.","17":"A.^1.^1. sciencey place.","18":"Don't you think I could EASILY become the world's CUTEST dullahan!?","19":"I just have to find a giant cat for my steed, and I'll be off!","20":"No idea what was going on THERE, but.^1.^1.","21":"As soon as I saw this body, I just knew--","22":"IT WAS ME!!!\nME!!!\nME!!!!","23":"ALRIGHT, it's starting to get ANNOYING again!!!","24":"So I TOOK it!\nYou can't blame me!","25":"Why does a scientist need a life-sized girl statue anyway!?","26":"I probably saved it from EXPERIMENTS!!!","27":"I'm a HERO, and I rescued MYSELF!!!","28":"And now, with this new body,","29":"I've got a BRAND NEW life ahead of me!!","30":"And NOW I'll finally be able.^1.^1.","31":"I'll.^1.^1. finally be able to.^1.^1.","32":"Uhh, continue being Undyne's Training Dummy.","33":"BUT BETTER!","34":"Uhh, Undyne.^1.^1.\nSweet, violent, Undyne~","35":"I can't wait to see the look on her face when she sees me~","36":"She'll blast me with a storm of spears~","37":"I'll be the world's greatest pin cushion~","38":"H-huh.^1.^1.!?\nThat look on your face--","39":"She's already got.^1.^1.","40":".^1.^1. somebody else?","41":".^1.^1.","42":"Heheheh.^1.^1.\nHeheh.^1.^1.","43":"Well, if she's got somebody else.^1.^1.","44":"THEN YOU KNOW WHAT I'M GONNA DO TO THEM!??","45":"Enough.\nENOUGH.\nENOUGH!","46":"WHY haven't I FUSED YET!?","47":"Do I have to use my FULL POWER!?","48":"COME ON!\nIS THIS ENOUGH FOR YOU!?","49":"What the hey!?\nYou're some kind of freak, aren't you!","50":"You dodged ALL of my attacks without getting hit!","51":"Unbelievable.\nUnbelievable!\nUNBELIEVABLE!!!","52":"YOU! Let's see what you think of THIS, then!!","53":"Huuuuu.^1.^1.!!!","54":"Don't think that was NEARLY enough to earn my praise!!!","55":"Take THIS!!!","56":"Mewsers!\nThat was Gnarly!","57":"Tubular! Way Cool! Awesome! Groovy! Mondo! Outrageous! Funky!","58":"WHAT YOU WANTED ME TO SAY!?\nBECAUSE WE AREN'T DONE YET!!","59":"Enough.\nENOUGH.\nENOUGH!","60":"WHY ISN'T IT WORKING!?","61":"NO MATTER HOW MAD I GET,","62":"NO MATTER HOW MUCH I FIGHT,","63":"I JUST CAN'T FUSE WITH THIS BODY!!!","64":"WHAT AM I DOING WRONG!?!?","65":"What am I doing wrong.^1.^1.","66":"H.^1.^1. huh?","67":"You mean I might have to try.^1.^1.","68":".^1.^1. other.^1.^1.\n.^1.^1.emotions?","69":"You mean something like.^1.^1.","70":"Love?","71":"Then, I.^1.^1.","72":".^1.^1.","73":"Human!!!\nGo ahead!!!","74":"Show me what LOVE is!!!","75":"I suppose I should have expected that."},"intro":{"1":"(It's a strange doll.)","2":"(It glares back at you^1.^1.^1.)","3":"ENOUGH!!!\nENOUGH!!!!\nENOUGH!!!!!!","4":"FOOL!!^1 DON'T YOU KNOW NOT TO TOUCH PEOPLE YOU DON'T KNOW!?","5":"ESPECIALLY!!\nWHEN!!!\nTHEY'RE!!!","6":"Ticklish.","7":"Huh?\n^1You don't recognize me^1.^1.^1.^1?","8":"Ohhh ho ho^1.^1.^1.","9":"That's all for the better~!","10":"Once I fuse with this PERFECT body,^1 mew~","11":"A brand new,^1 WONDERFUL life is going to begin!","12":".^1.^1.^1 but as much as I try to fuse^1.^1.^1.","13":"IT'S!!\n^1NOT!!\n^1WORKING!!!","14":"MY EMOTIONS AREN'T PURE ENOUGH---!!","15":"I need TENSION!\n^1CONFLICT!","16":"Something to bring out my ANGER!!!","17":".^1.^1.","18":"That's it!!!","19":"YOU!!! Human!!!","20":"Fight with me!!!"},"outro":{"1":"Huh^1.^1.^1.^1?\nSuch^1.^1.^1. such kindness^1.^1.^1.^1!","2":"It's making me FEEL something!","3":"It may be a while before I can truly fuse with this body.","4":"But,^1 I think this is a start^1.^1.^1.^1!","5":"Heh,^1 to think that even though I hid here to be alone^1.^1.^1.","6":"^1.^1.^1. I somehow made a friend!!!","7":"Thank you.\nThank you!\nTHANK YOU!!!","8":"(The Animatronic Limited Edition Mew Mew Machine was shattered into pieces^1.^1.^1.)","9":"YOU!^1 I had finally found the perfect body^1.^1.^1.!!!","10":"I even came to a secluded place to fuse in PEACE, but^1.^1.^1.","11":"I guess I made an ^1ENEMY!!!","12":"Just WAIT! After I repair this body, you're REALLY going to suffer!!!","13":"Someday.\nSomeday!\nSOMEDAY!!!"},"staff":{"1_1":"NEW LIFE!!!","1_2":"COOL LIFE!!!","2_1":"I'LL RESPECT THEM!!!","2_2":"I'LL RESPECT THEIR RELATIONSHIP!!!","2_3":"HAHAHA!!! HAPPY FOR HER!!","2_4":"NOTHING BUT THE BEST!!!","2_5":"BEST OF LUCK!!!","3_1":"EAT THIS!!!","3_5":"AND THIS!!!","3_10":"AND SOME OF THIS!!!","3_15":"BUT NOT THIS!!!","3_20":"DON'T EAT THAT!!!","3_25":"IT'S FOR ME!!!","3_30":"I DIDN'T MEAN TO USE IT!!!"},"love":"* How will you show LOVE...?"};
+ // Battle.gd story attacks: SOUL-half bullets (x,y in the port's room space; type b/r/o) and
+ // the staff volleys (with the shouts for each volley).
+ const MMM_ATTACKS={"6":{"pos":[[319,-20],[319,-58],[319,-96]],"type":{}},"12":{"pos":[[319,-20],[271,-134],[367,-134],[319,-248],[271,-362],[367,-362]],"type":{}},"18":{"pos":[[319,-20],[271,-134],[367,-134],[271,-248],[319,-248],[271,-362],[367,-362],[319,-478],[367,-478],[271,-592],[367,-592],[271,-706],[319,-706],[367,-706],[271,-744],[319,-744],[367,-744],[271,-782],[319,-782],[367,-782]],"type":{"11":"b","14":"b","17":"b","13":"r","16":"r","19":"r"}},"23":{"pos":[[271,-20],[319,-20],[367,-20],[271,-134],[367,-134],[271,-248],[319,-248],[367,-248],[271,-362],[367,-362],[271,-478],[319,-478],[367,-478],[271,-592],[367,-592],[271,-706],[319,-706],[367,-706]],"type":{"1":"b","2":"r","5":"b","6":"r","11":"b","12":"r","15":"b","16":"r"}},"26":{"pos":[[271,-20],[319,-20],[367,-20],[271,-134],[319,-134],[367,-134],[271,-248],[319,-248],[367,-248],[271,-362],[319,-362],[367,-362],[271,-478],[319,-478],[367,-478],[271,-592],[319,-592],[367,-592]],"type":{"0":"b","2":"r","3":"b","4":"r","6":"b","8":"r","10":"b","11":"r","12":"b","14":"r","15":"b","16":"r"}},"28":{"pos":[[319,-20],[271,-134],[367,-134],[271,-248],[319,-248],[367,-248],[271,-362],[367,-362],[319,-478],[271,-592],[367,-592],[271,-706],[319,-706],[367,-706],[271,-820],[367,-820],[319,-934]],"type":{"4":"b","5":"r","11":"b","12":"r"}},"30":{"staff":1,"text":{"1":["l","1_1"],"2":["r","1_2"],"3":["l","1_1"],"4":["r","1_2"]},"close":false},"34":{"pos":[[271,-20],[319,-20],[367,-20],[319,-134],[367,-134],[271,-248],[319,-248],[367,-248],[271,-362],[319,-362],[271,-478],[367,-478],[319,-592],[367,-592],[271,-706],[367,-706],[271,-820],[319,-820],[271,-934],[319,-934],[367,-934],[271,-972],[319,-972],[367,-972],[271,-1010],[319,-1010],[367,-1010],[-1276,339],[1916,339]],"type":{"0":"b","2":"r","5":"b","7":"r","18":"b","20":"r","21":"b","23":"r","24":"b","25":"o","26":"r"}},"36":{"pos":[[-20,291],[-20,339],[-20,387],[271,-230],[319,-230],[367,-230],[-392,291],[-392,339],[-392,387],[271,-554],[319,-554],[367,-554]],"type":{"0":"b","2":"r","3":"b","5":"r","6":"r","8":"b","9":"r","11":"b"}},"38":{"pos":[[-20,339],[-20,387],[319,-134],[367,-134],[964,291],[964,339],[271,-410],[319,-410],[271,-524],[319,-524],[367,-524],[-686,291],[-686,339],[-686,387],[1326,291],[1326,339],[1326,387],[-896,291],[-896,339],[-896,387],[1536,291],[1536,339],[1536,387]],"type":{"8":"b","10":"r","11":"b","13":"r","14":"b","16":"r","17":"r","19":"b","20":"r","22":"b"}},"41":{"pos":[[-20,339],[-20,387],[774,291],[774,339],[271,-248],[319,-248],[367,-248],[271,-400],[367,-400],[1192,291],[1192,339],[-704,339],[-704,387],[271,-818],[319,-818],[367,-818],[271,-970],[319,-970]],"type":{"4":"b","6":"r","13":"b","15":"r"}},"45":{"staff":2,"text":{"1":["l","2_1"],"2":["r","2_2"],"3":["l","2_3"],"4":["r","2_4"],"5":["l","2_5"]},"close":true},"48":{"pos":[[271,-20],[319,-20],[367,-20],[319,-172],[367,-172],[271,-306],[319,-306],[367,-306],[271,-440],[319,-440],[367,-440],[271,-574],[367,-574],[271,-708],[319,-708],[367,-708],[271,-842],[319,-842],[367,-842],[271,-976],[367,-976],[271,-1110],[319,-1110],[367,-1110]],"type":{"0":"b","1":"r","5":"b","7":"r","8":"b","9":"r","14":"b","15":"r","16":"b","18":"r","21":"b","23":"r"}},"49":{"pos":[[319,-20],[367,-20],[-172,291],[-172,339],[-172,387],[271,-334],[319,-334],[367,-334],[271,-478],[319,-478],[-650,291],[-650,339],[-650,387],[-822,291],[-822,339],[-822,387],[271,-956],[319,-956],[367,-956],[319,-1128],[367,-1128],[-1262,339],[-1262,387]],"type":{"2":"b","4":"r","5":"b","7":"r","10":"r","12":"b","13":"b","15":"r","16":"b","18":"r"}},"53":{"staff":3,"text":{"1":["l","3_1"],"5":["r","3_5"],"10":["l","3_10"],"15":["r","3_15"],"20":["l","3_20"],"25":["r","3_25"],"30":["l","3_30"]},"close":true},"56":{"pos":[[319,-20],[367,-20],[271,-154],[319,-154],[367,-154],[271,-288],[319,-288],[271,-422],[319,-422],[367,-422],[271,-556],[367,-556],[271,-690],[319,-690],[271,-824],[367,-824],[271,-958],[319,-958],[367,-958],[319,-1092],[367,-1092],[271,-1226],[367,-1226],[271,-1360],[319,-1360],[367,-1360],[319,-1496],[367,-1496],[271,-1628],[367,-1628],[319,-1762],[367,-1762],[271,-1896],[367,-1896],[271,-2030],[319,-2030],[367,-2030]],"type":{"3":"b","4":"r","7":"b","9":"r","17":"b","18":"r","23":"b","24":"r","34":"b","36":"r"}},"59":{"pos":[[-20,291],[-20,339],[-20,387],[271,-154],[319,-154],[367,-154],[271,-268],[319,-268],[367,-268],[-402,291],[-402,339],[-402,387],[-536,339],[-536,387],[-670,291],[-670,339],[-670,387],[271,-842],[319,-842],[367,-842],[319,-976],[367,-976],[271,-1110],[319,-1110],[271,-1244],[319,-1244],[367,-1244],[271,-1378],[367,-1378],[-1550,291],[-1550,339],[-1550,387],[-1684,291],[-1684,339],[-1818,291],[-1818,339],[-1818,387],[319,-1990],[367,-1990],[271,-2124],[319,-2124],[319,-2258],[367,-2258]],"type":{"0":"r","2":"b","3":"b","5":"r","7":"b","8":"r","9":"r","11":"b","14":"b","16":"r","18":"b","19":"r","24":"b","25":"r","29":"r","31":"b","34":"b","36":"r"}}};
+ // Battle.gd head_backer (the head goes back on as that line starts), faces (her face for each
+ // line) and the intro's ifaces.
+ const MMM_HEAD_BACK=new Set([9, 16, 20, 24, 26, 28, 30, 34, 36, 38, 41, 45, 48, 49, 53, 56, 59]);
+ const MMM_FACES={"1":0,"2":6,"3":8,"4":4,"5":0,"6":6,"7":0,"8":1,"9":6,"10":0,"11":8,"12":2,"13":5,"14":0,"16":5,"18":6,"19":1,"20":6,"21":5,"22":0,"23":2,"24":6,"25":5,"26":6,"27":0,"29":1,"30":0,"31":6,"32":5,"33":0,"34":1,"38":6,"39":5,"40":3,"42":6,"43":5,"44":0,"45":2,"49":6,"50":5,"51":6,"52":0,"53":2,"55":0,"56":1,"57":8,"58":2,"64":6,"65":3,"66":5,"68":6,"69":5,"70":1,"71":3,"73":6,"74":7};
+ const MMM_IFACES=[0, 0, 2, 2, 2, 1, 5, 4, 6, 1, 7, 5, 2, 2, 2, 2, 6, 7, 6, 0, 0];
+ const {rnd,snd,clamp}=NB,R=Math.round;
+ const S=()=>NB.S;
+ // The port's room is 640x480 like UNDERTALE's; everything sits 28px higher so the board
+ // (centred at 319,339 there) clears the HP line.
+ const DY=-28,BX=319,BY=339+DY;
+ // Body.gd anim(): where each body sprite is centred
+ const BODY={Idle:[322,151+DY],Headless:[308,171+DY],Staff:[322,140+DY]};
+ const ATTACKS=[6,12,18,23,26,28,30,34,36,38,41,45,48,49],EXTRA=[53,56,59];
+ // Border.gd poss: the two SOUL halves' spots on the plus-shaped board
+ const SPOT={Default:[0,-1],Up:[0,-50],Down:[0,48],Right:[48,-1],Left:[-48,-1]};
+ const FLAVOR=['* Mad Mew Mew is trying very&  hard to get mad.','* Mad Mew Mew strikes a cute&  pose. Furiously.','* The doll\'s eyes follow you&  around the room.','* Mad Mew Mew adjusts her&  new head.'];
+ const pick=a=>a[Math.floor(rnd(a.length))];
+ const store={get:k=>NB.store.get(k),set:(k,v)=>NB.store.set(k,v)};
+
+ // ---- text: the bubble wraps by character, so lines are broken by word here (21 columns,
+ // four lines a page). \E<n> sets her face, \M1 puts the head back on, ^1 pauses.
+ const vis=s=>s.replace(/\\[EM]\d|\^\d/g,'');
+ function wrapLines(text,cols=21){
+  const out=[];
+  for(const para of String(text).split('\n')){
+   let line='';
+   for(const w of para.split(' ')){const t=line?line+' '+w:w;if(vis(t).length>cols&&line){out.push(line);line=w}else line=t}
+   out.push(line);
+  }
+  return out;
+ }
+ function pagesFor(text,pre=''){
+  const ls=wrapLines(text),pg=[];
+  for(let i=0;i<ls.length;i+=4)pg.push(ls.slice(i,i+4).join('&'));
+  return pg.map((p,i)=>(i===0?pre:'')+p+'/');
+ }
+ // Battle.gd _next/atk_end: line n shows her face for it, and some lines put the head back
+ function linePages(n){
+  const f=n===59?2:MMM_FACES[n];
+  return pagesFor(MMM_TEXT.b[n],(MMM_HEAD_BACK.has(n)?'\\M1':'')+(f!=null?'\\E'+f:''));
+ }
+ // her own bubble: obj_blconwdflowey-style wide bubble to her right, shaking text
+ NB.TYPERS[130]={font:'plain',color:'#000000',dx:0,dy:0,wrap:x=>x+999,speed:1,sound:'mmmVoice',spacing:9,vspacing:20,shake:2};
+ function bubbleOf(m,pages){
+  return {pages,wide:true,img:images.nbBlconWdShrt,pos:{x:392,y:34},tx:34,ty:12,typer:130,hold:true,
+   onFace:d=>{m.v.face=d},onM:()=>headOn(m.v)};
+ }
+ // a bubble outside the talk phase (the intro and the endings run their own steps)
+ function say(m,pages,then){
+  const st=S(),o=bubbleOf(m,pages);
+  const w=new NB.Writer(o.pages,{typer:130,x:o.pos.x+o.tx,y:o.pos.y+o.ty});
+  w.onFace=o.onFace;w.onM=o.onM;
+  const b={m,x:o.pos.x,y:o.pos.y,wide:true,get img(){return images.nbBlconWdShrt||null},w};
+  st.bubbles.push(b);m.v.say={b,then};
+ }
+ function sayStep(m){
+  const v=m.v,st=S();if(!v.say)return;
+  v.say.b.w.step();
+  if(v.say.b.w.done){const s=v.say;v.say=null;st.bubbles=st.bubbles.filter(b=>b!==s.b);if(s.then)s.then()}
+ }
+ function narrate(text,then){
+  const w=NB.api.write(text,{end:'/'});
+  w.onEnd=()=>{if(S().writer===w)S().writer=null;then&&then()};
+  return w;
+ }
+
+ // ---- body: Body.gd's Idle (five frames at 10 fps, then a second's rest), Headless, Staff;
+ // AnimMaster Head_Off / Head_On; shake() from atk_end
+ function setAnim(v,a){v.anim=a;[v.bx,v.by]=BODY[a];if(a==='Idle')v.idleT=0}
+ function headOff(v){setAnim(v,'Headless');v.head='flying';v.ht=0;[v.hx,v.hy]=[-2,-82];v.hrot=0}
+ function headOn(v){if(v.head==='off'||v.head==='flying'){v.head='returning';v.ht=0}}
+ const lerp=(a,b,t)=>a+(b-a)*Math.max(0,Math.min(1,t));
+ function bodyStep(v){
+  v.idleT=(v.idleT+1)%45;
+  if(v.shake>0){v.shk=-v.shk;v.shake=Math.max(0,v.shake-.5)}
+  if(v.head==='flying'){
+   const t=++v.ht;
+   // keys at 0, .5, .6 and 1 s: up off-screen, across, and down by her side, two full turns
+   if(t<=15){v.hx=-2;v.hy=lerp(-82,-260,t/15)}
+   else if(t<=18){v.hx=lerp(-2,-78,(t-15)/3);v.hy=-260}
+   else{v.hx=-78;v.hy=lerp(-260,-84,(t-18)/12)}
+   v.hrot=t<=15?lerp(0,360,t/15):lerp(360,720,(t-15)/15);
+   v.bounce=t>30&&t<=33?(t-30)*2/3:t>33&&t<36?(36-t)*2/3:0;
+   if(t>=36){v.head='off';v.hrot=0;v.bounce=0}
+  }else if(v.head==='returning'){
+   const t=++v.ht;v.hx=lerp(-78,-2,t/6);v.hy=lerp(-84,-80,t/6);
+   if(t>=6){v.head='on';setAnim(v,'Idle')}
+  }
+  // AnimMaster "Battle": the body fades to 61% while her bullets fly
+  const to=v.dim?.61:1;v.alpha+=Math.sign(to-v.alpha)*Math.min(Math.abs(to-v.alpha),.39/6);
+  // Border.gd: the top and bottom arms of the board slide open (or shut) at 7/s
+  const b=v.board;
+  if(b.ver){if(b.upS<1)b.upS=Math.min(1,b.upS+7/30)}
+  else if(b.upS>0){b.upS=Math.max(0,b.upS-7/30);if(b.upS<=0)b.frame=0}
+ }
+ function setBoard(v,ver,now){
+  const b=v.board;b.ver=ver;b.frame=1;
+  if(now){b.frame=ver?1:0;b.upS=ver?1:0}
+ }
+ const img=(k,i)=>{const a=images[k];return Array.isArray(a)?a[((i|0)%a.length+a.length)%a.length]:a};
+ function drawC(g,im,x,y,flip){
+  if(!im)return;const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+  if(flip){g.save();g.translate(R(x),R(y));g.scale(-1,1);g.drawImage(im,-Math.floor(w/2),-Math.floor(h/2));g.restore()}
+  else g.drawImage(im,R(x-Math.floor(w/2)),R(y-Math.floor(h/2)));
+ }
+ function drawHead(g,v,x,y,rot,withHead){
+  g.save();g.translate(R(x),R(y));if(rot)g.rotate(rot*Math.PI/180);
+  if(withHead)drawC(g,images.mmmHead,0,0);
+  drawC(g,img('mmmFace',v.face),2,9);
+  g.restore();
+ }
+ // Attack ending: the doll breaks. Whatever she looks like at that moment is cut into
+ // squares that fly apart, bounce and come to rest on the floor.
+ const SH=30,FLOOR=228;
+ function shatter(m){
+  const v=m.v,c=document.createElement('canvas');c.width=640;c.height=260;
+  const g=c.getContext('2d');bodyDraw(g,{...m,alpha:1,v:{...v,shake:0,alpha:1,shards:null}});
+  let data=null;try{data=g.getImageData(0,0,640,260).data}catch(_){}
+  const filled=(x0,y0)=>{if(!data)return true;for(let y=y0;y<y0+SH;y+=2)for(let x=x0;x<x0+SH;x+=2)if(data[(y*640+x)*4+3]>0)return true;return false};
+  v.shards=[];v.shardImg=c;
+  for(let y0=0;y0<240;y0+=SH)for(let x0=150;x0<480;x0+=SH){
+   if(!filled(x0,y0))continue;
+   const cx=x0+SH/2,cy=y0+SH/2;
+   v.shards.push({sx:x0,sy:y0,x:cx,y:cy,vx:(cx-322)/26+rnd(2)-1,vy:-2-rnd(4),vr:(rnd(2)-1)*.3,r:0,floor:FLOOR-SH/2+rnd(12)});
+  }
+ }
+ function shardsStep(v){
+  for(const p of v.shards||[]){
+   if(p.rest)continue;
+   p.vy+=.7;p.x=Math.max(170,Math.min(470,p.x+p.vx));p.y+=p.vy;p.r+=p.vr;
+   if(p.y>=p.floor){p.y=p.floor;if(Math.abs(p.vy)>2){p.vy*=-.3;p.vx*=.6;p.vr*=.5}else{p.vy=0;p.vx*=.6;p.vr=0;if(Math.abs(p.vx)<.2)p.rest=true}}
+  }
+ }
+ function bodyDraw(g,m){
+  const v=m.v;
+  g.save();g.imageSmoothingEnabled=false;g.globalAlpha=(m.alpha??1)*v.alpha;
+  const x=v.bx+(v.shake>0?v.shake*v.shk:0),y=v.by+(v.bounce||0);
+  if(v.shards){
+   for(const p of v.shards){
+    g.save();g.translate(R(p.x),R(p.y));if(p.r)g.rotate(p.r);
+    g.drawImage(v.shardImg,p.sx,p.sy,SH,SH,-SH/2,-SH/2,SH,SH);g.restore();
+   }
+  }else if(v.anim==='Staff')drawC(g,images.mmmStaff,x,y,v.flip);
+  else if(v.anim==='Headless'){
+   drawC(g,images.mmmHeadless,x,y);
+   drawHead(g,v,x+v.hx,y+v.hy,v.hrot,true);
+  }else{
+   const t=v.idleT,f=t<15?Math.floor(t/3):0;
+   drawC(g,img('mmmBody',f),x,y);
+   drawHead(g,v,x-16,y-60,0,false);
+  }
+  g.restore();
+ }
+
+ // ---- the split SOUL (Border.gd): blue half on WASD, red half on the arrows / IJKL. Each
+ // half sits on one of the board's spots; Up and Down only once the board has opened.
+ const held=n=>typeof key!=='undefined'&&!!key[n];
+ function spotFor(v,u,l,d,r){
+  if(u)return v.board.ver?'Up':'Default';
+  if(l)return 'Left';
+  if(d)return v.board.ver?'Down':'Default';
+  if(r)return 'Right';
+  return 'Default';
+ }
+ function soulsStep(v){
+  const want=[
+   spotFor(v,held('w'),held('a'),held('s'),held('d')),
+   spotFor(v,held('arrowup')||held('i'),held('arrowleft')||held('j'),held('arrowdown')||held('k'),held('arrowright')||held('l'))];
+  // lerp at delta*30 every 60 fps frame: three quarters of the way each 30 fps step
+  v.souls.forEach((s,i)=>{const [tx,ty]=SPOT[want[i]];s.x+=(tx-s.x)*.75;s.y+=(ty-s.y)*.75;if(Math.abs(tx-s.x)<.3)s.x=tx;if(Math.abs(ty-s.y)<.3)s.y=ty});
+ }
+ // HalfBullet / CatBullet Area2D vs a half's 8x8 area. type 1 (blue) passes the blue half,
+ // type 2 (red) the red one.
+ function touches(v,b,r){
+  for(let i=0;i<2;i++){
+   if(b.type===1&&i===0||b.type===2&&i===1)continue;
+   const s=v.souls[i],sx=BX+s.x,sy=BY+s.y;
+   const cx=clamp(b.x,sx-4,sx+4),cy=clamp(b.y,sy-4,sy+4);
+   if((b.x-cx)**2+(b.y-cy)**2<r*r)return true;
+  }
+  return false;
+ }
+ // HP.gd hit(): two seconds of mercy after a hit
+ function soulHurt(m){
+  const st=S(),v=m.v;
+  if(NB.api.damage(m.atk,{inv:60/Math.max(1,st.inv)})){v.hits++;v.hurtFx=1}
+ }
+
+ // ---- Battle.gd default_atk + HalfBullet.gd: each one flies straight at the board from the
+ // side it starts on (190 px/s), and fades once it has been within 60px of the centre and left.
+ function halfAttack(v,p){
+  v.dim=true;
+  p.pos.forEach(([x,y],i)=>{
+   const sp=190/30,t=p.type[i]||'d';
+   let vx=0,vy=0;
+   if(y<0)vy=sp;else if(y>480)vy=-sp;else if(x<0)vx=sp;else if(x>320)vx=-sp;
+   v.bul.push({cat:false,x,y:y+DY,vx,vy,type:t==='b'?1:t==='r'?2:0,opener:t==='o',alpha:1,dest:false,t:0,hit:false});
+  });
+ }
+ function bulletsStep(m){
+  const v=m.v;
+  for(const b of v.bul){
+   b.t++;b.x+=b.vx;b.y+=b.vy;
+   const d=Math.hypot(b.x-BX,b.y-BY);
+   if(d<=60)b.dest=true;
+   else if(b.dest){b.alpha-=1/3;if(b.alpha<=0){b.dead=true;if(b.opener)setBoard(v,true)}}
+   // area_entered: once per bullet
+   if(!b.dead&&!b.hit&&touches(v,b,b.cat?7:9)){b.hit=true;soulHurt(m)}
+  }
+  v.bul=v.bul.filter(b=>!b.dead);
+ }
+
+ // ---- Body.gd staff_1/2/3: she slides between x 302 and 342 and, at each stop, fires cats
+ // from the tip of her staff at one of the three spots on the middle row (a volley of three
+ // for staffs 1 and 2, one for staff 3), shouting a line now and then.
+ function staffAttack(v,p){
+  if(v.head!=='on'){v.head='on'}
+  setAnim(v,'Staff');v.flip=false;
+  v.staff={type:p.staff,atks:1,q:[],qT:0,text:p.text,lastGone:false,last:false};
+  staffText(v);
+ }
+ function staffText(v){
+  const s=v.staff,t=s.text[s.atks];
+  if(t){const i=t[0]==='l'?0:1;v.labels[i]={s:MMM_TEXT.staff[t[1]]||'',n:0}}
+ }
+ function cat(v,lane,last){
+  const ox=v.flip?-97:97,x=v.bx+ox,y=v.by-25,tx=lane,ty=338+DY,a=Math.atan2(ty-y,tx-x),sp=260/30;
+  v.bul.push({cat:true,x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,ang:a,type:0,alpha:1,dest:false,t:0,hit:false,last});
+ }
+ function staffStep(v){
+  const s=v.staff,lim=[0,4,5,30][s.type],lastAt=lim-1;
+  if(s.q.length){if(--s.qT<=0){s.q.shift()();s.qT=2}return}
+  if(s.atks>=lim){if(!v.bul.some(b=>b.last))s.lastGone=true;return}
+  const tx=[302,342][s.atks%2];
+  if(Math.abs(v.bx-tx)<5){
+   const lane=pick([271,319,367]);
+   const fin=()=>{s.atks++;staffText(v)};
+   if(s.type===3){
+    snd('mmmStaff');
+    if(s.atks===lastAt)cat(v,lane,true);else{cat(v,lane,false);v.flip=!v.flip}
+    fin();
+   }else{
+    snd('mmmStaff');cat(v,lane,false);
+    s.q.push(()=>{snd('mmmStaff');cat(v,lane,false)});
+    s.q.push(()=>{snd('mmmStaff');if(s.atks===lastAt)cat(v,lane,true);else{cat(v,lane,false);v.flip=!v.flip}fin()});
+    s.qT=2;
+   }
+  }else v.bx+=(tx-v.bx)*(s.type===3?.193:.129);
+ }
+ function labelsStep(v){for(const l of v.labels)if(l&&l.n<l.s.length)l.n=Math.min(l.s.length,l.n+4/3)}
+
+ // ---- drawing the attack: bullets under the board's lines, the halves on top
+ function bulletsDraw(g,v){
+  for(const b of v.bul){
+   g.save();g.globalAlpha=Math.max(0,b.alpha);
+   if(b.cat){
+    const f=[0,1,2,1][Math.floor(b.t*4/30)%4],im=img('mmmCat',f);
+    if(im){g.translate(R(b.x),R(b.y));g.rotate(b.ang);g.drawImage(im,-21,-19)}
+   }else{
+    const im=img(b.type===1?'mmmBallB':b.type===2?'mmmBallR':'mmmBall',Math.floor(b.t*7/30));
+    if(im)g.drawImage(im,R(b.x-19),R(b.y-19));
+   }
+   g.restore();
+  }
+ }
+ function boardDraw(g,v){
+  const b=v.board,im=img('mmmBoard',b.frame),up=images.mmmBoardUp;
+  if(im)g.drawImage(im,BX-79,BY-79);
+  if(up&&b.upS>0){
+   const h=Math.max(1,R(46*b.upS));
+   g.drawImage(up,BX-79,BY-33-h,158,h);
+   g.save();g.translate(BX-79,BY+33+h);g.scale(1,-1);g.drawImage(up,0,0,158,h);g.restore();
+  }
+ }
+ function soulsDraw(g,v){
+  const st=S(),f=st.invc>0?Math.floor(st.t*5/30)%2:0;
+  // the halves face each other: red drawn second so a whole heart reads left-blue, right-red
+  ['mmmSoulB','mmmSoulR'].forEach((k,i)=>{const s=v.souls[i],im=img(k,f);if(im)g.drawImage(im,R(BX+s.x-8),R(BY+s.y-8))});
+ }
+ function labelsDraw(g,v){
+  [[40,140+DY],[460,140+DY]].forEach(([x0,y0],i)=>{
+   const l=v.labels[i];if(!l||!l.s)return;
+   const ls=wrapLines(l.s.slice(0,Math.floor(l.n)),17);
+   ls.forEach((ln,j)=>{let x=x0;for(const ch of ln){NB.drawGlyph(g,'plain',ch,x,y0+j*16,'#ffffff');x+=9}});
+  });
+ }
+ function hintDraw(g){
+  const touch=document.documentElement.classList.contains('touchUI');
+  const rows=touch?[['LEFT STICK','#14a9ff','BLUE HALF'],['RIGHT STICK','#ff2020','RED HALF']]:[['W A S D','#14a9ff','BLUE HALF'],['ARROWS','#ff2020','RED HALF']];
+  rows.forEach(([a,c,b],j)=>{
+   let x=40;const y=BY-14+j*18;
+   for(const ch of a){NB.drawGlyph(g,'plain',ch,x,y,'#ffffff');x+=9}
+   x+=9;for(const ch of b){NB.drawGlyph(g,'plain',ch,x,y,c);x+=9}
+  });
+ }
+
+ // ---- the opening (Intro.gd): the doll, her rant, then the SOUL splits and the theme starts.
+ // After the first time only the last two lines play.
+ function introStep(m){
+  const st=S(),v=m.v;
+  if(v.con===0){
+   v.con=1;st.myfight=99;st.mnfight=99;st.heart.visible=false;st.writer=null;NB.setBorder(0);
+   const seen=store.get('utbg.mmmIntro')==='1';store.set('utbg.mmmIntro','1');
+   const rant=from=>{const pages=[];for(let n=from;n<=20;n++)pages.push(...pagesFor(MMM_TEXT.intro[n],'\\E'+MMM_IFACES[n-1]));say(m,pages,()=>{v.con=3;v.ct=0})};
+   if(seen){v.face=MMM_IFACES[18];rant(19)}
+   else{v.face=3;narrate('* '+MMM_TEXT.intro[1]+'/* '+MMM_TEXT.intro[2],()=>rant(3))}
+  }
+  if(v.con===3){
+   // the SOUL breaks in two (Intro.gd plays soul_break before the battle starts)
+   if(v.ct++===0){snd('break1');v.splitFx=0}
+   if(v.ct>=24){
+    v.con=5;v.splitFx=null;setMmmMusic('madmewmew');
+    st.myfight=0;st.mnfight=0;st.heart.visible=true;
+    st.flavor=m.def.encounter;NB.api.write(st.flavor);
+   }
+  }
+ }
+ // the menu SOUL coming apart into its halves
+ function splitDraw(g,v){
+  const st=S(),h=st.heart;if(v.splitFx==null)return;
+  const t=Math.min(1,v.ct/12),x=h.x,y=h.y;
+  ['mmmSoulB','mmmSoulR'].forEach((k,i)=>{const im=img(k,0);if(im)g.drawImage(im,R(x+(i?6:-6)*t),R(y))});
+ }
+
+ // ---- Attack: "I suppose I should have expected that." The doll shatters (Outro mode 2).
+ function badStart(m){
+  const st=S(),v=m.v;
+  st.myfight=99;st.mnfight=99;st.heart.visible=false;st.writer=null;st.bubbles=[];st.boxAlpha=1;NB.setBorder(0);
+  snd('damage');v.shake=6;v.shk=1;v.react=null;v.cut={t:0,phase:'shake'};
+ }
+ function badStep(m){
+  const st=S(),v=m.v,c=v.cut;c.t++;
+  if(c.phase==='shake'&&v.shake<=0){c.phase='head';if(v.head==='on')headOff(v)}
+  if(c.phase==='head'&&v.head==='off'){c.phase='say';say(m,linePages(75),()=>{c.phase='boom';c.t=0;snd('mmmBoom')})}
+  shardsStep(v);
+  if(c.phase==='boom'){
+   if(c.t<=20)v.white=c.t/20;
+   if(c.t===20){shatter(m);v.broken=true}
+   if(c.t>24)v.white=Math.max(0,1-(c.t-24)/16);
+   if(c.t===80){
+    c.phase='narrate';
+    narrate('* '+MMM_TEXT.outro[8],()=>{
+     c.phase='rant';
+     const pages=[];for(let n=9;n<=13;n++)pages.push(...pagesFor(MMM_TEXT.outro[n]));
+     say(m,pages,()=>{c.phase='end';c.t=0});
+    });
+   }
+  }
+  if(c.phase==='end'&&c.t===20){
+   v.cut=null;m.alive=false;m.killed=true;st.xpTotal+=m.xp;st.goldTotal+=m.gold;NB.api.win();
+  }
+ }
+ function whiteDraw(g,v){if(v.white>0){g.fillStyle='rgba(255,255,255,'+Math.min(1,v.white)+')';g.fillRect(-40,-40,720,560)}}
+
+ // ---- FIGHT (atk_end's strike): she shakes and the head pops off. Her guard's up: no damage.
+ function reactStep(m){
+  const v=m.v;if(!v.react||v.shake>0)return;
+  if(v.react==='off'){headOff(v);v.react='wait';return}
+  if(v.react==='wait'&&v.head!=='off')return;
+  v.react=null;NB.api.endPlayerTurn();
+ }
+
+ NB.BORDERS[60]=[BX-79,BX+74,BY-33,BY+28]; // the plus board's middle bar
+ NB.defs.set('madmewmew',{
+  name:'Mad Mew Mew',hp:500,atk:5,def:999,xp:0,gold:0,mercymod:-99999,wd:194,
+  encounter:'* Mad Mew Mew blocks the way!',
+  size:()=>({w:194,h:184}),pos:()=>({x:BODY.Idle[0]-97,y:BODY.Idle[1]-92}),
+  noFlee:()=>true,
+  setup(m){
+   mmmMusic=null;
+   Object.assign(m.v,{face:3,anim:'Idle',bx:0,by:0,idleT:0,shake:0,shk:1,bounce:0,head:'on',hx:0,hy:0,hrot:0,ht:0,
+    alpha:1,dim:false,board:{ver:false,upS:0,frame:0},open:false,souls:[{x:0,y:-1},{x:0,y:-1}],bul:[],staff:null,
+    labels:[null,null],flip:false,line:1,pend:null,extra:false,final:false,finalNext:false,ending:null,hits:0,
+    hitTurn:-1,react:null,atkOn:false,atkN:0,attacks:0,con:0,ct:0,say:null,cut:null,white:0,broken:false,
+    started:false,splitFx:null});
+   setAnim(m.v,'Idle');
+  },
+  acts:['Check'],
+  check:()=>'* MAD MEW MEW - ATK 5 DEF 999&* Mad Dummy found a new body.&* It\'s limited edition.',
+  spareable:m=>m.v.final&&!m.v.cut,
+  // Spare: she gets her goodbye first (Outro mode 1), then she's spared on her turn
+  spareHold(m){if(m.v.ending==='spare2')return false;m.v.ending='spare';return true},
+  border:m=>m.v.final||m.v.ending?0:60,
+  speech(m,api){
+   const v=m.v;
+   if(v.ending==='spare'){
+    const pages=[];for(let n=1;n<=7;n++)pages.push(...pagesFor(MMM_TEXT.outro[n],n===1?'\\E4':n===2?'\\E7':n===4?'\\E8':''));
+    return bubbleOf(m,pages);
+   }
+   if(v.final)return bubbleOf(m,linePages(74));
+   // Battle.gd _next: every line up to the next attack (its own line comes after it)
+   const list=v.extra?ATTACKS.concat(EXTRA):ATTACKS,a=list.find(n=>n>v.line)||null,end=a?a-1:74;
+   if(v.line===59)setMmmMusic(null); // "Enough. ENOUGH. ENOUGH!" - the music cuts out
+   const pages=[];for(let n=v.line;n<=end;n++)pages.push(...linePages(n));
+   v.pend=a;if(!a)v.finalNext=true;
+   return bubbleOf(m,pages);
+  },
+  attack(m,api){
+   const v=m.v,st=api.S;
+   if(v.ending==='spare'){
+    v.ending='spare2';api.endTurn();st.heart.visible=false;
+    api.spare(m);if(!api.alive().length)api.win();
+    return null;
+   }
+   if(v.finalNext){v.finalNext=false;v.final=true}
+   // "Show me what LOVE is!!!" - no more attacks, just the choice
+   if(v.final){api.endTurn();st.heart.visible=false;return '* '+MMM_TEXT.love.replace(/^\*\s*/,'')}
+   const n=v.pend,p=MMM_ATTACKS[n];
+   if(!p){api.endTurn();return null}
+   v.atkN=n;v.atkOn=true;v.attacks++;st.turntimer=1e9;st.heart.visible=false;st.boxAlpha=0;st.splitSoul=true;
+   v.souls.forEach(s=>{s.x=0;s.y=-1});v.bul=[];v.labels=[null,null];
+   if(p.staff){setBoard(v,false,true);staffAttack(v,p)}
+   else{
+    // after the board first opens (attack 34) it opens again at the start of each attack
+    const b=v.board;b.ver=v.open;b.frame=v.open?1:0;b.upS=0;
+    halfAttack(v,p);
+   }
+   return pick(FLAVOR);
+  },
+  attackStep(m,api){
+   const v=m.v,st=api.S;if(!v.atkOn)return;
+   st.splitSoul=true;
+   soulsStep(v);
+   if(v.staff)staffStep(v);
+   bulletsStep(m);
+   labelsStep(v);
+   if(v.staff?v.staff.lastGone:!v.bul.length)api.endTurn();
+  },
+  endAttack(m,api){
+   const v=m.v,st=api.S;if(!v.atkOn)return;
+   v.atkOn=false;v.bul=[];v.dim=false;st.boxAlpha=1;st.splitSoul=false;
+   if(v.staff){v.staff=null;v.flip=false;setAnim(v,'Idle');v.labels=[null,null]}
+   const n=v.atkN;
+   // atk_end: from attack 34 on, the board is open for the rest of the fight
+   if(n>34||v.board.ver)v.open=true;
+   v.board.ver=false;v.board.upS=0;v.board.frame=0;
+   v.line=n;
+   // after attack 49: hit even once and she skips to "Enough..."; otherwise three more attacks
+   if(n===49){if(v.hits>0)v.line=59;else v.extra=true}
+  },
+  hurt(m,api){
+   const v=m.v,st=api.S;
+   if(v.final){badStart(m);return}
+   if(v.react||v.hitTurn===st.turn){api.endPlayerTurn();return}
+   v.hitTurn=st.turn;snd('damage');v.shake=6;v.shk=1;v.react=v.head==='on'?'off':'shake';
+  },
+  step(m,api){
+   const v=m.v,st=api.S;
+   if(!v.started){v.started=true;st.overlay=g=>{splitDraw(g,v);whiteDraw(g,v)}}
+   if(v.con<5)introStep(m);
+   if(st.myfight===99&&st.writer)st.writer.step();
+   if(v.cut)badStep(m);
+   sayStep(m);
+   bodyStep(v);
+   reactStep(m);
+  },
+  draw(g,m){bodyDraw(g,m)},
+  drawGone(g,m){if(m.v.broken)bodyDraw(g,m)},
+  drawOver(g,m){
+   const v=m.v,st=S();
+   if(!v.atkOn||st.mnfight!==2)return;
+   bulletsDraw(g,v);boardDraw(g,v);soulsDraw(g,v);labelsDraw(g,v);
+   if(v.attacks<=2)hintDraw(g);
+  },
+  flavor:()=>pick(FLAVOR)
  });
 })();
 /* ---- NB content: JAYZEE (fanmade OC, by a friend of the dev). Plays FAIR. Bouncing balls,
@@ -23191,6 +23797,12 @@ const NB_ASSETS={
  asgHollow:['fightbt','talkbt','itembt'].map(n=>RAW+`sprites/images/spr_${n}_hollow_1.png`), // 2-frame exports are swapped
  asgSpareBt:[1,0].map(i=>RAW+`sprites/images/spr_sparebt_bandage_${i}.png`),
  // SANS (multi-frame exports are reversed; spr_gasterblaster's are rotated by three)
+ // MAD MEW MEW (frames cut from the port's sheets)
+ mmmBody:[0,1,2,3,4].map(i=>MMM_RAW+`mmm_body_${i}.png`),mmmFace:[0,1,2,3,4,5,6,7,8].map(i=>MMM_RAW+`mmm_face_${i}.png`),
+ mmmHead:MMM_RAW+'mmm_head.png',mmmHeadless:MMM_RAW+'mmm_headless.png',mmmStaff:MMM_RAW+'mmm_staff.png',
+ mmmBall:[0,1,2].map(i=>MMM_RAW+`mmm_ball_${i}.png`),mmmBallB:[0,1,2].map(i=>MMM_RAW+`mmm_ballb_${i}.png`),mmmBallR:[0,1,2].map(i=>MMM_RAW+`mmm_ballr_${i}.png`),
+ mmmCat:[0,1,2].map(i=>MMM_RAW+`mmm_cat_${i}.png`),mmmBoard:[0,1].map(i=>MMM_RAW+`mmm_board_${i}.png`),mmmBoardUp:MMM_RAW+'mmm_board_up.png',
+ mmmSoulB:[0,1].map(i=>MMM_RAW+`mmm_soulb_${i}.png`),mmmSoulR:[0,1].map(i=>MMM_RAW+`mmm_soulr_${i}.png`),
  snsLegs:RAW+'sprites/images/spr_sansb_legs_0.png',snsLegsSit:RAW+'sprites/images/spr_sansb_legs_sit_0.png',
  snsTorso:[7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_sansb_torso_${i}.png`),
  snsFace:[14,13,12,11,10,9,8,7,6,5,4,3,2,1,0].map(i=>RAW+`sprites/images/spr_sansb_face_${i}.png`),
@@ -23344,7 +23956,9 @@ function nbBattleOpts(online=false){
  // hub LOADOUT (party slot 1's items). Without it the fight got the last fight's bag.
  if(vanillaMode)inventory=buildBattleInventory();else{resetPartyRuntimeItems();activatePartyRuntimeSlot(0)}
  // A party shares one bag: every member's PARTY loadout items.
- const bag=partyOn?sandboxPartySlots().flatMap((r,i)=>r&&r!=='off'?(partyRuntimeItems?.[i]||[]):[]):(inventory||[]);
+ let bag=partyOn?sandboxPartySlots().flatMap((r,i)=>r&&r!=='off'?(partyRuntimeItems?.[i]||[]):[]):(inventory||[]);
+ // Shop purchases come along on CUSTOM rules too, ahead of the loadout items.
+ if(!vanillaMode){const st=stockBattleItems();if(st.length)bag=[...st,...bag].slice(0,Math.max(8,bag.length))}
  if(partyOn&&typeof DR!=='undefined')DR.load(); // head icons, press lanes, spell sprites and sounds
  const ids=nbBattleIds(),custom=!vanillaMode;
  return {
@@ -23355,7 +23969,7 @@ function nbBattleOpts(online=false){
   name:(typeof playerDisplayName==='function'?playerDisplayName():roleDisplayName(practiceMode)),
   // battleItemHealing: role, Burnt Pan and armour multipliers. Using one spends the
   // VANILLA shop stock (a no-op on CUSTOM rules), like the old engine's ITEM menu.
-  items:bag.map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id)})),
+  items:bag.map(v=>({...v,heal:battleItemHealing(v),onUse:()=>consumeVanillaInventoryItem(v.id,v.fromStock)})),
   mods:MOD_DEFS.filter(m=>modEnabled(m.id)).map(m=>m.id),
   weapon:activeWeaponData()?.id||'stick'
  };
@@ -24797,7 +25411,7 @@ function drStart(){
  screen='dr';
  DR.start({onExit(){screen='title';mainSelected=9;try{startMenuMusic()}catch(_){}}});
 }
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt,now);syncMenuMusic();render(now);requestAnimationFrame(loop)}
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt,now);syncMenuMusic();syncSplitSoul();render(now);requestAnimationFrame(loop)}
 setupTestControls();requestAnimationFrame(loop);
 boot().catch(err=>{
   console.error('BOOT RECOVERY',err);
@@ -25059,6 +25673,7 @@ const NBO=(()=>{
   currentBoss=BOSS_OPTIONS[bossSelected]?.id||'dummy';
   const ids=nbBattleIds();
   if(!ids.every(id=>NB.supports(id))){setStatus(bossLabel()+" isn't on the new engine");return}
+  if(currentBoss==='madmewmew'){setStatus(bossLabel()+"'s split SOUL is single-player only");return}
   const o=nbBattleOpts(true);
   const stats=effectivePlayerStats(),w=activeWeaponData();
   const players=[{id:T.self,name:myName},...lobby.map(p=>({id:p.id,name:p.name}))];
