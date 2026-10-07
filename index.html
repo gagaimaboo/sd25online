@@ -9411,7 +9411,9 @@ const NB=(()=>{
  const partySpareable=m=>m.alive&&(monsterSpareable(m)||(m.mercy||0)>=100);
  // UNDERTALE monsters have no TIRED flag of their own: like most of DELTARUNE's, they
  // tire under half HP (DELTATRAVELER sets it per monster).
- const partyTired=m=>m.alive&&m.hp<m.maxhp/2;
+ // Bosses never get TIRED, so SLEEP MIST only puts regular enemies to sleep.
+ const NEVER_TIRED=new Set(['toriel','napstablook','papyrus','papyrus_nhb','undyne','undyneex','maddummy','muffet','mettaton','mettatonex','mettatonneo','asgore','sans','sans5000','jayzee']);
+ const partyTired=m=>m.alive&&!NEVER_TIRED.has(m.id)&&m.hp<m.maxhp/2;
  NB.partySpareable=partySpareable;NB.partyTired=partyTired;
  const partyChooser=()=>S.party[S.pturn];
  const partyBag=()=>S.bag.filter(it=>!S.party.some(q=>q.act?.item===it));
@@ -9682,8 +9684,8 @@ const NB=(()=>{
   froggit:{g:20,s:'* Susie croaked at Froggit.\n* Froggit croaked back,\n  impressed.',n:'* Noelle complimented\n  Froggit\'s posture.\n* Froggit sat up straighter.'},
   whimsun:{g:25,s:'* Susie tried to look nice.\n* Whimsun still cried, but\n  less.',n:'* Noelle told Whimsun it\'s\n  okay to be nervous.\n* Whimsun related to that.'},
   moldsmal:{g:20,s:'* Susie wiggled at Moldsmal.\n* It wiggled harder.',n:'* Noelle hummed a little\n  tune.\n* Moldsmal jiggled along.'},
-  migosp:{g:20,s:'* Susie told Migosp to\n  dance like nobody\'s\n  watching.\n* It did.',n:'* Noelle asked Migosp to\n  be her friend.\n* It got shy.'},
-  vegetoid:{g:20,s:'* Susie ate a carrot off\n  Vegetoid.\n* It took that as a\n  compliment.',n:'* Noelle said she eats her\n  vegetables.\n* Vegetoid beamed.'},
+  migosp:{g:20,s:'* Susie told Migosp to\n  dance like no one\'s looking.\n* It did.',n:'* Noelle asked Migosp to\n  be her friend.\n* It got shy.'},
+  vegetoid:{g:20,s:'* Susie ate a carrot off\n  Vegetoid.\n* It took it as a compliment.',n:'* Noelle said she eats her\n  vegetables.\n* Vegetoid beamed.'},
   loox:{g:20,s:'* Susie stared Loox down.\n* Loox blinked first.',n:'* Noelle didn\'t pick on\n  Loox.\n* Loox noticed.'},
   napstablook:{g:15,s:'* Susie told Napstablook\n  its music slaps.\n* It blushed... sort of.',n:'* Noelle cheered Napstablook\n  up.\n* It said "oh... thanks..."'},
   snowdrake:{g:20,s:'* Susie laughed at\n  Snowdrake\'s joke.\n* Snowdrake felt seen.',n:'* Noelle told an ice pun.\n* Snowdrake was\n  deeply impressed.'},
@@ -9698,7 +9700,7 @@ const NB=(()=>{
   papyrus:{g:10,s:'* Susie flexed at Papyrus.\n* "NYEH! A WORTHY RIVAL!"',n:'* Noelle asked Papyrus for\n  a puzzle.\n* He is overjoyed.'},
   aaron:{g:20,s:'* Susie out-flexed Aaron.\n* He winked. Respect.',n:'* Noelle complimented\n  Aaron\'s muscles.\n* He flexed out of view.'},
   woshua:{g:20,s:'* Susie let Woshua clean\n  her.\n* It was overwhelmed.',n:'* Noelle was already clean.\n* Woshua was thrilled.'},
-  shyren:{g:20,s:'* Susie hummed along,\n  badly.\n* Shyren sang louder to\n  help.',n:'* Noelle sang a carol with\n  Shyren.\n* Shyren found her voice.'},
+  shyren:{g:20,s:'* Susie hummed along, badly.\n* Shyren sang louder to\n  help her out.',n:'* Noelle sang a carol with\n  Shyren.\n* Shyren found her voice.'},
   moldbygg:{g:20,s:'* Susie hugged Moldbygg.\n* It squished.',n:'* Noelle snuggled\n  Moldbygg.\n* It jiggled happily.'},
   temmie:{g:25,s:'* Susie paid for Temmie\'s\n  college.\n* hOI!!!',n:'* Noelle petted Temmie.\n* tem... tem is blushing!!'},
   undyne:{g:8,s:'* Susie challenged Undyne to\n  an arm-wrestle.\n* Undyne wants that later.',n:'* Noelle said she won\'t\n  give up either.\n* Undyne grinned.'},
