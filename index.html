@@ -19097,7 +19097,9 @@ if(c.lesson > 20) {
  // User Event 1: the windup and slash with her left arm (movetype 2).
  function bodySlash(b){if(b.move===0)b.move=2}
  function bodyStep(b){
-  if(tick(b,'a1'))b.slashno=Math.floor(b.slashno)+1;
+  // alarm[1]: slashno++ (0.1 -> 1.1 starts the two-step swing; flooring it skipped the alarm
+  // that ends the swing and left the arm spinning forever)
+  if(tick(b,'a1'))b.slashno=Math.round((b.slashno+1)*10)/10;
   const L=b.larm;
   if(b.move===2){
    L.vis=true;
