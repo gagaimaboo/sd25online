@@ -12656,7 +12656,9 @@ const NB=(()=>{
   hurt(m){
    const v=m.v,st=S();
    st.dmgw.push({x:v.x-20,y:CY-50,ystart:CY-50,vy:0,dmg:0,m,maxhp:m.maxhp,apparent:m.hp,actual:m.hp,life:-1,tick:0});
-   v.hitTry++;v.hurtT=32;
+   // one hit a round (a party can land several), and never past his last attack at 23
+   if(v.hitTurn!==st.turn&&v.hitTry<23){v.hitTry++;v.hitTurn=st.turn}
+   v.hurtT=32;
   },
   onSpell(m,id,dmg,p){if(id!=='iceshock')return false;iceEnding(m,p);return true},
   step(m){
