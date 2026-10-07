@@ -58,7 +58,7 @@ html.splitSoul #mobileJoystick2{border-color:#ff3030}
 <body>
 <div id="wrap">
 <canvas id="game" width="1448" height="1086" tabindex="0"></canvas>
-<div id="hint">PC + MOBILE · keyboard or virtual joystick · X/Z touch controls</div>
+<div id="hint">PC + MOBILE + CONTROLLER · keyboard, gamepad or virtual joystick · X/Z touch controls</div>
 
 <div id="mobileControls" aria-label="Mobile controls">
   <div class="cluster joystickWrap">
@@ -7203,6 +7203,40 @@ function debugLog(msg){
  const el=document.getElementById('debugLog');
  if(el)el.textContent=debugLastLog;
 }
+// Controller support: a gamepad becomes key presses, like the touch stick, so every menu,
+// fight and online room takes it as-is. Standard layout: A confirms (Z), B cancels (X),
+// Y is the menu key (C), Start is Enter; the d-pad and left stick move. In Mad Mew Mew's
+// split SOUL fight the d-pad / left stick drive the blue half (WASD) and the right stick the
+// red half (arrows). Any real keyboard key hands control back to the keyboard prompts.
+const padHeld=new Set();
+let gamepadActive=false;
+function padSet(k,on){
+ if(padHeld.has(k)===on)return;
+ if(on)padHeld.add(k);else padHeld.delete(k);
+ window.dispatchEvent(new KeyboardEvent(on?'keydown':'keyup',{key:k,bubbles:true,cancelable:true}));
+ key[k]=on;key[k.toLowerCase()]=on;
+}
+function pollGamepads(){
+ let pads=[];try{pads=navigator.getGamepads?[...navigator.getGamepads()]:[]}catch(_){}
+ const want=new Set(),D=.5;
+ const split=document.documentElement.classList.contains('splitSoul');
+ const ARROW={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'},WASD={up:'w',down:'s',left:'a',right:'d'};
+ for(const p of pads){
+  if(!p||p.connected===false)continue;
+  const b=i=>!!p.buttons[i]?.pressed,ax=i=>p.axes[i]||0;
+  const L={up:b(12)||ax(1)<-D,down:b(13)||ax(1)>D,left:b(14)||ax(0)<-D,right:b(15)||ax(0)>D};
+  const Rs={up:ax(3)<-D,down:ax(3)>D,left:ax(2)<-D,right:ax(2)>D};
+  for(const d in L){if(L[d])want.add(split?WASD[d]:ARROW[d]);if(split&&Rs[d])want.add(ARROW[d])}
+  if(b(0))want.add('z');if(b(1))want.add('x');if(b(3))want.add('c');if(b(9))want.add('Enter');
+ }
+ for(const k of [...padHeld])if(!want.has(k))padSet(k,false);
+ for(const k of want)padSet(k,true);
+ if(want.size){
+  if(!gamepadActive){gamepadActive=true;try{unlockAudio()}catch(_){}}
+  document.documentElement.classList.remove('touchUI');
+ }
+}
+window.addEventListener('keydown',e=>{if(e.isTrusted)gamepadActive=false},{capture:true});
 // Mad Mew Mew's split SOUL: html.splitSoul swaps the touch X/Z for a second stick while her
 // attacks are up (see the NB module); the main loop keeps it in step with the fight.
 let releaseSplitSticks=null;
@@ -13119,7 +13153,7 @@ const NB=(()=>{
   });
  }
  function hintDraw(g){
-  const touch=document.documentElement.classList.contains('touchUI');
+  const touch=document.documentElement.classList.contains('touchUI')||gamepadActive;
   const rows=touch?[['LEFT STICK','#14a9ff','BLUE HALF'],['RIGHT STICK','#ff2020','RED HALF']]:[['W A S D','#14a9ff','BLUE HALF'],['ARROWS','#ff2020','RED HALF']];
   rows.forEach(([a,c,b],j)=>{
    let x=40;const y=BY-14+j*18;
@@ -25411,7 +25445,7 @@ function drStart(){
  screen='dr';
  DR.start({onExit(){screen='title';mainSelected=9;try{startMenuMusic()}catch(_){}}});
 }
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt,now);syncMenuMusic();syncSplitSoul();render(now);requestAnimationFrame(loop)}
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;pollGamepads();update(dt,now);syncMenuMusic();syncSplitSoul();render(now);requestAnimationFrame(loop)}
 setupTestControls();requestAnimationFrame(loop);
 boot().catch(err=>{
   console.error('BOOT RECOVERY',err);
