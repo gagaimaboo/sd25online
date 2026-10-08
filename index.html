@@ -23408,12 +23408,13 @@ if(c.lesson > 20) {
  const X=NB.mex,{sfx,spr,IM,clamp,choose,rand}=X;
  let K=null,N=null;
  const mk=api=>{K=api.S.mx;X.setK(K);N=K.neoState;return K};
- const NX=m=>m.x0+104,NY=m=>m.y+50; // obj_mneo_body at (x+104, y+50)
+ // obj_mneo_body at (x+104, y+50); slide: he glides aside to line up his arm cannon
+ const NX=m=>m.x0+104+(N?N.slide||0:0),NY=m=>m.y+50;
  const phase=m=>{const r=m.hp/Math.max(1,m.maxhp);return r<.25?3:(r<.6?2:1)};
  const speed=m=>[1,1.2,1.4,1.6][phase(m)];
  const L=(t,e)=>[t,e];
  const pagesOf=lines=>lines.map(([t,e])=>(e!=null?'\\E'+e:'')+t.replace(/\n/g,'&')+'/');
- function neoState(){return {twistDone:false,shield:0,shieldMax:100,shieldFlash:0,broken:false,turn:0,face:0,siner:0,pause:0,shakeX:0,shakeY:0,dying:false,sparks:[],phaseSaid:{},barrierFx:0,al:null,bub:null,iceRoll:null,hidden:false,plan:null}}
+ function neoState(){return {twistDone:false,shield:0,shieldMax:100,shieldFlash:0,broken:false,turn:0,face:0,siner:0,pause:0,shakeX:0,shakeY:0,dying:false,sparks:[],phaseSaid:{},barrierFx:0,al:null,bub:null,iceRoll:null,hidden:false,plan:null,aimR:0,aimW:0,kick:0,slide:0,slideT:0}}
 
  // ---------------------------------------------------------------------- body (obj_mneo_body)
  function bodyStep(m){
@@ -23424,6 +23425,12 @@ if(c.lesson > 20) {
   for(const s of N.sparks){s.x+=s.hs;s.y+=s.vs;s.vs+=.2;s.a-=.06}
   N.sparks=N.sparks.filter(s=>s.a>0);
   if(N.dying){N.shakeX=rand(4)-2;N.shakeY=rand(4)-2}else{N.shakeX=N.shakeY=0}
+  // the arm cannon settles back to his side once he stops aiming
+  const aiming=!!(K.gen&&K.gen.ac&&K.gen.ac.st!=='done');
+  N.aimW=clamp((N.aimW||0)+(aiming?.15:-.08),0,1);
+  if(!aiming)N.aimR=(N.aimR||0)*.84;
+  N.slide+=((aiming?N.slideT:0)-N.slide)*.1;if(Math.abs(N.slide)<.3)N.slide=0;
+  N.kick=(N.kick||0)*.75;
  }
  function drawBody(g,m,dy=0,alpha=1){
   const s=N.siner,x=NX(m)+N.shakeX,y=NY(m)+N.shakeY+dy;
@@ -23433,9 +23440,12 @@ if(c.lesson > 20) {
   spr(g,images.neoBurst,x+28,y+18+Math.sin(s/3),-2,-2,2,2,-Math.sin(s/6)*2,a*alpha);
   spr(g,images.neoLegs,x,y+196,55,55,2,2-Math.sin(s/3)*.05,0,alpha);
   spr(g,images.neoArmR,x+40+Math.sin(s/3)*2,y+40,0,-1,2,2,Math.sin(s/6)*2,alpha);
-  spr(g,images.neoArmL,x-26-Math.sin(s/3)*2,y+40,60,2,2,2,-Math.sin(s/6)*2,alpha);
+  // the left arm is his cannon: swung round to aim it comes in front of his body
+  const P=armPose(m,dy),front=Math.abs(N.aimR||0)>.35;
+  if(!front)spr(g,images.neoArmL,P.px,P.py,60,2,2,2,P.deg,alpha);
   spr(g,images.neoBody,x+4,y+36+Math.sin(s/3)*2,53,33,2,2,0,alpha);
   spr(g,IM('neoFace',N.face),x,y+Math.sin(s/3)*3,23,19,2,2,0,alpha);
+  if(front)spr(g,images.neoArmL,P.px,P.py,60,2,2,2,P.deg,alpha);
  }
  // ------------------------------------------------------------------------------- the shield
  function shieldHit(n,x,y){
@@ -23484,12 +23494,20 @@ if(c.lesson > 20) {
   return pool[t%pool.length];
  }
  // ------------------------------------------------------------------------------- attacks
- const CYCLE=['cannon','grid','core','spot','legs','core','storm','grid','core'];
- const BORDER={cannon:24,grid:27,core:24,spot:24,legs:24,storm:24};
+ const CYCLE=['armcannon','grid','core','missiles','legs','armcannon','core','missiles','grid','core'];
+ const BORDER={armcannon:24,grid:27,core:24,missiles:24,legs:24};
+ const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
  function create(api,m){
-  const g=K.gen,st=api.S,B=st.ideal,gil=B[0],gir=B[1],sp=speed(m),ph=phase(m);
+  const g=K.gen,st=api.S,B=st.ideal,gil=B[0],sp=speed(m),ph=phase(m);
   api.turntimer(240);
-  if(g.kind==='cannon')api.turntimer(250);
+  g.ms=[];
+  if(g.kind==='armcannon'){
+   // track, lock, fire; a quick second shot after each one in phase 3
+   api.turntimer(9999);
+   const T=[null,[30,16,4],[25,14,5],[21,12,4]][ph];
+   N.slideT=choose(110,140);
+   g.ac={st:'track',t:0,n:0,max:T[2],track:T[0],lock:T[1],dbl:ph===3,quick:false,half:0,ox:0,oy:0,dir:0};
+  }
   if(g.kind==='grid'){
    api.turntimer(230);
    // rows come faster and closer together than EX's
@@ -23504,48 +23522,162 @@ if(c.lesson > 20) {
    const h=X.heartCore(4,320,170);h.life=ph===3?1100:900;h.neoCore=true;
    sfx('mexBurst');
   }
-  if(g.kind==='spot'){
-   api.turntimer(220);
-   const d=X.obj('disco',308,B[2]-10,{diff:2,dtype:0,swap:0,snd:0,rottimer:0,laserno:0});
-   X.discoInit(d);
-  }
+  if(g.kind==='missiles'){api.turntimer(9999);g.mleft=[0,6,8,10][ph];g.side=choose(-1,1)}
   if(g.kind==='legs')api.turntimer(240);
-  if(g.kind==='storm'){
-   api.turntimer(230);
-   X.hand('l',gil,-25,{sf:30,sp:8,vs:4.2*sp,yseg:999,ysegi:50});
-   X.hand('r',gir,-185,{sf:30,sp:8,vs:4.2*sp,yseg:999,ysegi:50});
-   for(let i=0;i<9;i++)X.fodder(gil+10+rand(130),-80-i*45,{vs:4.6*sp,type:2,early:60});
+ }
+ // ------------------------------------------------- the arm cannon (his left arm, obj_mneo_arml)
+ // The sprite hangs from its shoulder at (60,2); the barrel's mouth is at its left end.
+ const ARM_A=Math.atan2(18,-120),ARM_L=Math.hypot(120,18);
+ // r: the arm's turn in radians (canvas, clockwise); w: how far the idle sway is held still
+ function armPose(m,dy=0,r=N.aimR||0,w=N.aimW||0,k=N.kick||0){
+  const s=N.siner,x=NX(m)+N.shakeX,y=NY(m)+N.shakeY+dy;
+  const deg=-Math.sin(s/6)*2*(1-w)-r*180/Math.PI,rr=-deg*Math.PI/180,dir=rr+Math.PI;
+  const px=x-26-Math.sin(s/3)*2*(1-w)-Math.cos(dir)*k*8,py=y+40-Math.sin(dir)*k*8;
+  return {px,py,deg,dir,mx:px+ARM_L*Math.cos(ARM_A+rr),my:py+ARM_L*Math.sin(ARM_A+rr)};
+ }
+ // the turn that puts the barrel's line through (tx,ty)
+ function aimAt(m,tx,ty){
+  let r=N.aimR||0;
+  for(let i=0;i<4;i++){const P=armPose(m,0,r,1,0);r=wrap(Math.atan2(ty-P.my,tx-P.mx)-Math.PI)}
+  return r;
+ }
+ function acStep(api,m){
+  const g=K.gen,a=g.ac,st=api.S;if(!a)return;
+  a.t++;
+  const H=X.heartXY(),tx=H.x+8,ty=H.y+8,sp=speed(m);
+  if(a.st==='track'){
+   const d=wrap(aimAt(m,tx,ty)-N.aimR);
+   N.aimR+=clamp(d*.3,-.16,.16);
+   if(a.t>=(a.quick?7:a.track)){a.st='lock';a.t=0;sfx('gbCharge',a.quick?1.6:1.25)}
+  }else if(a.st==='lock'){
+   // the aim stops following here: move!
+   if(a.t>=(a.quick?7:a.lock)){
+    const P=armPose(m);
+    a.st='fire';a.t=0;a.ox=P.mx;a.oy=P.my;a.dir=P.dir;
+    N.kick=1;sfx('gbFire',1.1);sfx('mexBurst');st.shake={h:3,v:3,speed:2,t:0};
+    if(phase(m)>=2&&!a.quick){
+     const deg=-a.dir*180/Math.PI;
+     for(const o of [-34,-17,17,34]){const lt=X.light(a.ox,a.oy);lt.fric=-.1;X.setDir(lt,3.4*sp,deg+o)}
+    }
+   }
+  }else if(a.st==='fire'){
+   a.half=a.t<=3?a.t*4.5:a.t<=10?14:Math.max(0,14-(a.t-10)*2.5);
+   if(a.half>=6&&st.heart.visible){
+    const vx=Math.cos(a.dir),vy=Math.sin(a.dir),u=(tx-a.ox)*vx+(ty-a.oy)*vy;
+    if(u>0&&Math.abs((tx-a.ox)*vy-(ty-a.oy)*vx)<=a.half*.8+3)X.hurt();
+   }
+   if(a.t>=16){a.st='rest';a.t=0;a.half=0}
+  }else if(a.st==='rest'&&a.t>=5){
+   if(a.dbl&&!a.quick){a.quick=true;a.st='track';a.t=0;return}
+   a.quick=false;a.n++;a.t=0;
+   if(a.n>=a.max){a.st='done';if(st.turntimer>18)st.turntimer=18}
+   else{a.st='track';N.slideT=N.slideT>125?choose(90,110):choose(140,160)}
   }
+ }
+ // --------------------------------------- wing missiles: Mad Dummy's (blt_dummymissle)
+ // Fired up out of his wings; they steer at the SOUL while their juice lasts, fly straight,
+ // then blow up on their own. The yellow SOUL can shoot them down.
+ const pdir=(x1,y1,x2,y2)=>Math.atan2(-(y2-y1),x2-x1)*180/Math.PI;
+ function missile(m,side){
+  const g=K.gen,ph=phase(m);
+  g.ms.push({x:NX(m)+(side<0?-72:76),y:NY(m)+40,dir:90-side*(20+rand(25)),sp:3,juice:[0,55,60,65][ph],create:0,destroy:0,normal:0,sc:1});
+  sfx('mexShoot',.7);
+ }
+ function msStep(api,m){
+  const g=K.gen,st=api.S;if(!g.ms)return;
+  const h=st.heart;
+  for(const b of g.ms){
+   if(b.destroy>=1){
+    b.x+=rand(2)-rand(2);b.y+=rand(2)-rand(2);if(b.destroy>=2)b.sc+=.25;
+    if(++b.destroy>=8)b.dead=true;continue;
+   }
+   b.sp+=.1;if(b.sp>6)b.sp=6;
+   if(b.juice>0){
+    const ideal=pdir(b.x,b.y,h.x+10,h.y+10);let diff=b.dir-ideal;
+    if(Math.abs(diff)>180)diff=b.dir>ideal?-(360-b.dir+ideal):360-ideal+b.dir;
+    if(Math.abs(diff)>4){let ds=1;const a=Math.abs(diff);for(const [lim,v] of [[10,2],[20,3],[30,4],[40,5],[50,6],[60,7],[70,8],[80,9],[90,10],[100,11]])if(a>lim)ds=v;if(diff<0)ds=-ds;b.dir-=ds}
+   }
+   b.juice--;if(b.juice<-60)b.destroy=1;
+   b.x+=Math.cos(b.dir*Math.PI/180)*b.sp;b.y-=Math.sin(b.dir*Math.PI/180)*b.sp;
+   if(b.create<6){if(++b.create>=6)b.normal=1}
+   if(b.normal&&!b.destroy){
+    const sh=X.findShot(b.x-8,b.y-8,b.x+8,b.y+8);
+    if(sh){sh.dead=true;X.addRatings(20);sfx('mexBurstSmall');b.destroy=1;b.normal=0;continue}
+    if(h.visible&&Math.abs(b.x-(h.x+8))<11&&Math.abs(b.y-(h.y+8))<11){sfx('impact');b.destroy=1;b.normal=0;X.hurt()}
+   }
+   if(b.x<-60||b.x>700||b.y<-160||b.y>540)b.dead=true;
+  }
+  g.ms=g.ms.filter(b=>!b.dead);
  }
  // Per-step choreography the spawners above don't cover.
  function genStep(api,m){
   const g=K.gen;if(!g)return;
   shotStep(m);
   g.t=(g.t||0)+1;
-  const st=api.S,B=st.ideal,gil=B[0],gir=B[1],sp=speed(m),ph=phase(m),H=X.heartXY();
-  // Arm cannon: aimed bolt bursts from his right arm
-  // a burst of eight aimed bolts; the back half fans out to both sides of the aim
-  const cannon=rate=>{
-   if(g.t%rate===20){g.aimX=H.x+10;g.aimY=H.y+10;g.chch=choose(-1,1)}
-   const k=g.t%rate-20;
-   if(k>=0&&k<=14&&k%2===0){
-    const ox=NX(m)+100,oy=NY(m)+48,aim=Math.atan2(-(g.aimY-oy),g.aimX-ox)*180/Math.PI;
-    const shoot=a=>{const lt=X.light(ox,oy);lt.fric=-.12;X.setDir(lt,7.5*sp,a)};
-    shoot(aim+(k>=8?g.chch*12:0));
-    if(k>=8&&k%4===0){shoot(aim-24);shoot(aim+24)}
-    sfx('mexShoot',.8);
-   }
-  };
-  if(g.kind==='cannon'){cannon(ph===3?30:ph===2?38:44);if(g.t%30===0)X.box(gil+25*Math.floor(rand(6)),-30,3.5*sp,{sf:20,sp:12})}
-  if(g.kind==='spot'&&g.t%14===0){const k=X.kiss(gil+rand(gir-gil),B[2]-40,null,0);k.vs=3.6*sp;k.hs=rand(3)-1.5}
+  const st=api.S,B=st.ideal,gil=B[0],sp=speed(m),ph=phase(m);
+  acStep(api,m);
+  if(g.kind==='missiles'&&g.mleft>0&&g.t%[0,40,34,28][ph]===10){
+   if(ph===3&&g.mleft>1){missile(m,-1);missile(m,1);g.mleft-=2}
+   else{missile(m,g.side);g.side=-g.side;g.mleft--}
+  }
+  if(g.kind==='missiles'&&g.mleft<=0&&!g.ms.length&&st.turntimer>18)st.turntimer=18;
   if(g.kind==='legs'){
    if(g.t%48===5)X.legline((g.t/48|0)%2?'r':'l');
    if(g.t%48===29)X.legline((g.t/48|0)%2?'l':'r');
    if(g.t%26===0)X.fodder(gil+10+rand(130),-40,{vs:4.6*sp,type:2,early:40});
   }
-  if(g.kind==='storm')cannon(ph>=2?44:60);
-  if(g.kind==='grid'&&ph===3)cannon(60);
+  if(g.kind==='grid'&&ph===3&&g.t%70===35){missile(m,g.t%140<70?-1:1)}
   if(g.kind==='core'&&ph>=2&&g.t%(ph===3?34:50)===0)for(let i=0;i<10;i++){const lt=X.light(320,170);lt.fric=-.09;X.setDir(lt,2.2,i*36+g.t)}
+  msStep(api,m);
+ }
+ // the sight, the beam, the missiles
+ function drawAttack(g){
+  const G=K.gen;if(!G)return;
+  const t=NB.S.t,a=G.ac,R=Math.round;
+  g.save();g.imageSmoothingEnabled=false;
+  if(a&&(a.st==='track'||a.st==='lock')){
+   const P=armPose(K.neoM);
+   const lock=a.st==='lock',blink=lock&&t%4<2;
+   // laser sight: dotted while tracking, solid and blinking once locked
+   g.save();g.translate(P.mx,P.my);g.rotate(P.dir);
+   g.fillStyle=blink?'#ffffff':'#ff2020';
+   if(lock)g.fillRect(0,-1,760,2);
+   else{g.globalAlpha=.55+.25*Math.sin(t*.9);for(let d=(t*2)%8;d<760;d+=8)g.fillRect(d,-1,4,2)}
+   g.restore();
+   // the barrel charges
+   const ch=lock?Math.min(1,a.t/(a.quick?7:a.lock)):0;
+   if(ch>0){
+    g.fillStyle='#ff66cc';g.globalAlpha=.8;g.beginPath();g.arc(P.mx,P.my,3+ch*7+(t%2),0,7);g.fill();
+    g.fillStyle='#ffffff';g.globalAlpha=1;g.beginPath();g.arc(P.mx,P.my,1+ch*4,0,7);g.fill();
+   }
+   // the reticle closes in on the SOUL
+   if(lock){
+    const H=X.heartXY(),cx=H.x+8,cy=H.y+8,d=R(16-ch*6);
+    g.globalAlpha=1;g.fillStyle=blink?'#ffffff':'#ff2020';
+    for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+     const x=cx+sx*d,y=cy+sy*d;
+     g.fillRect(R(x-(sx>0?5:0)),R(y-(sy>0?1:0)),6,2);g.fillRect(R(x-(sx>0?1:0)),R(y-(sy>0?5:0)),2,6);
+    }
+   }
+  }
+  if(a&&a.st==='fire'&&a.half>0){
+   const h=a.half+(t%2);
+   g.save();g.translate(a.ox,a.oy);g.rotate(a.dir);
+   g.fillStyle='#ff66cc';g.globalAlpha=.9;g.fillRect(0,-h,820,h*2);
+   g.fillStyle='#ffd6f2';g.fillRect(0,-h*.7,820,h*1.4);
+   g.fillStyle='#ffffff';g.globalAlpha=1;g.fillRect(0,-h*.4,820,h*.8);
+   g.restore();
+   g.fillStyle='#ffffff';g.beginPath();g.arc(a.ox,a.oy,h*1.3,0,7);g.fill();
+  }
+  // missiles: Mad Dummy's sprites (they redden as their juice runs out)
+  const md=NB.md;
+  for(const b of G.ms||[]){
+   const fr=b.juice<0?3:b.juice<30?2:b.juice<60?1:0;
+   if(b.normal){md.spr(g,md.rev(images.nbMissile,fr),b.x,b.y,17,17,b.dir,1,1);md.spr(g,md.rev(images.nbMissileSh,fr),b.x,b.y,17,17,b.dir,1,1)}
+   if(b.create<6)md.spr(g,md.rev(images.nbMissileShot,6-b.create),b.x,b.y,17,17,b.dir,1,1);
+   if(b.destroy>=1)md.spr(g,md.rev(images.nbMissileShot,b.destroy-1),b.x,b.y,17,17,b.dir,b.sc,b.sc);
+  }
+  g.restore();
  }
  // ------------------------------------------------------------------------------- scenes
  function scene(api){
@@ -23819,7 +23951,7 @@ if(c.lesson > 20) {
   dmgPos:m=>({x:m.x,y:m.y+200}),
   setup(m,api){
    const k=X.newKit(true);k.neoState=neoState();api.S.mx=k;K=k;X.setK(k);N=k.neoState;
-   k.neoGenStep=api2=>genStep(api2,m);
+   k.neoGenStep=api2=>genStep(api2,m);k.neoM=m;
    k.neoShieldHit=shieldHit;k.neoShieldBreak=shieldBreak;
    api.S.overlay=g=>{K=NB.S.mx;X.setK(K);N=K.neoState;drawAlphysOverlay(g);X.drawWhite(g)};
   },
@@ -23880,6 +24012,7 @@ if(c.lesson > 20) {
   drawOver(g,m){
    K=NB.S.mx;X.setK(K);N=K.neoState;
    X.drawLayer(g);
+   drawAttack(g);
    drawAlphysOver(g);
    drawHud(g,m);
   },
@@ -23903,7 +24036,7 @@ if(c.lesson > 20) {
    api.soul('yellow');
    if(N.twistDone&&N.shield<=0){N.shield=N.shieldMax;N.broken=false;N.barrierFx=0}
    N.face=phase(m)===3?5:(phase(m)===2?4:0);N.pause=0;
-   K.objs=[];K.gen={type:'neo',kind:N.plan?.kind||'cannon',specialtimer:0,dark:1,darkamt:0,siner:0,t:0};
+   K.objs=[];K.gen={type:'neo',kind:N.plan?.kind||'armcannon',specialtimer:0,dark:1,darkamt:0,siner:0,t:0};
    create(api,m);
    if(N.twistDone&&N.shield<=0)return '* The shield is down!&* Now is your chance!';
    if(phase(m)===3)return '* Sparks rain from the&  stage rigging.';
