@@ -713,6 +713,7 @@ const IMG={
  }
 };
 const SFX={
+ glydeBreak:RAW+'sound/audio/snd_shakerbreaker.ogg',
  rgGrab:RAW+'sound/audio/snd_grab.wav',
  impact:RAW+'sound/audio/snd_impact.wav',
  bombTick:RAW+'sound/audio/snd_bomb.wav',
@@ -1190,6 +1191,7 @@ const VANILLA_REWARDS={
  sans:{exp:0,killGold:0,spareGold:0},
  madmewmew:{exp:0,killGold:0,spareGold:0},
  roaringknight:{exp:0,killGold:0,spareGold:0},
+ glyde:{exp:100,killGold:140,spareGold:120},
  royalguards:{exp:220,killGold:120,spareGold:100},
  moldessa:{exp:10,killGold:6,spareGold:6},
  parsnik:{exp:8,killGold:2,spareGold:2},
@@ -3076,6 +3078,7 @@ const BOSS_OPTIONS=[
  {id:'snowdrake',label:'SNOWDRAKE',area:'SNOWDIN',hp:74,atk:12,def:2,encounter:'* Snowdrake flutters forth!',noelleEncounter:'* Noelle encountered Snowdrake.'},
  {id:'icecap',label:'ICE CAP',area:'SNOWDIN',hp:48,atk:11,def:4,encounter:'* Ice Cap struts into view.',noelleEncounter:'* Noelle encountered Ice Cap.'},
  {id:'gyftrot',label:'GYFTROT',area:'SNOWDIN',hp:114,atk:16,def:8,encounter:'* Gyftrot confronts you!',noelleEncounter:'* Noelle encountered Gyftrot.'},
+ {id:'glyde',label:'GLYDE',area:'SNOWDIN',hp:220,atk:9,def:-20,encounter:'* Glyde swooped in!',noelleEncounter:'* Noelle encountered Glyde.'},
  {id:'loox',label:'LOOX',area:'RUINS',hp:50,atk:6,def:4,encounter:'* Loox drew near!',noelleEncounter:'* Noelle encountered Loox.'},
  {id:'moldsmal',label:'MOLDSMAL',area:'RUINS',hp:50,atk:6,def:0,encounter:'* Moldsmal blocked the way!',noelleEncounter:'* Noelle encountered Moldsmal.'},
  {id:'moldessa',label:'MOLDESSAS',area:'RUINS // HARD MODE',hp:104,atk:27,def:23,encounter:'* You tripped over some Moldessas.',noelleEncounter:'* Noelle tripped over some Moldessas.'},
@@ -5466,6 +5469,7 @@ function bossImage(b,now=performance.now()){
  if(b.id==='sans')return images.sans||images.dummy;
  if(b.id==='madmewmew')return mmmPortrait()||images.dummy;
  if(b.id==='roaringknight')return images.knFront||images.dummy;
+ if(b.id==='glyde')return ((NB.glydePortrait&&NB.glydePortrait())||images.glydeHurt)||images.dummy;
  if(b.id==='royalguards')return (images.rgHurt01)||images.dummy;
  if(b.id==='moldessa')return ((Array.isArray(images.moldessHurt)?images.moldessHurt[0]:images.moldessHurt))||images.dummy;
  if(b.id==='parsnik')return (images.parsHurt)||images.dummy;
@@ -14224,6 +14228,7 @@ const NB=(()=>{
 
  NB.defs.set('gyftrot',{
   name:'Gyftrot',hp:114,atk:7,def:3,xp:35,gold:30,mercymod:-5,wd:200,
+  bgFrame:99, // obj_gyftrot's create destroys obj_battlebg: no grid
   encounter:'* Gyftrot confronts you!',
   size:()=>({w:202,h:206}),pos:(i,n,cx)=>n===1?{x:208,y:38}:{x:R(cx-101),y:38},
   setup(m){
@@ -14415,6 +14420,256 @@ const NB=(()=>{
   }
   return g;
  }
+})();
+/* ---- NB content: Glyde (obj_glydeb + obj_glyde_body; obj_glydeshot, obj_bigglydeshot;
+        obj_objshake on the body when it's hit) ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB,gm=b=>NB.gm(b); // NB.gm is defined further down the page
+ const R=Math.round,F=Math.floor;
+ // GameMaker alarm: counts down while >0 and fires on reaching 0 (-1 = off).
+ const tick=(o,k)=>o[k]>0&&--o[k]===0;
+ const ready=im=>!!im&&(im.naturalWidth||im.width)>0;
+ // draw_sprite_ext: origin (ox,oy) in the exported (trimmed) image's pixels, rotation in degrees CCW.
+ function dse(g,im,x,y,xs=1,ys=1,rot=0,alpha=1,ox=0,oy=0){
+  if(!im||alpha<=0||!xs||!ys)return;
+  g.save();g.globalAlpha*=Math.min(1,alpha);
+  if(rot){g.translate(x,y);g.rotate(-rot*Math.PI/180)}else g.translate(R(x),R(y));
+  g.scale(xs,ys);g.drawImage(im,-ox,-oy);g.restore();
+ }
+ // image_blend 8421504 (c_gray) while attacking: draw_sprite_ext's blend is a multiply.
+ const gray=im=>ready(im)&&NB.multiplied?NB.multiplied(im,'#808080'):im;
+
+ // obj_glyde_body Draw. The exports are trimmed to their visible pixels, so each origin is
+ // shifted by the sprite's bbox corner: rightwing origin (0,42) bbox (2,0), body (0,0)/(1,0),
+ // leftwing (79,82)/(1,0), antenna (7,15)/(5,2).
+ function drawBody(g,v,x,y,blend){
+  const s=v.g,gg=v.gg,c=blend?gray:im=>im;
+  dse(g,c(images.glydeRightWing),x+46,y+106+s*2,2,1.7-s*.3,0,1,-2,42);
+  dse(g,c(images.glydeBody),x,y,2,2,0,1,-1,0);
+  dse(g,c(images.glydeLeftWing),x+82,y+174,1.95-s*.05,1.8-s*.2,0,1,78,82);
+  dse(g,images.glydeAntenna,x+54+gg*2,y+4,2,2,20-gg*20,1,2,13);
+ }
+ // spr_glyde_blackflash_b (origin 6,6): a black disc passing over the gun. Frames in
+ // image_index order (file 4-k); each trimmed frame's top row in the 1..11 bbox.
+ const FLASH_TOP=[1,1,1,5,8];
+ // obj_glyde_body: the gun sits at x+72+gg*8, y+gg*10-8.
+ const gun=(m)=>{const v=m.v;return {x:m.x0+72+v.gg*8,y:v.by+v.gg*10-8}};
+
+ // spr_heart's pixels, for the shots' manual 2x2 mask (spr_glydeshot bbox 5..6, origin 6).
+ const HEART=['..##........##..','.#####....#####.','#######..#######','#######..#######','################','################','################','################','################','################','..############..','..############..','....########....','....########....','......####......','......####......'];
+ const HPX=[];HEART.forEach((r,j)=>{for(let i=0;i<16;i++)if(r[i]==='#')HPX.push([i+.5,j+.5])});
+ function shotMask(h){
+  const b=this,s=b.xs;if(!(s>0))return false;
+  const c=dcos(b.rot),sn=dsin(b.rot);
+  for(const [px,py] of HPX){
+   const dx=h.x+px-b.x,dy=h.y+py-b.y,lx=(c*dx-sn*dy)/s,ly=(sn*dx+c*dy)/s;
+   if(lx>=-1&&lx<1&&ly>=-1&&ly<1)return true;
+  }
+  return false;
+ }
+ const shotBox=b=>{const r=Math.max(.01,b.xs*1.5);b.box=[-r,-r,r*2,r*2]};
+ const offRoom=b=>b.x<-40||b.x>680||b.y<-40||b.y>500;
+ // two copies of spr_glydeshot (it has one frame, so index 1 wraps to 0), the second turned
+ // 45 degrees, their alphas pulsing against each other
+ function drawStar(g,b,s){
+  const im=images.glydeShot,a=Math.sin(b.siner/3);
+  dse(g,im,b.x,b.y,s,s,b.rot,.7+a,6,6);
+  dse(g,im,b.x,b.y,s,s,b.rot+45,.7-a,6,6);
+ }
+
+ // obj_glydeshot (blt_parent_noborder): speed 7 with a slight negative friction, spinning and
+ // swelling to 3x. blt_parent's heart collision: dmg - DF/5, and it's gone.
+ // Draw-event updates run at the top of each step (the first one stands for the draw on the
+ // frame it was made), so collision sees last frame's scale like in GameMaker.
+ function shot(api,x,y,dir,sp,dmg){
+  return api.spawn({x,y,glydeShot:1,dmg,vx:dcos(dir)*sp,vy:-dsin(dir)*sp,fric:rnd(-.1),
+   siner:0,rot:0,aa:rnd(1)<.5?2:-2,xs:2,wallKill:false,mask:shotMask,
+   step(b){
+    b.siner++;b.rot+=b.aa;if(b.xs<3)b.xs+=.05;
+    if(offRoom(b)){b.alive=false;return}
+    shotBox(b);gm(b);
+   },
+   draw(g,b){drawStar(g,b,b.xs)}});
+ }
+ // obj_bigglydeshot: swells from nothing over 20 steps, jittering, then flies at the SOUL at 9,
+ // leaving three fans of five obj_glydeshot (speeds 7, 5.5, 4; every glydeshot stops
+ // accelerating). Near the bottom of the box it breaks (snd_shakerbreaker) into a red word.
+ // Its own heart collision: scr_damagestandard, and only once it's fully opaque.
+ function bigShot(api,x,y,dmg){
+  return api.spawn({x,y,dmg,manual:true,kill:false,wallKill:false,mask:shotMask,
+   siner:0,alpha:.5,xs:0,rot:0,aa:rnd(1)<.5?2:-2,dir:300-rnd(60),sp:0,a8:20,breaking:0,talpha:0,tab:0,
+   phrase:['COOL','VIBIN','RAD','NICEY','SPICEY','SWEET','SICK'][F(rnd(7))],
+   onHit:b=>b.alpha>=.95?api.damageStd(b.dmg):false,
+   step(b){
+    const B=api.S.ideal[3];
+    // Draw event (see shot())
+    b.siner++;if(b.sp>0)b.rot+=b.aa;
+    if(b.xs<10){b.x+=Math.sin(b.siner)*b.xs/2;b.y+=Math.cos(b.siner)*b.xs/2;if(b.alpha<1)b.alpha+=.05;b.xs+=.5}
+    if(b.y>B-20&&b.breaking===0){b.breaking=1;snd('glydeBreak')}
+    if(b.breaking===1){
+     b.sp=0;b.tab+=.1;if(b.talpha<1)b.talpha+=.2;b.alpha-=.05;b.xs+=.5;
+     if(b.alpha<-1){b.alive=false;return}
+    }
+    if(tick(b,'a8')){
+     const h=api.heart;
+     b.dir=Math.atan2(-(h.y+8-b.y),h.x+8-b.x)*180/Math.PI;b.sp=9; // move_towards_point
+     for(let k=0;k<3;k++)for(let i=0;i<5;i++)shot(api,b.x,b.y,b.dir-28+i*14,7-k*1.5,b.dmg);
+     for(const o of api.S.bullets)if(o.glydeShot)o.fric=0; // with(obj_glydeshot) friction=0
+    }
+    b.x+=dcos(b.dir)*b.sp;b.y-=dsin(b.dir)*b.sp;
+    if(offRoom(b)){b.alive=false;return}
+    shotBox(b);
+   },
+   draw(g,b){
+    if(b.breaking===0){drawStar(g,b,b.xs);return}
+    dse(g,images.glydeShot,b.x,b.y,b.xs,b.xs,b.rot,b.alpha,6,6);
+    // draw_text_transformed in fnt_main, c_red, scale talpha*2, angle 1+talpha, shaking
+    const t=b.talpha,a=t-(t>=1?b.tab-.5:0);if(a<=0||t<=0)return;
+    const j=()=>Math.random()*2-Math.random()*2; // cosmetic, so not NB.rnd
+    g.save();g.globalAlpha*=Math.min(1,a);
+    g.translate(b.x-20-t*40+j(),b.y-10+j()-10-t*10);g.rotate(-(1+t)*Math.PI/180);g.scale(t*2,t*2);
+    let cx=0;for(const ch of b.phrase){NB.drawGlyph(g,'main',ch,cx,0,'#ff0000');cx+=typeof utMainGlyph==='function'?utMainGlyph(ch)[4]:16}
+    g.restore();
+   }});
+ }
+ // obj_glydeb Destroy: goldreward[3] += 120 when it was won over (it flew off).
+ const LEAVE_GOLD=120;
+ function leave(m,api){
+  // mercymod 222 once the writer is gone: scr_mercystandard, and Glyde is spared.
+  const S=api.S;if(api.srcHp(m)-S.at-S.wstrength+m.df-m.mercymod<0)api.spare(m);
+ }
+
+ NB.defs.set('glyde',{
+  name:'Glyde',hp:220,atk:9,def:-20,xp:100,gold:140,mercymod:-50,wd:240,
+  encounter:'* Glyde swooped in!',
+  // scr_battlegroup case 4: obj_glydeb at (188,16), spr_glyde_hurt 236x198; the body at +72,+24.
+  size:()=>({w:236,h:198}),pos:(i,n,cx)=>n===1?{x:188,y:16}:{x:R(cx-118),y:16},
+  // alarm[3]: shudder 8,-8,7,-7... on the invisible obj_glydeb; obj_objshake swings the body.
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{siner:0,dsiner:0,g:0,gg:0,by:m.y+24,sh:0,shT:0,shDraw:0,shSpeed:1,diff:5,
+   attackmode:0,a1:-1,applaud:0,nothing:0,boo:0,heard:null,cmd:0,osh:null,ox:0,wasHurt:false})},
+  step(m,api){
+   const v=m.v;
+   // obj_objshake: 14 swings two steps apart, starting the step after the hit
+   if(m.hurt&&!v.wasHurt)v.osh={t:2,oo:0,shx:14,x:0};
+   v.wasHurt=m.hurt;
+   const o=v.osh;if(o&&--o.t<=0){o.oo^=1;o.x=o.oo?o.shx:-o.shx;o.shx--;if(o.shx>0)o.t=2;else v.osh=null}
+   v.ox=v.osh?v.osh.x:0;
+   // obj_glyde_body Draw, pause==1: hurt sprite, siner reset, back at its start
+   if(m.hurt){v.siner=0;v.by=m.y+24;v.shDraw=0;return}
+   v.dsiner++;v.siner+=Math.cos(v.dsiner/24)*2;
+   v.by=m.y+24+Math.sin(v.siner/12)*8;v.g=Math.sin(v.siner/6);v.gg=Math.sin(v.siner/12);
+   // Alarm 1: an obj_bigglydeshot every 32 steps while the turn has more than 33 left
+   if(tick(v,'a1')){const p=gun(m);bigShot(api,p.x,p.y,m.atk);if(api.S.turntimer>33)v.a1=32}
+   // sh: the black flash over the gun, the shot showing from 6, a fan of `diff` at 12
+   v.shDraw=0;
+   if(v.sh===1){
+    v.shT+=v.shSpeed;v.shDraw=v.shT;
+    if(v.shT>1){
+     if(v.diff<1)v.diff=1;
+     if(v.shT>=12){
+      const p=gun(m);
+      for(let i=0;i<v.diff;i++)shot(api,p.x,p.y,300-(i+1)/v.diff*60+rnd(1/v.diff*60),7,m.atk);
+      v.shT=-1;
+     }
+    }
+   }
+  },
+  draw(g,m){
+   const v=m.v,x=m.x0+(v.ox||0);
+   if(m.hurt||!m.alive){dse(g,images.glydeHurt,x,m.y);return} // spr_glyde_hurt at body-72,-24
+   drawBody(g,v,x+72,v.by,v.attackmode===1);
+   const t=v.shDraw;
+   if(v.sh===1&&t>1){
+    const p={x:x+72+v.gg*8,y:v.by+v.gg*10-8},rot=20-v.gg*20;
+    if(t>=6)dse(g,images.glydeShot,p.x,p.y,2,2,rot,1,6,6);
+    const k=F((t-1)/2);if(k<4)dse(g,images.glydeFlash?.[k],p.x,p.y,2,2,rot,1,5,6-FLASH_TOP[k]);
+   }
+  },
+  vaporDraw(g,m){dse(g,images.glydeHurt,m.x,m.y)}, // obj_vaporized_new on spr_glyde_hurt
+  // alarm[3]: the number shows under Glyde (x+10, y+ht 200); a miss uses the parent's spot
+  dmgPos:m=>m.hurt?{x:m.x0+10,y:m.y+200}:{x:m.x0+118-48,y:m.y-24},
+  // alarm[3]: takedamage = ceil(takedamage/3)
+  onHitCalc:(m,dmg)=>Math.ceil(dmg/3),
+  bubblePos:m=>({x:m.x0+220,y:m.y}), // obj_blconsm at x+220, y
+  acts:['Check','Applaud','Boo','Nothing'], // SCR_TEXT 206
+  check:()=>'* GLYDE - ATK HIGH DEF HIGH&* Refuses to give more details&  about its statistics./^',
+  act(m,i,name,api){
+   const v=m.v;v.heard=name;let t;
+   if(name==='Applaud'){
+    if(v.applaud===0){t='* You clap really sloppily^1.&* Glyde sucks up your praise&  like a vacuum cleaner./^';v.applaud=1}
+    else{t='* You clap like a gorilla^1.&* Glyde is becoming addicted to&  your praise./^';if(v.applaud===1)v.applaud=2}
+    return t;
+   }
+   if(name==='Boo'){
+    t='* You boo..^1. but haters&  only make Glyde stronger^1.&* Glyde ATTACK UP+DEFENSE DOWN./^';
+    m.atk+=2;m.df-=10;
+    let gone=false;
+    if(v.nothing===2){t='* You boo loudly^1.&* Glyde leaves to look elsewhere&  for praise./^';v.nothing=3;m.mercymod=222;gone=true}
+    v.boo++;
+    return gone?{text:t,then:()=>leave(m,api)}:t;
+   }
+   // Nothing
+   t='* You do nothing^1.&* No effect./^';
+   let gone=false;
+   if(v.applaud>=2){
+    if(v.nothing===2){t='* You do nothing^1.&* Glyde leaves to look elsewhere&  for praise./^';v.nothing=3;m.mercymod=222;gone=true}
+    if(v.nothing===1){t='* You do nothing^1.&* Glyde looks desperate for&  attention./^';v.nothing=2}
+    if(v.nothing===0){t='* You do nothing^1.&* Glyde looks disappointed you&  aren\'t paying attention./^';v.nothing=1}
+   }
+   return gone?{text:t,then:()=>leave(m,api)}:t;
+  },
+  // obj_glydeb alarm[6]
+  speech(m,api){
+   const v=m.v,c=v.cmd=R(rnd(100)),h=v.heard;
+   let t='How&great&I am.';
+   if(c<75)t='Look.&Watch.&Observe.';
+   if(c<50)t='Wow.&Check&out my&pecs.';
+   if(c<25)t='Sorry...&for&NOTHING&*ollies*';
+   if(h==='Boo'){t='Bepis';if(v.boo===1)t='Boo?&What a&wimpy&ghost.';if(v.boo>=2)t='Mmm,&Fresh&Sweet&Haters'}
+   if(h==='Applaud'){t='OK!&I rule!&I admit&it!';if(v.applaud>=2)t='What&else do&you have&to say!?'}
+   if(h==='Nothing'){t='...';if(v.nothing===1)t='Eh?&You&forgot&to clap.';if(v.nothing===2)t='HELLO??&I\'M&RIGHT&HERE!!!'}
+   api.S.talkLenExact=Math.max(api.S.talkLenExact||0,110); // alarm[5]=110
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,c=v.cmd;v.heard=null; // whatiheard=-1
+   api.turntimer(180);
+   // mycommand 70 exactly matches none of these: Glyde just floats for the turn.
+   if(c<40)Object.assign(v,{sh:1,attackmode:1,shSpeed:1,diff:5});
+   if(c>=40&&c<70)Object.assign(v,{sh:1,attackmode:1,shSpeed:2,diff:3});
+   if(c>70){v.attackmode=1;v.a1=5}
+   let f='* Glyde does fancy flips.';
+   if(c>=25)f='* Glyde is giving itself a&  high five^1.&* ... somehow.';
+   if(c>=50)f='* Glyde sees its reflection &  and gets jealous.';
+   if(c>=75)f='* Glyde is thinking of new&  slang for the word "cool."&* Like "freakadacious."';
+   if(c>=90)f='* An arrogant-smelling wind&  blows through.';
+   if(v.nothing===2)f='* Glyde is doing tons of flips&  to get your attention.';
+   if(m.mercymod>100)f='* Glyde seems satisfied.';
+   if(api.srcHp(m)<=220/4)f='* Glyde is dying^1, but in a&  cool way.';
+   return f;
+  },
+  // obj_glydeb Step, mnfight 3: the body stops shooting
+  endAttack(m){Object.assign(m.v,{sh:0,shT:0,shDraw:0,a1:-1,attackmode:0})},
+  // Destroy + scr_monsterdefeat: a spare pays the damage share of 140, plus 120 if it flew off.
+  onSpare(m,api){
+   const st=api.S;
+   st.goldTotal+=F(m.gold*(m.maxhp-m.hp)/m.maxhp)-m.gold+(m.mercymod>10?LEAVE_GOLD:0);
+  },
+  onKill(m,api){if(m.mercymod>10)api.S.goldTotal+=LEAVE_GOLD}
+ });
+
+ // Roster portrait: the body at rest (siner 0), built once its parts have loaded.
+ let portrait=null;
+ NB.glydePortrait=()=>{
+  if(portrait)return portrait;
+  if(![images.glydeBody,images.glydeLeftWing,images.glydeRightWing,images.glydeAntenna].every(ready))return null;
+  const c=document.createElement('canvas');c.width=236;c.height=206;
+  const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+  drawBody(g,{g:0,gg:0},72,30,false);
+  return portrait=c;
+ };
 })();
 /* ---- NB content: ULTRA SECRET SECRETLY SANS SUPER 5000 OMNI MEGA BOSS (the KILL archive's
    secret). One bone, then he forgets to stay alive. ---- */
@@ -25454,6 +25709,13 @@ rgCarrot:RAW+'sprites/images/spr_carrotshot_0.png',
 rgStar:RAW+'sprites/images/spr_stardrop_0.png',
 rgGreenArmor:RAW+'sprites/images/spr_greenarmor_0.png',
 rgSweat:RAW+'sprites/images/spr_sweat99_0.png',
+ glydeHurt:RAW+'sprites/images/spr_glyde_hurt_0.png',
+glydeBody:RAW+'sprites/images/spr_glyde_body_0.png',
+glydeLeftWing:RAW+'sprites/images/spr_glyde_leftwing_0.png',
+glydeRightWing:RAW+'sprites/images/spr_glyde_rightwing_0.png',
+glydeAntenna:RAW+'sprites/images/spr_glyde_antenna_0.png',
+glydeShot:RAW+'sprites/images/spr_glydeshot_0.png',
+glydeFlash:[RAW+'sprites/images/spr_glyde_blackflash_b_4.png',RAW+'sprites/images/spr_glyde_blackflash_b_3.png',RAW+'sprites/images/spr_glyde_blackflash_b_2.png',RAW+'sprites/images/spr_glyde_blackflash_b_1.png',RAW+'sprites/images/spr_glyde_blackflash_b_0.png'],
  knFront:KNIGHT_RAW+'knight_front.png',knRoar:[0,1].map(i=>KNIGHT_RAW+`knight_roar_${i}.png`),
  knJag:KNIGHT_RAW+'knight_jag.png',dkAtlas:KNIGHT_DK+'dk_atlas_0.png',
  mmmBody:[0,1,2,3,4].map(i=>MMM_RAW+`mmm_body_${i}.png`),mmmFace:[0,1,2,3,4,5,6,7,8].map(i=>MMM_RAW+`mmm_face_${i}.png`),
