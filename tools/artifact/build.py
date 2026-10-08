@@ -83,7 +83,7 @@ def kind(data):
     if data[:4] == b'OggS': return 'audio/ogg', 'ogg'
     if data[:4] == b'RIFF' and data[8:12] == b'WAVE': return 'audio/wav', 'wav'
     if data[:3] == b'ID3' or data[:2] == b'\xff\xfb': return 'audio/mpeg', 'mp3'
-    if data[4:8] == b'ftyp': return 'audio/mp4', 'm4a'
+    if data[4:8] == b'ftyp': return 'audio/mp4', 'mp4'
     if data[:4] == b'wOF2': return 'font/woff2', 'woff2'
     if data[:4] == b'wOFF': return 'font/woff', 'woff'
     if data[:4] in (b'\x00\x01\x00\x00', b'OTTO', b'true'): return 'font/ttf', 'ttf'
