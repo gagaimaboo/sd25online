@@ -14224,6 +14224,7 @@ const NB=(()=>{
 
  NB.defs.set('gyftrot',{
   name:'Gyftrot',hp:114,atk:7,def:3,xp:35,gold:30,mercymod:-5,wd:200,
+  bgFrame:99, // obj_gyftrot's create destroys obj_battlebg: no grid
   encounter:'* Gyftrot confronts you!',
   size:()=>({w:202,h:206}),pos:(i,n,cx)=>n===1?{x:208,y:38}:{x:R(cx-101),y:38},
   setup(m){
