@@ -713,6 +713,7 @@ const IMG={
  }
 };
 const SFX={
+ rgGrab:RAW+'sound/audio/snd_grab.wav',
  impact:RAW+'sound/audio/snd_impact.wav',
  bombTick:RAW+'sound/audio/snd_bomb.wav',
  mexShoot:RAW+'sound/audio/snd_heartshot.wav',
@@ -860,6 +861,8 @@ const MUSIC={
  madmewmew:MMM_RAW+'mmm_theme.ogg',
  // the Knight: Black Knife, and its attack sounds (loaded when its fight starts)
  knight:KNIGHT_DK+'knight.ogg',
+ // RG 01 & 02's confession
+ rgConfession:RAW+'sound/audio/mus_confession.ogg',
  dk_snd_bell:KNIGHT_DK+'snd_bell.m4a',
  dk_snd_cardrive:KNIGHT_DK+'snd_cardrive.m4a',
  dk_snd_chargeshot_fire:KNIGHT_DK+'snd_chargeshot_fire.m4a',
@@ -1187,6 +1190,10 @@ const VANILLA_REWARDS={
  sans:{exp:0,killGold:0,spareGold:0},
  madmewmew:{exp:0,killGold:0,spareGold:0},
  roaringknight:{exp:0,killGold:0,spareGold:0},
+ royalguards:{exp:220,killGold:120,spareGold:100},
+ moldessa:{exp:10,killGold:6,spareGold:6},
+ parsnik:{exp:8,killGold:2,spareGold:2},
+ gyftrot:{exp:35,killGold:30,spareGold:20},
  custom:{exp:0,killGold:0,spareGold:0}
 };
 const SHOP_ITEM_ENTRIES=[
@@ -2506,6 +2513,7 @@ const MUSIC_LOADERS={
  sans:()=>loadAudioAsset(MUSIC.sans,.44,true),
  megalovania:()=>loadAudioAsset(MUSIC.megalovania,.5,true),
  madmewmew:()=>loadAudioAsset(MUSIC.madmewmew,.45,true),
+ rgConfession:()=>loadAudioAsset(MUSIC.rgConfession,.77,true),
  knight:()=>loadAudioAsset(MUSIC.knight,.5,true),
  sansBirds:()=>loadAudioAsset(MUSIC.sansBirds,.5,true),
  flashback:()=>loadAudioAsset(MUSIC.flashback,.52,true),
@@ -3056,17 +3064,21 @@ const BOSS_OPTIONS=[
  {id:'finalfroggit',label:'FINAL FROGGIT',area:'CORE',hp:100,atk:30,def:24,encounter:'* Final Froggit was already there, waiting for you.',noelleEncounter:'* Noelle encountered Final Froggit.'},
  {id:'toriel',label:'TORIEL',area:'RUINS BOSS',hp:440,atk:6,def:1,encounter:'* TORIEL blocks the way!',noelleEncounter:'* Noelle faces TORIEL.'},
  {id:'vegetoid',label:'VEGETOID',area:'RUINS',hp:72,atk:6,def:6,encounter:'* Vegetoid came out of the earth!',noelleEncounter:'* Noelle encountered Vegetoid.'},
+ {id:'parsnik',label:'PARSNIK',area:'RUINS // HARD MODE',hp:72,atk:30,def:28,encounter:'* Parsnik slithered out of the earth!',noelleEncounter:'* Noelle encountered Parsnik.'},
  {id:'napstablook',label:'NAPSTABLOOK',area:'RUINS MINI-BOSS',hp:88,atk:10,def:10,encounter:'* Here comes Napstablook.',noelleEncounter:'* Noelle encountered Napstablook.'},
  {id:'maddummy',label:'MAD DUMMY',area:'WATERFALL BOSS',hp:200,atk:30,def:999,encounter:'* Mad Dummy blocks the way!',noelleEncounter:'* Noelle encountered Mad Dummy.'},
  {id:'doggo',label:'DOGGO',area:'SNOWDIN',hp:70,atk:6,def:1,encounter:'* Doggo blocks the way!',noelleEncounter:'* Noelle encountered Doggo.'},
  {id:'lesserdog',label:'LESSER DOG',area:'SNOWDIN',hp:60,atk:6,def:0,encounter:'* Lesser Dog appears.',noelleEncounter:'* Noelle encountered Lesser Dog.'},
  {id:'greaterdog',label:'GREATER DOG',area:'SNOWDIN',hp:105,atk:6,def:4,encounter:'* Greater Dog bounds into view!',noelleEncounter:'* Noelle encountered Greater Dog.'},
  {id:'dogi',label:'DOGAMY & DOGARESSA',area:'SNOWDIN',hp:216,atk:6,def:4,encounter:'* Dogi assault you!',noelleEncounter:'* Noelle encountered Dogamy and Dogaressa.'},
+ {id:'royalguards',label:'ROYAL GUARDS',area:'HOTLAND',hp:300,atk:8,def:4,encounter:'* Royal Guard attacks!',noelleEncounter:'* Noelle encountered RG 01 and RG 02.'},
  {id:'papyrus',label:'PAPYRUS',area:'SNOWDIN BOSS',hp:680,atk:8,def:2,encounter:'* Papyrus blocks the way!',noelleEncounter:'* Noelle faces Papyrus.'},
  {id:'snowdrake',label:'SNOWDRAKE',area:'SNOWDIN',hp:74,atk:12,def:2,encounter:'* Snowdrake flutters forth!',noelleEncounter:'* Noelle encountered Snowdrake.'},
  {id:'icecap',label:'ICE CAP',area:'SNOWDIN',hp:48,atk:11,def:4,encounter:'* Ice Cap struts into view.',noelleEncounter:'* Noelle encountered Ice Cap.'},
+ {id:'gyftrot',label:'GYFTROT',area:'SNOWDIN',hp:114,atk:16,def:8,encounter:'* Gyftrot confronts you!',noelleEncounter:'* Noelle encountered Gyftrot.'},
  {id:'loox',label:'LOOX',area:'RUINS',hp:50,atk:6,def:4,encounter:'* Loox drew near!',noelleEncounter:'* Noelle encountered Loox.'},
  {id:'moldsmal',label:'MOLDSMAL',area:'RUINS',hp:50,atk:6,def:0,encounter:'* Moldsmal blocked the way!',noelleEncounter:'* Noelle encountered Moldsmal.'},
+ {id:'moldessa',label:'MOLDESSAS',area:'RUINS // HARD MODE',hp:104,atk:27,def:23,encounter:'* You tripped over some Moldessas.',noelleEncounter:'* Noelle tripped over some Moldessas.'},
  {id:'whimsun',label:'WHIMSUN',area:'RUINS',hp:10,atk:4,def:0,encounter:'* Whimsun approached meekly!',noelleEncounter:'* Noelle encountered Whimsun.'},
  {id:'aaron',label:'AARON',area:'WATERFALL',hp:98,atk:24,def:2,encounter:'* Aaron flexes in!',noelleEncounter:'* Noelle encountered Aaron.'},
  {id:'shyren',label:'SHYREN',area:'WATERFALL',hp:66,atk:7,def:2,encounter:'* Shyren hides in the corner, but somehow encounters you anyway.',noelleEncounter:'* Noelle encountered Shyren.'},
@@ -5454,6 +5466,10 @@ function bossImage(b,now=performance.now()){
  if(b.id==='sans')return images.sans||images.dummy;
  if(b.id==='madmewmew')return mmmPortrait()||images.dummy;
  if(b.id==='roaringknight')return images.knFront||images.dummy;
+ if(b.id==='royalguards')return (images.rgHurt01)||images.dummy;
+ if(b.id==='moldessa')return ((Array.isArray(images.moldessHurt)?images.moldessHurt[0]:images.moldessHurt))||images.dummy;
+ if(b.id==='parsnik')return (images.parsHurt)||images.dummy;
+ if(b.id==='gyftrot')return (images.gyftHurt)||images.dummy;
  if(b.id==='jayzee')return (jayzeeGenocideMode()?images.jayzeeSad:images.jayzee)||images.jayzee||images.dummy;
  return images.dummy;
 }
@@ -14136,6 +14152,270 @@ const NB=(()=>{
   flavor:m=>m.v.roared?'* The Knight\'s guard is down.':pick(['* The Knight stands silently.','* The Knight is watching.','* Smells like nothing at all.'])
  });
 })();
+/* ---- NB content: Gyftrot (obj_gyftrot + obj_gyftrotbody/obj_gyftrothead/obj_gyftrotmouth,
+        obj_gyftrotgift, obj_gyfcloud; obj_gyftgen/blt_gravbullet, obj_giftgen/blt_potentiallyblue) ---- */
+(()=>{
+ const {rnd}=NB,gm=b=>NB.gm(b); // NB.gm is defined further down the page
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum
+ const R=Math.round,F=Math.floor;
+ const drawAt=(g,im,x,y,w,h)=>{if(im)g.drawImage(im,R(x),R(y),w??im.naturalWidth,h??im.naturalHeight)};
+ // GameMaker alarm: counts down while >0 and fires on reaching 0 (-1 = off).
+ const tick=(o,k)=>o[k]>0&&--o[k]===0;
+ // global.gold: your real G in VANILLA, unlimited on CUSTOM rules (same as Muffet's bribes).
+ const wallet=api=>api.S.custom?Infinity:Math.max(0,F(Number(typeof progression!=='undefined'&&progression?.gold)||0));
+ function spend(api,n){if(api.S.custom||typeof progression==='undefined')return;progression.gold=Math.max(0,(progression.gold||0)-n);try{saveProgression()}catch(_){}}
+
+ // spr_gyfgift: the export trims every frame, so each one's place on the 101x103 canvas
+ // (drawn at 2x) is lost. These offsets are fitted to the sprite's bbox (4..100, 12..101)
+ // and the antlers/eyes/back on the head+body composite; image_index k is file 9-k.
+ // 0 cane, 1 raisins, 2 bookmark, 3 barbed wire, 4 photo, 5 dog, 6 stocking, 7 shirt,
+ // 8 googly eyes, 9 the gift you gave.
+ const GIFT_AT=[[5,40],[66,54],[22,36],[4,22],[66,37],[33,12],[80,42],[59,69],[30,50],[84,83]];
+ // obj_gyftrotgift Step: 1, 7 and 9 ride the body (obj_gyftrot), the rest ride the head.
+ const onBody=k=>k===1||k===7||k===9;
+ const GIFT_TEXT=[
+  '* You remove the striped cane&  that says "I use this tiny&  cane to walk" on it.',
+  '* You remove the box of&  non-dog-related raisins.',
+  '* You remove the lenticular&  bookmark of a smug teen&  winking.',
+  '* You remove the barbed wire&  made of pipe cleaners.',
+  '* You remove a childhood&  photograph of Snowdrake and&  his parent.',
+  '* You remove a small^1, confused&  dog.',
+  '* You remove a stocking filled&  with chicken nuggets.',
+  '* You remove the shirt that says& \'I\'m with stupid\' and points&  inward.'
+ ];
+
+ // obj_gyftrothead (+ its obj_gyftrotmouth): made at Create and again after every hurt.
+ function newHead(m){
+  m.v.head={dx:0,hs:0,img:0,a1:45,a2:F(rnd(60)+40),a3:-1,a4:-1,mouth:{f:0,a0:20,a1:-1,a2:-1}};
+ }
+ function headStep(m){
+  const h=m.v.head,o=h.mouth;
+  // obj_gyftrothead alarms: drift 1px/step right (or back left once 8px out), pause, repeat;
+  // blink (frame 1) for 8 steps every 60-120.
+  if(tick(h,'a1')){h.hs=h.dx>8?-1:1;h.a4=F(8+rnd(10))}
+  if(tick(h,'a2')){h.img=1;h.a3=8}
+  if(tick(h,'a3')){h.img=0;h.a2=F(60+rnd(60))}
+  if(tick(h,'a4')){h.hs=0;h.a1=F(40+rnd(20))}
+  // obj_gyftrotmouth: opens 0->4 (3 steps a frame), holds, puffs a cloud, holds, closes.
+  if(tick(o,'a0')){if(o.f<4){o.f++;o.a0=3}else o.a1=25}
+  if(tick(o,'a1')){o.a2=25;puff(m,m.x+h.dx+50+40,m.y+96+46)}
+  if(tick(o,'a2')){if(o.f>0){o.f--;o.a2=3}else o.a0=F(45+rnd(60))}
+  h.dx+=h.hs;
+ }
+ // obj_gyfcloud: a breath puff that sinks, slows (friction .15), spins and swells, then fades.
+ function puff(m,x,y){m.v.clouds.push({x,y,vx:.5-rnd(1),vy:3+rnd(.5),xs:.1,a:.7,ang:rnd(360)})}
+ function cloudStep(m){
+  for(const c of m.v.clouds){
+   const sp=Math.hypot(c.vx,c.vy);
+   if(sp<.5)c.a-=.03;
+   c.xs+=1/(4+c.xs*8);c.ang+=sp+1;
+   const n=Math.max(0,sp-.15);if(sp>0){c.vx=c.vx/sp*n;c.vy=c.vy/sp*n}
+   c.x+=c.vx;c.y+=c.vy;
+  }
+  m.v.clouds=m.v.clouds.filter(c=>c.a>=.1);
+ }
+ function drawGift(g,m,d,bx,by){
+  if(m.t-d.t0<2)return; // obj_gyftrotgift: invisible until alarm[0] (2 steps)
+  const im=images.gyftGift?.[d.k];if(!im)return;const [ox,oy]=GIFT_AT[d.k];
+  g.drawImage(im,R(bx+ox*2),R(by+oy*2),im.naturalWidth*2,im.naturalHeight*2);
+ }
+ const giftsOn=m=>{const v=m.v,a=[];for(let i=v.itemgone;i<3;i++)a.push(v.parts[i]);if(v.googly)a.push(v.eyes);if(v.giftpart)a.push(v.giftpart);return a.filter(Boolean)};
+
+ NB.defs.set('gyftrot',{
+  name:'Gyftrot',hp:114,atk:7,def:3,xp:35,gold:30,mercymod:-5,wd:200,
+  encounter:'* Gyftrot confronts you!',
+  size:()=>({w:202,h:206}),pos:(i,n,cx)=>n===1?{x:208,y:38}:{x:R(cx-101),y:38},
+  setup(m){
+   // obj_gyftrot Create: three different decorations out of the eight.
+   const gift=[F(rnd(7)),F(rnd(7)),F(rnd(7))];
+   if(gift[1]===gift[0])gift[1]++;
+   if(gift[2]===gift[0])gift[2]++;
+   if(gift[2]===gift[1])gift[2]=0;
+   if(gift[2]===gift[0])gift[2]++;
+   Object.assign(m.v,{gift,parts:gift.map(k=>({k,t0:0})),eyes:null,giftpart:null,
+    itemgone:0,googly:0,giftgiven:0,betray:0,ung:0,heard:-1,cmd:0,clouds:[],wasHurt:false});
+   newHead(m);
+  },
+  step(m){
+   const v=m.v;cloudStep(m);
+   // obj_gyftrot alarm[3]: the hurt frame replaces head and body; they're made anew after.
+   if(m.hurt){v.wasHurt=true;return}
+   if(v.wasHurt){v.wasHurt=false;newHead(m)}
+   headStep(m);
+  },
+  draw(g,m){
+   const v=m.v;
+   if(m.hurt||!m.alive){
+    // spr_gyftrot frame 1 (file _0): the whole deer. The decorations follow obj_gyftrot
+    // while the head is gone, and are destroyed with it.
+    drawAt(g,images.gyftHurt,m.x,m.y);
+    if(m.alive)for(const d of giftsOn(m))drawGift(g,m,d,m.x,m.y);
+    return;
+   }
+   const h=v.head,hx=m.x+h.dx,gifts=giftsOn(m);
+   // depth: body 10 < head 9 = raisins/shirt < mouth 8 < cloud 7 < decorations 6
+   drawAt(g,images.gyftBody,m.x,m.y,202,206);
+   const head=images.gyftHead?.[h.img];if(head)g.drawImage(head,R(hx+6),R(m.y+14),head.naturalWidth*2,head.naturalHeight*2);
+   for(const d of gifts)if(d.k===1||d.k===7)drawGift(g,m,d,m.x,m.y);
+   const mo=images.gyftMouth?.[h.mouth.f];if(mo)g.drawImage(mo,R(hx+50),R(m.y+96),mo.naturalWidth*2,mo.naturalHeight*2);
+   const cl=images.gyftCloud;
+   if(cl)for(const c of v.clouds){g.save();g.globalAlpha*=c.a;g.translate(c.x,c.y);g.rotate(-c.ang*Math.PI/180);g.scale(c.xs,c.xs);g.drawImage(cl,-8,-7);g.restore()}
+   for(const d of gifts)if(d.k!==1&&d.k!==7)drawGift(g,m,d,onBody(d.k)?m.x:hx,m.y);
+  },
+  vaporDraw(g,m){drawAt(g,images.gyftHurt,m.x,m.y)}, // scr_newvapordata(2) on spr_gyftrot
+  bubblePos:m=>({x:m.x+205,y:m.y+52}), // obj_blconsm at x+205, y+52
+  acts:['Check','Decorate','Undecorate','Gift'], // "Check / Undecorate" + "Decorate / Gift" columns
+  check:()=>'* GYFTROT - ATK 16 DEF 8&* Some teens "decorated" it as&  a prank./',
+  act(m,i,name,api){
+   const v=m.v;let t;
+   if(name==='Undecorate'){
+    v.heard=1;
+    if(v.itemgone<3)t=GIFT_TEXT[v.gift[v.itemgone]];
+    if(v.itemgone===3){t='* You try to undecorate...?';m.mercymod=180}
+    if(v.googly===1)t='* You remove the googly eyes.';
+    if(v.googly===1){v.googly=0;v.ung=1;v.eyes=null}
+    else if(v.itemgone<3)v.itemgone++;
+    if(m.mercymod<150){
+     if(v.itemgone>0&&m.mercymod<100)m.mercymod=10;
+     if(v.itemgone>2)m.mercymod=160; // global.flag[138]=1
+    }
+    return t;
+   }
+   if(name==='Decorate'){
+    v.heard=3;
+    if(v.googly===0){v.googly=1;v.eyes={k:8,t0:m.t};return '* You add some googly eyes&  you found on the ground.'}
+    return '* You can\'t improve on&  perfection.';
+   }
+   // Gift
+   v.heard=4;
+   if(v.giftgiven===0&&v.googly===0&&v.itemgone>0&&v.betray===0){
+    v.giftpart={k:9,t0:m.t};
+    const gold=wallet(api);
+    if(gold===0){t='* You give the cheapest gift&  of all..^1.&* Friendship.';v.giftgiven=2;m.mercymod=140;m.gold+=50}
+    else{
+     if(gold>=35){t='* You give 35 G because&  you can\'t think of an&  appropriate gift.';spend(api,35)}
+     else{spend(api,gold);t='* You give your remaining&  money because you can\'t&  think of a better gift.'}
+     v.giftgiven=1;m.mercymod=140;
+    }
+    return t;
+   }
+   if(v.googly===1||v.betray===1||v.itemgone===0)t='* Gyftrot refuses your gift.';
+   if(v.giftgiven===1)t='* Hey now^1.&* You aren\'t made of money.';
+   if(v.giftgiven===2)t='* Hey now^1.&* You aren\'t made of friendship.';
+   return t;
+  },
+  // obj_gyftrot alarm[6]
+  speech(m,api){
+   const v=m.v,c=v.cmd=R(rnd(100)),h=v.heard;v.heard=-1;
+   let t=c<20?'Is this&funny to&you?':c<40?'Don\'t&put any&more on&me!':c<60?'Leave me&alone...':c<80?'Hohoho!&Go ahead&and&laugh...':'Get this&off of&me...';
+   if(m.mercymod>90){t='Thanks.';m.df=-100}
+   if(h===4){
+    if(v.giftgiven===1)t='Aw, you&shouldn\'&have...';
+    if(v.giftgiven===2)t='You even&wrapped&it...';
+    if(v.googly===1)t='Keep&away&from me!';
+    if(v.betray===1)t='I don\'t&want&your&gift!';
+    if(v.itemgone===0)t='How do&I know&it\'s not&a trick?';
+   }
+   if(h===3){
+    t='GOSHDARN&TEENAGE&GOOGLY&EYES!!!'; // global.flag[74]=1
+    if(v.itemgone>0||v.giftgiven>0){t='I WAS&STARTING&TO TRUST&YOU!!!';v.betray=1}
+    m.mercymod=-20;
+   }
+   if(h===1){
+    if(v.itemgone===1||v.itemgone===2){m.mercymod=10;t='That\'s&a little&better.'}
+    if(m.mercymod>170)t='Er...&Those&are&real.';
+    else if(v.itemgone===3){m.mercymod=200;t='A weight&has been&lifted.'}
+    if(v.ung===1)t='Thanks&for&nothing!';
+    v.ung=0;
+   }
+   api.S.talkLenExact=Math.max(api.S.talkLenExact||0,110); // alarm[5]=110
+   return t;
+  },
+  border:()=>6,
+  attack(m,api){
+   const v=m.v,c=v.cmd,p=pop();
+   api.border(7);api.turntimer(120);
+   let rate=5;if(p===3)rate*=2.4;if(p===2)rate*=1.7;
+   if(m.mercymod>90)api.turntimer(0); // global.turntimer=-2: no attack at all
+   else if(c<=60)v.gen={kind:'gyft',t:1,rate};
+   else v.gen=giftGen(m,api);
+   let f='* Gyftrot laments its lack of&  hands.';
+   if(c>=25)f='* Gyftrot eyes you with&  suspicion.';
+   if(c>=40)f='* Gyftrot distrusts your&  youthful demeanor.';
+   if(c>=60)f='* Ah^1, the scent of fresh&  pine needles.';
+   if(c>=80)f='* Gyftrot tries vainly to&  remove its decorations.';
+   if(v.giftgiven===1)f='* Gyftrot pretends to refuse&  your gift.';
+   if(v.giftgiven===2)f='* Gyftrot politely accepts&  your gift.';
+   if(v.googly===1)f='* Gyftrot stumbles blindly.';
+   if(v.itemgone===1||v.itemgone===2)f='* Gyftrot is slightly less&  irritated.';
+   if(v.itemgone===3)f='* Gyftrot\'s problems have&  been taken away.';
+   if(v.betray===1)f='* Gyftrot looks disappointed.';
+   if(api.srcHp(m)<30)f='* Gyftrot\'s antlers tremble.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g)return;
+   if(g.kind==='gyft'){
+    // obj_gyftgen: a pellet drops from one of six slots along the top, drifting at you.
+    if(--g.t>0)return;g.t=Math.ceil(g.rate);
+    const [L,Rr,T,B]=api.S.ideal,h=api.heart;
+    const myx=L+(Rr-L)/6*F(rnd(6)),myy=T-20;
+    // blt_gravbullet Create: y-=8, vspeed -.5, gravity .25, nudged off the left wall.
+    let x=myx;if(x<L+15)x+=15;
+    const vx=h.x+8<myx?-.5:h.x+8>myx?.5:0;
+    api.spawn({x,y:myy-8,box:[2,2,4,4],img:images.gyftCircle,dmg:m.atk,vx,vy:-.5,grav:.25,clip:true,wallKill:false,kill:false,
+     onHit:b=>api.damageStd(b.dmg), // scr_damagestandard_x; the pellet keeps falling
+     step(b){gm(b);if(b.y>B+20)b.alive=false}});
+    return;
+   }
+   // obj_giftgen
+   const bl=g.blt,X=s=>Math.sin(s/100*Math.PI)*(g.R-g.L-45)/2+g.L+67;
+   if(tick(g,'a0')){g.flash=true;g.a1=25}
+   if(tick(g,'a1')){
+    g.flash=false;bl[g.bltx].frame=0;g.siner=1;g.rr=F(rnd(3));
+    g.a2=g.rr===0?41:g.rr===1?61:21;
+   }
+   if(tick(g,'a2')){
+    // the odd gift out turns blue, and every gift lifts off, speeding up (friction -.3)
+    g.siner=0;bl[g.bltx].frame=1;bl[g.bltx].blue=1;
+    for(const b of bl){b.vy=-2;b.vx=0;b.fric=-.3}
+    if(g.rr===2){for(const b of bl){b.vy=-1;b.fric=-.1}g.rr=3;g.siner=1}
+   }
+   if(g.flash)bl[g.bltx].frame+=.2; // image_speed .2 between white and blue
+   if(g.siner>0){g.siner++;for(const b of bl){b.sinex+=g.rr!==3?5:2;b.x=X(b.sinex)}}
+  },
+  endAttack(m){m.v.gen=null},
+  // obj_gyftrot Destroy + scr_monsterdefeat: goldreward[3] is the whole battle's purse.
+  onSpare(m,api){
+   const v=m.v,st=api.S;let tot=st.goldTotal-m.gold-(m.goldBonus||0);
+   if(m.mercymod>10&&m.hp===m.maxhp)tot+=20;
+   if(v.giftgiven===1)tot=0;
+   if(v.giftgiven===2)tot=75;
+   st.goldTotal=tot+F(m.gold*(m.maxhp-m.hp)/m.maxhp);
+  },
+  onKill(m,api){
+   const v=m.v,st=api.S;
+   if(v.giftgiven===1)st.goldTotal=m.gold;
+   if(v.giftgiven===2)st.goldTotal=75+m.gold;
+  }
+ });
+
+ // obj_giftgen Create: three gift boxes (blt_potentiallyblue, 7 damage each) on the floor;
+ // one flashes, they shuffle along a sine, then all fly up with the flashed one blue.
+ function giftGen(m,api){
+  const [L,Rr,,B]=api.S.ideal,g={kind:'gift',L,R:Rr,blt:[],bltx:F(rnd(3)),a0:5,a1:-1,a2:-1,siner:0,rr:0,flash:false};
+  for(let i=0;i<3;i++){
+   const sinex=-50+i*50;
+   g.blt.push(api.spawn({x:Math.sin(sinex/100*Math.PI)*(Rr-L-45)/2+L+67,y:B-60,sinex,box:[5,20,41,34],img:images.gyftBullet,frame:0,dmg:7,blue:0,
+    clip:true,wallKill:false,kill:false,
+    // blue only hurts a moving SOUL; plain round(dmg-df/5), no HP bonus, and it stays
+    onHit:b=>b.blue&&!api.moving()?false:api.damage(b.dmg),
+    step(b){if(b.fric)gm(b);if(b.y+60<api.S.ideal[2]-40)b.alive=false}}));
+  }
+  return g;
+ }
+})();
 /* ---- NB content: ULTRA SECRET SECRETLY SANS SUPER 5000 OMNI MEGA BOSS (the KILL archive's
    secret). One bone, then he forgets to stay alive. ---- */
 (()=>{
@@ -21629,6 +21909,657 @@ if(c.lesson > 20) {
  });
  function askerStart(m,api){if(api.S.mnfight===2)ask(m,api)}
 })();
+/* ---- NB content: Parsnik (obj_parsnik + obj_parsnik_body; obj_1sidegen bullettype 6 blt_gravbullet /
+        bullettype 5 blt_vegbullet, snake sprites while a Parsnik exists; obj_foodsound) ---- */
+(()=>{
+ const {rnd,snd}=NB;
+ const {dse,sprBullet,move,tick,fr,talkLen}=NB.hl;
+ const R=Math.round;
+ const pop=()=>NB.S.mons.filter(m=>m.alive).length; // scr_monstersum
+ const hurtPose=m=>m.hurt||(!m.alive&&!m.spared);
+ // Destroy event: spared untouched and won over pays goldreward[3].
+ const goldOnSpare=n=>(m,api)=>{if(m.mercymod>10&&m.hp===m.maxhp){api.S.goldTotal+=n;api.S.gr3=(api.S.gr3||0)+n}};
+ // obj_objshake on the body (the monster itself is invisible): 14 swings, 2 steps apart.
+ function bodyShake(v){const o=v.osh;if(!o)return 0;if(--o.t<=0){o.oo^=1;o.v=o.oo?o.shx:-o.shx;o.shx--;if(o.shx>0)o.t=2;else{v.osh=null;return 0}}return o.v}
+ // spr_parsnik_snake1..5: origin, and where each exported (trimmed) frame sits in the sprite.
+ const SNK={1:{o:[16,19],c:[[0,2],[1,1],[0,2],[0,2]]},2:{o:[8,18],c:[[1,0],[1,0],[1,0],[0,0]]},
+  3:{o:[8,34],c:[[0,7],[1,6],[0,7],[0,8]]},4:{o:[0,19],c:[[0,1],[0,2],[0,1],[0,0]]},5:{o:[0,18],c:[[2,0],[0,0],[2,0],[2,0]]}};
+ function snake(g,n,k,x,y,rot){
+  const a=images['parsSnake'+n];if(!a)return;
+  const i=((Math.floor(k)%a.length)+a.length)%a.length,d=SNK[n],c=d.c[i]||[0,0];
+  dse(g,a[i],x,y,2,2,rot,1,d.o[0]-c[0],d.o[1]-c[1]);
+ }
+ // blt_vegbullet / blt_gravbullet heart collision with a green one: heal 1, and every Parsnik
+ // (or Vegetoid) that was offered a snack this turn has eaten.
+ function eatGreen(api,b){
+  b.alive=false;snd('heal');
+  const S=api.S;if(S.hp<S.maxhp)S.hp++;
+  for(const o of api.alive())if((o.id==='parsnik'||o.id==='vegetoid')&&o.v.eat===1){o.v.ate=1;o.mercymod=90}
+  return true;
+ }
+ // blt_gravbullet (spr_carrotbullet_snake): hops up, falls through the box, drawn inside it only.
+ function gravSnake(api,x,y,dmg,green){
+  if(x<api.S.ideal[0]+15)x+=15;
+  const im=green?NB.multiplied(images.parsCarrotGr,'#00ff00'):images.parsCarrot;
+  sprBullet(api,{x,y:y-8,im,vy:-.5,grav:.25,gdir:270,dmg,green,kill:false,clip:true,
+   onHit:b=>b.green?eatGreen(api,b):api.damageStd(b.dmg),
+   step(b){move(b);if(b.y+12>480)b.alive=false}});
+ }
+ // blt_vegbullet (spr_vegbullet_snake): thrown sideways, bouncing off the side walls and losing
+ // height off the floor; image_blend green for the snack one.
+ function vegSnake(api,x,y,dmg,green){
+  if(x<api.S.ideal[0]+20)x+=20;
+  const base=fr(images.parsVeg,R(rnd(5))),im=green?NB.multiplied(base,'#00ff00'):base;
+  const vx=R(rnd(1))===0?2+rnd(.2):-2-rnd(.2);
+  sprBullet(api,{x,y:y-8,im,vx,grav:.2,gdir:270,dmg,green,kill:false,
+   onHit:b=>b.green?eatGreen(api,b):api.damageStd(b.dmg),
+   step(b){
+    move(b);const f=NB.inner();
+    if(b.x+10<f.l||b.x+14>f.r){b.x=b.xp;b.vx=-b.vx}   // obj_lborder / obj_rborder
+    if(b.y+23>f.b){b.y=b.yp;b.vy=-b.vy/1.2}             // obj_dborder
+    if(b.vy<0&&b.y+12<f.t)b.alive=false;                 // obj_uborder (blt_parent)
+    if(b.x>640||b.x+24<0||b.y>480)b.alive=false;
+   }});
+ }
+ NB.defs.set('parsnik',{
+  name:'Parsnik',hp:72,atk:7,def:-2,xp:8,gold:2,mercymod:7,wd:104,
+  encounter:'* Parsnik slithered out of the&  earth!',
+  size:()=>({w:104,h:124}),
+  // scr_battlegroup: 111 alone, 111/318 in pairs, 218 in the middle of three.
+  pos:(i,n,cx)=>({x:n===1?111:n===2?[111,318][i]:n===3?[18,218,418][i]:R(cx-52),y:120}),
+  shudder:[8,1],shudderAbs:true,
+  setup(m){Object.assign(m.v,{siner:0,eat:0,ate:0,pause:0,osh:null,ox:0,wasHurt:false})},
+  step(m,api){
+   const v=m.v,S=api.S;
+   if(S.myfight===0&&S.mnfight===0)v.eat=0;
+   if(m.hurt&&!v.wasHurt)v.osh={t:2,oo:0,shx:14,v:0};
+   v.wasHurt=m.hurt;v.ox=bodyShake(v);
+   if(m.hurt||v.pause)v.siner=0;else v.siner++;
+  },
+  // obj_parsnik_body: headwrap, five swaying snakes, then the head; spr_parsnik_hurt while paused.
+  draw(g,m){
+   const v=m.v,x=m.x0+(v.ox||0),y=m.y,s=v.siner;
+   if(hurtPose(m)||v.pause){dse(g,images.parsHurt,x,y);return}
+   dse(g,images.parsHeadwrap,x+14,y+24+Math.sin(1.5+s/5)*2,2,2);
+   snake(g,1,s/6,x+32,y+52+Math.sin(s/5)*1.5,Math.sin(s/5)*6);
+   snake(g,5,(s+8)/6,x+74,y+52+Math.sin(2+s/5)*1.5,-Math.sin(2+s/5)*6);
+   snake(g,2,(s+2)/5.5,x+38,y+46+Math.sin(.5+s/5)*1.5,Math.sin(s/5)*2);
+   snake(g,4,(s+6)/5.5,x+60,y+46+Math.sin(1.5+s/5)*1.5,-Math.sin(s/5)*2);
+   snake(g,3,(s+4)/5,x+52,y+50+Math.sin(1+s/5)*1.5,0);
+   dse(g,fr(images.parsHead,s/12),x+24,y+46,2,2);
+  },
+  vaporDraw(g,m){dse(g,images.parsHurt,m.x,m.y)},
+  bubblePos:m=>({x:m.x0+100,y:m.y+10}),
+  acts:['Check','Hiss','Devour','Snack'],
+  check:()=>'* PARSNIK - ATK 30 DEF 28&* This cobrafied carrot has&  a headful of tasty snakes./',
+  act(m,i,name,api){
+   const v=m.v,S=api.S;
+   // Hiss: straight to the monsters' turn ("Don't Be Rude").
+   if(name==='Hiss')return null;
+   if(name==='Snack'){v.eat=1;return '* Parsnik mishears you and fires&  a series of tasty snakes.'}
+   // Devour: scr_mercystandard; eaten once mercy drops under 8.
+   const mercy=api.srcHp(m)-S.at-S.wstrength+m.df-m.mercymod;
+   if(mercy<8){
+    // obj_foodsound: snd_swallow, then snd_power 10 steps later
+    snd('mexSwallow');S.fx.push({t:0,step(e){if(++e.t>=10){snd('power');e.dead=true}},draw(){}});
+    api.heal(5);v.pause=1;
+    return {text:'* You start eating snakes like&  they\'re spaghetti.&* You recovered 5 HP!',then:()=>api.spare(m)};
+   }
+   return '* You tried to eat Parsnik^1,&  but it wasn\'t weakened&  enough.';
+  },
+  speech(m){
+   const v=m.v,c=v.cmd=R(rnd(100)),h=m.heardName;
+   talkLen(110);
+   let t=c>=75?'Herssss':'Hisssss';
+   if(v.ate===1)t='Ate&Your&Green&Snakes';
+   if(h==='Hiss')t='Don\'t&Be Rude';
+   if(h==='Snack')t='Eat Your&Green&Tasty&Snakes';
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,c=v.cmd??0,p=pop();m.heardName=null;
+   api.turntimer(150);
+   // obj_1sidegen: bullettype 6 (falling snakes) or 5 (bouncing snakes); after a Snack the
+   // 8th falling one / the (4-monsters)th bouncing one is green.
+   let rate,type;
+   if(c<50){rate=4;if(p>1)rate=7;if(p===3)rate=11;type=6}
+   else{rate=12;if(p===2)rate=22;if(p===3)rate=30;type=5}
+   v.gen={type,rate,a0:1,num:0,green:v.eat===1,dmg:m.atk};
+   let f='* Parsnik has a hissy fit.';
+   if(c>=25)f='* Parsnik\'s snakes shift to&  change hairstyles^1.&* Mohawk^1. Ponytail^1. Undercut.';
+   if(c>=50)f='* Parsnik completely closes its&  mouth^1.&* It looks short and weird.';
+   if(c>=75)f='* Snakes play with a beach ball.';
+   if(c>=90)f='* Smells like tasty snakes.';
+   if(m.mercymod>100)f='* Parsnik seems satisfied.';
+   if(api.srcHp(m)<=72/4)f='* The snakes are wilting.';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||!tick(g,'a0'))return;
+   g.a0=g.rate;g.num++;
+   // SCR_BORDER(0,40): a random spot on the top edge, then x-20, y+5
+   const [L,Rr,T]=api.S.ideal,x=R(rnd(Rr-L))+L-20,y=T+5;
+   if(g.type===6)gravSnake(api,x,y,g.dmg,g.green&&g.num===8);
+   else vegSnake(api,x,y,g.dmg,g.green&&g.num===4-pop());
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare:goldOnSpare(2)
+ });
+})();
+/* ---- NB content: Moldessa (obj_moldessa + obj_moldessa_body; obj_1sidegen bullettype 3
+        blt_pollendrop / bullettype 2 blt_splinterbig -> blt_splinter) ---- */
+(()=>{
+ const {rnd,snd,dcos,dsin}=NB;
+ const {dse,move,tick,fr,talkLen}=NB.hl;
+ const R=Math.round;
+ const pop=()=>NB.S.mons.filter(m=>m.alive).length; // scr_monstersum
+ const hurtPose=m=>m.hurt||(!m.alive&&!m.spared);
+ // Destroy event: spared untouched and won over pays goldreward[3].
+ const goldOnSpare=n=>(m,api)=>{if(m.mercymod>10&&m.hp===m.maxhp){api.S.goldTotal+=n;api.S.gr3=(api.S.gr3||0)+n}};
+ // obj_objshake on the body (the monster itself is invisible): 14 swings, 2 steps apart.
+ function bodyShake(v){const o=v.osh;if(!o)return 0;if(--o.t<=0){o.oo^=1;o.v=o.oo?o.shx:-o.shx;o.shx--;if(o.shx>0)o.t=2;else{v.osh=null;return 0}}return o.v}
+ // user event 0: three new faces out of spr_moldessa_face's nine (cosmetic, so not NB.rnd)
+ const newFaces=v=>{v.face=[0,1,2].map(()=>Math.floor(Math.random()*9))};
+ // spr_moldessa_face (origin 7,7): the exported frames are trimmed, so each sits centred in the
+ // sprite's bounding box (x 2..12, y 1..13).
+ function face(g,k,x,y,rot){
+  const im=images.moldessFace?.[k];if(!im)return;
+  const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+  dse(g,im,x,y,2,2,rot,1,7-(2+((11-w)>>1)),7-(1+((13-h)>>1)));
+ }
+ // blt_pollendrop: drifts down, swaying left/right (alarm 10, then every 20 steps).
+ function pollen(api,x,y,dmg){
+  const [L,Rr]=api.S.ideal;if(x>Rr-20)x-=20;if(x<L+6)x+=6; // scr_edge(20,6)
+  api.spawn({x,y,box:[5,5,2,2],img:images.bulletMd,dmg,manual:true,vx:1.5,vy:1.2,grav:.02,gdir:270,a0:10,
+   step(b){if(tick(b,'a0')){b.vx=-b.vx;b.a0=20}move(b)}});
+ }
+ // blt_splinterbig: falls, then after 20-40 steps bursts into nine blt_splinter (every 40 degrees).
+ function splinterBig(api,x,y,dmg){
+  const [L,Rr]=api.S.ideal;if(x>Rr-6)x-=6;if(x<L+10)x+=10; // scr_edge(6,10)
+  api.spawn({x,y,box:[5,5,2,2],img:images.bulletMd,dmg,manual:true,vy:2,a0:20+rnd(20),
+   step(b){
+    if(tick(b,'a0')){
+     for(let i=0;i<9;i++)api.spawn({x:b.x+3,y:b.y+3,box:[3,3,1,1],img:images.nbBulletSm,dmg:b.dmg,vx:dcos(i*40)*1.5,vy:-dsin(i*40)*1.5});
+     b.alive=false;return;
+    }
+    move(b);
+   }});
+ }
+ NB.defs.set('moldessa',{
+  name:'Moldessa',hp:52,atk:7,def:-4,xp:5,gold:3,mercymod:10,wd:96,
+  encounter:'* You tripped over some&  Moldessas.',
+  size:()=>({w:96,h:120}),
+  // scr_battlegroup: 118/318 in pairs, 18/218/418 in a line of three (the body stands at +48).
+  pos:(i,n,cx)=>({x:n===1?118:n===2?[118,318][i]:n===3?[18,218,418][i]:R(cx-48),y:127}),
+  shudder:[8,1],shudderAbs:true,
+  setup(m){const v=m.v;Object.assign(v,{siner:0,fs:0,facego:1,lie:0,osh:null,ox:0,wasHurt:false});newFaces(v)},
+  step(m){
+   const v=m.v;
+   v.siner++;if(v.facego===1)v.fs++;
+   if(m.hurt&&!v.wasHurt)v.osh={t:2,oo:0,shx:14,v:0};
+   v.wasHurt=m.hurt;v.ox=bodyShake(v);
+   if(m.hurt)newFaces(v); // faces reshuffle every frame while hurt
+  },
+  // obj_moldessa_body: a squashing stem, three faces orbiting (and spinning) on the cap,
+  // the head thing and two waving arms.
+  draw(g,m){
+   const v=m.v,x=m.x0+48+(v.ox||0),y=m.y,s=v.siner,f=v.fs,w=Math.sin(s/7);
+   if(hurtPose(m)){dse(g,fr(images.moldessHurt,s/4),x-48,y-2);return}
+   // stem/headthing/arm exports are trimmed to the bbox: origins carry the offsets
+   dse(g,images.moldessStem,x,y+114,2+w*.1,2-w*.1,0,1,17,56);
+   [0,36,65].forEach((ph,k)=>face(g,v.face[k],x+Math.sin((f+ph)/16)*13+Math.sin(s/6),y+56+Math.cos((f+ph)/16)*18+Math.cos(s/6),f*3+(k?180:0)+Math.sin(s/6)*4));
+   dse(g,images.moldessHeadthing,x,y-4+w*2,2,2,0,1,10,-1);
+   dse(g,images.moldessArm,x-12,y,2,2,-5+w*5,1,16,0);
+   dse(g,images.moldessArm,x+14,y,-2,2,5-w*5,1,16,0);
+  },
+  vaporDraw(g,m){dse(g,fr(images.moldessHurt,0),m.x,m.y-2)},
+  bubblePos:m=>({x:m.x0+95,y:m.y}),
+  acts:['Check','Switch','Fix','Lie Down'],
+  check:()=>'* MOLDESSA - ATK 27 DEF 23&* Can\'t decide on a face^1.&* Can\'t see friend from foe./',
+  act(m,i,name,api){
+   const v=m.v,S=api.S;
+   if(name==='Switch'){
+    if((S.gr3||0)<8){S.gr3=(S.gr3||0)+2;S.goldTotal+=2} // goldreward[3]
+    newFaces(v);v.facego=1;
+    return '* You encourage Moldessa to try&  a new look^1.&* Its face shifts...';
+   }
+   if(name==='Fix'){
+    const t=m.mercymod<100?'* You adjust Moldessa\'s face^1.&* It seems to be happy with its&  new look.':'* You adjust Moldessa\'s face.';
+    v.facego=0;m.mercymod=100;
+    return t;
+   }
+   // Lie Down: +2 HP the first time (unclamped, as in the source).
+   if(S.hp<S.maxhp&&v.lie===0){v.lie=1;S.hp+=2;snd('heal')}
+   if(pop()>=2){
+    for(const o of api.alive())if(o!==m&&o.mercymod<90)o.mercymod=90;
+    return '* You lie down and rest^1.&* Moldessa tucks you in with&  a blanket of moss./* While you were sleeping^1, the&  other monsters get bored.';
+   }
+   return '* You lie down and rest^1.&* Moldessa tucks you in with&  a blanket of moss.';
+  },
+  speech(m){
+   const c=m.v.cmd=R(rnd(100));
+   talkLen(110);
+   let t='(slime&sounds)';
+   if(c<75)t='Shh...';
+   if(c<50)t='Hsh...';
+   if(c<25)t='Krr...';
+   return t;
+  },
+  border:()=>3,
+  attack(m,api){
+   const v=m.v,c=v.cmd??0,p=pop();m.heardName=null;
+   api.turntimer(150);
+   if(m.mercymod<100||p>=2){
+    let rate=c<=50?7:15;
+    if(p===3)rate*=2.7;if(p===2)rate*=1.8;
+    v.gen={type:c<=50?3:2,rate,a0:1,dmg:m.atk};
+   }else if(p===1)api.turntimer(0); // fixed and alone: no attack at all
+   let f='* Moldessa\'s face rearranges&  it';
+   if(c>=40)f='* Moldessa tries to make its&  face look like a movie-&  star\'s^1, but it shifts apart.';
+   if(c>=70)f='* Moldessa hides behind its ears^3.&* ... arms?';
+   if(c>=90)f='* Smells like twelve-week-old&  gummy bears.';
+   if(api.srcHp(m)<15)f='* Moldessa\'s face falls apart.';
+   if(m.mercymod>15)f='* Moldessa\'s face looks... happy?';
+   return f;
+  },
+  attackStep(m,api){
+   const g=m.v.gen;if(!g||!tick(g,'a0'))return;
+   g.a0=g.rate;
+   // SCR_BORDER(0,6): a random spot on the top edge
+   const [L,Rr,T]=api.S.ideal,x=R(rnd(Rr-L))+L;
+   if(g.type===3)pollen(api,x,T,g.dmg);else splinterBig(api,x,T,g.dmg);
+  },
+  endAttack(m){m.v.gen=null},
+  onSpare:goldOnSpare(3)
+ });
+ // scr_battlegroup 16: "You tripped over some Moldessas." - two of them.
+ NB.groups.moldessa=['moldessa','moldessa'];
+})();
+/* ---- NB content: Royal Guards (obj_bara01 + obj_bara02, both drawn by obj_barabody; obj_carrotstargen
+        with obj_carrotshot / obj_stardrop, obj_greenarmor, obj_sweat99). scr_battlegroup 72. ---- */
+(()=>{
+ const {rnd,dcos,dsin,snd}=NB,gm=NB.gm;
+ const S=()=>NB.S;
+ const pop=()=>S().mons.filter(m=>m.alive).length; // scr_monstersum
+ const R=Math.round;
+ const rg=id=>S().mons.find(o=>o.id===id&&o.alive);
+ const talkLen=n=>{S().talkLenExact=Math.max(S().talkLenExact||0,n)};
+ // GameMaker alarms count down by one a step and fire once they reach zero (rate/3 and rate/2 included).
+ const tick=(o,k)=>{if(o[k]>0){o[k]-=1;if(o[k]<=0){o[k]=-1;return true}}return false};
+ // GameMaker's end-of-step motion: friction, gravity, then the move (xprevious kept for bounces).
+ function move(b){b.xp=b.x;b.yp=b.y;gm(b);b.x+=b.vx;b.y+=b.vy}
+ const drawAt=(g,im,x,y)=>{if(im)g.drawImage(im,R(x),R(y))};
+
+ // ---- precise collision (spr_carrotshot, spr_stardrop and spr_greenarmor use per-pixel masks):
+ // the SOUL's pixels against the sprite's opaque ones, through scale and image_angle.
+ const HEART=['..##........##..','.#####....#####.','#######..#######','#######..#######','################','################','################','################','################','################','..############..','..############..','....########....','....########....','......####......','......####......'];
+ const HPX=[];HEART.forEach((r,j)=>{for(let i=0;i<16;i++)if(r[i]==='#')HPX.push([i+.5,j+.5])});
+ const alphaCache=new WeakMap();
+ function opaque(im){
+  if(!im)return null;
+  let a=alphaCache.get(im);if(a!==undefined)return a;a=null;
+  try{
+   const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,c=document.createElement('canvas');c.width=w;c.height=h;
+   const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0);
+   const d=g.getImageData(0,0,w,h).data,m=new Uint8Array(w*h);for(let i=0;i<w*h;i++)m[i]=d[i*4+3]>0?1:0;a={w,h,m};
+  }catch(_){a=null}
+  alphaCache.set(im,a);return a;
+ }
+ // b.bb: the sprite's bbox from its .sprite.gmx, used when the pixels can't be read.
+ function maskHit(h,b){
+  const M=opaque(b.im),c=dcos(b.rot||0),s=dsin(b.rot||0),[l,t,r,bt]=b.bb;
+  for(const [px,py] of HPX){
+   const dx=h.x+px-b.x,dy=h.y+py-b.y,u=Math.floor((c*dx-s*dy)/b.xs),v=Math.floor((s*dx+c*dy)/b.ys);
+   if(M?(u>=0&&v>=0&&u<M.w&&v<M.h&&M.m[v*M.w+u]):(u>=l&&u<=r&&v>=t&&v<=bt))return true;
+  }
+  return false;
+ }
+ // draw_sprite_ext with origin (0,0): scale, then image_angle (counter-clockwise) about (x,y).
+ function drawSpr(g,b){
+  const im=b.im;if(!im)return;
+  g.save();
+  if(b.rot){g.translate(b.x,b.y);g.rotate(-b.rot*Math.PI/180)}else g.translate(R(b.x),R(b.y));
+  g.scale(b.xs,b.ys);g.drawImage(im,0,0);g.restore();
+ }
+
+ // ---- obj_barabody: both guards are this one body (RG 02 swaps in spr_barahead2), x scale 2.
+ // Several parts are exported trimmed to their bbox: [bbox_left,bbox_top] puts each crop back.
+ const TRIM={rgHead1:[15,5],rgHead2:[11,0],rgLegs:[5,0],rgShirtless:[8,10],rgShoes:[6,0],rgFalchion:[1,1]};
+ function part(g,key,x,y,xs,ys,rot,ox,oy){
+  const im=images[key];if(!im)return;const [tx,ty]=TRIM[key]||[0,0];
+  g.save();
+  if(rot){g.translate(x,y);g.rotate(-rot*Math.PI/180)}else g.translate(R(x),R(y));
+  g.scale(xs,ys);g.drawImage(im,tx-ox,ty-oy);g.restore();
+ }
+ function body(g,m){
+  // created at (x+28, y+32); heady/armory/arm1/arm2/hand/pantsy/shoesy are fixed offsets from that y
+  const v=m.v,x=m.x+28+v.bx,y=m.y+32,sn=Math.sin(v.siner/4),cs=Math.cos(v.siner/4);
+  part(g,'rgBall',x+110,y+40+sn*3,2,2,0,0,0);
+  part(g,'rgBall',x+120,y+60+cs*2,2,2,0,0,0);
+  part(g,'rgFalchion',x+140,y+80+cs*4+16,2,2,sn*4-30,13,55);
+  part(g,'rgBall',x-10,y+40+sn*3,2,2,0,0,0);
+  part(g,'rgBall',x-20,y+60+cs*2,2,2,0,0,0);
+  part(g,'rgFist',x-10,y+80+cs*4+16,2,2,sn*4,8,8);
+  part(g,'rgLegs',x+64,y+100+sn,2+sn*.05,2-sn*.05,0,32,0);
+  part(g,'rgShoes',x+64,y+142,2+sn*.1,2-sn*.05,0,32,0);
+  part(g,v.shirt?'rgShirtless':'rgArmor',x,y+10+sn*2,2,2,0,0,0);
+  part(g,m.id==='rg01'?'rgHead1':'rgHead2',x,y-30+sn*4,2,2,0,0,0);
+ }
+ // obj_barabody Draw (siner, pause while hurt: x = parent.x+28, shaker) and Alarm 3 (sweat).
+ function bodyStep(m,api){
+  const v=m.v;
+  if(m.hurt)v.bx=0;
+  else{v.siner++;if(v.shaker>0){v.siner+=.5;v.bx+=Math.sin(v.siner/2)}}
+  if(tick(v,'a3')&&v.shaker>0){v.a3=8;sweat(api,m.x+28+v.bx+55,m.y+32+20)}
+ }
+ // event_user(2): start shaking and sweating.
+ const shakeOn=o=>{if(o){o.v.shaker=1;o.v.a3=2}};
+ // obj_sweat99: fades in, falls (gravity 0.1) for 20 steps once opaque, fades out.
+ function sweat(api,x,y){
+  const d=rnd(180);
+  api.S.fx.push({x,y,vx:dcos(d)*4,vy:-dsin(d)*4,alpha:0,on:0,a0:3,a1:-1,grav:0,gdir:270,
+   step(e){
+    if(tick(e,'a0'))e.on=1;
+    if(tick(e,'a1'))e.on=3;
+    if(e.on===1){if(e.alpha<1)e.alpha+=.1;else e.on=2;e.grav=.1;e.a1=20}
+    if(e.on===3){if(e.alpha>0)e.alpha-=.04;if(e.alpha<.1)e.dead=true}
+    gm(e);e.x+=e.vx;e.y+=e.vy;
+   },
+   draw(g,e){
+    const im=images.rgSweat;if(!im)return;
+    g.save();g.globalAlpha=Math.max(0,Math.min(1,e.alpha));g.translate(e.x,e.y);
+    g.rotate(Math.atan2(e.vy,e.vx));g.drawImage(im,-3,-3);g.restore(); // image_angle = direction
+   }});
+ }
+
+ // ---- obj_carrotstargen: alarm 0 rains obj_carrotshot from the top (and, with both guards up,
+ // from the bottom), alarm 1 drops obj_stardrop in three lanes. The box is border 16 (270..370, 50..385).
+ function shot(m,api,x,y,star){
+  const b=api.spawn({x,y,xp:x,yp:y,manual:true,wallKill:false,dmg:m.atk,xs:2,ys:2,rot:0,siner:0,shake:0,a0:-1,
+   im:star?images.rgStar:images.rgCarrot,bb:star?[5,5,10,10]:[4,4,8,11],box:[-8,-8,46,46],
+   mask(h){return maskHit(h,this)},
+   step(b,api){
+    // Alarm 0 (only once shaking): carrots get kicked sideways, stars pick a drift
+    if(tick(b,'a0')){if(star)b.vx=rnd(4)-2;else b.vx+=(rnd(2)+2)*(rnd(2)<1?-1:1)}
+    if(!star&&!b.shake){
+     const [L,Rr]=api.S.ideal;
+     if(b.x>Rr-30){b.x=b.xp;b.vx=-b.vx}
+     if(b.x<L){b.x=b.xp;b.vx=-b.vx}
+    }
+    if(b.y>480||b.y<0){b.alive=false;return}
+    if(b.shake){b.x+=Math.sin(b.siner/2)*2;b.rot+=Math.sin(b.siner/2)*2;b.siner++}
+    move(b);
+    b.box=b.ys<0?[-8,-38,46,46]:[-8,-8,46,46];
+   },
+   draw:drawSpr});
+  if(!star){b.vx=rnd(4)-2;b.vy=0;b.grav=.15;b.gdir=270;if(y>400){b.ys=-2;b.grav=-b.grav}}
+  else{b.vx=0;b.vy=2+rnd(3);b.grav=.06;b.gdir=270;if(y>200){b.ys=-2;b.grav=-b.grav;b.vy=-b.vy}}
+  return b;
+ }
+ function gen(m,which,rate,shake){
+  return {mode:pop()>1?1:0,side:0,old:0,dmg:m.atk,shake,rate,a0:which===0?8:-1,a1:which===1?8:-1};
+ }
+ function genStep(m,api){
+  const g=m.v.gen;if(!g)return;
+  const [L,Rr,T,B]=api.S.ideal;
+  if(tick(g,'a1')){
+   g.side=Math.floor(rnd(3));if(g.side===g.old)g.side++;if(g.side>=3)g.side=0;g.old=g.side;
+   const c=shot(m,api,276+g.side*30,T,true);c.dmg=g.dmg;
+   if(g.shake){c.shake=1;c.a0=2}
+   g.a1=g.rate/2;
+   if(g.mode===1){const c2=shot(m,api,336-g.side*30,B,true);c2.grav=-c.grav;c2.vx=-c.vx;c2.dmg=g.dmg;g.a1=g.rate}
+  }
+  if(tick(g,'a0')){
+   const c=shot(m,api,305,T,false);c.dmg=g.dmg;
+   if(g.shake){c.shake=1;c.a0=2}
+   g.a0=g.rate/3;
+   if(g.mode===1){const c2=shot(m,api,305,B,false);c2.grav=-c.grav;c2.vx=-c.vx;c2.dmg=g.dmg;g.a0=g.rate}
+  }
+ }
+ // obj_bara01/02 mnfight 2: while the box grows the SOUL stays halfway between its walls.
+ function holdHeart(api){const e=api.S.edge;if(e.T>api.S.ideal[2])api.heart.y=(e.T+e.B)/2}
+
+ // ---- obj_greenarmor (Clean Armor on RG 02): drifts about the box; every touch rings snd_bell
+ // and heats it (green -21, red +21). Over red 99 when the turn ends, RG 02 takes it off.
+ function greenArmor(m,api){
+  api.spawn({x:320-15,y:240-80,manual:true,wallKill:false,kill:false,dmg:0,xs:1,ys:1,rot:0,
+   im:images.rgGreenArmor,bb:[0,9,44,39],box:[0,0,45,45],g:m.v.armor,r:255-m.v.armor,siner:0,inv:0,
+   mask(h){return maskHit(h,this)},
+   onHit(b){if(b.inv<=0){snd('mdBell');b.g-=21;b.r+=21;b.inv=20}return false},
+   step(b,api){
+    b.y+=Math.sin(b.siner/20)*2;b.x+=Math.cos(b.siner/10)*6;b.siner++;
+    if(api.S.turntimer<3){m.v.armor=b.g;if(b.r>99)m.v.hot=1;b.alive=false;return}
+    b.inv--;
+   },
+   draw(g,b){
+    const im=b.im;if(!im)return;
+    const h=n=>Math.max(0,Math.min(255,n)).toString(16).padStart(2,'0');
+    g.drawImage(NB.multiplied(im,'#'+h(b.r)+h(b.g)+'00'),R(b.x),R(b.y)); // image_blend make_color_rgb(r,g,0)
+   }});
+ }
+
+ // ---- mnfight 5 scenes, run from the guards' step (the battle controller sits at 99).
+ function say(api,m,x,y,img,pages,wide){
+  const b={m,x,y,wide:!!wide,img,w:new NB.Writer(pages,{typer:2,x:x+(wide?30:15),y:y+10})};
+  api.S.bubbles.push(b);return b;
+ }
+ const done=b=>!b||b.w.done;
+ const unsay=(api,b)=>{if(b)api.S.bubbles=api.S.bubbles.filter(o=>o!==b)};
+ function cutIn(api){
+  const st=api.S;
+  st.turntimer=-1;st.myfight=99;st.mnfight=99;st.bullets=[];st.bubbles=[];st.writer=null;
+  api.heart.visible=false;api.border(0); // obj_heart.x = -800, global.border = 0
+  for(const o of st.mons)if(o.def.rg)o.v.gen=null;
+ }
+ function toMenu(api,flavor){const st=api.S;st.nextFlavor=flavor;st.myfight=0;st.mnfight=3;api.border(0)}
+ // caster_pause(global.batmusic): the battle theme stays off for the rest of the fight.
+ function pauseBattle(){try{for(const a of battleMusicTracks())if(a&&a!==music.rgConfession&&!a.paused)a.pause()}catch(_){}}
+ // caster_loop("music/confession.ogg", 0.8, 0.9) / caster_pause
+ function confession(on){
+  try{
+   const a=music.rgConfession;if(!a)return;
+   if(on){a.currentTime=0;a.playbackRate=.9;a.preservesPitch=a.mozPreservesPitch=a.webkitPreservesPitch=false;playMusicElement(a)}
+   else a.pause();
+  }catch(_){}
+ }
+ // obj_bara02 mnfight 5: the armor is too hot.
+ function armorScene(m,api){
+  const v=m.v;
+  if(tick(v,'a4'))v.con++;
+  if(v.bub)v.bub.w.step();
+  const blcon=pages=>say(api,m,m.x-165,m.y+55,images.nbBlconSm2,pages);
+  if(v.con===0){v.a4=15;v.con=1}
+  if(v.con===2){v.bub=blcon(['...&can\'t&...&take it./','...&armor...&too...&HOT!!!/%%']);v.con=3}
+  if(v.con===3&&done(v.bub)){unsay(api,v.bub);v.bub=null;snd('rgGrab');v.shirt=1;v.con=4;v.a4=60}
+  if(v.con===5&&done(v.bub)){shakeOn(rg('rg01'));v.bub=blcon(['...&much&better./%%']);v.con=6}
+  if(v.con===6&&done(v.bub)){
+   v.shirtless=1;unsay(api,v.bub);v.bub=null;v.con=7;v.scene=0;
+   const o=rg('rg01');if(o)o.v.shake=1;
+   toMenu(api,'* RG 01 looks bothered by&  something.');
+  }
+ }
+ // obj_bara01 mnfight 5: the confession (02's lines are his blcon, made "with(obj_bara02)").
+ function confessScene(m,api){
+  const v=m.v,o=S().mons.find(x=>x.id==='rg02');
+  if(tick(v,'a4'))v.con++;
+  if(v.bub)v.bub.w.step();
+  const next=(two,pages)=>{unsay(api,v.bub);v.bub=two?say(api,o,o.x-165,o.y+55,images.nbBlconSm2,pages):say(api,m,m.x+193,m.y+55,null,pages)};
+  if(v.con===0&&v.toldhim){pauseBattle();v.con=1;v.a4=20}
+  if(v.con===2){next(0,['D-dude&.../','I can\'t&.../','I can\'t&take&this&anymore!/','Not like&this!!/%%']);v.con=3}
+  if(v.con===3&&done(v.bub)){
+   v.shaker=0;unsay(api,v.bub);
+   confession(true);v.con=4;
+   // scr_blcon_x(blconx+50, blcony): OBJ_WRITER in obj_blconwideslave (spr_blconwdshrt) at (215,55)
+   v.bub=say(api,m,215,55,images.nbBlconWdShrt,['Like^1, 02!&I like.../','I like^1, LIKE you^1,&bro!/','The way you fight..^1.&The way you talk.../','I love doing team&attacks with you./','I love standing here&with you^1, bouncing&and waving our&weapons in sync.../','02..^1.&I^1, like^1, want to stay&like this forever.../%%'],true);
+  }
+  if(v.con===4&&done(v.bub)){confession(false);v.con=5;next(1,['^1.^1../','^1.^1.^1.^1./%%'])}
+  if(v.con===5&&done(v.bub)){shakeOn(m);next(0,['Uh.../','I mean,&uh.../','Psyche!&Gotcha,&bro!!!&Haha!/%%']);v.con=6}
+  if(v.con===6&&done(v.bub)){v.con=7;next(1,['... 01./%%'])}
+  if(v.con===7&&done(v.bub)){v.shaker=2;next(0,['Y-yeah,&bro??/%%']);v.con=8}
+  if(v.con===8&&done(v.bub)){v.shaker=0;v.con=9;next(1,['.../','... do&you want&to.../','... get&some ice&cream.../','...&after&this?/%%'])}
+  // msg[0] "Like.../" is overwritten in the source before it's shown
+  if(v.con===9&&done(v.bub)){v.shaker=0;next(0,['Sure,&dude!&Haha!/%%']);v.con=10}
+  if(v.con===10&&done(v.bub)){
+   unsay(api,v.bub);v.bub=null;v.con=11;v.scene=0;
+   for(const x of [m,o])if(x){x.mercymod=999;x.df=-999}
+   confession(false); // caster_free(conmusic)
+   toMenu(api,'* 01 and 02 are looking at&  each other happily.');
+  }
+ }
+
+ const rgCommon={
+  hp:150,atk:8,def:4,xp:110,gold:60,mercymod:-9999,wd:224,rg:true,
+  encounter:'* Royal Guard attacks!',
+  setup(m){
+   Object.assign(m.v,{siner:0,bx:0,shaker:0,a3:-1,a4:-1,con:0,scene:0,bub:null,wh:-1,cmd:0,turn0:0,fresh:0,gen:null,
+    shake:0,toldhim:0,armor:255,hot:0,shirt:0,shirtless:0});
+   // Destroy: +50 G when spared untouched
+   Object.defineProperty(m,'goldBonus',{get:()=>m.mercymod>10&&m.hp===m.maxhp?50:0});
+   try{ensureMusicTrack('rgConfession')}catch(_){}
+  },
+  acts:['Check','Whisper','Clean Armor'], // SCR_TEXT 248/249: Check, Clean Armor = 1, Whisper = 3
+  border:()=>15,
+  shudder:[8,1],shudderAbs:true, // alarm 3: x = sha + shudder, 8,-8,7,-7...
+  attackStep(m,api){holdHeart(api);genStep(m,api)},
+  endAttack(m){m.v.gen=null}
+ };
+ NB.groups.royalguards=['rg01','rg02'];
+ NB.defs.set('rg01',{...rgCommon,
+  name:'RG 01',
+  size:()=>({w:224,h:202}),pos:(i,n,cx)=>n===2?{x:18,y:34}:{x:R(cx-112),y:34},
+  dmgPos:m=>({x:m.x,y:m.y}),
+  draw(g,m){if(!m.alive){drawAt(g,images.rgHurt01,m.x,m.y);return}body(g,m)},
+  vaporDraw(g,m){drawAt(g,images.rgHurt01,m.x,m.y)},
+  bubblePos:m=>({x:m.x+193,y:m.y+87}),
+  check:()=>'* RG 01 - ATK 30 DEF 20&* Royal Guard member with&  shining^1, polished armor./^',
+  act(m,i,name){
+   const v=m.v;
+   if(name==='Clean Armor'){v.wh=1;return '* You attempt to touch RG 01\'s&  armor^1.&* Your hands slip off./^'}
+   if(name==='Whisper'){v.wh=3;if(v.shake)v.toldhim=1;return '* You tell RG 01 to be honest&  with his feelings./^'}
+   return '* Nothing happened.';
+  },
+  // Alarm 6
+  speech(m,api){
+   talkLen(110);
+   const v=m.v,c=v.cmd=R(rnd(100));
+   let t;
+   if(c<25)t='Like,&give us&the soul&brah.';
+   if(c>=25)t='Like,&"you\'re&dead"&and all.';
+   if(c>=50)t='Like,&prepare&to die,&right?';
+   if(c>=75)t='Like,&perish&and&stuff.';
+   if(v.shake)t='D...&Dude...';
+   if(!v.turn0)t='Like,&team&attack!';
+   v.turn0=1;
+   if(v.wh===3){t='Like...&what?&I don\'t&get it.';if(v.toldhim)t='I...&I...'}
+   if(v.wh===1)t='Like,&hands&off the&merch.';
+   if(v.wh===12)t='H-HEY,&STOP&THAT!!';
+   if(pop()<2){
+    if(c<25)t='02...&this is,&like,&for you.';
+    if(c>=25)t='Like,&02...';
+    if(c>=50)t='02...&are you&really..';
+    if(c>=75)t='...';
+    if(!v.fresh&&m.mercymod<1)t='02...&I never&told&him...';
+    if(!v.fresh&&m.mercymod>100)t='02!?&B-but&why!?';
+    v.fresh=1;m.mercymod=-99999;
+   }
+   return t;
+  },
+  // mnfight 2: 01 only attacks on his own (with 02 up, 02's generator is the attack).
+  attack(m,api){
+   const v=m.v;v.wh=-1; // alarm 5
+   if(pop()!==1)return null;
+   api.border(16);api.turntimer(180);
+   const c=v.cmd;
+   v.gen=c<=50?gen(m,0,25,0):gen(m,1,20,0);
+   let f='* 01 holds his head in his&  hands.';
+   if(c>=25)f='* Anguished noises come from&  inside 01\'s armor.';
+   if(c>=50)f='* 01 stands still.';
+   if(c>=75)f='* 01 doesn\'t know what to do.';
+   if(api.srcHp(m)<30)f='* 01\'s breathing intensifies.';
+   return f;
+  },
+  step(m,api){
+   const v=m.v,st=api.S;
+   bodyStep(m,api);
+   // Whispered to after 02 took his armor off: near the end of the attack, he breaks.
+   if(v.toldhim&&st.mnfight===2&&st.turntimer>1&&st.turntimer<5&&v.con===0&&pop()===2){cutIn(api);v.scene=1}
+   if(v.scene===1&&st.mnfight===99)confessScene(m,api);
+  }
+ });
+ NB.defs.set('rg02',{...rgCommon,
+  name:'RG 02',
+  size:()=>({w:224,h:210}),pos:(i,n,cx)=>n===2?{x:432,y:34}:{x:R(cx-112),y:34},
+  dmgPos:m=>({x:m.x,y:m.y+24}),
+  draw(g,m){if(!m.alive){drawAt(g,images.rgHurt02,m.x,m.y);return}body(g,m)},
+  vaporDraw(g,m){drawAt(g,images.rgHurt02,m.x,m.y)},
+  bubblePos:m=>({x:m.x-125,y:m.y+87}),bubbleImg:()=>images.nbBlconSm2,
+  check:()=>'* RG 02 - ATK 30 DEF 20&* Royal Guard member with&  stuffy armor./^',
+  act(m,i,name){
+   const v=m.v;
+   if(name==='Clean Armor'){
+    v.wh=1;
+    let t='* You clean RG 02\'s armor.&* Its cooling dirt begins to&  wash away./^';
+    if(pop()<2)t='* You were repelled./^';
+    if(v.shirtless){t='* You pat RG 02\'s chest&  like a muscular bongo./^';const o=rg('rg01');if(o)o.v.wh=12}
+    return t;
+   }
+   if(name==='Whisper'){v.wh=3;return '* You tell RG 02 your favorite&  secret./^'}
+   return '* Nothing happened.';
+  },
+  speech(m,api){
+   talkLen(110);
+   const v=m.v,c=v.cmd=R(rnd(100));
+   let t;
+   if(c<25)t='...&...&...&sigh.';
+   if(c>=25)t='...&...&heh.';
+   if(c>=50)t='...&...&what?';
+   if(c>=75)t='...&...&hmph.';
+   if(!v.turn0)t='...&team&attack.';
+   v.turn0=1;
+   if(v.wh===3)t='...&i&won\'t&tell.';
+   if(v.wh===1){t='...&getting&...&warmer.';if(v.shirtless)t='...&hello.'}
+   if(pop()<2){
+    t='...';
+    if(!v.fresh&&m.mercymod<1)t='01...&you...!&..!!!!';
+    if(!v.fresh&&m.mercymod>100)t='01...!?&What&the...!?';
+    v.fresh=1;m.mercymod=-99999;
+   }
+   return t;
+  },
+  attack(m,api){
+   const v=m.v,p=pop();
+   api.border(16);api.turntimer(180);
+   const armor=v.wh===1&&v.con===0&&p>1; // Clean Armor: stars, slower, and the green armor
+   if(armor)v.cmd=80;
+   const c=v.cmd,shake=v.con>6&&p===2?1:0;
+   if(c<=50)v.gen=gen(m,0,25,shake);
+   else{let rate=20;if(armor){greenArmor(m,api);rate=35}v.gen=gen(m,1,rate,shake)}
+   let f;
+   if(c>=0)f='* Sweat pours from 02\'s armor.';
+   if(c>=25)f='* 01 is polishing his face.';
+   if(c>=50)f='* 01 stands guard.';
+   if(c>=75)f='* 02 watches your movements.';
+   if(c>=90)f='* Smells like a military zoo.';
+   if(p===1){
+    f='* 02 is clenching and unclenching&  his fists.';
+    if(c>=25)f='* 02 is shaking his head.';
+    if(c>=50)f='* 02 is striking his sword&  against the ground.';
+    if(c>=75)f='* 02 is coughing.';
+   }
+   if(api.srcHp(m)<30)f='* 02\'s breathing intensifies.';
+   v.wh=-1;
+   return f;
+  },
+  step(m,api){
+   const v=m.v,st=api.S;
+   bodyStep(m,api);
+   // obj_greenarmor set global.mnfight = 5 as the attack ran out
+   if(v.hot&&st.mnfight===2){v.hot=0;cutIn(api);v.scene=1}
+   if(v.scene===1&&st.mnfight===99)armorScene(m,api);
+  }
+ });
+})();
 /* ---- NB content: Core I (obj_finalfroggit, obj_whimsalot, obj_astigmatism, obj_wizard = Madjick,
         obj_finalknight = Knight Knight, with their bodies; obj_megaflybulletgen, obj_frogbullet_gen,
         obj_butterflybullet_gen/_gen_2, obj_astigmatismgen, obj_stromboligen, obj_wizardorb_chaser,
@@ -24484,6 +25415,45 @@ const NB_ASSETS={
  asgSpareBt:[1,0].map(i=>RAW+`sprites/images/spr_sparebt_bandage_${i}.png`),
  // SANS (multi-frame exports are reversed; spr_gasterblaster's are rotated by three)
  // MAD MEW MEW (frames cut from the port's sheets)
+ gyftHurt:RAW+'sprites/images/spr_gyftrot_0.png',
+gyftBody:RAW+'sprites/images/spr_gyftrotbody_0.png',
+gyftHead:[RAW+'sprites/images/spr_gyftrothead_1.png',RAW+'sprites/images/spr_gyftrothead_0.png'],
+gyftMouth:[RAW+'sprites/images/spr_gyftrotmouth_8.png',RAW+'sprites/images/spr_gyftrotmouth_7.png',RAW+'sprites/images/spr_gyftrotmouth_6.png',RAW+'sprites/images/spr_gyftrotmouth_5.png',RAW+'sprites/images/spr_gyftrotmouth_4.png',RAW+'sprites/images/spr_gyftrotmouth_3.png',RAW+'sprites/images/spr_gyftrotmouth_2.png',RAW+'sprites/images/spr_gyftrotmouth_1.png',RAW+'sprites/images/spr_gyftrotmouth_0.png'],
+gyftGift:[RAW+'sprites/images/spr_gyfgift_9.png',RAW+'sprites/images/spr_gyfgift_8.png',RAW+'sprites/images/spr_gyfgift_7.png',RAW+'sprites/images/spr_gyfgift_6.png',RAW+'sprites/images/spr_gyfgift_5.png',RAW+'sprites/images/spr_gyfgift_4.png',RAW+'sprites/images/spr_gyfgift_3.png',RAW+'sprites/images/spr_gyfgift_2.png',RAW+'sprites/images/spr_gyfgift_1.png',RAW+'sprites/images/spr_gyfgift_0.png'],
+gyftBullet:[RAW+'sprites/images/spr_gyftbullet_1.png',RAW+'sprites/images/spr_gyftbullet_0.png'],
+gyftCloud:RAW+'sprites/images/spr_gyftcloud_0.png',
+gyftCircle:RAW+'sprites/images/spr_circlebullet_noc_0.png',
+ parsHead:[RAW+'sprites/images/spr_parsnik_head_0.png',RAW+'sprites/images/spr_parsnik_head_1.png',RAW+'sprites/images/spr_parsnik_head_2.png',RAW+'sprites/images/spr_parsnik_head_3.png'],
+parsHeadwrap:RAW+'sprites/images/spr_parsnik_headwrap_0.png',
+parsHurt:RAW+'sprites/images/spr_parsnik_hurt_0.png',
+parsSnake1:[RAW+'sprites/images/spr_parsnik_snake1_0.png',RAW+'sprites/images/spr_parsnik_snake1_1.png',RAW+'sprites/images/spr_parsnik_snake1_2.png',RAW+'sprites/images/spr_parsnik_snake1_3.png'],
+parsSnake2:[RAW+'sprites/images/spr_parsnik_snake2_0.png',RAW+'sprites/images/spr_parsnik_snake2_1.png',RAW+'sprites/images/spr_parsnik_snake2_2.png',RAW+'sprites/images/spr_parsnik_snake2_3.png'],
+parsSnake3:[RAW+'sprites/images/spr_parsnik_snake3_0.png',RAW+'sprites/images/spr_parsnik_snake3_1.png',RAW+'sprites/images/spr_parsnik_snake3_2.png',RAW+'sprites/images/spr_parsnik_snake3_3.png'],
+parsSnake4:[RAW+'sprites/images/spr_parsnik_snake4_0.png',RAW+'sprites/images/spr_parsnik_snake4_1.png',RAW+'sprites/images/spr_parsnik_snake4_2.png',RAW+'sprites/images/spr_parsnik_snake4_3.png'],
+parsSnake5:[RAW+'sprites/images/spr_parsnik_snake5_0.png',RAW+'sprites/images/spr_parsnik_snake5_1.png',RAW+'sprites/images/spr_parsnik_snake5_2.png',RAW+'sprites/images/spr_parsnik_snake5_3.png'],
+parsCarrot:RAW+'sprites/images/spr_carrotbullet_snake_0.png',
+parsCarrotGr:RAW+'sprites/images/spr_carrotbullet_snake_gr_0.png',
+parsVeg:[RAW+'sprites/images/spr_vegbullet_snake_0.png',RAW+'sprites/images/spr_vegbullet_snake_1.png',RAW+'sprites/images/spr_vegbullet_snake_2.png',RAW+'sprites/images/spr_vegbullet_snake_3.png',RAW+'sprites/images/spr_vegbullet_snake_4.png',RAW+'sprites/images/spr_vegbullet_snake_5.png'],
+ moldessArm:RAW+'sprites/images/spr_moldessa_arm_0.png',
+moldessFace:[RAW+'sprites/images/spr_moldessa_face_0.png',RAW+'sprites/images/spr_moldessa_face_1.png',RAW+'sprites/images/spr_moldessa_face_2.png',RAW+'sprites/images/spr_moldessa_face_3.png',RAW+'sprites/images/spr_moldessa_face_4.png',RAW+'sprites/images/spr_moldessa_face_5.png',RAW+'sprites/images/spr_moldessa_face_6.png',RAW+'sprites/images/spr_moldessa_face_7.png',RAW+'sprites/images/spr_moldessa_face_8.png'],
+moldessHeadthing:RAW+'sprites/images/spr_moldessa_headthing_0.png',
+moldessHurt:[RAW+'sprites/images/spr_moldessa_hurt_0.png',RAW+'sprites/images/spr_moldessa_hurt_1.png'],
+moldessStem:RAW+'sprites/images/spr_moldessa_stem_0.png',
+ rgBall:RAW+'sprites/images/spr_baraball_0.png',
+rgFist:RAW+'sprites/images/spr_barafist_0.png',
+rgFalchion:RAW+'sprites/images/spr_barafalchion_0.png',
+rgHead1:RAW+'sprites/images/spr_barahead1_0.png',
+rgHead2:RAW+'sprites/images/spr_barahead2_0.png',
+rgArmor:RAW+'sprites/images/spr_baraarmor_0.png',
+rgShirtless:RAW+'sprites/images/spr_barashirtless_0.png',
+rgLegs:RAW+'sprites/images/spr_baralegs_0.png',
+rgShoes:RAW+'sprites/images/spr_barashoes_0.png',
+rgHurt01:RAW+'sprites/images/spr_bara01hurt_0.png',
+rgHurt02:RAW+'sprites/images/spr_bara02hurt_0.png',
+rgCarrot:RAW+'sprites/images/spr_carrotshot_0.png',
+rgStar:RAW+'sprites/images/spr_stardrop_0.png',
+rgGreenArmor:RAW+'sprites/images/spr_greenarmor_0.png',
+rgSweat:RAW+'sprites/images/spr_sweat99_0.png',
  knFront:KNIGHT_RAW+'knight_front.png',knRoar:[0,1].map(i=>KNIGHT_RAW+`knight_roar_${i}.png`),
  knJag:KNIGHT_RAW+'knight_jag.png',dkAtlas:KNIGHT_DK+'dk_atlas_0.png',
  mmmBody:[0,1,2,3,4].map(i=>MMM_RAW+`mmm_body_${i}.png`),mmmFace:[0,1,2,3,4,5,6,7,8].map(i=>MMM_RAW+`mmm_face_${i}.png`),
