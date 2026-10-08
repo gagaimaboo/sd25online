@@ -963,7 +963,8 @@ const MOD_DEFS=[
  {id:'doubleDamage',label:'DOUBLE DAMAGE',desc:'Your FIGHT, magic and role attacks deal x2 damage.',tag:'POWER'},
  {id:'mirrorMove',label:'MIRROR MOVEMENT',desc:'Left and right are swapped for your SOUL. Undyne\'s shield too.',tag:'CURSED'},
  {id:'turboMeter',label:'TURBO FIGHT METER',desc:'FIGHT timing bars travel 35% faster.',tag:'SKILL'},
- {id:'perfectHits',label:'PERFECT TIMING',desc:'Every FIGHT press lands dead center.',tag:'CHEAT'}
+ {id:'perfectHits',label:'PERFECT TIMING',desc:'Every FIGHT press lands dead center.',tag:'CHEAT'},
+ {id:'noBulletCooldown',label:'NO BULLET COOLDOWN',desc:'Bullet spawners have no cooldown and no cap. Every generator fires as fast as it can.',tag:'CHAOS'}
 ];
 function defaultModConfig(){return Object.fromEntries(MOD_DEFS.map(m=>[m.id,false]))}
 function loadModConfig(){try{return {...defaultModConfig(),...(JSON.parse(localStorage.getItem(MOD_MENU_KEY)||'{}')||{})}}catch(_){return defaultModConfig()}}
@@ -9451,9 +9452,14 @@ const NB=(()=>{
    if(S.mp)mpAttackInit();
   }
  }
+ const NO_COOLDOWN_RUNS=12;
  function attackStep(){
   if(S.turntimer>0)S.turntimer--;
   for(const m of alive())if(m.def.attackStep){S.curMon=m;m.def.attackStep(m,api)}
+  // MOD: NO BULLET COOLDOWN. Every attack script runs again and again inside one step, so each
+  // generator's timer runs out at once and it fires every frame. Bullets still move one step at
+  // a time, and nothing caps how many there are.
+  if(S.mods.has('noBulletCooldown'))for(let k=0;k<NO_COOLDOWN_RUNS&&S.mnfight===2;k++)for(const m of alive())if(m.def.attackStep&&!m.def.ownClock){S.curMon=m;m.def.attackStep(m,api)}
   S.curMon=null;
   if(S.turntimer<=0){
    S.mnfight=3;S.turntimer=-1;
@@ -14031,6 +14037,8 @@ const NB=(()=>{
   st.spriteFrames=r.spriteFrames;st.spriteRate=r.spriteRate;
   DKSIM.buildSingleAttackScene(st,{seed:st.seed,attack:id,difficulty:diff,holdBreath:breath});
   st.keepAlive=true;st.embed=true;
+  // MOD: NO BULLET COOLDOWN. DEVICE_KNIGHT has its own switch for it
+  st.noBulletCooldown=NB.S.mods.has('noBulletCooldown');
   for(const e of st.entities)if(e.type&&e.type.name==='actor_party')e.visible=false;
   v.sim=st;v.simInv=-1;v.simDone=false;
  }
@@ -14093,6 +14101,7 @@ const NB=(()=>{
 
  NB.defs.set('roaringknight',{
   name:'Knight',hp:3200,atk:9,def:8,xp:0,gold:0,mercymod:-99999,wd:140,bgFrame:-1,
+  ownClock:true, // its attack scene keeps its own frame clock (NO BULLET COOLDOWN leaves it alone)
   encounter:'* The Knight blocks the way.',
   size:()=>({w:KW,h:KH}),pos:()=>({x:KX-KW/2,y:KY}),
   noFlee:()=>true,
@@ -14559,6 +14568,10 @@ const NB=(()=>{
    if(m.hurt){v.siner=0;v.by=m.y+24;v.shDraw=0;return}
    v.dsiner++;v.siner+=Math.cos(v.dsiner/24)*2;
    v.by=m.y+24+Math.sin(v.siner/12)*8;v.g=Math.sin(v.siner/6);v.gg=Math.sin(v.siner/12);
+   // MOD: NO BULLET COOLDOWN. Its gun fires from these timers, so they skip straight to firing
+   const nbc=api.S.mods.has('noBulletCooldown')&&api.S.mnfight===2;
+   if(nbc&&v.a1>1)v.a1=1;
+   if(nbc&&v.sh===1)v.shT=12;
    // Alarm 1: an obj_bigglydeshot every 32 steps while the turn has more than 33 left
    if(tick(v,'a1')){const p=gun(m);bigShot(api,p.x,p.y,m.atk);if(api.S.turntimer>33)v.a1=32}
    // sh: the black flash over the gun, the shot showing from 6, a fan of `diff` at 12
