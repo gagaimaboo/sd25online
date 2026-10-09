@@ -2164,6 +2164,11 @@ function assetCandidates(url){
  else if(url.startsWith(DR_RAW))out.push(DR_RAW_FALLBACK+url.slice(DR_RAW.length));
  else if(url.startsWith('https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/'))
    out.push('https://raw.githubusercontent.com/BenSFGamer/Deltarune-web/main/'+url.split('@main/')[1]);
+ else{
+  // our own pinned assets (Mad Mew Mew, the Knight): jsdelivr can briefly 403 a big repo
+  const m=url.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/gagaimaboo\/undertalebteng@([0-9a-f]{40})\/(.*)$/);
+  if(m)out.push(`https://raw.githubusercontent.com/gagaimaboo/undertalebteng/${m[1]}/${m[2]}`);
+ }
  return [...new Set(out)];
 }
 async function mobileAssetSource(url){
@@ -8567,6 +8572,13 @@ const NB=(()=>{
   if(S&&S.mp){
    const fr=S.mp.frame||{};
    for(const p of S.mp.players){
+    // while this copy flies my SOUL itself (see mpOwnMode) my keys are read here and now,
+    // not the ones that made the round trip through the host
+    if(S.mp.own&&S.mp.localKeys&&p.i===S.mp.me){
+     const down=(S.mp.cur===p?S.hp:p.hp)<=0;
+     for(const k of KEYN){const h=!down&&KEYS[k].some(n=>!!key[n]);p.pressed[k]=(h&&!p.held[k])||!!latched[k];p.held[k]=h}
+     p.pressAt=0;continue;
+    }
     const e=fr.k?.[p.i]||[0,0];
     KEYN.forEach((k,b)=>{const h=!!((e[0]>>b)&1);p.pressed[k]=(h&&!p.held[k])||!!((e[1]>>b)&1);p.held[k]=h});
     p.pressAt=fr.at?.[p.i]||0;
@@ -10440,6 +10452,8 @@ const NB=(()=>{
  function damagePlayer(dmg,opt={}){
   // scr_damagestandard / blt_parent collision.
   if(S.invc>0)return false;
+  // online: another player's own copy judges the hits on their SOUL
+  if(S.mp&&S.mp.own&&S.mp.cur&&S.mp.cur.i!==S.mp.me)return false;
   // MODS: GOD MODE hits for nothing, GLASS SOUL makes any hit lethal
   if(S.mods.has('godMode')){snd('hurt');S.invc=Math.round(S.inv*(opt.inv||1));return true}
   if(S.mods.has('glassSoul'))dmg=99999;
@@ -10459,7 +10473,12 @@ const NB=(()=>{
   if(opt.keep1&&before>1&&S.hp<1)S.hp=1;
   S.shake={h:2,v:2,speed:2,t:0};
   S.invc=Math.round(S.inv*(opt.inv||1));
-  if(S.hp<=0){if(S.mp)mpDown(S.mp.cur);else gameOver()}
+  if(S.hp<=0){
+   // online, my own copy: the fall waits for my HP event to come back in the host's
+   // frames, so it lands on the same step on every copy (who's up steers the monsters)
+   if(S.mp&&S.mp.own&&S.mp.cur.i===S.mp.me)S.invc=1e9;
+   else if(S.mp)mpDown(S.mp.cur);else gameOver();
+  }
   return true;
  }
  function damageStd(dmg,opt={}){
@@ -10511,7 +10530,7 @@ const NB=(()=>{
  function gameOverStep(){
   const g=S.gameover;g.t++;
   if(g.t===20)snd('break1');
-  if(g.t===40){snd('break2');g.shards=[];for(let i=0;i<6;i++)g.shards.push({x:g.x+rnd(10),y:g.y+rnd(8),vx:-2+rnd(4),vy:-(3+rnd(4)),f:Math.floor(rnd(4))})}
+  if(g.t===40){snd('break2');g.shards=[];const fr=n=>Math.random()*n;for(let i=0;i<6;i++)g.shards.push({x:g.x+fr(10),y:g.y+fr(8),vx:-2+fr(4),vy:-(3+fr(4)),f:Math.floor(fr(4))})}
   if(g.shards)for(const s of g.shards){s.vy+=.2;s.x+=s.vx;s.y+=s.vy}
   if(g.t>=110&&!g.text){g.text=new NB.Writer(['  You cannot give&  up just yet.../','  '+S.name+'!&  Stay determined.../%'],{x:100,y:300,sound:'asgoreText'});g.text.typer={...NB.TYPERS[1],speed:2,dx:0,dy:0}}
   if(g.text){g.text.step();if(g.text.done&&!g.exit){g.exit=true;exitBattle('gameover')}}
@@ -10595,11 +10614,12 @@ const NB=(()=>{
  const MP_TURN_STEPS=600; // 20 s to pick, then the turn passes
  // Set-piece fights scripted around one SOUL (captures, shields, strings, the shooter,
  // SOUL-colour intros): one player flies each enemy turn, in rotation.
- const MP_PILOT=new Set(['papyrus','papyrus_nhb','undyne','undyneex','muffet','mettaton','mettatonex','mettatonneo','maddummy']);
+ const MP_PILOT=new Set(['papyrus','papyrus_nhb','undyne','undyneex','muffet','mettaton','mettatonex','mettatonneo','maddummy','sans']);
  function mpSetup(o){
   const base=S.heart;
   const mp={players:[],me:o.me|0,active:0,cur:null,rs:(o.seed>>>0)||1,ls:{...(o.ls||{})},live:true,
-   turnT:0,atkT:0,pilotI:-1,round:0,frame:null,tc:0,itemIdx:0};
+   turnT:0,atkT:0,pilotI:-1,round:0,frame:null,tc:0,itemIdx:0,
+   own:false,localKeys:!!o.localKeys,myDelta:0,myTotal:0};
   mp.rand=()=>{let t=(mp.rs=(mp.rs+0x6D2B79F5)|0);t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296};
   o.players.forEach((q,i)=>mp.players.push({i,id:q.id,name:String(q.name||'PLAYER').toUpperCase().slice(0,12),color:q.color||'#ff0000',
    hp:S.hp,maxhp:S.maxhp,invc:0,alive:true,gone:false,acted:false,pressAt:0,
@@ -10625,6 +10645,8 @@ const NB=(()=>{
   const mp=S.mp,fr=mp.frame;
   if(fr&&fr.ev)for(const e of fr.ev)if(e&&e.t==='leave')mpLeave(e.p);
   if(S.mnfight===2)mp.atkT++;
+  // a set piece that starts its enemy turn by itself (Sans's opening) still gets one pilot
+  if(S.mnfight===2&&mp.pilotI<0&&S.mons.some(m=>m.alive&&(m.def.mpPilot||MP_PILOT.has(m.id)))){const c=mpCanon();if(c)mp.pilotI=c.i}
   mpSet(mpCanon());
   // Text everyone reads (monster talk, ACT/ITEM results, the win screen) moves on
   // when anyone presses; the menus and the FIGHT bar stay with whoever's turn it is.
@@ -10684,12 +10706,15 @@ const NB=(()=>{
     if(b.vx<0&&b.x+bx+bw<f.l)b.alive=false;
     if(b.vy>0&&b.y+by>f.b)b.alive=false;
    }
-   if(b.alive&&S.mnfight===2){
+   if(b.alive&&S.mnfight===2&&!b.mpGone){
     for(const p of mp.players){
      if(!p.alive||!p.heart.visible)continue;
+     if(mp.own&&p.i!==mp.me)continue; // their copy checks their SOUL
      const hit=mpWith(p,()=>heartHit(b)?(b.onHit?b.onHit(b,api):damagePlayer(b.dmg)):null);
      if(hit===null)continue;
-     if(hit!==false&&b.kill){b.alive=false;break}
+     // a bullet that hit me only disappears for me: it keeps running unseen so this copy's
+     // bullets (and the random numbers they draw) stay in step with everyone else's
+     if(hit!==false&&b.kill){if(mp.own)b.mpGone=true;else b.alive=false;break}
      if(!b.alive)break;
     }
    }
@@ -10706,7 +10731,10 @@ const NB=(()=>{
   if(!quiet){
    snd('break1');
    const sh=[];
-   S.fx.push({t:0,x,y,step(e){e.t++;if(e.t===12){snd('break2');for(let i=0;i<6;i++)sh.push({x:x+rnd(10),y:y+rnd(8),vx:-2+rnd(4),vy:-(3+rnd(4)),f:Math.floor(rnd(4))})}
+   // the shards are only for show: a death lands on each copy at its own moment, so they
+   // must not draw on the fight's shared random numbers
+   const fr=n=>Math.random()*n;
+   S.fx.push({t:0,x,y,step(e){e.t++;if(e.t===12){snd('break2');for(let i=0;i<6;i++)sh.push({x:x+fr(10),y:y+fr(8),vx:-2+fr(4),vy:-(3+fr(4)),f:Math.floor(fr(4))})}
      for(const s of sh){s.vy+=.2;s.x+=s.vx;s.y+=s.vy}if(e.t>70)e.dead=true},
     draw(g,e){if(e.t<12){const im=images.nbHeartBreak||images.heartbreak;if(im)g.drawImage(im,Math.round(x),Math.round(y))}else{const s2=images.nbShards;for(const s of sh){const im=s2?.[s.f];if(im)g.drawImage(im,Math.round(s.x),Math.round(s.y))}}}});
   }
@@ -10749,15 +10777,71 @@ const NB=(()=>{
   const text=t===me&&it.useText?it.useText:`* ${me.name} used the ${it.name}${t===me?'':' on '+t.name}.${got}`;
   write(text,{end:'/',onEnd:()=>endPlayerTurn()});
  }
+ // While the enemy attacks, each player's own copy flies their SOUL: it moves on their
+ // keys the moment they press them and their copy alone decides what hits it. The others
+ // place that SOUL where its owner last said it was (frame.s) and take its HP changes as
+ // events (frame.dm), so nobody waits a round trip to dodge. Menus, monsters and bullets
+ // stay in lockstep. The yellow SOUL's shots change the fight, so it stays lockstep too.
+ function mpOwnMode(){
+  return S.mnfight===2&&S.mp.pilotI<0&&!S.gameover&&!S.won&&!S.mp.players.some(p=>p.alive&&p.heart.visible&&p.heart.mode==='yellow');
+ }
+ // Set pieces read and push the SOUL all the time (Sans's fake FIGHT button, his slams, the
+ // box at the end), so there the copies can't each move it their own way. Instead, for
+ // the turns one player flies, that player's own copy writes the steps (their keys, at
+ // once) and the host and everyone else replay them; after the turn the host takes over.
+ NB.mpAuthor=()=>{
+  if(!S||!S.mp||S.exited||S.gameover||S.won)return 0;
+  const mp=S.mp;if(S.mnfight!==2||mp.pilotI<0)return 0;
+  const p=mp.players[mp.pilotI];return p&&p.alive&&!p.gone?p.i:0;
+ };
+ // another player's SOUL took (or healed) d HP on their copy
+ function mpHpEvent(i,d){
+  const p=S.mp.players[i];if(!p||!d||!p.alive)return;
+  mpWith(p,()=>{
+   S.hp=Math.max(0,Math.min(S.maxhp,S.hp+d));
+   if(d<0)S.invc=Math.max(S.invc,S.inv||30);
+   if(S.hp<=0)mpDown(p);
+  });
+  mpSave(); // mpWith writes nothing back when p is already the one in S
+ }
+ // place another player's SOUL where they said it was; with no word from them this turn
+ // yet, move it on the keys the host passed on, as before
+ function mpRemoteHeart(p){
+  const r=S.mp.frame&&S.mp.frame.s&&S.mp.frame.s[p.i];
+  if(!r){mpWith(p,()=>NB.heartStep());return}
+  const h=p.heart;h.xprev=h.x;h.yprev=h.y;h.x=r[0];h.y=r[1];
+  if(p.invc>0)p.invc--;
+  h.frame=r[2]?(h.frame+.5)%2:0;
+ }
  NB.mpStep=frame=>{if(!S||!S.mp||S.exited)return;S.mp.frame=frame||null;step();if(S.mp)S.mp.frame=null};
  NB.mpLocal=()=>S&&S.mp?S.mp.players[S.mp.me]:null;
+ // what this copy says about my SOUL: where it is (only while I fly it) and my HP changes
+ NB.mpReport=()=>{
+  if(!S||!S.mp)return null;const mp=S.mp,p=mp.players[mp.me],h=p.heart;
+  return {own:mp.own&&p.alive,x:Math.round(h.x*8)/8,y:Math.round(h.y*8)/8,b:(mp.cur===p?S.invc:p.invc)>0?1:0,turn:S.turn,total:mp.myTotal};
+ };
+ NB.mpTakeDelta=()=>{if(!S||!S.mp)return 0;const d=S.mp.myDelta;S.mp.myDelta=0;return d};
+ NB.mpPendingDelta=()=>S&&S.mp?S.mp.myDelta:0;
 
  // ------------------------------------------------------------- update ----
  function step(){
   if(!S.mp){stepCore();return}
+  const mp=S.mp,fr=mp.frame;
+  if(fr&&fr.dm)for(const [i,d] of fr.dm){
+   if(i!==mp.me)mpHpEvent(i,d);
+   else{const p=mp.players[i];if(p&&p.alive&&(mp.cur===p?S.hp:p.hp)<=0){mpWith(p,()=>mpDown(p));mpSave()}}
+  }
+  mp.own=mpOwnMode();
+  const hp0=mp.own?mp.players.map(p=>p.hp):null;
   S.mp.live=true;
   try{stepCore()}finally{S.mp.live=false}
-  mpSave();if(!S.exited)mpSet(mpCanon());
+  mpSave();
+  // my HP changes go out as events; nothing in this copy may change anyone else's
+  if(hp0)for(const p of mp.players){
+   if(p.i===mp.me){const d=p.hp-hp0[p.i];if(d){mp.myDelta+=d;mp.myTotal+=d}}
+   else if(p.hp!==hp0[p.i]&&p.alive)p.hp=hp0[p.i];
+  }
+  if(!S.exited)mpSet(mpCanon());
  }
  function stepCore(){
   if(NB.snap)NB.snap(S);
@@ -10783,7 +10867,8 @@ const NB=(()=>{
   else if(S.mnfight===3)returnStep();
   for(const m of S.mons){S.curMon=m;monsterHurtStep(m);if(m.alive&&m.def.step)m.def.step(m,api);else if(!m.alive&&!m.killed&&!m.spared&&m.def.stepAway)m.def.stepAway(m,api)}
   S.curMon=null;
-  if(S.mp)for(const p of S.mp.players)mpWith(p,()=>NB.heartStep());else NB.heartStep();
+  if(S.mp)for(const p of S.mp.players){if(S.mp.own&&p.i!==S.mp.me)mpRemoteHeart(p);else mpWith(p,()=>NB.heartStep())}
+  else NB.heartStep();
   fxStep();
   // obj_target fades out on its own, whatever phase the turn has moved on to.
   const f=S.fight;
@@ -11138,6 +11223,7 @@ const NB=(()=>{
  function drawBullets(g,S){
   const f=NB.inner();
   for(const b of S.bullets){
+   if(b.mpGone)continue;
    if(b.clip){g.save();g.beginPath();g.rect(f.l,f.t,f.r-f.l,f.b-f.t);g.clip()}
    try{
    if(b.draw){b.draw(g,b,NB.api);continue}
@@ -11975,6 +12061,9 @@ const NB=(()=>{
  const S=()=>NB.S,api=NB.api,snd=k=>NB.snd(k);
  const tick=(o,k)=>o[k]>0&&--o[k]<=0;
  const choose=(...a)=>a[Math.floor(rnd(a.length))];
+ // for what only the SOUL's own player feels (screen shake, KARMA): online, that happens on
+ // their copy alone, so it can't take numbers from the fight's shared stream
+ const chooseOwn=(...a)=>a[Math.floor(Math.random()*a.length)];
  const pdir=(x1,y1,x2,y2)=>Math.atan2(-(y2-y1),x2-x1)*180/Math.PI;
  const LBLUE='#14a8ff'; // image_blend 16754964
  const sans=()=>S()?.mons.find(m=>m.id==='sans'&&!m.gone);
@@ -12017,7 +12106,7 @@ const NB=(()=>{
  function shaker(v,n){v.shk=n;v.shkT=1}
  function shakerStep(v){
   const st=S();if(!v.shk)return;
-  if(tick(v,'shkT')){st.view.x=choose(-1,1)*v.shk;st.view.y=choose(1,-1)*v.shk;v.shk--;if(v.shk<=0){v.shk=0;st.view.x=0;st.view.y=0}else v.shkT=1}
+  if(tick(v,'shkT')){st.view.x=chooseOwn(-1,1)*v.shk;st.view.y=chooseOwn(1,-1)*v.shk;v.shk--;if(v.shk<=0){v.shk=0;st.view.x=0;st.view.y=0}else v.shkT=1}
  }
 
  // ------------------------------------------------------------------ the SOUL --
@@ -12092,12 +12181,15 @@ const NB=(()=>{
  // obj_sansb_body Draw (end): KARMA ticks HP away while it's above zero, faster the more there is
  function karmaStep(v){
   const st=S();if(st.party)return;
+  // online: KARMA only eats into the SOUL its owner is flying right now (their own copy
+  // sends the HP it takes); what's left when the attack ends is dropped
+  if(st.mp&&!st.mp.own){st.km=0;return}
   if(st.km>40)st.km=40;
   if(st.km>st.hp)st.km=st.hp-1;
   if(st.km>0&&st.hp>1){
    v.kmT++;
    if(v.prevhp===st.hp){
-    let b=0;if(st.inv>=45)b=choose(0,1);if(st.inv>=60)b=choose(0,1,1);if(st.inv>=75)b=1;
+    let b=0;if(st.inv>=45)b=chooseOwn(0,1);if(st.inv>=60)b=chooseOwn(0,1,1);if(st.inv>=75)b=1;
     const drop=()=>{v.kmT=0;st.hp--;st.km--};
     if(v.kmT>=1+b&&st.km>=40)drop();
     if(v.kmT>=2+b*2&&st.km>=30)drop();
@@ -14134,28 +14226,33 @@ const NB=(()=>{
     [id,d]=ORDER[i];phase=Math.floor(i/5);pt=i%5;v.turn++;
     flavor=FLAVOR[Math.min(2,phase)][pt];
    }
-   if(!dk.renderer){
-    // its assets are still on the way: skip the turn rather than stall
-    dkLoad();api.turntimer(30);return flavor;
-   }
-   dkStart(m,id,d,!!v.breath);v.breath=0;
    // the scene brings its own box and SOUL
    st.heart.visible=false;st.boxAlpha=0;
    api.turntimer(99999);
+   // its sprite sheet may still be loading: the turn waits for it (attackStep starts it)
+   v.pending={id,d,breath:!!v.breath,t:0};v.breath=0;
    return flavor;
   },
   attackStep(m,api){
    const v=m.v;
    if(v.glow>0&&!v.roared)v.glow=Math.min(1,v.glow+.03);
+   if(v.pending){
+    dkLoad();
+    if(dk.renderer){const q=v.pending;v.pending=null;dkStart(m,q.id,q.d,q.breath)}
+    // never got its sprites: give up on this turn after ten seconds
+    else if(++v.pending.t>300){v.pending=null;api.endTurn()}
+   }
    if(v.sim){api.S.heart.visible=false;dkStep(m,api)}
   },
   endAttack(m,api){
    const v=m.v,st=api.S;
-   v.sim=null;v.simDone=false;st.boxAlpha=1;
+   v.sim=null;v.simDone=false;v.pending=null;st.boxAlpha=1;
    if(v.roared)v.glow=0;
   },
   step(m){
    const v=m.v;
+   // its sprite sheet may still be loading when the fight starts: keep trying until it's in
+   if(!dk.ready)dkLoad();
    // the swap: the front Knight fades out while the scene's attack pose fades in
    const want=v.sim&&v.poseSeen?1:0;
    v.kAlpha+=Math.sign(want-v.kAlpha)*Math.min(Math.abs(want-v.kAlpha),.14);
@@ -27492,12 +27589,17 @@ const NBO=(()=>{
  function log(t){feed.push(clean(t,90));if(feed.length>7)feed.shift();refreshUI()}
 
  // ------------------------------------------------------------ frame codec
- // One step = 3 chars per player (held bits | taps<<7). Runs of equal steps
- // compress to "xyz*12"; the text is cut into <=900-char pieces at commas.
+ // One step = 3 chars per player (held bits | taps<<7), then, on steps that carry
+ // SOUL positions, 6 more per player (x and y in eighths of a pixel; bit 15 = known,
+ // bit 16 = blinking). Runs of equal steps compress to "xyz*12"; the text is cut
+ // into <=900-char pieces at commas.
+ const encPos=r=>r?enc3(Math.max(0,Math.min(32767,Math.round((r[0]+512)*8)))|(1<<15)|(r[2]?1<<16:0))+enc3(Math.max(0,Math.min(32767,Math.round((r[1]+512)*8)))):'AAAAAA';
+ function decPos(t,i){const a=dec3(t,i);if(!((a>>15)&1))return null;return [(a&32767)/8-512,(dec3(t,i+3)&32767)/8-512,(a>>16)&1]}
  function encFrames(F,a,b,budget){
   const runs=[];let len=0,s=a;
   for(;s<=b;s++){
    const fr=F[s-1];let t='';for(const [h,l] of fr.k)t+=enc3(h|(l<<7));
+   if(fr.s)for(const r of fr.s)t+=encPos(r);
    const r=runs[runs.length-1];
    if(r&&r[0]===t)r[1]++;else{runs.push([t,1]);len+=t.length+4;if(len>budget){runs.pop();break}}
   }
@@ -27505,24 +27607,34 @@ const NBO=(()=>{
   const parts=[];let cur='';
   for(const [t,n] of runs){const tok=n>1?t+'*'+n:t;if(cur&&cur.length+tok.length+1>900){parts.push(cur);cur=tok}else cur=cur?cur+','+tok:tok}
   if(cur)parts.push(cur);
-  const x=[],e=[];
-  for(let i=a;i<=end;i++){const fr=F[i-1];if(fr.at)fr.at.forEach((v,p)=>{if(v)x.push([i,p,v])});if(fr.ev)for(const v of fr.ev)e.push([i,v.p])}
-  const o={a,d:parts};if(x.length)o.x=x;if(e.length)o.e=e;return o;
+  const x=[],e=[],m=[];
+  for(let i=a;i<=end;i++){const fr=F[i-1];if(fr.at)fr.at.forEach((v,p)=>{if(v)x.push([i,p,v])});if(fr.ev)for(const v of fr.ev)e.push([i,v.p]);if(fr.dm)for(const [p,d] of fr.dm)m.push([i,p,d])}
+  const o={a,d:parts};if(x.length)o.x=x;if(e.length)o.e=e;if(m.length)o.m=m;o.z=end;return o;
+ }
+ // the newest steps that fit (a client that is in step only needs the last few)
+ function encNewest(F,from,top,budget){
+  for(const w of [top-from+1,24,12,6,3,1]){if(w>top-from+1)continue;const o=encFrames(F,top-w+1,top,budget);if(o&&o.z===top)return o}
+  return null;
  }
  function decFrames(o,n,into,min=0){
   if(!o||!Array.isArray(o.d))return;
   let s=o.a;
   for(const tok of o.d.join(',').split(',')){
    if(!tok)continue;const st=tok.indexOf('*'),t=st<0?tok:tok.slice(0,st),c=st<0?1:Math.max(1,+tok.slice(st+1)|0);
-   if(t.length!==n*3)return;
+   if(t.length!==n*3&&t.length!==n*9)return;
    for(let r=0;r<c;r++,s++){
     if(s<=min||into.has(s))continue;
     const k=[];for(let p=0;p<n;p++){const v=dec3(t,p*3);k.push([v&127,(v>>7)&127])}
-    into.set(s,{k});
+    const fr={k};
+    if(t.length===n*9){fr.s=[];for(let p=0;p<n;p++)fr.s.push(decPos(t,n*3+p*6))}
+    into.set(s,fr);
    }
   }
   for(const [s2,p,v] of o.x||[]){const f=into.get(s2);if(f){f.at=f.at||Array(n).fill(0);f.at[p]=v}}
   for(const [s2,p] of o.e||[]){const f=into.get(s2);if(f){f.ev=f.ev||[];if(!f.ev.some(v=>v.p===p))f.ev.push({t:'leave',p})}}
+  for(const [s2,p,d] of o.m||[]){const f=into.get(s2);if(f&&!f.dmDone&&Number.isFinite(d)&&(p|0)===p&&p>=0&&p<n){f.dm=f.dm||[];f.dm.push([p,d])}}
+  // one message holds all of a step's HP events, so a step only takes them from one
+  for(const [s2] of o.m||[]){const f=into.get(s2);if(f)f.dmDone=true}
  }
 
  // ---------------------------------------------------------------- publish
@@ -27531,12 +27643,12 @@ const NBO=(()=>{
   if(isHost){
    st.h=1;st.l=lobby.map(p=>[p.id,p.name,p.ready?1:0]);
    if(game){
-    const g={id:game.id,st:game.st,n:game.p.length,p:game.p,b:game.bossName};
+    const g={id:game.id,st:game.st,n:game.p.length,p:game.p,b:game.bossName,t:game.F.length};
     if(game.st==='setup'){const i=publishes%game.parts.length;g.c={N:game.parts.length,i,d:game.parts[i]}}
     if((game.st==='run'||game.st==='end')&&game.F.length){
      const B=T.budget,top=game.F.length;
-     const f=encFrames(game.F,Math.max(1,top-59),top,B*.42);if(f)g.f=f;
      let lag=top;for(const id of game.p.slice(1)){const c=game.clients[id];if(c&&!c.gone)lag=Math.min(lag,c.ack)}
+     const f=encNewest(game.F,Math.max(1,Math.min(top-5,lag+1)),top,B*.42);if(f)g.f=f;
      if(f&&lag+1<f.a){const u=encFrames(game.F,lag+1,f.a-1,B*.42);if(u)g.u=u}
      if(game.au)g.au=game.au;
     }
@@ -27544,17 +27656,25 @@ const NBO=(()=>{
    }
   }else{
    st.r=ready?1:0;
-   if(game){st.g={id:game.id,ok:game.ok?1:0,k:game.lastT||0}}
+   if(game){st.g={id:game.id,ok:game.ok?1:0,k:game.ackT||game.lastT||0}}
    const q=inQ.slice(-36);
    if(q.length){let d='';const a=[];for(const s of q){d+=enc3(s.h|(s.l<<7));if(s.a)a.push([s.q,s.a])}st.i={q:q[q.length-1].q,d};if(a.length)st.i.a=a}
+   if(game&&game.myF&&game.myF.size){
+    const ht=game.hostTop||0;for(const t of game.myF.keys())if(t<=ht)game.myF.delete(t);
+    if(game.myF.size){const ks=[...game.myF.keys()],a=Math.min(...ks),b=Math.max(...ks),arr=[];for(const [t,f] of game.myF)arr[t-1]=f;
+     let ok=true;for(let t=a;t<=b;t++)if(!arr[t-1]){ok=false;break}
+     if(ok){const o=encFrames(arr,a,b,T.budget*.6);if(o)st.pf=o}}
+   }
+   const r=game&&game.running?NB.mpReport():null;
+   if(r){st.i=st.i||{};st.i.dm=r.total;if(r.own)st.i.p=[r.x,r.y,r.b,r.turn]}
   }
   return st;
  }
  function publish(force){
   if(!T)return;
   const now=performance.now(),busy=game&&(game.st==='run'||game.st==='setup');
-  if(!force&&!pubDirty&&now-pubAt<(busy?66:1000))return;
-  if(!force&&now-pubAt<(busy?60:250))return;
+  if(!force&&!pubDirty&&now-pubAt<(busy?33:1000))return;
+  if(!force&&now-pubAt<(busy?30:250))return;
   pubAt=now;pubDirty=false;publishes++;
   T.publish(myState());
  }
@@ -27598,6 +27718,15 @@ const NBO=(()=>{
    if(c){
     if(s.g&&s.g.id===game.id){if(s.g.ok&&!c.ok){c.ok=true;refreshUI()}if(s.g.k>c.ack)c.ack=s.g.k}
     else if(game.st==='run'&&!c.gone&&c.ok&&prev&&prev.g&&prev.g.id===game.id){c.gone=true;game.leaves.push(game.p.indexOf(from))} // quit the fight
+    if(s.pf&&s.g&&s.g.id===game.id&&game.st==='run'){
+     // only plain key steps from a client
+     const tmp=new Map();decFrames({a:s.pf.a,d:s.pf.d},game.p.length,tmp,game.F.length);
+     for(const [t,f] of tmp)if(!c.pf.has(t))c.pf.set(t,{k:f.k});
+    }
+    if(s.i&&s.g&&s.g.id===game.id){
+     const P=s.i.p;c.pos=Array.isArray(P)&&P.length===4&&P.every(Number.isFinite)?P:null;
+     if(Number.isFinite(s.i.dm))c.dmTot=Math.round(s.i.dm);
+    }
     if(s.i&&typeof s.i.d==='string'){
      const n=s.i.d.length/3,first=s.i.q-n+1,at=new Map((s.i.a||[]).map(v=>[v[0],v[1]]));
      for(let j=0;j<n;j++){const q=first+j;if(q<=c.lastQ||c.buf.has(q))continue;const v=dec3(s.i.d,j*3);c.buf.set(q,{h:v&127,l:(v>>7)&127,a:at.get(q)||0})}
@@ -27625,7 +27754,7 @@ const NBO=(()=>{
   const text=b64e(JSON.stringify(cfg)),size=T.kind==='room'?2700:20000,parts=[];
   for(let i=0;i<text.length;i+=size){const c=text.slice(i,i+size),arr=[];for(let j=0;j<c.length;j+=1000)arr.push(c.slice(j,j+1000));parts.push(arr)}
   game={id:rid(6),st:'setup',cfg,parts,p:players.map(q=>q.id),bossName:clean(bossLabel(),24),clients:{},F:[],leaves:[],au:null,t0:performance.now(),ok:false,running:false};
-  for(const p of lobby)game.clients[p.id]={ok:false,ack:0,lastQ:0,buf:new Map(),gone:false,held:0};
+  for(const p of lobby)game.clients[p.id]={ok:false,ack:0,lastQ:0,buf:new Map(),gone:false,held:0,pos:null,dmTot:0,dmSeen:0,pf:new Map(),pfAt:0};
   // everyone has the battle and its sprites before the first step
   nbLoadAssets().then(()=>{if(game&&game.st==='setup')game.ok=true;refreshUI()});
   log('starting '+game.bossName+' ('+players.length+' players)');
@@ -27633,7 +27762,7 @@ const NBO=(()=>{
  }
  function hostSetupTick(){
   const c=Object.values(game.clients),all=c.every(x=>x.ok||x.gone);
-  const late=performance.now()-game.t0>25000;
+  const late=performance.now()-game.t0>40000; // phones on slow data can take a while
   if(game.ok&&(all||late)){
    for(const [id,x] of Object.entries(game.clients))if(!x.ok&&!x.gone){x.gone=true;game.leaves.push(game.p.indexOf(id));log((lobby.find(p=>p.id===id)?.name||'someone')+" couldn't load in time")}
    game.st='run';beginBattle(game.cfg,0);pubDirty=true;
@@ -27654,12 +27783,26 @@ const NBO=(()=>{
   });
   const fr={k};if(anyAt)fr.at=at;
   if(game.leaves.length){fr.ev=game.leaves.map(p=>({t:'leave',p}));game.leaves=[]}
+  // during the enemy's turn: where everyone's SOUL is, by their own word, and the HP
+  // their own copies took since the last step
+  const S=NB.S,mine=NB.mpReport(),atk=!!(S&&S.mnfight===2),sp=[],dm=[];let anyS=false;
+  game.p.forEach((id,i)=>{
+   let r=null;
+   if(i===0){if(atk&&mine&&mine.own)r=[mine.x,mine.y,mine.b]}
+   else{const c=game.clients[id];if(atk&&c&&!c.gone&&c.pos&&c.pos[3]===S.turn)r=[c.pos[0],c.pos[1],c.pos[2]?1:0]}
+   if(r)anyS=true;sp.push(r);
+  });
+  if(anyS)fr.s=sp;
+  const d0=NB.mpTakeDelta();if(d0)dm.push([0,d0]);
+  game.p.forEach((id,i)=>{const c=game.clients[id];if(i&&c&&!c.gone&&c.dmTot!==c.dmSeen){dm.push([i,c.dmTot-c.dmSeen]);c.dmSeen=c.dmTot}});
+  if(dm.length)fr.dm=dm;
   game.F.push(fr);
   return fr;
  }
  function hostAuth(){
   const S=NB.S;if(!S||!S.mp||S.t%30)return;
-  game.au=[S.t,S.mp.players.map(p=>p.hp),S.mons.map(m=>m.hp),S.mp.rs];
+  // my own HP change from this step goes out in the next frame: leave it out until then
+  game.au=[S.t,S.mp.players.map((p,i)=>i===0&&NB.mpPendingDelta()?null:p.hp),S.mons.map(m=>m.hp),S.mp.rs];
  }
 
  // ---------------------------------------------------------------- client
@@ -27682,6 +27825,7 @@ const NBO=(()=>{
     game.N=g.c.N;game.parts[g.c.i]=Array.isArray(g.c.d)?g.c.d.join(''):'';
     if(game.parts.filter(v=>v!=null).length===game.N)prepare(game);
    }
+   if(Number.isFinite(g.t))game.hostTop=g.t;
    const t0=NB.S&&NB.S.mp&&game.running?NB.S.t:0;
    if(game.running){decFrames(g.u,game.n,game.frames,t0);decFrames(g.f,game.n,game.frames,t0)}
    if(g.au&&g.au[0]>t0)game.aus.set(g.au[0],g.au);
@@ -27726,7 +27870,7 @@ const NBO=(()=>{
   const items=o.items.map(v=>({...v,onUse:isHost?()=>{try{consumeVanillaInventoryItem(v.id)}catch(_){}}:null}));
   screen='nb';closePanel();
   NB.start({monsters:o.monsters,custom:o.custom,stats:o.stats,mods:o.mods,weapon:o.weapon,items,st:o.st,name:cfg.players[me]?.name||'CHARA',
-   mp:{players:cfg.players,me,seed:cfg.seed,ls:cfg.ls},
+   mp:{players:cfg.players,me,seed:cfg.seed,ls:cfg.ls,localKeys:!isHost},
    onExit(reason){endBattle(reason)}});
   game.running=true;acc=0;sAcc=0;starve=0;inQ.length=0;
   try{startBattleMusic()}catch(_){}
@@ -27745,22 +27889,69 @@ const NBO=(()=>{
   const why={win:'the party won!',gameover:'the party fell...',flee:'the party fled',quit:'left the fight','host left':'the host left'}[reason]||String(reason||'fight over');
   log(why);pubDirty=true;openPanel();
  }
+ // host: step on my clock, or, while a client flies a set piece, replay the steps they write
+ function hostTick(ms){
+  acc+=ms;
+  for(let guard=0;guard<16&&game.running;guard++){
+   const au=NB.mpAuthor(),id=au?game.p[au]:null,c=id?game.clients[id]:null;
+   if(!au||!c||c.gone){
+    if(game.waitFor!=null){
+     // back from a client's turn: what anyone pressed meanwhile is stale
+     game.waitFor=null;takeSample();
+     for(const x of Object.values(game.clients)){for(const q of x.buf.keys())if(q>x.lastQ)x.lastQ=q;x.buf.clear();x.held=0}
+    }
+    if(acc<STEP)break;
+    acc-=STEP;const fr=hostFrame();NB.mpStep(fr);hostAuth();starve=0;
+   }else{
+    const now=performance.now();
+    if(game.waitFor!==au){game.waitFor=au;c.pfAt=now}
+    const top=game.F.length,fr=c.pf.get(top+1);
+    if(!fr){
+     acc=Math.min(acc,STEP);starve+=ms;ms=0;
+     // they stopped answering: the fight goes on without them
+     if(now-c.pfAt>8000){c.gone=true;game.leaves.push(au);log((lobby.find(q=>q.id===id)?.name||'someone')+' stopped answering')}
+     break;
+    }
+    let ahead=0;for(let t=top+1;c.pf.has(t);t++)ahead++;
+    if(acc<STEP&&ahead<=2)break;
+    if(acc>=STEP)acc-=STEP;
+    c.pf.delete(top+1);c.pfAt=now;starve=0;
+    game.F.push(fr);NB.mpStep(fr);hostAuth();
+   }
+   if(NB.S.exited)break;
+  }
+  for(const x of Object.values(game.clients))for(const t of x.pf.keys())if(t<=game.F.length)x.pf.delete(t);
+ }
+ // a client flying a set piece: step on my own clock with my own keys, and send the steps
+ function authorTick(ms,me){
+  if(!game.authoring){game.authoring=true;acc=0;inQ.length=0;takeSample();game.myF=game.myF||new Map()}
+  acc+=ms;
+  while(acc>=STEP&&game.running&&NB.mpAuthor()===me){
+   acc-=STEP;
+   const s=takeSample(),k=game.cfg.players.map(()=>[0,0]);k[me]=[s.h,s.l];
+   const fr={k};game.myF.set(NB.S.t+1,fr);NB.mpStep(fr);game.lastT=game.ackT=NB.S.t;pubDirty=true;
+   if(NB.S.exited)break;
+  }
+  starve=0;
+ }
  NB.mpTick=(dt,now)=>{
   const S=NB.S;if(!S||!game||!game.running)return;
   const ms=Math.min(dt*1000,250);
-  if(isHost){
-   acc+=ms;
-   while(acc>=STEP&&game.running){acc-=STEP;const fr=hostFrame();NB.mpStep(fr);hostAuth();if(NB.S.exited)break}
-   S.acc=acc;
-  }else{
+  const me=isHost?0:game.cfg.players.findIndex(p=>p.id===T.self);
+  if(isHost){hostTick(ms);S.acc=acc}
+  else if(me>0&&NB.mpAuthor()===me&&!game.over){authorTick(ms,me);S.acc=acc}
+  else{
+   if(game.authoring){game.authoring=false;acc=0}
    // my keys, 30 times a second, stamped with the step I was looking at
    sAcc+=ms;while(sAcc>=STEP){sAcc-=STEP;const s=takeSample();s.q=++inSeq;inQ.push(s);if(inQ.length>90)inQ.shift();if(s.l)pubDirty=true}
-   // replay the host's frames at 30 Hz, a little faster when behind
+   // replay the host's frames at 30 Hz, faster whenever more than a couple are waiting:
+   // every frame held back here is that much more delay on everything the host sends
    acc+=ms;let due=Math.floor(acc/STEP);acc-=due*STEP;
    let ahead=0;for(let t=S.t+1;game.frames.has(t);t++)ahead++;
-   if(ahead>8)due+=Math.min(4,ahead-6);
+   game.ackT=S.t+ahead;
+   if(ahead>2)due+=Math.min(8,Math.ceil((ahead-2)/2));
    let ran=0;
-   while(due-->0&&game.frames.has(S.t+1)&&game.running){
+   while(due-->0&&game.frames.has(S.t+1)&&game.running&&!(me>0&&NB.mpAuthor()===me)){
     const s=S.t+1,fr=game.frames.get(s);game.frames.delete(s);NB.mpStep(fr);ran++;
     const au=game.aus.get(NB.S.t);if(au&&game.running){game.aus.delete(NB.S.t);checkAuth(au)}
     game.lastT=NB.S.t;
@@ -27778,7 +27969,7 @@ const NBO=(()=>{
  // (floating-point differences between browsers) is put back.
  function checkAuth(au){
   const S=NB.S,[s,hp,mh,rs]=au;let bad=false;
-  S.mp.players.forEach((p,i)=>{if(hp[i]!=null&&p.hp!==hp[i]){bad=true;p.hp=hp[i];if(S.mp.cur===p)S.hp=hp[i];if(p.hp>0&&!p.alive&&!p.gone)p.alive=true;if(p.hp<=0&&p.alive)p.alive=false}});
+  S.mp.players.forEach((p,i)=>{if(i!==S.mp.me&&hp[i]!=null&&p.hp!==hp[i]){bad=true;p.hp=hp[i];if(S.mp.cur===p)S.hp=hp[i];if(p.hp>0&&!p.alive&&!p.gone)p.alive=true;if(p.hp<=0&&p.alive)p.alive=false}});
   S.mons.forEach((m,i)=>{if(mh[i]!=null&&m.hp!==mh[i]){bad=true;m.hp=mh[i]}});
   if(S.mp.rs!==rs){bad=true;S.mp.rs=rs}
   if(bad)game.desync++;
@@ -27787,9 +27978,10 @@ const NBO=(()=>{
  const baseDraw=NB.draw;
  NB.draw=function(now){
   baseDraw(now);
-  if(!game||!game.running||isHost||starve<700)return;
+  if(!game||!game.running||starve<700||(isHost&&game.waitFor==null))return;
+  const who=isHost?(NB.S&&NB.S.mp&&NB.S.mp.players[game.waitFor]?.name||'PLAYER'):'HOST';
   const U=UT_SCALE;ctx.save();ctx.setTransform(U,0,0,U,0,0);ctx.font='16px UT8Bit, monospace';ctx.textAlign='center';
-  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(200,200,240,28);ctx.fillStyle='#ffff00';ctx.fillText('WAITING FOR HOST...',320,219);ctx.restore();
+  ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(170,200,300,28);ctx.fillStyle='#ffff00';ctx.fillText(('WAITING FOR '+who).slice(0,26)+'...',320,219);ctx.restore();
  };
  function quitBattle(){
   if(!game||!game.running)return;
