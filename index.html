@@ -27784,7 +27784,9 @@ boot().catch(err=>{
      local - BroadcastChannel between tabs of this browser
    ========================================================================== */
 const NBO=(()=>{
- const MAX=5,PROTO='nbo1',STEP=1000/30;
+ // PROTO changes whenever online play changes, so two different builds never share a room
+ // (they'd fall out of step); ONLINE_BUILD is shown in the panel to compare builds.
+ const MAX=5,PROTO='nbo3',STEP=1000/30,ONLINE_BUILD='63';
  const KEYMAP={confirm:['z','enter'],cancel:['x','shift'],menu:['c','control'],up:['arrowup','w'],down:['arrowdown','s'],left:['arrowleft','a'],right:['arrowright','d']};
  const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_',B64I={};[...B64].forEach((c,i)=>B64I[c]=i);
  const enc3=v=>B64[v&63]+B64[(v>>6)&63]+B64[(v>>12)&63];
@@ -28254,7 +28256,7 @@ const NBO=(()=>{
   if(isHost){joined=true;log('room '+code+' open ('+T.label.toLowerCase()+')')}
   else log('looking for room '+code+'...');
   pubDirty=true;publish(true);refreshUI();
-  if(!isHost)setTimeout(()=>{if(T&&!joined)setStatus('no host answered yet - check the code (and that you are on the same site/app as the host)')},9000);
+  if(!isHost)setTimeout(()=>{if(T&&!joined)setStatus('no host answered yet - check the code, and that you both have the same online build ('+ONLINE_BUILD+'): refresh the page')},9000);
  }
  function disconnect(){
   if(game&&game.running)endBattle('quit');
@@ -28348,7 +28350,7 @@ const NBO=(()=>{
    else if(isHost&&lobby.length===0)setStatus('share the code. pick the fight on the title screen, then START.');
    else if(isHost)setStatus(lobby.some(p=>!p.ready)?'waiting for everyone to be READY':'ready to start');
    else setStatus(ready?'waiting for the host to start':'press READY');
-   $('nboNote').textContent=`via ${T.label.toLowerCase()}. the host's fight, settings and items are used. FIGHT/ACT/ITEM/MERCY take turns; everyone dodges at once, each with their own SOUL. ESC leaves a fight.`;
+   $('nboNote').textContent=`online build ${ONLINE_BUILD}, via ${T.label.toLowerCase()}. the host's fight, settings and items are used. FIGHT/ACT/ITEM/MERCY take turns; everyone dodges at once, each with their own SOUL. ESC leaves a fight.`;
   }else{
    $('nboNote').textContent=inArtifact()?'in this app, everyone in the room needs access to this page (share it with them).':'works between copies of this page on the same site (e.g. GitHub Pages).';
   }
