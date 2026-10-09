@@ -26,6 +26,7 @@ URLS = os.path.join(CACHE, 'urls.json')
 PAIRS = [
     ('https://raw.githubusercontent.com/fachinformatiker/undertale/master/', 'https://cdn.jsdelivr.net/gh/fachinformatiker/undertale@master/'),
     ('https://raw.githubusercontent.com/TeamBlossomDevs/DeltaruneDecomp/chapter2/', 'https://cdn.jsdelivr.net/gh/TeamBlossomDevs/DeltaruneDecomp@chapter2/'),
+    ('https://raw.githubusercontent.com/TeamBlossomDevs/DeltaruneDecomp/chapter1/', 'https://cdn.jsdelivr.net/gh/TeamBlossomDevs/DeltaruneDecomp@chapter1/'),
     ('https://raw.githubusercontent.com/BenSFGamer/Deltarune-web/main/', 'https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/'),
 ]
 
@@ -97,7 +98,7 @@ SHIM = '''
 const ARTIFACT_PACK=fetch('pack/assets.json').then(r=>r.ok?r.json():null).catch(()=>null);
 const artifactAudioURLs=new Map();
 function artifactKey(url){
- for(const [raw,cdn] of [[RAW_FALLBACK,RAW],[DR_RAW_FALLBACK,DR_RAW],['https://raw.githubusercontent.com/BenSFGamer/Deltarune-web/main/','https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/']])
+ for(const [raw,cdn] of [[RAW_FALLBACK,RAW],[DR_RAW_FALLBACK,DR_RAW],['https://raw.githubusercontent.com/TeamBlossomDevs/DeltaruneDecomp/chapter1/','https://cdn.jsdelivr.net/gh/TeamBlossomDevs/DeltaruneDecomp@chapter1/'],['https://raw.githubusercontent.com/BenSFGamer/Deltarune-web/main/','https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/']])
   if(url.startsWith(raw))return cdn+url.slice(raw.length);
  return url;
 }

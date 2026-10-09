@@ -132,6 +132,8 @@ const EMBED={
 const RAW='https://cdn.jsdelivr.net/gh/fachinformatiker/undertale@master/';
 const RAW_FALLBACK='https://raw.githubusercontent.com/fachinformatiker/undertale/master/';
 const DR_RAW='https://cdn.jsdelivr.net/gh/TeamBlossomDevs/DeltaruneDecomp@chapter2/';
+// Chapter 1 (Rudinn, the speech bubble, fnt_dotumche)
+const DR_RAW1='https://cdn.jsdelivr.net/gh/TeamBlossomDevs/DeltaruneDecomp@chapter1/';
 const DMK_RAW='https://raw.githubusercontent.com/deltamodders/deltamodkit/c61032a2a6370706242f625b992132ed23b9bd7b/';
 // Mad Mew Mew's sprites and sounds (converted from the fangame port), pinned to the commit that added them
 // the Roaring Knight's front-facing battle sprites (cut from the DELTARUNE wiki's gifs)
@@ -144,6 +146,7 @@ const KRISTAL_RAW='https://raw.githubusercontent.com/KristalTeam/Kristal/cbca0cc
 const UNDYNE_NORMAL_ARMORED_DATA='data:image/png;base64,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';
 // no fake nonlethal hurt sprite; normal battle art shudders on hit
 const DR_RAW_FALLBACK='https://raw.githubusercontent.com/TeamBlossomDevs/DeltaruneDecomp/chapter2/';
+const DR_RAW1_FALLBACK='https://raw.githubusercontent.com/TeamBlossomDevs/DeltaruneDecomp/chapter1/';
 const IMG={
  fntMainAtlas:RAW+'fonts/fnt_main.png',
  // Embedded (3 KB): the remote copy could fail, dropping the HUD to the narrower dialogue font.
@@ -2162,6 +2165,7 @@ function assetCandidates(url){
  const out=[url];
  if(url.startsWith(RAW))out.push(RAW_FALLBACK+url.slice(RAW.length));
  else if(url.startsWith(DR_RAW))out.push(DR_RAW_FALLBACK+url.slice(DR_RAW.length));
+ else if(url.startsWith(DR_RAW1))out.push(DR_RAW1_FALLBACK+url.slice(DR_RAW1.length));
  else if(url.startsWith('https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/'))
    out.push('https://raw.githubusercontent.com/BenSFGamer/Deltarune-web/main/'+url.split('@main/')[1]);
  else{
@@ -26546,8 +26550,10 @@ const DR_ASSETS={"spr":{"spr_krisb_idle":[36,38,3,0,["89f53b11-4ba9-459c-970e-02
    obj_battleback, obj_writer (typer 4) and obj_dummyenemy (monstertype 3) with
    its obj_dbulletcontroller type 14 attack (obj_viro_needle).
    640x480 room space, one logic step per 1/30 s like the game.            */
+// Chapter 1 sprites/fonts (same layout as DR_ASSETS), loaded from DR_RAW1.
+const DR1_ASSETS={"spr":{"spr_diamondm_idle":[35,40,0,0,["852c64c8-0b96-430f-a5c2-a8e8ceb7e46c","610b6f3b-3def-42cd-bb05-6a6cb8b06b0c","a42610ef-29d6-4150-b0ea-57e688f75b02","5210c1c5-7c63-469f-9e8b-91bea98a1657"]],"spr_diamondm_hurt":[47,47,0,7,["034f2308-ffdb-412a-ad63-4d561ad1cd0e"]],"spr_diamondm_spared":[35,40,0,0,["020511ae-d352-4c3a-8ff8-fa681d227a28","34046a28-7ae7-4239-beaa-39cefb71b659","ff6673db-e331-4340-bdf8-e6e5ed397089"]],"spr_diamondbullet":[33,32,16,15,["8b39604a-9c7b-41c3-91bf-e77fc16195a1"]],"spr_diamondbullet_form":[33,32,16,15,["2f2c1899-a8a6-40f1-a2c9-df4933bbbee0"]],"spr_diamondbullet_vert":[33,33,16,16,["03944b35-fcd9-43fe-a81d-6f0c777eca03"]],"spr_battleblcon_long":[150,86,0,0,["0bd9e5ae-5220-41ab-b0b7-61a89548e6fb"]]},"font":{"fnt_dotumche":{"32":[2,2,9,16,9,0],"33":[96,102,2,14,9,4],"34":[77,102,5,6,9,3],"35":[13,2,9,14,9,0],"36":[75,2,8,15,9,1],"37":[32,20,8,14,9,1],"38":[92,52,8,14,9,1],"39":[122,102,2,6,9,4],"40":[9,102,5,15,9,3],"41":[16,102,5,15,9,1],"42":[43,102,6,10,9,1],"43":[63,85,8,11,9,1],"44":[63,102,3,15,9,3],"45":[23,102,8,8,9,1],"46":[84,102,2,14,9,4],"47":[38,85,7,13,9,1],"48":[82,36,8,14,9,1],"49":[57,102,4,14,9,2],"50":[92,69,7,14,9,1],"51":[74,69,7,14,9,1],"52":[82,20,8,14,9,1],"53":[11,69,7,14,9,1],"54":[83,69,7,14,9,1],"55":[29,69,7,14,9,1],"56":[38,69,7,14,9,1],"57":[20,85,7,14,9,1],"58":[112,102,2,12,9,3],"59":[68,102,3,14,9,3],"60":[73,85,8,11,9,1],"61":[109,85,8,10,9,1],"62":[83,85,8,11,9,1],"63":[52,20,8,14,9,1],"64":[12,20,8,14,9,1],"65":[102,20,8,14,9,1],"66":[72,20,8,14,9,1],"67":[52,36,8,14,9,1],"68":[72,52,8,14,9,1],"69":[42,20,8,14,9,1],"70":[62,20,8,14,9,1],"71":[2,36,8,14,9,1],"72":[62,52,8,14,9,1],"73":[92,102,2,14,9,4],"74":[101,85,6,14,9,1],"75":[32,52,8,14,9,1],"76":[11,85,7,14,9,1],"77":[42,52,8,14,9,1],"78":[42,36,8,14,9,1],"79":[112,36,8,14,9,1],"80":[2,52,8,14,9,1],"81":[55,2,8,15,9,1],"82":[92,36,8,14,9,1],"83":[2,20,8,14,9,1],"84":[92,20,8,14,9,1],"85":[12,52,8,14,9,1],"86":[22,20,8,14,9,1],"87":[22,52,8,14,9,1],"88":[22,36,8,14,9,1],"89":[95,2,8,14,9,1],"90":[56,69,7,14,9,1],"91":[2,102,5,15,9,3],"92":[24,2,9,14,9,0],"93":[119,85,5,15,9,1],"94":[104,102,6,4,9,2],"95":[85,2,8,15,9,1],"96":[116,102,4,4,9,2],"97":[102,36,8,14,9,1],"98":[52,52,8,14,9,1],"99":[32,36,8,14,9,1],"100":[82,52,8,14,9,1],"101":[12,36,8,14,9,1],"102":[110,69,7,14,9,1],"103":[102,52,7,15,9,1],"104":[2,85,7,14,9,1],"105":[88,102,2,14,9,4],"106":[51,102,4,15,9,2],"107":[101,69,7,14,9,1],"108":[100,102,2,14,9,4],"109":[72,36,8,14,9,1],"110":[2,69,7,14,9,1],"111":[115,2,8,14,9,1],"112":[35,2,8,15,9,1],"113":[65,2,8,15,9,1],"114":[93,85,6,14,9,2],"115":[20,69,7,14,9,1],"116":[65,69,7,14,9,1],"117":[47,69,7,14,9,1],"118":[62,36,8,14,9,1],"119":[112,20,8,14,9,1],"120":[105,2,8,14,9,1],"121":[45,2,8,15,9,1],"122":[29,85,7,14,9,1],"123":[47,85,6,15,9,2],"124":[73,102,2,15,9,4],"125":[55,85,6,15,9,1],"126":[33,102,8,8,9,1],"127":[111,52,7,14,9,1]}}};
 const DR=(()=>{
- const A=DR_ASSETS,STEP_MS=1000/30;
+ const A=DR_ASSETS,A1=DR1_ASSETS,STEP_MS=1000/30;
  const imgs={},masks={};let ready=false,loading=null,S=null;
  const sndKeys={menumove:'snd_menumove',select:'snd_select',laz:'snd_laz_c',crit:'snd_criticalswing',damage:'snd_damage',impact:'snd_impact',hurt:'snd_hurt1',graze:'snd_graze',mercyadd:'snd_mercyadd',spare:'snd_spare',power:'snd_power',rbswing:'snd_rudebuster_swing',rbhit:'snd_rudebuster_hit',pacify:'snd_pacify',text:'snd_text',boost:'snd_boost',icespell:'snd_icespell',snowgrave:'snd_snowgrave',petrify:'snd_petrify',deathnoise:'snd_deathnoise',ghostappear:'snd_ghostappear',spellpacify:'snd_spell_pacify'};
  const sndFiles={snd_mercyadd:'snd_mercyadd.ogg',snd_pacify:'snd_pacify.ogg',snd_text:'snd_text.wav',snd_icespell:'snd_icespell.ogg',snd_snowgrave:'snd_snowgrave.ogg',snd_ghostappear:'snd_ghostappear.ogg',snd_spell_pacify:'snd_spell_pacify.ogg'};
@@ -26564,6 +26570,11 @@ const DR=(()=>{
    ids.forEach((g,i)=>jobs.push(loadImage(DR_RAW+`sprites/${n}/${g}.png`).then(im=>{imgs[n][i]=im}).catch(()=>{})));
   }
   for(const f of Object.keys(A.font))jobs.push(loadImage(DR_RAW+`fonts/${f}/${f}.png`).then(im=>{imgs['font_'+f]=im}).catch(()=>{}));
+  for(const [n,[w,h,xo,yo,ids]] of Object.entries(A1.spr)){
+   imgs[n]=[];
+   ids.forEach((g,i)=>jobs.push(loadImage(DR_RAW1+`sprites/${n}/${g}.png`).then(im=>{imgs[n][i]=im}).catch(()=>{})));
+  }
+  for(const f of Object.keys(A1.font))jobs.push(loadImage(DR_RAW1+`fonts/${f}/${f}.png`).then(im=>{imgs['font_'+f]=im}).catch(()=>{}));
   for(const [k,n] of Object.entries(sndKeys))jobs.push(loadAudioAsset(sndUrl(n),k==='text'?.4:.66,false).then(a=>{sounds['dr_'+k]=a}).catch(()=>{}));
   jobs.push(loadAudioAsset('https://cdn.jsdelivr.net/gh/BenSFGamer/Deltarune-web@main/battle.ogg',.5,true).then(a=>{music=a}).catch(()=>{}));
   loading=Promise.all(jobs).then(()=>{buildMasks();ready=true});
@@ -26582,7 +26593,7 @@ const DR=(()=>{
   }
  }
  const frame=(n,i)=>{const f=imgs[n];if(!f||!f.length)return null;const k=((Math.floor(i)%f.length)+f.length)%f.length;return f[k]||f[0]};
- const meta=n=>A.spr[n]||[0,0,0,0,[]];
+ const meta=n=>A.spr[n]||A1.spr[n]||[0,0,0,0,[]];
  // draw_sprite_ext: x/y is the sprite origin; flash = white silhouette alpha (d3d_set_fog white).
  function draw(g,n,i,x,y,xs=1,ys=1,ang=0,alpha=1,o={}){
   const im=frame(n,i);if(!im||alpha<=0)return;
@@ -26598,7 +26609,7 @@ const DR=(()=>{
   if(o.flash>0)draw(g,n,i,x,y,xs,ys,ang,o.flash,{fog:'#ffffff'});
  }
  // GM fonts (fnt_mainbig etc): glyph [x,y,w,h,shift,offset] from the .yy.
- function glyph(f,c){return A.font[f]?.[c.charCodeAt(0)]||A.font[f]?.[63]}
+ function glyph(f,c){const t=A.font[f]||A1.font[f];return t?.[c.charCodeAt(0)]||t?.[63]}
  function textWidth(f,s){let w=0;for(const c of String(s))w+=(glyph(f,c)?.[4]||0);return w}
  function text(g,f,s,x,y,color='#ffffff',o={}){
   const at=imgs['font_'+f];if(!at)return;
@@ -26661,8 +26672,8 @@ const DR=(()=>{
  // ------------------------------------------------------------ writer ------
  // obj_writer with typer 4 (fnt_mainbig, 16px spacing, 1 char per step, special 1 shadow).
  class Writer{
-  constructor(pages,x=30,y=376){
-   this.pages=pages;this.no=0;this.x=x;this.y=y;this.t=A.typer[4];this.done=false;this.siner=0;this.load();
+  constructor(pages,x=30,y=376,o={}){
+   this.pages=pages;this.no=0;this.x=x;this.y=y;this.t=o.typer||A.typer[4];this.font=o.font||'fnt_mainbig';this.color=o.color||C.white;this.done=false;this.siner=0;this.load();
   }
   load(){this.str=this.format(this.pages[this.no]||'');this.pos=0;this.halt=0;this.wait=0}
   format(s){
@@ -26710,7 +26721,7 @@ const DR=(()=>{
   }
   draw(g){
    if(this.done)return;
-   const t=this.t;let wx=this.x,wy=this.y,color=C.white;
+   const t=this.t,f=this.font;let wx=this.x,wy=this.y,color=this.color;
    const COL={R:C.red,B:C.blue,Y:C.yellow,G:C.lime,W:C.white,X:'#000000',P:C.purple,M:C.maroon,S:'#ff80ff',V:'#80ff80','0':C.white};
    for(let i=0;i<this.pos&&i<this.str.length;i++){
     const c=this.str[i];
@@ -26720,30 +26731,83 @@ const DR=(()=>{
     if(c==='|'){wx+=t.hspace;continue}
     if(c==='/'||c==='%')break;
     // special 1: a dark drop shadow, then the letter.
-    if(color===C.white){text(g,'fnt_mainbig',c,wx+1,wy+1,'#202060');text(g,'fnt_mainbig',c,wx,wy,C.white)}
+    if(!t.special){text(g,f,c,wx,wy,color)}
+    else if(color===C.white){text(g,'fnt_mainbig',c,wx+1,wy+1,'#202060');text(g,'fnt_mainbig',c,wx,wy,C.white)}
     else{text(g,'fnt_mainbig',c,wx+1,wy+1,color,{alpha:.3});text(g,'fnt_mainbig',c,wx,wy,color)}
     wx+=t.hspace;
    }
   }
  }
 
+ // ------------------------------------------------------------ enemies -----
+ // scr_monstersetup stats + each enemy object's ACT/talk/attack choices.
+ // mx/my: monsterx/monstery (Other_22) offsets from x/y.
+ const ENEMY={
+  dummy:{name:'Dummy',hp:450,at:0,df:0,gold:0,x:500,y:160,mx:45,my:75,
+   idle:'spr_dummymonster',idleSpeed:5,hurt:'spr_dummymonster',spared:null,still:'spr_dummymonster',tiredOnHurt:1,
+   intro:'* The tutorial begins.',attack:'needle',
+   acts:[{name:'Check',actor:1},{name:'Hug',actor:1},{name:'Hug Ralsei',actor:3}],
+   act(name,m,i){
+    if(name==='Check')return ['* DUMMY - AT 0 DF 0&* Cotton heart and button eye&* Looks just like a fluffy guy./%'];
+    if(name==='Hug'){mercyadd(i,100);return ['* You hug the DUMMY./%']}
+    return ['* You hug RALSEI./','* K..^1. Kris!?/%'];
+   }
+  },
+  // obj_diamondenemy (monstertype 5).
+  rudinn:{name:'Rudinn',hp:120,at:5,df:0,gold:30,x:480,y:140,mx:35,my:40,
+   idle:'spr_diamondm_idle',idleSpeed:6,hurt:'spr_diamondm_hurt',spared:'spr_diamondm_spared',still:'spr_diamondm_idle',
+   intro:'* Rudinn drew near!',attack:'diamond',
+   acts:[{name:'Check',actor:1},{name:'Convince',actor:1},{name:'Lecture',actor:1},{name:'Warning',actor:3}],
+   act(name,m,i){
+    if(name==='Check')return ['* RUDINN - AT 6 DF 0&* This ambivalent diamond isn\'t any girl\'s best friend./%'];
+    if(name==='Convince'){mercyadd(i,100);return ['* You told Rudinn to quit fighting^1.&* It was utterly swayed./%']}
+    if(name==='Lecture'){
+     for(const o of S.mons){o.comment='(Tired)';o.status=1}
+     mercyadd(i,50);
+     return ['* You lectured the enemies on the importance of kindness./','* The enemies became \\cBTIRED\\cW.../%'];
+    }
+    // Warning: Susie's attacks miss this turn's foes (global.automiss).
+    for(const o of S.mons){o.comment='(Warned)';o.automiss=1}
+    return [monsterpop()>1?'* You and Ralsei warned the enemies about Susie^1.&* Everyone went on guard./%':'* You and Ralsei warned Rudinn about Susie^1.&* The enemy went on guard.../%'];
+   },
+   talk(m){
+    let s=choose('Long live&the guy&who pays us!','Shine,&shine','I\'m just a&normal&person.','Face my&Diamond&Cutter!');
+    if(m.lastAct==='Convince')s='Yeah I&guess that&makes&sense.';
+    if(m.lastAct==='Lecture')s='(Yawn)...&What? OK...';
+    return s;
+   },
+   flavor(m){
+    let s=choose('* Rudinn is glimmering plainly.','* Rudinn has no strong opinions one way or the other.','* Rudinn thinks about elaborate stones.','* Rudinn dislikes its boss^1, but doesn\'t care enough to quit.','* Smells like jewelry.');
+    if(m.status===1)s='* Rudinn is starting to fall asleep.';
+    if(m.hp<=m.maxhp/3)s='* Rudinn\'s luster begins to fade.';
+    if(m.mercy>=m.mercymax)s='* Rudinn is alright with not fighting.';
+    return s;
+   }
+  }
+ };
+ const ENEMY_IDS=Object.keys(ENEMY);
+ // typer 50: the enemy speech bubble (fnt_dotumche, black, 9x20 spacing).
+ const BUBBLE={typer:{charline:33,rate:1,hspace:9,vspace:20,special:0},font:'fnt_dotumche',color:'#000000'};
+
  // ------------------------------------------------------------- start ------
  // Party screen before the fight: Noelle can take Ralsei's place (three slots, like the game).
  const PARTIES=[['kris','susie','ralsei'],['kris','susie','noelle']];
  const savedParty=()=>{try{return localStorage.getItem('utbg.drParty')==='noelle'?1:0}catch(_){return 0}};
+ const savedEnemy=()=>{try{return Math.max(0,ENEMY_IDS.indexOf(localStorage.getItem('utbg.drEnemy')))}catch(_){return 0}};
  function start(opt={}){
   load();
-  if(!opt.party){S={picking:true,k:savedParty(),t:0,acc:0,exited:false,onExit:opt.onExit||null};return S}
+  if(!opt.party){S={picking:true,k:savedParty(),e:savedEnemy(),t:0,acc:0,exited:false,onExit:opt.onExit||null};return S}
+  const eid=ENEMY[opt.enemy]?opt.enemy:'dummy',d=ENEMY[eid];
   const party=opt.party.map((id,i)=>{const h=HERO[id];return {id,...h,i,x:80,y:50+80*i,maxhp:h.hp,hp:h.hp,state:0,hurt:0,hurttimer:0,siner:0,attacktimer:0,acttimer:0,defendtimer:0,victoryanim:0,attacked:0,itemed:0,points:0,flash:0,fsiner:0,darken:0,alarm1:-1,alarm4:-1}});
   S={
    t:0,acc:0,exited:false,onExit:opt.onExit||null,
-   party,mons:[{id:'dummy',name:'Dummy',hp:450,maxhp:450,at:0,df:0,mercy:0,mercymax:100,status:0,comment:' ',x:500,y:160,state:0,siner:0,fsiner:0,flash:0,shakex:0,hurttimer:0,hurtshake:0,alive:true,acting:0,alpha:1,blendFx:0,
-    acts:[{name:'Check',actor:1},{name:'Hug',actor:1},{name:'Hug Ralsei',actor:3}]}],
+   party,mons:[{id:eid,def:d,name:d.name,hp:d.hp,maxhp:d.hp,at:d.at,df:d.df,mercy:0,mercymax:100,status:0,comment:' ',x:d.x,y:d.y,state:0,siner:0,fsiner:0,flash:0,shakex:0,hurttimer:0,hurtshake:0,alive:true,acting:0,alpha:1,blendFx:0,
+    acts:d.acts.map(a=>({...a}))}],
    tension:0,maxtension:250,tensionselect:0,temptension:[0,0,0],
    items:[1,1,1],tempitem:[[1,1,1],[1,1,1],[1,1,1]],
    myfight:0,mnfight:0,bmenuno:0,charturn:0,coord:{},
    charaction:[0,0,0],charspecial:[0,0,0],chartarget:[0,0,0],faceaction:[0,0,0],acting:[0,0,0],actingsingle:[0,0,0],actingtarget:[0,0,0],actingchoice:[0,0,0],targeted:[0,0,0],hittarget:[0,0,0],
-   battlemsg:'* The tutorial begins.',writer:null,
+   battlemsg:d.intro,writer:null,
    bp:0,bpy:152,intro:1,mmy:[0,0,0,0],s_siner:0,
    tbar:{x:-40,hs:13,apparent:0,current:0,changetimer:15,tsiner:0},
    onebuffer:0,twobuffer:0,lbuffer:0,rbuffer:0,
@@ -26751,7 +26815,7 @@ const DR=(()=>{
    heart:null,box:null,darkener:null,grazebox:{timer:0},bullets:[],fx:[],dmgw:[],
    inv:0,gold:0,exp:0,bgsiner:0,bgsiner2:0,bgalpha:0,turn:0,gameover:null
   };
-  // The Dummy's "Hug Ralsei" needs Ralsei in the party.
+  // ACTs with Ralsei ("Hug Ralsei", "Warning") need him in the party.
   const has=c=>party.some(h=>h.char===c);
   S.mons[0].acts=S.mons[0].acts.filter(a=>a.actor===1||has(a.actor));
   for(const m of S.mons)m.freezable=1; // scr_enemy_object_init
@@ -26813,9 +26877,9 @@ const DR=(()=>{
   if(S.party[0].hp<=0){S.charturn=1;if(S.party[1].hp<=0)S.charturn=2}
   S.acting=[0,0,0];S.actingsingle=[0,0,0];S.temptension=[S.tension,S.tension,S.tension];
   S.charspecial=[0,0,0];S.targeted=[0,0,0];S.charaction=[0,0,0];S.faceaction=[0,0,0];
-  for(const m of S.mons){m.acting=0;m.attacked=0;m.talked=0}
+  for(const m of S.mons){m.acting=0;m.attacked=0;m.talked=0;m.lastAct=null}
   S.tempitem=[[...S.items],[...S.items],[...S.items]];
-  S.battlemsg=S.party.some(h=>h.id==='ralsei')?'* Ralsei looks on expectedly.':'* Noelle looks on expectedly.';
+  S.battlemsg=S.nextmsg||(S.party.some(h=>h.id==='ralsei')?'* Ralsei looks on expectedly.':'* Noelle looks on expectedly.');S.nextmsg=null;
   S.writer=null;
  }
  function wincombat(){
@@ -26823,16 +26887,13 @@ const DR=(()=>{
   for(const m of S.mons)if(m.alive){m.alive=false}
  }
 
- // ACT phase (myfight 3): obj_dummyenemy's acting / actcon handlers.
+ // ACT phase (myfight 3): the enemy object's acting / actcon handlers.
  function actPhaseStart(){
-  const m=S.mons[S.actingtarget[0]]||S.mons[0];
-  const a=S.actingchoice[0];
-  for(let i=0;i<3;i++)if(S.acting[i]){S.party[i].state=6;S.party[i].acttimer=0}
-  let pages;
-  if(a===0)pages=['* DUMMY - AT 0 DF 0&* Cotton heart and button eye&* Looks just like a fluffy guy./%'];
-  else if(a===1){pages=['* You hug the DUMMY./%'];mercyadd(0,100)}
-  else pages=['* You hug RALSEI./','* K..^1. Kris!?/%'];
-  battletext(pages);
+  const i=S.mons[S.actingtarget[0]]?S.actingtarget[0]:0,m=S.mons[i];
+  const act=m.acts[S.actingchoice[0]]||m.acts[0];
+  for(let j=0;j<3;j++)if(S.acting[j]){S.party[j].state=6;S.party[j].acttimer=0}
+  m.lastAct=act.name;
+  battletext(m.def.act(act.name,m,i));
   S.actPhase={m};
  }
  function actPhaseStep(){
@@ -26849,7 +26910,9 @@ const DR=(()=>{
   S.hittarget[i]++;
  }
  // Other_22: monsterx/y use sprite_height for both axes.
- const monsterx=m=>m.x+45,monstery=m=>m.y+45+30;
+ const monsterx=m=>m.x+m.def.mx,monstery=m=>m.y+m.def.my;
+ // Hurt state; the Dummy tires on any hit, Rudinn below a third of its HP (Draw_0).
+ function hurtMon(m){m.shakex=9;m.state=3;m.hurttimer=30;if(m.def.tiredOnHurt||m.hp<=m.maxhp/3){m.status=1;if(m.comment===' ')m.comment='(Tired)'}}
 
  // --------------------------------------------- spell phase (obj_spellphase)
  function spellPhaseStep(){
@@ -26962,7 +27025,7 @@ const DR=(()=>{
   const m=S.mons[star];if(!m)return;
   S.dmgw.push(dmgwriter(monsterx(m),monstery(m)+20-S.hittarget[star]*20,dmg,type));
   m.hp-=dmg;
-  if(dmg>0){m.shakex=9;m.state=3;m.hurttimer=30;m.status=1;if(m.comment===' ')m.comment='(Tired)'}
+  if(dmg>0)hurtMon(m);
   S.hittarget[star]++;
   if(m.hp<=0&&m.alive){
    m.alive=false;m.killed=true;
@@ -27054,6 +27117,7 @@ const DR=(()=>{
   let star=S.chartarget[h.i];if(!S.mons[star]||!S.mons[star].alive){star=S.mons.findIndex(m=>m.alive);if(star<0)return}
   const m=S.mons[star];
   let dmg=Math.round(h.at*h.points/20-m.df*3);if(dmg<0)dmg=0;
+  if(m.automiss&&h.char===2)dmg=0;
   const dm=dmgwriter(monsterx(m),monstery(m)-S.hittarget[star]*20+20,dmg,h.char===4?6:h.char-1,{delay:dmg===0?2:8});
   S.dmgw.push(dm);S.hittarget[star]++;
   m.hp-=dmg;
@@ -27062,7 +27126,7 @@ const DR=(()=>{
    S.fx.push({kind:'slash',spr:h.slash,x:monsterx(m)+rnd(6),y:monstery(m)+rnd(6),f:0,speed:h.slashSpeed,max:h.slashMax,scale:h.points===150?2.5:2});
    snd('damage');
    if(h.id==='susie'){snd('impact');S.shake={amt:4,t:0}}
-   m.shakex=9;m.state=3;m.hurttimer=30;m.status=1;if(m.comment===' ')m.comment='(Tired)';
+   hurtMon(m);
   }
   if(m.hp<=0){m.alive=false;m.killed=true;S.fx.push({kind:'defeat',m,t:0})}
  }
@@ -27073,30 +27137,70 @@ const DR=(()=>{
   const alive=S.party.map((h,i)=>h.hp>0?i:-1).filter(i=>i>=0);
   const target=alive.length?alive[Math.floor(Math.random()*alive.length)]:0;
   S.targeted=[0,0,0];S.targeted[target]=1;S.enemyTarget=target;
-  // scr_moveheart: the SOUL flies from Kris into the box while it grows.
+  S.darkener={amt:0,on:1};
+  S.talkT=0;S.bubble=null;
+  // scr_enemyblcon(x-160, y, 3): spr_battleblcon_long with a typer-50 writer at +5,+5.
+  const m=S.mons.find(o=>o.alive);
+  const say=m&&m.def.talk?m.def.talk(m):null;
+  if(say)S.bubble={x:m.x-160,y:m.y,t:0,w:new Writer([say],m.x-160+5,m.y+5,BUBBLE)};
+  else spawnBox();
+ }
+ // scr_moveheart: the SOUL flies from Kris into the box while it grows.
+ function spawnBox(){
   const k=S.party[0];
   S.heart={x:k.x+k.mywidth/2,y:k.y+k.myheight/2,fly:8,tx:320-10,ty:170-10,img:0,vis:1};
   S.box={x:320,y:170,timer:0,max:15,grow:1,after:[]};
-  S.darkener={amt:0,on:1};
-  S.talkT=0;
  }
  function enemyTalkStep(){
-  if(++S.talkT>=10){
-   S.mnfight=2;S.turntimer=150;S.reset=0;
-   S.gen={btimer:99,special:0};
+  const b=S.bubble;
+  if(b){
+   // scr_blconskip(15): Z after 15 steps skips, otherwise talkmax 90.
+   b.w.step();
+   if(P.confirm&&b.t>15)b.t=90;
+   if(++b.t>=90){S.bubble=null;spawnBox();beginAttack()}
+   return;
+  }
+  if(++S.talkT>=10)beginAttack();
+ }
+ function beginAttack(){
+  const m=S.mons.find(o=>o.alive)||S.mons[0];
+  S.mnfight=2;S.turntimer=150;S.reset=0;
+  S.gen={kind:m.def.attack,m,btimer:99,special:0,rtimer:0,ctl:null,dmg:m.at*5};
+ }
+ // obj_diamondenemy (rtimer 12 picks the pattern) + obj_dbulletcontroller types 0 and 1.
+ function diamondGen(g){
+  if(!g.ctl){
+   if(++g.rtimer===12){
+    g.ctl={type:choose(0,1),btimer:99,ratio:[1,1,1.6,2.3][monsterpop()]||1};
+    S.turntimer=140;S.nextmsg=g.m.def.flavor(g.m);
+   }else S.turntimer=120;
+   return;
+  }
+  const c=g.ctl,h=S.heart;if(!h)return;
+  const hx=h.x+10,hy=h.y+10;c.btimer++;
+  if(c.type===0&&c.btimer>=12*c.ratio){
+   c.btimer=0;const dir=30+rnd(120),r=140+rnd(80);
+   const x=hx+Math.cos(dir*Math.PI/180)*r,y=Math.max(40,hy-Math.sin(dir*Math.PI/180)*r);
+   S.bullets.push({kind:'dmaker',x,y,alpha:0,active:0,at:0,times:0,dont:1,dir:pdir(x,y,hx,hy),dmg:g.dmg,target:S.enemyTarget});
+  }
+  if(c.type===1&&c.btimer>=9*c.ratio){
+   c.btimer=0;const r=140+rnd(40);let xx=-100+rnd(200);if(choose(0,1,2,3)===3)xx=-10+rnd(20);
+   S.bullets.push({kind:'dvert',x:hx+xx,y:Math.max(20,Math.min(460,hy+r)),alpha:0,active:0,dont:1,vs:0,grav:0,dmg:g.dmg,target:S.enemyTarget,grazed:0,grazepoints:5,timepoints:5});
   }
  }
+ const pdir=(x,y,tx,ty)=>Math.atan2(-(ty-y),tx-x)*180/Math.PI;
  function enemyAttackStep(){
   // obj_dbulletcontroller type 14: needles from beyond the right side every 6 steps.
   const g=S.gen;
-  if(g&&S.box){
+  if(g&&g.kind==='diamond'&&S.box)diamondGen(g);
+  else if(g&&S.box){
    g.btimer++;
    if(g.btimer>=6){
     const bx=S.box.x,by=S.box.y,miny=by-75,maxx=bx+75;
     let x=maxx+40+rnd(140),y=miny+rnd(150);
     g.special--;if(g.special===0&&S.heart)y=S.heart.y+10;
     if(g.special<=0)g.special=Math.floor(rnd(6))+5;
-    S.bullets.push({kind:'needle',x,y,speed:1,fric:-.2,dir:180,spawning:true,f:0,fspeed:1/3,active:false,alpha:0,dmg:S.mons[0].at*5,target:S.enemyTarget,grazed:0,grazepoints:5,timepoints:5});
+    S.bullets.push({kind:'needle',x,y,speed:1,fric:-.2,dir:180,spawning:true,f:0,fspeed:1/3,active:false,alpha:0,dmg:g.dmg,target:S.enemyTarget,grazed:0,grazepoints:5,timepoints:5});
     g.btimer=0;
    }
   }
@@ -27133,9 +27237,72 @@ const DR=(()=>{
   const l=8-16,r=21-16+1,t=13-15,bt=16-15+1;
   return b.dir===180?[b.x-r,b.y+t,b.x-l,b.y+bt]:[b.x+l,b.y+t,b.x+r,b.y+bt];
  }
+ // Heart mask vs a bullet's bbox rect [l,t,r,b] around its origin, rotated by ang (image_angle).
+ function heartTouchesRot(b,r,ang){
+  const h=S.heart;if(!h)return false;
+  const c=Math.cos(ang*Math.PI/180),s=Math.sin(ang*Math.PI/180);
+  for(const [mx,my] of masks.heart||[]){const dx=h.x+mx+.5-b.x,dy=h.y+my+.5-b.y;const lx=dx*c-dy*s,ly=dx*s+dy*c;if(lx>=r[0]&&lx<r[2]&&ly>=r[1]&&ly<r[3])return true}
+  return false;
+ }
+ function rotAabb(b,r,ang){
+  const c=Math.cos(ang*Math.PI/180),s=Math.sin(ang*Math.PI/180);let l=1e9,t=1e9,R=-1e9,B=-1e9;
+  for(const [x,y] of [[r[0],r[1]],[r[2],r[1]],[r[0],r[3]],[r[2],r[3]]]){const wx=b.x+x*c+y*s,wy=b.y-x*s+y*c;l=Math.min(l,wx);R=Math.max(R,wx);t=Math.min(t,wy);B=Math.max(B,wy)}
+  return [l,t,R,B];
+ }
+ // bbox of spr_diamondbullet (10..23, 14..17) and spr_diamondbullet_vert (14..18, 11..22) around their origins.
+ const DBOX=[10-16,14-15,23-16+1,17-15+1],VBOX=[14-16,11-16,18-16+1,22-16+1];
+ function grazeCheck(b,box){
+  const h=S.heart;if(!h||S.inv>0)return;
+  const gx=h.x+10-25,gy=h.y+10-25;
+  if(box[2]>gx&&box[0]<gx+50&&box[3]>gy&&box[1]<gy+50){
+   if(b.grazed){tensionheal(b.grazepoints/30);if(S.turntimer>=10)S.turntimer-=b.timepoints/30;if(S.grazebox.timer>=0&&S.grazebox.timer<4)S.grazebox.timer=3;if(S.grazebox.timer<2)S.grazebox.timer=2}
+   else{b.grazed=1;tensionheal(b.grazepoints);if(S.turntimer>=10)S.turntimer-=b.timepoints;snd('graze');S.grazebox.timer=10}
+  }
+ }
+ // obj_dbullet_maker / obj_regularbullet / obj_dbullet_vert (their Draw events run the logic).
+ function diamondStep(b){
+  const h=S.heart;
+  if(b.kind==='dmaker'){
+   if(!b.dont){
+    if(!b.active){
+     if(h)b.dir=pdir(b.x,b.y,h.x+10,h.y+10);
+     if(b.alpha<1)b.alpha+=.1;else b.active=1;
+    }
+    if(b.active){
+     b.at++;
+     if(b.at>=5&&b.times<1){S.bullets.push({kind:'dbullet',x:b.x,y:b.y,dir:b.dir,dmg:b.dmg,target:b.target,grazed:0,grazepoints:5,timepoints:5});b.times++;b.at=0}
+     if(b.at>=5&&b.times>=1){b.alpha-=.2;if(b.alpha<=0)b.dead=true}
+    }
+   }
+   b.dont=0;return;
+  }
+  if(b.kind==='dbullet'){
+   b.x+=Math.cos(b.dir*Math.PI/180)*6;b.y-=Math.sin(b.dir*Math.PI/180)*6;
+   if(b.x<-40||b.x>680||b.y<-40||b.y>520){b.dead=true;return}
+   collide(b,DBOX,b.dir);return;
+  }
+  if(b.kind==='dvert'){
+   b.vs+=b.grav;b.y+=b.vs;
+   if(!b.dont){
+    if(!b.active){
+     if(b.alpha<1)b.alpha+=.1;
+     else{if(h&&h.y+10<b.y){b.vs=1;b.grav=-.2}else{b.vs=-2;b.grav=1}b.active=1}
+    }
+    if(Math.abs(b.vs)>8)b.vs=Math.sign(b.vs)*8;
+    if(b.y>500||b.y<-20){b.dead=true;return}
+   }
+   b.dont=0;
+   if(b.active)collide(b,VBOX,0);
+  }
+ }
+ // obj_collidebullet: hurts (scr_damage respects inv) and is destroyed on touch.
+ function collide(b,r,ang){
+  if(heartTouchesRot(b,r,ang)){if(S.inv<=0)damageHero(b);b.dead=true;return}
+  grazeCheck(b,rotAabb(b,r,ang));
+ }
  function bulletsStep(){
   for(const b of S.bullets){
-   if(b.kind!=='needle')continue;
+   if(b.kind!=='needle'){diamondStep(b);continue}
    // GameMaker motion: friction -0.2 speeds it up.
    if(b.speed>0||b.fric<0){b.speed=Math.max(0,b.speed-b.fric)}
    b.x+=Math.cos(b.dir*Math.PI/180)*b.speed;b.y-=Math.sin(b.dir*Math.PI/180)*b.speed;
@@ -27261,17 +27428,24 @@ const DR=(()=>{
  function pickStep(){
   poll();S.t++;
   if(P.up||P.down){S.k=1-S.k;snd('menumove')}
+  if(P.left||P.right){S.e=(S.e+(P.right?1:ENEMY_IDS.length-1))%ENEMY_IDS.length;snd('menumove')}
   if(P.confirm){
-   snd('select');try{localStorage.setItem('utbg.drParty',S.k?'noelle':'ralsei')}catch(_){}
-   start({party:PARTIES[S.k],onExit:S.onExit});return;
+   snd('select');try{localStorage.setItem('utbg.drParty',S.k?'noelle':'ralsei');localStorage.setItem('utbg.drEnemy',ENEMY_IDS[S.e])}catch(_){}
+   start({party:PARTIES[S.k],enemy:ENEMY_IDS[S.e],onExit:S.onExit});return;
   }
   if(P.cancel)exit('quit');
  }
  function drawPick(g){
   g.fillStyle='#000';g.fillRect(0,0,640,480);
-  text(g,'fnt_mainbig','CHOOSE YOUR PARTY',320,90,C.white,{align:'center'});
+  text(g,'fnt_mainbig','CHOOSE YOUR PARTY',320,40,C.white,{align:'center'});
+  // Enemy picker: left/right cycles, the enemy idles in the middle.
+  const d=ENEMY[ENEMY_IDS[S.e]],[w,h]=meta(d.idle);
+  draw(g,d.idle,S.t/d.idleSpeed,320-w,190-h*2,2,2);
+  const ar=Math.sin(S.t/6)*3;
+  text(g,'fnt_mainbig','<',200-ar,130,C.white,{align:'center'});text(g,'fnt_mainbig','>',440+ar,130,C.white,{align:'center'});
+  text(g,'fnt_mainbig',d.name.toUpperCase(),320,198,C.yellow,{align:'center'});
   PARTIES.forEach((ids,r)=>{
-   const y=190+r*90,on=S.k===r;
+   const y=250+r*70,on=S.k===r;
    if(on)draw(g,'spr_heart',0,70,y+8);
    ids.forEach((id,j)=>{
     const h=HERO[id],x=110+j*170;
@@ -27279,8 +27453,8 @@ const DR=(()=>{
     text(g,'fnt_mainbig',h.name,x+44,y,on?C.yellow:C.white);
    });
   });
-  text(g,'fnt_mainbig','Noelle takes Ralsei\'s place.',320,380,C.gray,{align:'center'});
-  text(g,'fnt_mainbig','Z: Fight   X: Back',320,420,C.gray,{align:'center'});
+  text(g,'fnt_mainbig','Noelle takes Ralsei\'s place.',320,395,C.gray,{align:'center'});
+  text(g,'fnt_mainbig','<>: Enemy   Z: Fight   X: Back',320,430,C.gray,{align:'center'});
  }
  function step(){
   if(S.picking){pickStep();return}
@@ -27296,6 +27470,7 @@ const DR=(()=>{
   if(S.victory&&!S.victoried){
    S.victoried=1;S.victortimer=0;S.faceaction=[0,0,0];S.myfight=7;S.mnfight=-1;
    for(const h of S.party){if(h.hp<1)h.hp=Math.round(h.maxhp/8);h.state=7;h.hurt=0}
+   for(const m of S.mons)if(m.spared||m.killed)S.gold+=m.def.gold;
    S.gold+=Math.floor(S.tension/10)*2;
    battletext(['* You won^1!&* Got '+S.exp+' EXP and '+S.gold+' D$./%']);
    tb.out=1;tb.hs=-10;
@@ -27457,7 +27632,7 @@ const DR=(()=>{
       if(b.chosen>0){const k=fb-b.chosen;dmg+=[30,28,22,20,13,11,10][k]||0}
       const star=e.star;S.hittarget[star]=0;
       S.dmgw.push(dmgwriter(monsterx(e.m),monstery(e.m)+20-S.hittarget[star]*20,dmg,1));S.hittarget[star]++;
-      e.m.hp-=dmg;if(dmg>0){e.m.shakex=9;e.m.state=3;e.m.hurttimer=30;e.m.status=1;if(e.m.comment===' ')e.m.comment='(Tired)';e.m.flash=6}
+      e.m.hp-=dmg;if(dmg>0){hurtMon(e.m);e.m.flash=6}
       if(e.m.hp<=0&&e.m.alive){e.m.alive=false;e.m.killed=true;S.fx.push({kind:'defeat',m:e.m,t:0})}
       snd('rbhit');
       b.bursts=[0,1,2,3,4,5,6,7].map(i=>({x:b.cx,y:b.cy,ang:45+i*90,sp:25,xs:2,a:1,k:i<4?.75:.8}));
@@ -27609,9 +27784,9 @@ const DR=(()=>{
  }
  function drawMonster(g,m){
   if(!m.alive&&!m.drawGone)return;
-  const flash=m.flash?((-Math.cos(m.fsiner/5)*.4)+.6):0;
-  if(m.state===3)draw(g,'spr_dummymonster',0,m.x+m.shakex,m.y,2,2,0,m.alpha);
-  else draw(g,'spr_dummymonster',m.siner/5,m.x,m.y,2,2,0,m.alpha,{flash});
+  const d=m.def,flash=m.flash?((-Math.cos(m.fsiner/5)*.4)+.6):0;
+  if(m.state===3)draw(g,d.hurt,0,m.x+m.shakex,m.y,2,2,0,m.alpha);
+  else draw(g,d.spared&&m.mercy>=m.mercymax?d.spared:d.idle,m.siner/d.idleSpeed,m.x,m.y,2,2,0,m.alpha,{flash});
  }
  function drawBox(g){
   const b=S.box;if(!b)return;
@@ -27626,6 +27801,15 @@ const DR=(()=>{
    if(b.kind==='needle'){
     const n=b.spawning?'spr_virovirokun_needle_spawn':'spr_virovirokun_needle';
     draw(g,n,b.f,b.x,b.y,1,1,b.dir,b.alpha);
+   }
+   else if(b.kind==='dmaker'){
+    if(!b.active)draw(g,'spr_diamondbullet_form',0,b.x,b.y,3-b.alpha*2,3-b.alpha*2,b.dir,1-b.alpha);
+    draw(g,'spr_diamondbullet_form',0,b.x,b.y,2-b.alpha,2-b.alpha,b.dir,b.alpha);
+   }
+   else if(b.kind==='dbullet')draw(g,'spr_diamondbullet',0,b.x,b.y,1,1,b.dir);
+   else if(b.kind==='dvert'){
+    if(!b.active)draw(g,'spr_diamondbullet_vert',0,b.x,b.y,3-b.alpha*2,3-b.alpha*2,0,b.alpha);
+    draw(g,'spr_diamondbullet_vert',0,b.x,b.y,2-b.alpha,2-b.alpha,0,b.alpha);
    }
   }
  }
@@ -27643,14 +27827,14 @@ const DR=(()=>{
    else if(e.kind==='fairy')draw(g,'spr_lightfairy',e.f,e.x,e.y,2,2,0,e.a);
    else if(e.kind==='heal'){for(const s of e.stars)draw(g,'spr_sparestar_anim',s.f,s.x,s.y,2,2,s.ang,s.a,{tint:C.lime});if(e.t<12)draw(g,heroSprite(e.target)[0],heroSprite(e.target)[1],e.target.x,e.target.y,2,2,0,(12-e.t)/12,{fog:'#ffffff'})}
    else if(e.kind==='spareanim'){
-    const m=e.m,n='spr_dummymonster';
+    const m=e.m,n=m.def.still;
     if(e.t>=6&&e.t<=26){draw(g,n,0,m.x+e.after*4,m.y,2,2,0,.7-e.after/25,{fog:'#ffffff'});draw(g,n,0,m.x+e.after*8,m.y,2,2,0,.4-e.after/30,{fog:'#ffffff'})}
     if(e.t<6){if(e.t<5)draw(g,n,0,m.x,m.y,2,2,0,1-e.neotone/4);draw(g,n,0,m.x,m.y,2,2,0,Math.min(1,e.t/5)-e.tone/5,{fog:'#ffffff'})}
     for(const s of e.stars)draw(g,'spr_sparestar_anim',s.f,s.x,s.y,2,2,s.ang,s.a);
    }
    else if(e.kind==='pacify'){for(const z of e.zs||[])draw(g,'spr_spare_z',0,z.x,z.y,z.s,z.s,0,z.a)}
-   else if(e.kind==='pacifyfail'){const m=e.m;const k=e.t<8?e.t/8:(e.t<16?1:Math.max(0,1-(e.t-16)/8));draw(g,'spr_dummymonster',0,m.x,m.y,2,2,0,k*.6,{fog:C.blue})}
-   else if(e.kind==='defeat'){const m=e.m;draw(g,'spr_dummymonster',0,m.x+(e.t%2?2:-2),m.y,2,2,0,1-e.t/40)}
+   else if(e.kind==='pacifyfail'){const m=e.m;const k=e.t<8?e.t/8:(e.t<16?1:Math.max(0,1-(e.t-16)/8));draw(g,m.def.still,0,m.x,m.y,2,2,0,k*.6,{fog:C.blue})}
+   else if(e.kind==='defeat'){const m=e.m;draw(g,m.def.hurt,0,m.x+(e.t%2?2:-2),m.y,2,2,0,1-e.t/40)}
    else if(e.kind==='icespell'){
     for(const q of e.hex)draw(g,'spr_icespell_snowflake',0,q.x,q.y,1.5,1.5);
     for(const f of e.flakes)draw(g,'spr_icespell_snowflake',0,f.x,f.y,f.xs,f.xs,f.ang,f.a);
@@ -27690,7 +27874,7 @@ const DR=(()=>{
    else if(e.kind==='frozen'){
     // obj_frozennpc Draw: the hurt sprite, then four navy-white offsets and an additive
     // layer, cut from row t down: the ice climbs from the feet to the head.
-    const im=frame('spr_dummymonster',0),m=e.m;if(!im)continue;
+    const m=e.m,im=frame(m.def.still,0);if(!im)continue;
     const SC=mix(C.navy,C.white,.8),sw=im.naturalWidth,sh=im.naturalHeight,x=m.x,y=m.y;
     g.drawImage(im,x,y,sw*2,sh*2);
     const t=Math.max(0,sh-e.timer*sh);
@@ -27703,7 +27887,7 @@ const DR=(()=>{
    }
    else if(e.kind==='recruit')draw(g,'spr_battlemsg',12,e.x0+83*e.xs/2,e.y,e.xs,e.ys,0,e.a);
    else if(e.kind==='death'){
-    const im=frame('spr_dummymonster',0),m=e.m;if(!im)continue;
+    const m=e.m,im=frame(m.def.still,0);if(!im)continue;
     if(e.t2<=1){g.drawImage(im,m.x,m.y,im.naturalWidth*2,im.naturalHeight*2);continue}
     const src=NB.multiplied(im,mix(C.white,C.red,e.redup/10));
     for(const b of e.bl){
@@ -27712,7 +27896,7 @@ const DR=(()=>{
      g.save();g.globalAlpha=a;g.drawImage(src,b.i*e.bs,b.j*e.bs,sw,sh,b.bx,m.y+b.j*e.bs*2,sw*2,sh*2);g.restore();
     }
    }
-   else if(e.kind==='oflash'){const a=Math.sin(e.siner/3);if(a>0)draw(g,'spr_dummymonster',0,e.x,e.y,2,2,0,a,{fog:'#ffffff'})}
+   else if(e.kind==='oflash'){const a=Math.sin(e.siner/3);if(a>0)draw(g,e.m.def.still,0,e.x,e.y,2,2,0,a,{fog:'#ffffff'})}
    else if(e.kind==='crystal')drawCrystal(g,e);
    else if(e.kind==='rudebuster'){
     if(e.t<=28)draw(g,'spr_susie_rudebuster',e.t/2,e.h.x,e.h.y,2,2);
@@ -27726,7 +27910,7 @@ const DR=(()=>{
  // SnowGrave crystal statue: the crystal is fitted around the monster's sprite and the
  // monster shows through as a dark silhouette (as in the UNDERTALE-engine SnowGrave).
  function drawCrystal(g,e){
-  const m=e.m,im=frame('spr_dummymonster',0),cr=images.snowgraveCrystal;if(!im)return;
+  const m=e.m,im=frame(m.def.still,0),cr=images.snowgraveCrystal;if(!im)return;
   const r={x:m.x,y:m.y,w:im.naturalWidth*2,h:im.naturalHeight*2};
   const a=Math.min(1,e.t2/10);
   if(e.t2<10)g.drawImage(im,r.x,r.y,r.w,r.h);
@@ -27929,6 +28113,7 @@ const DR=(()=>{
   drawBox(g);
   drawBullets(g);
   drawHeart(g);
+  if(S.bubble){draw(g,'spr_battleblcon_long',0,S.bubble.x,S.bubble.y);S.bubble.w.draw(g)}
   drawPanel(g);
   drawMenus(g);
   if(S.writer&&(S.myfight!==0||S.bmenuno===0||S.victory))S.writer.draw(g);
@@ -27951,7 +28136,7 @@ const DR=(()=>{
  return {start,update,render,onKey,load,exit,get S(){return S},get ready(){return ready},gfx:{draw,frame,meta},_dbg:{P,held,mercyadd,heroHit,dmgwriter}};
 })();
 
-// DELTARUNE tab: its own screen with its own engine (Dummy only for now).
+// DELTARUNE tab: its own screen with its own engine (the Dummy or Rudinn).
 function drStart(){
  screen='dr';
  DR.start({onExit(){screen='title';mainSelected=9;try{startMenuMusic()}catch(_){}}});
