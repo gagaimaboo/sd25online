@@ -7275,6 +7275,7 @@ function render(now){
  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
  if(screen==='nb'){NB.draw(now);nbDrawnS=NB.S;nbDrawnT=NB.S?NB.S.t:-1;return}
  if(screen==='dr'){DR.render();return}
+ if(screen==='results'){drawResults(now);return}
  uiTrackScreen(now);
 
  if(screen==='loading'){drawLoading();return}
@@ -7494,6 +7495,7 @@ function keyDown(e){
  if(screen==='loading')return;
 
  unlockAudio();
+ if(screen==='results'){if(!e.repeat&&(low==='z'||k==='Enter'||low==='x'||k==='Escape'||k===' '))resultsContinue();return}
 
  if(screen==='tutorialPrompt'){
    if(!e.repeat&&(k==='ArrowLeft'||k==='ArrowRight'||low==='a'||low==='d')){tutorialPromptSelected=1-tutorialPromptSelected;play('move');return}
@@ -7863,6 +7865,7 @@ canvas.addEventListener('wheel',e=>{
 canvas.addEventListener('pointerdown',e=>{
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
  if(screen==='loading')return;unlockAudio();
+ if(screen==='results'){resultsContinue();return}
  if(screen==='tutorialPrompt'){
    const yr=tutorialPromptYesRect(),nr=tutorialPromptNoRect();
    if(x>=yr.x&&x<=yr.x+yr.w&&y>=yr.y&&y<=yr.y+yr.h){tutorialPromptSelected=0;play('select');startTutorial(false);return}
@@ -8915,7 +8918,7 @@ const NB=(()=>{
    turntimer:-1,target:null,shake:null,view:{x:0,y:0},
    won:false,runaway:false,gameover:null,flavor:'',onExit:opt.onExit||null,xpTotal:0,goldTotal:0,
    intro:opt.intro,encounterDone:false,custom:!!opt.custom,curMon:null,
-   mods:new Set(opt.mods||[]),weapon:String(opt.weapon||'stick')
+   mods:new Set(opt.mods||[]),weapon:String(opt.weapon||'stick'),stats:[]
   };
   NB.S=S;
   if(opt.mp)mpSetup(opt.mp);
@@ -9189,7 +9192,7 @@ const NB=(()=>{
   if(f.hit){f.blink+=.4;return}
   f.x+=f.hs;
   const m=S.mons[S.target];
-  const miss=()=>{f.fade=true;f.hit=true;f.cursorGone=true;spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn()};
+  const miss=()=>{noteMiss();f.fade=true;f.hit=true;f.cursorGone=true;spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn()};
   // obj_targetchoice ran off the far side: MISS. Online: a remote player's press reaches the
   // host a little after they made it, so the bar waits a moment past the edge and the hit
   // uses where it was when they pressed.
@@ -9204,7 +9207,7 @@ const NB=(()=>{
    // (x2.2 within 12px of the middle; the glove's fist bar x2.1).
    let dmg=S.at+S.wstrength-fightDef(m)+rnd(2);
    const myx=f.x+7,perfect=f.tx+273;let bonus=Math.abs(myx-perfect);if(bonus===0)bonus=1;
-   const stretch=(546-bonus)/546;
+   const stretch=(546-bonus)/546;f.crit=bonus<=12;
    dmg=bonus<=12?Math.round(dmg*(f.kind==='fist'?2.1:2.2)):Math.round(dmg*stretch*2);
    if(m.def.onHitCalc)dmg=m.def.onHitCalc(m,dmg,api);
    if(S.mods.has('doubleDamage'))dmg*=2;
@@ -9238,8 +9241,8 @@ const NB=(()=>{
   if(S.mods.has('perfectHits')&&f.punches<4&&f.punchT%2===0){f.punches++;punchFx(f.punches<4?m.x+rnd(wd):m.x+wd/2,f.punches<4?m.y+rnd(ht):m.y+ht/2,f.punches===4,false)}
   if(f.punchT>=30||f.punches===4){
    f.fade=true;f.cursorGone=true;
-   if(f.punches===0){f.phase='wait';spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn();return}
-   m.takedamage=Math.ceil(f.dmg*f.punches/4);
+   if(f.punches===0){noteMiss();f.phase='wait';spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn();return}
+   m.takedamage=Math.ceil(f.dmg*f.punches/4);f.crit=f.punches===4;
    f.phase='wait';S.fightWait=10;
   }
  }
@@ -9267,13 +9270,13 @@ const NB=(()=>{
   f.bolts=f.bolts.filter(b=>!b.dead);
   if(f.bolts.length||f.hit)return;
   f.hit=true;f.fade=true;f.cursorGone=true;
-  if(f.score<=0){f.phase='wait';spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn();return}
+  if(f.score<=0){noteMiss();f.phase='wait';spawnDmgWriter(m,0);S.dmgw.at(-1).life=30;endPlayerTurn();return}
   let dmg=(S.at+S.wstrength-fightDef(m))*f.score/160*4/f.num;
   dmg=Math.round(dmg)+Math.round(rnd(2));
   if(m.def.onHitCalc)dmg=m.def.onHitCalc(m,dmg,api);
   if(S.mods.has('doubleDamage'))dmg*=2;
   m.takedamage=Math.max(0,dmg);
-  const crit=f.score>400*f.num/4,cx=m.x+(m.wd||100)/2,cy=m.y+50,w=f.weapon;
+  const crit=f.score>400*f.num/4,cx=m.x+(m.wd||100)/2,cy=m.y+50,w=f.weapon;f.crit=crit;
   if(w==='balletshoes'){punchFx(cx,cy,true,true,crit);S.fightWait=10}
   else if(w==='emptygun'){gunFx(cx,cy,crit);S.fightWait=20}
   else if(w==='burntpan'){panFx(cx,cy,crit);S.fightWait=20}
@@ -9292,8 +9295,35 @@ const NB=(()=>{
   if(f.score>430)f.score*=1.8;
   if(f.score>=400)f.score*=1.25;
  }
+ // ------------------------------------------------------------- scoreboard --
+ // What each player did this fight, for the results screen. FIGHT counts are kept on every
+ // copy (the menus run in lockstep); HP lost, hits and the closest call are watched on the
+ // player's own copy, which online sends its own numbers once the fight is over.
+ function newStats(){return {dmg:0,attacks:0,misses:0,crits:0,hits:0,hpLost:0,healed:0,minHp:null,lastDrop:-99}}
+ function statOf(i){return S.stats[i]||(S.stats[i]=newStats())}
+ const statWho=()=>S.mp?(S.mp.cur?S.mp.cur.i:0):0;
+ function noteAttack(dmg,crit){const s=statOf(statWho());s.attacks++;s.dmg+=Math.max(0,Math.round(dmg)||0);if(crit)s.crits++}
+ function noteMiss(){statOf(statWho()).misses++}
+ const myHpNow=()=>{if(!S.mp)return S.hp;const p=S.mp.players[S.mp.me];return S.mp.cur===p?S.hp:p.hp};
+ // a drop after 20 quiet steps is a new hit (KARMA ticking away is not a new one each time)
+ function statsStep(before){
+  const s=statOf(S.mp?S.mp.me:0),hp=myHpNow();
+  if(s.minHp==null)s.minHp=before;
+  if(hp<before){s.hpLost+=before-hp;if(S.t-s.lastDrop>=20)s.hits++;s.lastDrop=S.t}
+  else if(hp>before)s.healed+=hp-before;
+  if(hp<s.minHp)s.minHp=hp;
+ }
+ // my numbers (online: the ones this copy is the judge of) plus how the fight went for me
+ NB.statsMine=()=>{
+  if(!S)return null;
+  const i=S.mp?S.mp.me:0,s={...statOf(i)},p=S.mp?S.mp.players[i]:null;
+  if(s.minHp==null)s.minHp=myHpNow();
+  return {...s,maxhp:p?p.maxhp:S.maxhp,hp:myHpNow(),alive:p?!!p.alive:S.hp>0,turns:S.turn,time:Math.round(S.t/30),
+   name:p?p.name:S.name,mods:[...S.mods]};
+ };
  function hurtMonster(){
   const m=S.mons[S.target];
+  noteAttack(m.takedamage,S.fight&&S.fight.crit);
   // Monsters that react to FIGHT their own way (Mad Dummy). On CUSTOM rules the old
   // engine lets FIGHT land (its hub DEF of 999 keeps that at 0 until edited), so an
   // edited DEF makes it a normal target here too.
@@ -10952,8 +10982,8 @@ const NB=(()=>{
 
  // ------------------------------------------------------------- update ----
  function step(){
-  if(!S.mp){stepCore();return}
-  const mp=S.mp,fr=mp.frame;
+  if(!S.mp){const b=S.hp;stepCore();statsStep(b);return}
+  const mp=S.mp,fr=mp.frame,hpB=myHpNow();
   if(fr&&fr.dm)for(const [i,d] of fr.dm){
    if(i!==mp.me)mpHpEvent(i,d);
    else{
@@ -10977,6 +11007,7 @@ const NB=(()=>{
    else if(p.hp!==hp0[p.i]&&p.alive)p.hp=hp0[p.i];
   }
   if(!S.exited)mpSet(mpCanon());
+  statsStep(hpB);
  }
  function stepCore(){
   if(NB.snap)NB.snap(S);
@@ -26312,6 +26343,172 @@ function nbBattleOpts(online=false){
   weapon:activeWeaponData()?.id||'stick'
  };
 }
+
+/* ==== RESULTS: the scoreboard after a fight, with a rank ===================
+   A rank from F to SS out of how the fight went, how often you got hit, how close it
+   got, and how well you swung. Each rank has its own sting (Web Audio, made here, so it
+   works offline in the artifact too). Online every player's line comes from their own
+   copy, so the board reads the same on every screen. */
+const RANKS=[
+ {r:'SS',min:112,col:'#ffd700',sub:'UNTOUCHABLE'},
+ {r:'S',min:100,col:'#ffff40',sub:'DETERMINED'},
+ {r:'A',min:86,col:'#40ff60',sub:'GREAT'},
+ {r:'B',min:72,col:'#40d0ff',sub:'GOOD'},
+ {r:'C',min:56,col:'#ffffff',sub:'OKAY'},
+ {r:'D',min:40,col:'#ff9a30',sub:'ROUGH'},
+ {r:'F',min:-1e9,col:'#ff3030',sub:'STAY DETERMINED...'}];
+const RANK_ORDER=RANKS.map(x=>x.r);
+function rankScore(st,o){
+ const won=o.reason==='win'||o.reason==='spare';
+ let sc=won?(st.alive?60:35):o.reason==='flee'?25:10;
+ const turns=Math.max(1,st.turns||0);
+ sc+=25*Math.max(0,1-(st.hits/turns)/1.5);
+ if(st.hits===0&&(st.turns||0)>=1)sc+=10;
+ sc+=10*Math.max(0,Math.min(1,(st.minHp??st.maxhp)/Math.max(1,st.maxhp)));
+ const tries=st.attacks+st.misses;
+ if(tries)sc+=10*(st.attacks/tries)+5*(st.crits/tries);else if(won)sc+=8; // won without swinging: MERCY
+ const mods=new Set(st.mods||[]);
+ if(mods.has('glassSoul'))sc+=10;
+ if(mods.has('noBulletCooldown'))sc+=5;
+ return Math.round(sc);
+}
+function rankOf(st,o){
+ const sc=rankScore(st,o);let k=RANKS.findIndex(x=>sc>=x.min);
+ // GOD MODE can't take a hit, so it can't go past C
+ if((st.mods||[]).includes('godMode'))k=Math.max(k,RANK_ORDER.indexOf('C'));
+ return {score:sc,...RANKS[k],god:(st.mods||[]).includes('godMode')};
+}
+// ---- the stings: square/triangle chip voices, one tune per rank
+function rankSting(rank){
+ if(!audioUnlocked)return;
+ const c=sfxContext();if(!c)return;
+ try{if(c.state!=='running')c.resume()}catch(_){}
+ const t0=c.currentTime+.03,out=c.createGain();out.gain.value=.22;out.connect(c.destination);
+ const note=(f,at,len,type='square',vol=1,slide=0)=>{
+  const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t0+at);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t0+at+len);
+  g.gain.setValueAtTime(0,t0+at);g.gain.linearRampToValueAtTime(vol,t0+at+.01);g.gain.exponentialRampToValueAtTime(.001,t0+at+len);
+  o.connect(g);g.connect(out);o.start(t0+at);o.stop(t0+at+len+.02);
+ };
+ const N=m=>440*Math.pow(2,(m-69)/12);
+ const thump=(at,vol=1)=>note(150,at,.18,'triangle',vol,.25);
+ if(rank==='SS'){ // a run up two octaves, a held chord, sparkles
+  [60,64,67,72,76,79,84,88].forEach((m,i)=>note(N(m),i*.055,.18,'square',.7));
+  for(const m of [72,76,79,84])note(N(m),.48,1.1,'square',.45);
+  note(N(48),.48,1.1,'triangle',.9);
+  [96,100,103,108,103,108].forEach((m,i)=>note(N(m),.62+i*.09,.12,'square',.25));
+  thump(.48,1);
+ }else if(rank==='S'){ // a fanfare: three pickups and a big major chord
+  [67,67,67].forEach((m,i)=>note(N(m),i*.09,.08,'square',.7));
+  for(const m of [72,76,79])note(N(m),.3,.8,'square',.5);
+  note(N(48),.3,.8,'triangle',.9);thump(.3);
+ }else if(rank==='A'){ // bright up-arpeggio, landing high
+  [64,67,72,76].forEach((m,i)=>note(N(m),i*.08,.2,'square',.6));
+  note(N(79),.34,.5,'square',.55);note(N(52),.34,.5,'triangle',.8);thump(.34,.8);
+ }else if(rank==='B'){ // two friendly notes up
+  note(N(67),0,.18,'square',.6);note(N(72),.16,.45,'square',.6);note(N(48),.16,.45,'triangle',.7);thump(.16,.7);
+ }else if(rank==='C'){ // a plain blip and a flat answer
+  note(N(64),0,.15,'square',.55);note(N(64),.17,.35,'triangle',.6);thump(.17,.6);
+ }else if(rank==='D'){ // stepping down, minor
+  [67,63,60].forEach((m,i)=>note(N(m),i*.16,.22,'square',.55));note(N(55),.5,.45,'triangle',.7);
+ }else{ // F: the sad trombone, wah-wah-wah-waaah
+  [[58,0],[57,.32],[56,.64]].forEach(([m,at])=>note(N(m),at,.28,'sawtooth',.4,.97));
+  note(N(55),.96,1.0,'sawtooth',.4,.94);
+  for(let i=0;i<8;i++)note(N(55)*(i%2?1.02:.98),.96+i*.12,.12,'triangle',.15);
+ }
+}
+let resultsData=null;
+// data: {title,boss,reason,rows:()=>[{name,me,st|null}],then}
+function showResults(data){
+ resultsData={...data,t0:performance.now(),stung:{},done:false};
+ screen='results';
+}
+function resultsRows(){
+ const R=resultsData,rows=(R.rows()||[]).map(r=>({...r,rk:r.st?rankOf(r.st,{reason:R.reason}):null}));
+ const scored=rows.filter(r=>r.rk);
+ if(scored.length>1){const best=scored.reduce((a,b)=>b.rk.score>a.rk.score?b:a);best.mvp=true}
+ return rows;
+}
+function resultsContinue(){
+ const R=resultsData;if(!R)return;
+ const el=performance.now()-R.t0;
+ // the first press only skips the counting up
+ if(el<2200&&!R.skipped){R.skipped=true;R.t0=performance.now()-2400;return}
+ resultsData=null;play('select');
+ try{R.then&&R.then()}catch(e){console.error(e);screen='title'}
+}
+function drawResults(now){
+ const R=resultsData;if(!R){screen='title';return}
+ let el=(now-R.t0)/1000;
+ const rows=resultsRows(),solo=rows.length===1;
+ ctx.save();ctx.setTransform(UT_SCALE,0,0,UT_SCALE,0,0);ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle='#000';ctx.fillRect(0,0,640,480);
+ const txt=(t,x,y,size,col,align='left',font='UndertaleFont')=>{ctx.font=`${size}px ${font}, monospace`;ctx.textAlign=align;ctx.textBaseline='alphabetic';ctx.fillStyle=col;ctx.fillText(t,x,y)};
+ const titleCol={win:'#ffff00',spare:'#ffff00',flee:'#ffffff',gameover:'#ff3030'}[R.reason]||'#ffffff';
+ txt(R.title,320,58,40,titleCol,'center','UndertaleFont');
+ if(R.boss)txt(R.boss,320,84,16,'#808080','center');
+ const count=(v,at)=>Math.round(v*Math.max(0,Math.min(1,(el-at)/.6)));
+ if(solo){
+  const r=rows[0],st=r.st;
+  const lines=[
+   ['DAMAGE DEALT',count(st.dmg,.2)],
+   ['HITS LANDED',`${count(st.attacks,.3)} / ${st.attacks+st.misses}`],
+   ['CRITICAL HITS',count(st.crits,.4)],
+   ['HITS TAKEN',count(st.hits,.5)],
+   ['HP LOST',count(st.hpLost,.6)],
+   ['CLOSEST CALL',`${st.minHp??st.maxhp} / ${st.maxhp} HP`],
+   ['TURNS',count(st.turns,.8)],
+   ['TIME',`${Math.floor(st.time/60)}:${String(st.time%60).padStart(2,'0')}`]];
+  lines.forEach(([k,v],i)=>{
+   if(el<.15+i*.1)return;
+   txt('* '+k,40,140+i*30,18,'#ffffff');txt(String(v),372,140+i*30,18,'#ffffff','right');
+  });
+  drawRankStamp(r,505,240,el-1.5,1.6);
+ }else{
+  txt('PLAYER',30,128,14,'#808080');txt('DMG',300,128,14,'#808080','right');txt('HITS',372,128,14,'#808080','right');
+  txt('CLOSEST',470,128,14,'#808080','right');txt('RANK',565,128,14,'#808080','center');
+  rows.forEach((r,i)=>{
+   const y=170+i*56;if(el<.2+i*.15)return;
+   const col=r.me?'#ffff00':'#ffffff';
+   txt(r.name+(r.me?' (YOU)':''),30,y,18,col);
+   if(!r.st){txt('...',470,y,18,'#808080','right');return}
+   const st=r.st;
+   txt(String(count(st.dmg,.3+i*.15)),300,y,18,col,'right');
+   txt(String(count(st.hits,.3+i*.15)),372,y,18,col,'right');
+   txt(`${st.minHp??st.maxhp}/${st.maxhp}`,470,y,18,col,'right');
+   if(r.mvp&&el>1.6+rows.length*.35)txt('MVP',30,y+20,14,'#ffd700');
+   drawRankStamp(r,565,y-8,el-1.4-i*.35,.62);
+  });
+ }
+ if(el>2.2&&Math.floor(el*2)%2===0)txt('Z / TAP  CONTINUE',320,456,16,'#808080','center');
+ ctx.restore();
+}
+function drawRankStamp(r,x,y,t,size){
+ if(!r.rk||t<0)return;
+ const rk=r.rk;
+ const key=r.name+'|'+rk.r;
+ if(!resultsData.stung[key]){
+  resultsData.stung[key]=true;
+  // online only your own rank plays its sting (one tune at a time); the rest just thud
+  if(r.me)rankSting(rk.r);else play('impact');
+ }
+ const sc=t<.18?3-2*(t/.18):1,shake=t<.4?(1-t/.4)*6*size:0;
+ ctx.save();
+ ctx.translate(x+(Math.random()-.5)*shake,y+(Math.random()-.5)*shake);ctx.scale(sc*size,sc*size);
+ ctx.font='96px UndertaleFont, monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+ let col=rk.col;
+ if(rk.r==='SS'){const h=(performance.now()/6)%360;col=`hsl(${h},100%,65%)`}
+ ctx.globalAlpha=Math.min(1,t/.1);
+ ctx.fillStyle='#000';ctx.fillText(rk.r,4,4);
+ ctx.fillStyle=col;ctx.fillText(rk.r,0,0);
+ ctx.restore();
+ if(size>1&&t>.3){
+  ctx.save();ctx.font='16px UndertaleFont, monospace';ctx.textAlign='center';ctx.fillStyle=rk.col;
+  ctx.fillText(rk.sub,x,y+90);ctx.fillStyle='#808080';ctx.fillText('SCORE '+rk.score+(rk.god?'  (GOD MODE)':''),x,y+114);
+  ctx.restore();
+ }
+}
+function nbResultsTitle(reason){return {win:'VICTORY',spare:'SPARED',flee:'ESCAPED',gameover:'GAME OVER'}[reason]||'FIGHT OVER'}
 function nbStartBattle(){
  screen='nb';
  NB.start({
@@ -26320,8 +26517,18 @@ function nbStartBattle(){
    try{nbRecordOutcome(reason,S)}catch(_){}
    screen='battle';
    try{stopMusic()}catch(_){}
-   if(currentBoss==='sans5000'||(currentBoss==='sans'&&secretSansReturn)){returnFromSecretSans5000();return}
-   returnTitle();
+   const after=()=>{
+    if(currentBoss==='sans5000'||(currentBoss==='sans'&&secretSansReturn)){returnFromSecretSans5000();return}
+    returnTitle();
+   };
+   // the scoreboard, unless you walked out of the fight
+   const mine=NB.statsMine();
+   if(mine&&['win','spare','flee','gameover'].includes(reason)){
+    const boss=(BOSS_OPTIONS.find(b=>b.id===currentBoss)?.label)||'';
+    showResults({title:nbResultsTitle(reason),boss,reason,rows:()=>[{name:mine.name,me:true,st:mine}],then:after});
+    return;
+   }
+   after();
   }
  });
  try{startBattleMusic()}catch(_){}
@@ -27784,7 +27991,9 @@ boot().catch(err=>{
      local - BroadcastChannel between tabs of this browser
    ========================================================================== */
 const NBO=(()=>{
- const MAX=5,PROTO='nbo1',STEP=1000/30;
+ // PROTO changes whenever online play changes, so two different builds never share a room
+ // (they'd fall out of step); ONLINE_BUILD is shown in the panel to compare builds.
+ const MAX=5,PROTO='nbo3',STEP=1000/30,ONLINE_BUILD='64';
  const KEYMAP={confirm:['z','enter'],cancel:['x','shift'],menu:['c','control'],up:['arrowup','w'],down:['arrowdown','s'],left:['arrowleft','a'],right:['arrowright','d']};
  const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_',B64I={};[...B64].forEach((c,i)=>B64I[c]=i);
  const enc3=v=>B64[v&63]+B64[(v>>6)&63]+B64[(v>>12)&63];
@@ -27947,9 +28156,10 @@ const NBO=(()=>{
    st.h=1;st.l=lobby.map(p=>[p.id,p.name,p.ready?1:0]);
    if(game){
     const g={id:game.id,st:game.st,n:game.p.length,p:game.p,b:game.bossName};
+    if(game.sbs&&Object.keys(game.sbs).length){g.sb={};for(const [id,v] of Object.entries(game.sbs))g.sb[id]=packSb(v)}
     if(game.st==='setup'){const i=publishes%game.parts.length;g.c={N:game.parts.length,i,d:game.parts[i]}}
     if((game.st==='run'||game.st==='end')&&game.F.length){
-     const B=T.budget,top=game.F.length;
+     const B=T.budget*(g.sb?.8:1),top=game.F.length;
      let lag=top;for(const id of game.p.slice(1)){const c=game.clients[id];if(c&&!c.gone)lag=Math.min(lag,c.ack)}
      const f=encNewest(game.F,Math.max(1,Math.min(top-5,lag+1)),top,B*.42);if(f)g.f=f;
      if(f&&lag+1<f.a){const u=encFrames(game.F,lag+1,f.a-1,B*.42);if(u)g.u=u}
@@ -27959,7 +28169,7 @@ const NBO=(()=>{
    }
   }else{
    st.r=ready?1:0;
-   if(game){st.g={id:game.id,ok:game.ok?1:0,k:game.ackT||game.lastT||0}}
+   if(game){st.g={id:game.id,ok:game.ok?1:0,k:game.ackT||game.lastT||0};const mineSb=game.sbs&&game.sbs[T.self];if(mineSb)st.sb={g:game.id,s:packSb(mineSb)}}
    const q=inQ.slice(-36);
    if(q.length){let d='';const a=[];for(const s of q){d+=enc3(s.h|(s.l<<7));if(s.a)a.push([s.q,s.a])}st.i={q:q[q.length-1].q,d};if(a.length)st.i.a=a}
    const r=game&&game.running?NB.mpReport():null;
@@ -28011,6 +28221,7 @@ const NBO=(()=>{
   const nm=clean(s.n)||'PLAYER',rd=!!s.r;
   if(nm!==p.name||rd!==p.ready){p.name=nm;p.ready=rd;pubDirty=true;refreshUI()}
   if(game){
+   if(s.sb&&s.sb.g===game.id&&game.p.includes(from)){const v=cleanSb(s.sb.s);if(v){game.sbs=game.sbs||{};game.sbs[from]=v;pubDirty=true}}
    const c=game.clients[from];
    if(c){
     if(s.g&&s.g.id===game.id){if(s.g.ok&&!c.ok){c.ok=true;refreshUI()}if(s.g.k>c.ack)c.ack=s.g.k}
@@ -28123,6 +28334,7 @@ const NBO=(()=>{
     if(game.parts.filter(v=>v!=null).length===game.N)prepare(game);
    }
    const t0=NB.S&&NB.S.mp&&game.running?NB.S.t:0;
+   if(g.sb&&typeof g.sb==='object'){game.sbs=game.sbs||{};for(const id of Object.keys(g.sb))if(id!==T.self&&(g.p||[]).includes(id)){const v=cleanSb(g.sb[id]);if(v)game.sbs[id]=v}}
    if(game.running){decFrames(g.u,game.n,game.frames,t0);decFrames(g.f,game.n,game.frames,t0)}
    if(g.au&&g.au[0]>t0)game.aus.set(g.au[0],g.au);
    if(g.st==='run'&&game.ok&&!game.running&&!game.over){
@@ -28179,11 +28391,32 @@ const NBO=(()=>{
   if(!isHost&&NB.S&&NB.S.mp)game.lastT=NB.S.t;
   if(NB.S&&!NB.S.exited)NB.S.exited=true;
   if(!was)return;
+  // my line for the scoreboard; the others' arrive from their own copies (through the host)
+  const mine=NB.statsMine();game.sbs=game.sbs||{};if(mine)game.sbs[T.self]=cleanSb(mine);
   try{stopMusic()}catch(_){}
   swapOut();
   screen='battle';returnTitle();
   const why={win:'the party won!',gameover:'the party fell...',flee:'the party fled',quit:'left the fight','host left':'the host left'}[reason]||String(reason||'fight over');
-  log(why);pubDirty=true;openPanel();
+  log(why);pubDirty=true;publish(true);
+  const g=game,ps=(g.cfg&&g.cfg.players)||[];
+  if(mine&&ps.length&&['win','spare','flee','gameover'].includes(reason)){
+   showResults({title:nbResultsTitle(reason),boss:g.bossName||'',reason,
+    rows:()=>ps.map(q=>({name:clean(q.name)||'PLAYER',me:q.id===T.self,st:(g.sbs&&g.sbs[q.id])||null})),
+    then:()=>{returnTitle();openPanel()}});
+  }else openPanel();
+ }
+ // a scoreboard line travels as a short row of numbers (presence is capped at 4 KiB)
+ const SB_KEYS=['dmg','attacks','misses','crits','hits','hpLost','healed','minHp','maxhp','hp','alive','turns','time'];
+ const SB_MODS=['godMode','glassSoul','noBulletCooldown','perfectHits','doubleDamage','mirrorMove'];
+ function packSb(v){if(!v)return null;const a=SB_KEYS.map(k=>k==='alive'?(v.alive?1:0):Math.round(Number(v[k])||0));let m=0;SB_MODS.forEach((k,i)=>{if((v.mods||[]).includes(k))m|=1<<i});a.push(m);return a}
+ // a scoreboard line from someone else's copy: numbers only
+ function cleanSb(v){
+  if(Array.isArray(v)){const o={};SB_KEYS.forEach((k,i)=>o[k]=v[i]);o.mods=SB_MODS.filter((k,i)=>(Number(v[SB_KEYS.length])|0)&(1<<i));v=o}
+  if(!v||typeof v!=='object')return null;
+  const n=k=>{const x=Number(v[k]);return Number.isFinite(x)?Math.max(0,Math.min(1e7,Math.round(x))):0};
+  return {dmg:n('dmg'),attacks:n('attacks'),misses:n('misses'),crits:n('crits'),hits:n('hits'),hpLost:n('hpLost'),healed:n('healed'),
+   minHp:n('minHp'),maxhp:Math.max(1,n('maxhp')),hp:n('hp'),alive:!!v.alive,turns:n('turns'),time:n('time'),name:clean(v.name),
+   mods:Array.isArray(v.mods)?v.mods.filter(x=>typeof x==='string').map(x=>x.slice(0,24)).slice(0,12):[]};
  }
  NB.mpTick=(dt,now)=>{
   const S=NB.S;if(!S||!game||!game.running)return;
@@ -28254,7 +28487,7 @@ const NBO=(()=>{
   if(isHost){joined=true;log('room '+code+' open ('+T.label.toLowerCase()+')')}
   else log('looking for room '+code+'...');
   pubDirty=true;publish(true);refreshUI();
-  if(!isHost)setTimeout(()=>{if(T&&!joined)setStatus('no host answered yet - check the code (and that you are on the same site/app as the host)')},9000);
+  if(!isHost)setTimeout(()=>{if(T&&!joined)setStatus('no host answered yet - check the code, and that you both have the same online build ('+ONLINE_BUILD+'): refresh the page')},9000);
  }
  function disconnect(){
   if(game&&game.running)endBattle('quit');
@@ -28348,7 +28581,7 @@ const NBO=(()=>{
    else if(isHost&&lobby.length===0)setStatus('share the code. pick the fight on the title screen, then START.');
    else if(isHost)setStatus(lobby.some(p=>!p.ready)?'waiting for everyone to be READY':'ready to start');
    else setStatus(ready?'waiting for the host to start':'press READY');
-   $('nboNote').textContent=`via ${T.label.toLowerCase()}. the host's fight, settings and items are used. FIGHT/ACT/ITEM/MERCY take turns; everyone dodges at once, each with their own SOUL. ESC leaves a fight.`;
+   $('nboNote').textContent=`online build ${ONLINE_BUILD}, via ${T.label.toLowerCase()}. the host's fight, settings and items are used. FIGHT/ACT/ITEM/MERCY take turns; everyone dodges at once, each with their own SOUL. ESC leaves a fight.`;
   }else{
    $('nboNote').textContent=inArtifact()?'in this app, everyone in the room needs access to this page (share it with them).':'works between copies of this page on the same site (e.g. GitHub Pages).';
   }
