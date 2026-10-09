@@ -28,6 +28,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   for(const t of [IMG,NB_ASSETS,SFX,MUSIC,EMBED])walk(t);
   for(const [n,[w,h,xo,yo,ids]] of Object.entries(DR_ASSETS.spr))ids.forEach(g=>out.add(DR_RAW+`sprites/${n}/${g}.png`));
   for(const f of Object.keys(DR_ASSETS.font))out.add(DR_RAW+`fonts/${f}/${f}.png`);
+  for(const [n,[w,h,xo,yo,ids]] of Object.entries(DR1_ASSETS.spr))ids.forEach(g=>out.add(DR_RAW1+`sprites/${n}/${g}.png`));
+  for(const f of Object.keys(DR1_ASSETS.font))out.add(DR_RAW1+`fonts/${f}/${f}.png`);
   return [...out];
  });
  const rec=await p.evaluate(()=>[...window.__rec].filter(u=>/^https?:/.test(u)));
