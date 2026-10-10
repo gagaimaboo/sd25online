@@ -184,7 +184,7 @@ def main():
     hook = " if(!MOBILE_BUILD||!/^https?:/i.test(url))return url;\n"
     body = patch(body, hook, hook + " {const packed=await artifactAsset(url);if(packed)return packed}\n", 'mobileAssetSource guard')
     with open(os.path.join(OUT, 'ub.html'), 'w', encoding='utf-8') as f:
-        f.write('<title>Undertale Battlegrounds</title>\n' + css + body)
+        f.write('<title>Undertale and Deltarune Battle Engine</title>\n' + css + body)
 
     files = sorted(os.path.relpath(os.path.join(dp, f), OUT) for dp, _, fs in os.walk(OUT) for f in fs if f != 'ub.html')
     with open(os.path.join(OUT, 'files.json'), 'w') as f:
