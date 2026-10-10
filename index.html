@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Undertale:Battlegrounds V103 - Mod Menu</title>
+<title>Undertale and Deltarune Battle Engine</title>
 <style>
 @font-face{font-family:"UT8Bit";src:local("8bitoperator JVE Regular"),local("8bitoperator JVE"),url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/184191/8bitoperator_jve.woff") format("woff"),url("https://static.wfonts.com/data/2016/05/02/8bitoperator-jve/8bitoperator_jve.ttf") format("truetype");font-weight:400;font-style:normal;font-display:block}
 @font-face{font-family:"UndertaleFont";src:local("Determination Mono"),local("DTM-Mono"),url("https://cdn.jsdelivr.net/gh/ThetaApps/font-undertale@master/Determination/Determination%20Mono.woff2") format("woff2"),url("https://raw.githubusercontent.com/ThetaApps/font-undertale/master/Determination/Determination%20Mono.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
@@ -1240,7 +1240,7 @@ const SHOP_ITEM_ENTRIES=[
  {id:'darkburger',price:70},
  {id:'rouxls_roux',price:50},
  // DELTARUNE Chapter 5 consumables. Healing/TP behavior matches Chapter 5 data;
- // prices are Battlegrounds shop prices because several are found/reward items in DR.
+ // prices are this game's shop prices because several are found/reward items in DR.
  {id:'punch_bowl',price:500},
  {id:'flavigne',price:220},
  {id:'green_tea',price:260},
@@ -1263,7 +1263,7 @@ const SHOP_WEAPON_ENTRIES=[
  {id:'burntpan',price:225,desc:'+10 AT / four timings / +4 item HP'},
  {id:'emptygun',price:350,desc:'+12 AT / four fast timings / precision bonus'},
  {id:'worndagger',price:500,desc:'An old, dulled dagger. +15 AT'},
- // DELTARUNE party weapons. These prices are Battlegrounds shop prices; the
+ // DELTARUNE party weapons. These prices are this game's shop prices; the
  // underlying stats and character compatibility come from DELTARUNE.
  {id:'spookysword',price:180,partyOnly:true,desc:'+2 AT // KRIS // PARTY GEAR'},
  {id:'bounceblade',price:240,partyOnly:true,desc:'+2 AT // +1 DF // KRIS // PARTY GEAR'},
@@ -1289,7 +1289,7 @@ const SHOP_WEAPON_ENTRIES=[
  {id:'mistlewp',price:1111,partyOnly:true,desc:'+6 AT // +2 MAGIC // RALSEI // CH5'}
 ];
 // Complete UNDERTALE armor roster. Prices for normally-found pickup armor are
-// adapted to Battlegrounds' all-in-one shop; actual armor stats/effects stay source-accurate.
+// adapted to this game's all-in-one shop; actual armor stats/effects stay source-accurate.
 const SHOP_ARMOR_ENTRIES=[
  {id:'bandage',label:'Bandage',price:0,def:0,atk:0,invMs:0,regenEvery:0,lvCap:20,desc:'0 DF // starting armor'},
  {id:'fadedribbon',label:'Faded Ribbon',price:25,def:3,atk:0,invMs:0,regenEvery:0,lvCap:20,desc:'+3 DF'},
@@ -2853,7 +2853,7 @@ let enemyDraw=utRect(ENEMY_LAYOUTS.dummy.x,ENEMY_LAYOUTS.dummy.y,ENEMY_LAYOUTS.d
 let enemyImage=null,enemyFrozenImage=null,enemyIceShadowImage=null;
 
 let state='menu',selected=0,sub=0;
-// Universal pre-battle encounter intro. The battlegrounds build has no overworld
+// Universal pre-battle encounter intro. This battle engine has no overworld
 // room to transition from, so every reset enters through the characteristic
 // SOUL flicker/zoom before the battle HUD and encounter text appear.
 let hp=20,maxHp=20,enemyHp=100,enemyMaxHp=100,mercy=0,enemyTired=false;
@@ -6770,13 +6770,13 @@ function ui6TitleText(i,b){
   '* Spend the GOLD from vanilla fights on items, weapons and armor.',
   '* Fight the selected battle with up to 4 friends.\n* Host a room or join one with its code.',
   '* Cheats and chaos rules.\n* Modded fights earn no EXP or GOLD and are not recorded.',
-  '* Kris, Susie and Ralsei vs the Dummy, built from DELTARUNE\'s own battle code.'
+  '* Kris, Susie and Ralsei (or Noelle) vs chapter 1\'s enemies and the King,\n  built from DELTARUNE\'s own battle code.'
  ][i]||'';
 }
 function drawTitle(now=performance.now()){
  const base=BOSS_OPTIONS[bossSelected]||BOSS_OPTIONS[0],b=effectiveBossById(base.id)||base;
  ui6TitleLogo(64,4);
- ui6T('B A T T L E G R O U N D S',W/2,190,{f:'text',s:2,c:UI6_C.gray,a:'center'});
+ ui6T(ui6Fit('A N D   D E L T A R U N E   B A T T L E   E N G I N E',W-120,'text',2),W/2,190,{f:'text',s:2,c:UI6_C.gray,a:'center'});
  // The save line, laid out like UNDERTALE's Continue screen.
  const role=vanillaMode?'classic':sandboxRole();
  const lx=W/2-460,rx=W/2+460;
