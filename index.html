@@ -27619,7 +27619,8 @@ const DR=(()=>{
   }
  }
  function enemyAttackStep(){
-  if(S.box)for(const g of S.gens||[]){if(g.kind==='needle')needleGen(g);else ch1Gen(g)}
+  // the King makes his own box at rtimer 12, so the scripts run before any box exists
+  for(const g of S.gens||[]){if(g.kind==='needle'){if(S.box)needleGen(g)}else ch1Gen(g)}
   if(S.mnfight===2){
    S.turntimer--;
    if(S.turntimer<=0&&!S.reset){
